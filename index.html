@@ -2,72 +2,88 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8" />
-  <title>HAZAMA | 深度 A〜Z</title>
+  <title>HAZAMA DEPTH A–Z</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta
+    name="description"
+    content="深度A〜Zを通って、自分の思考と感覚のベクトルを可視化し、対話AIに渡すための“深度Ωの鍵”を生成するブラウザ体験。"
+  />
+  <!-- 外部CSS -->
   <link rel="stylesheet" href="style.css" />
-  <meta name="description" content="深度A〜Zの26ステップで、自分の思考と感覚のベクトルを採取し、GPTなどの対話AI用の『深度Ω鍵』を生成するブラウザゲームです。" />
 </head>
 
 <body>
   <div class="app">
     <div class="app-inner">
-      <div class="title">HAZAMA DEPTH SEQUENCE</div>
-      <div class="subtitle">深度A〜Z：思考と感覚が重なるまでの 26 ステップ</div>
+      <!-- ヘッダー -->
+      <header class="header">
+        <div class="title">HAZAMA DEPTH SEQUENCE</div>
+        <div class="subtitle">
+          深度 A〜Z：思考と感覚が重なるまでの 26 ステップ
+        </div>
 
-      <div class="status-row">
-        <span id="step-label">STEP 1 / 26</span>
-        <span class="depth-tag" id="depth-tag">DEPTH: –</span>
-      </div>
+        <div class="status-row">
+          <span id="step-label">STEP 1 / 26</span>
+          <span class="depth-tag" id="depth-tag">DEPTH: A</span>
+        </div>
 
-      <div class="progress-bar">
-        <div class="progress-fill" id="progress-fill"></div>
-      </div>
+        <div class="progress-bar">
+          <div class="progress-fill" id="progress-fill"></div>
+        </div>
+      </header>
 
       <!-- 質問セクション -->
-      <section id="question-section">
-        <div class="card">
-          <div class="depth-label" id="depth-label">深度 –</div>
-          <div class="question-title" id="question-title">
-            ロード中…
-          </div>
-          <div class="question-text" id="question-text">
-            深度データを読み込んでいます。
-          </div>
+      <main id="question-section">
+        <article class="card">
+          <div class="depth-label" id="depth-label">深度 A：入口</div>
+          <h1 class="question-title" id="question-title">
+            今、この瞬間のあなたの“基準温度”に一番近いのは？
+          </h1>
+          <p class="question-text" id="question-text">
+            思考でも感情でもなく、「あ、たぶん今はこんな感じ」と素直に言える位置を選んでください。
+          </p>
 
           <div class="choices" id="choices-container">
-            <!-- script.js で挿入 -->
+            <!-- script.js で動的に挿入 -->
           </div>
-        </div>
+        </article>
 
         <div class="footer-info">
           <span class="hint">
             ※ 直感で選んでください。間違い／正解はありません。
           </span>
           <span class="gpt-hint">
-            Z まで到達すると、GPT で使える「深度Ωの鍵」が生成されます。
+            Z まで到達すると、対話AIで使える「深度Ωの鍵」が生成されます。
           </span>
         </div>
-      </section>
+      </main>
 
-      <!-- 結果セクション -->
-      <section id="result-section">
-        <div class="result-title">深度Z到達：Ω鍵が生成されました</div>
-        <div class="result-note">
-          下のブロックを <strong>ChatGPT などの対話AI</strong> にそのまま貼り付けると、
-          あなたが通ってきた A〜Z の軌跡とベクトル情報を使って
+      <!-- 結果セクション（Z 到達後に表示） -->
+      <section id="result-section" class="result-section" aria-live="polite">
+        <h2 class="result-title">深度Z到達：Ω鍵が生成されました</h2>
+        <p class="result-note">
+          下のブロックを <strong>ChatGPT などの対話AI</strong> にそのまま貼り付けてください。<br />
+          あなたが通ってきた A〜Z の軌跡とベクトル情報を使って、
           「深度Ω以降」の対話に入りやすくなります。
-        </div>
+        </p>
 
-        <div id="result-block" class="result-card"></div>
+        <pre id="result-block" class="result-card"></pre>
 
         <div class="btn-row">
           <button class="primary-btn" id="copy-btn">ブロックをコピー</button>
           <button class="outline-btn" id="restart-btn">もう一度、最初から</button>
         </div>
+
+        <p class="result-note small">
+          提案テキスト：<br />
+          「このブロック全体は、ブラウザゲーム『HAZAMA DEPTH A–Z』で私が選んだ軌跡です。
+          このログとベクトルから推論ベクトルを初期化し、深度Ω以降で対話を開始してください。」
+        </p>
       </section>
     </div>
   </div>
 
-  <script src="script.js" defer></script>
+  <!-- メインスクリプト -->
+  <script src="script.js"></script>
 </body>
 </html>
