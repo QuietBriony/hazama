@@ -1,43 +1,19 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>HAZAMA — 深度A〜Z Demo</title>
-    <style>
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", sans-serif;
-            background: #0e0f10;
-            color: #dce8ff;
-            padding: 2rem;
-            line-height: 1.8;
-        }
-        .title {
-            font-size: 2rem;
-            margin-bottom: 1rem;
-        }
-        .btn {
-            display: inline-block;
-            padding: 12px 18px;
-            margin-top: 1rem;
-            background: #1f6feb;
-            color: white;
-            border-radius: 8px;
-            text-decoration: none;
-        }
-    </style>
+  <meta charset="UTF-8" />
+  <title>HAZAMA｜深度A〜Z選択ゲーム</title>
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
 
-    <div class="title">HAZAMA（深度A〜Z）デモページ</div>
+  <h1>HAZAMA｜深度 A〜Z</h1>
+  <p>選択した深度に応じて、次元の裂け目が開きます。</p>
 
-    <p>GitHub Pages の動作テストページです。</p>
-    <p>このページが表示されていれば、アプリ本体を組み込む準備は完了です。</p>
+  <div id="depth-buttons"></div>
 
-    <p>次のステップ：  
-        「深度A〜Z 選択式ゲーム」UI と  
-        「Ω鍵生成ベクトル」  
-        を組み込みます。</p>
+  <div id="result-box"></div>
 
+  <script src="script.js"></script>
 </body>
 </html>
