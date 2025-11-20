@@ -1,284 +1,321 @@
-/* ------------------------------
-   Base
------------------------------- */
-
-*,
-*::before,
-*::after {
+/* ===== リセット ===== */
+* {
   box-sizing: border-box;
-  padding: 0;
   margin: 0;
+  padding: 0;
 }
 
-html, body {
-  width: 100%;
-  height: 100%;
-  background: #020617; /* 深宇宙ネイビー */
-  color: #e2e8f0;
-  font-family: "Inter", "Noto Sans JP", sans-serif;
-  -webkit-font-smoothing: antialiased;
-  overflow-x: hidden;
-}
-
-/* ------------------------------
-   Layout
------------------------------- */
-
-.app {
-  width: 100%;
+body {
   min-height: 100vh;
+  font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue",
+    "Segoe UI", sans-serif;
+  color: #e9f5ff;
+  background: radial-gradient(circle at 20% 20%, #3bb4ff 0, #001327 55%, #00040a 100%);
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 32px 20px;
+  padding: 16px;
+}
+
+/* ===== コンテナ ===== */
+.app {
+  width: 100%;
+  max-width: 760px;
+  background: rgba(2, 12, 28, 0.9);
+  border-radius: 20px;
+  border: 1px solid rgba(144, 202, 249, 0.35);
+  box-shadow:
+    0 0 40px rgba(0, 163, 255, 0.3),
+    0 0 120px rgba(0, 88, 179, 0.4);
+  padding: 20px 20px 24px;
+  position: relative;
+  overflow: hidden;
+}
+
+.app::before {
+  content: "";
+  position: absolute;
+  inset: -40%;
+  background:
+    radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.06), transparent 60%),
+    repeating-radial-gradient(circle at 50% 50%, rgba(150, 210, 255, 0.18), transparent 4px);
+  mix-blend-mode: screen;
+  opacity: 0.35;
+  pointer-events: none;
 }
 
 .app-inner {
-  max-width: 560px;
-  width: 100%;
+  position: relative;
+  z-index: 1;
 }
 
-/* ------------------------------
-   Header
------------------------------- */
-
-.header {
-  margin-bottom: 28px;
-}
-
+/* ===== ヘッダー ===== */
 .title {
-  font-size: 22px;
-  letter-spacing: 1px;
-  font-weight: 600;
-  background: linear-gradient(120deg, #93c5fd, #e0f2fe, #a5b4fc);
-  -webkit-background-clip: text;
-  color: transparent;
+  font-size: 1.2rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #bbdefb;
+  margin-bottom: 4px;
 }
 
 .subtitle {
-  font-size: 13px;
-  color: #94a3b8;
-  margin-top: 4px;
-  margin-bottom: 20px;
+  font-size: 0.8rem;
+  color: #9fbcd9;
+  margin-bottom: 16px;
 }
 
 .status-row {
   display: flex;
+  align-items: center;
   justify-content: space-between;
-  margin-bottom: 10px;
+  font-size: 0.78rem;
+  color: #b0c4de;
+  margin-bottom: 6px;
+  gap: 8px;
 }
 
 .depth-tag {
-  background: rgba(148, 163, 184, 0.12);
-  padding: 3px 9px;
-  border-radius: 6px;
-  font-size: 12px;
-  color: #cbd5e1;
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid rgba(144, 202, 249, 0.5);
+  font-size: 0.7rem;
+  letter-spacing: 0.08em;
 }
-
-/* ------------------------------
-   Progress Bar
------------------------------- */
 
 .progress-bar {
   width: 100%;
-  height: 6px;
-  background: rgba(148, 163, 184, 0.15);
-  border-radius: 4px;
+  height: 5px;
+  background: rgba(10, 40, 70, 0.9);
+  border-radius: 999px;
   overflow: hidden;
+  margin-bottom: 14px;
 }
 
 .progress-fill {
-  width: 0%;
   height: 100%;
-  background: linear-gradient(90deg, #38bdf8, #818cf8, #a78bfa);
-  transition: width 0.4s ease;
+  width: 0%;
+  background: linear-gradient(90deg, #4fc3f7, #81d4fa, #ffd54f);
+  transition: width 0.28s ease-out;
 }
 
-/* ------------------------------
-   Cards & Questions
------------------------------- */
-
+/* ===== カード ===== */
 .card {
-  padding: 26px 22px;
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  backdrop-filter: blur(6px);
+  background: linear-gradient(
+    135deg,
+    rgba(10, 25, 47, 0.94),
+    rgba(13, 32, 64, 0.98)
+  );
   border-radius: 16px;
-  box-shadow: 0 0 20px rgba(56, 189, 248, 0.12);
-  margin-bottom: 22px;
+  border: 1px solid rgba(144, 202, 249, 0.4);
+  padding: 16px 14px 14px;
+  margin-bottom: 12px;
 }
 
 .depth-label {
-  font-size: 13px;
-  margin-bottom: 10px;
-  font-weight: 500;
-  color: #93c5fd;
+  font-size: 0.9rem;
+  color: #90caf9;
+  margin-bottom: 4px;
 }
 
 .question-title {
-  font-size: 19px;
-  font-weight: 600;
-  margin-bottom: 12px;
-  line-height: 1.5;
+  font-size: 1.02rem;
+  margin-bottom: 6px;
+  color: #e3f2fd;
 }
 
 .question-text {
-  font-size: 14px;
-  color: #cbd5e1;
-  margin-bottom: 22px;
+  font-size: 0.9rem;
+  color: #c4d7f0;
   line-height: 1.6;
 }
 
-/* ------------------------------
-   Choices
------------------------------- */
-
+/* ===== 選択肢 ===== */
 .choices {
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
+  margin-top: 14px;
+  display: grid;
+  gap: 8px;
 }
 
 .choice-btn {
-  padding: 14px 18px;
-  border-radius: 12px;
-  border: 1px solid rgba(148, 163, 184, 0.2);
-  background: rgba(255, 255, 255, 0.04);
-  color: #e2e8f0;
-  font-size: 15px;
-  cursor: pointer;
-  transition: all 0.25s ease;
+  width: 100%;
+  border-radius: 999px;
+  border: 1px solid rgba(129, 212, 250, 0.55);
+  background: rgba(3, 22, 46, 0.95);
+  color: #e3f2fd;
+  padding: 9px 12px;
+  font-size: 0.9rem;
   text-align: left;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  transition:
+    background 0.18s ease-out,
+    transform 0.12s ease-out,
+    box-shadow 0.18s ease-out,
+    border-color 0.18s ease-out;
 }
 
-.choice-btn:hover {
-  background: rgba(168, 221, 255, 0.12);
-  border-color: rgba(125, 211, 252, 0.4);
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(56, 189, 248, 0.25);
+.choice-main {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
 }
 
-/* ------------------------------
-   Footer
------------------------------- */
-
-.footer-info {
-  text-align: center;
-  font-size: 12px;
-  color: #64748b;
-  margin-top: 10px;
+.choice-label {
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  font-size: 0.82rem;
+  text-transform: uppercase;
+  color: #bbdefb;
 }
 
-.footer-info .gpt-hint {
-  display: block;
-  margin-top: 4px;
+.choice-desc {
+  font-size: 0.82rem;
+  color: #c2d9f5;
 }
 
-/* ------------------------------
-   Results
------------------------------- */
-
-.result-section {
-  display: none;
-  padding-top: 20px;
-}
-
-.result-title {
-  font-size: 20px;
-  font-weight: 700;
-  background: linear-gradient(120deg, #93c5fd, #a78bfa);
-  -webkit-background-clip: text;
-  color: transparent;
-  margin-bottom: 14px;
-  text-align: center;
-}
-
-.result-note {
-  font-size: 13px;
-  color: #cbd5e1;
-  margin-bottom: 18px;
-  line-height: 1.7;
-  text-align: center;
-}
-
-.result-note.small {
-  font-size: 11px;
-  margin-top: 20px;
+.choice-hotkey {
+  font-size: 0.7rem;
   opacity: 0.7;
 }
 
-.result-card {
-  background: rgba(255, 255, 255, 0.04);
-  padding: 18px;
-  border-radius: 12px;
-  border: 1px solid rgba(148, 163, 184, 0.2);
-  color: #e2e8f0;
-  font-size: 13px;
-  white-space: pre-wrap;
-  line-height: 1.6;
-  margin-bottom: 20px;
+.choice-btn:hover {
+  background: rgba(6, 39, 80, 0.98);
+  box-shadow: 0 0 16px rgba(33, 150, 243, 0.45);
+  transform: translateY(-1px);
+  border-color: rgba(187, 222, 251, 0.95);
 }
 
-/* ------------------------------
-   Buttons
------------------------------- */
+.choice-btn:active {
+  transform: translateY(0);
+  box-shadow: none;
+}
 
-.btn-row {
+/* ===== フッター ===== */
+.footer-info {
+  font-size: 0.72rem;
+  color: #90a4c2;
   display: flex;
-  gap: 12px;
-  justify-content: center;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  margin-top: 4px;
+  flex-wrap: wrap;
 }
 
-.primary-btn {
-  padding: 12px 22px;
-  background: linear-gradient(120deg, #3b82f6, #818cf8);
-  border: none;
-  color: #fff;
-  border-radius: 8px;
-  cursor: pointer;
-  font-size: 14px;
-  font-weight: 600;
-  transition: 0.25s ease;
-}
-
-.primary-btn:hover {
+.hint {
   opacity: 0.85;
 }
 
-.outline-btn {
-  padding: 12px 22px;
-  border: 1px solid rgba(148, 163, 184, 0.5);
-  background: transparent;
-  color: #e2e8f0;
-  border-radius: 8px;
+.gpt-hint {
+  font-size: 0.7rem;
+  color: #b3e5fc;
+}
+
+/* ===== 結果画面 ===== */
+.result-section {
+  display: none;
+  margin-top: 8px;
+}
+
+.result-title {
+  font-size: 0.96rem;
+  color: #e1f5fe;
+  margin-bottom: 6px;
+}
+
+.result-note {
+  font-size: 0.8rem;
+  color: #b0c4de;
+  margin-top: 4px;
+  line-height: 1.6;
+}
+
+.result-note.small {
+  font-size: 0.76rem;
+  opacity: 0.9;
+}
+
+.result-card {
+  background: linear-gradient(
+    135deg,
+    rgba(4, 20, 42, 0.97),
+    rgba(6, 26, 56, 0.99)
+  );
+  border-radius: 14px;
+  border: 1px solid rgba(129, 212, 250, 0.6);
+  padding: 12px 12px 12px;
+  margin-top: 6px;
+  max-height: 320px;
+  overflow: auto;
+  font-family: "SF Mono", "Roboto Mono", ui-monospace, Menlo, Monaco,
+    Consolas, "Liberation Mono", "Courier New", monospace;
+  font-size: 0.78rem;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  color: #e0f7fa;
+}
+
+/* ===== ボタン ===== */
+.btn-row {
+  margin-top: 8px;
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.outline-btn,
+.primary-btn {
+  border-radius: 999px;
+  padding: 7px 12px;
+  font-size: 0.8rem;
   cursor: pointer;
-  font-size: 14px;
-  transition: 0.25s ease;
+  border-width: 1px;
+  border-style: solid;
+  background: transparent;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.outline-btn {
+  border-color: rgba(129, 212, 250, 0.7);
+  color: #b3e5fc;
+}
+
+.primary-btn {
+  border-color: rgba(255, 213, 79, 0.9);
+  color: #fff8e1;
+  background: radial-gradient(circle at 20% 0%, #ffe082, #ffca28);
+  box-shadow: 0 0 14px rgba(255, 213, 79, 0.6);
 }
 
 .outline-btn:hover {
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(13, 71, 161, 0.65);
 }
 
-/* ------------------------------
-   Responsive
------------------------------- */
+.primary-btn:hover {
+  filter: brightness(1.06);
+}
 
+/* ===== レスポンシブ ===== */
 @media (max-width: 480px) {
-  .card {
-    padding: 22px 18px;
+  .app {
+    padding: 16px 14px 18px;
   }
-
   .question-title {
-    font-size: 18px;
+    font-size: 0.98rem;
   }
-
-  .choice-btn {
-    font-size: 14px;
+  .question-text {
+    font-size: 0.86rem;
   }
-
-  .result-card {
-    font-size: 12px;
+  .choice-desc {
+    font-size: 0.8rem;
+  }
+  .footer-info {
+    flex-direction: column;
+    align-items: flex-start;
   }
 }
