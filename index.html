@@ -1,42 +1,88 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8">
-  <title>Hazama Depth Dive</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <title>HAZAMA DEPTH A–Z</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta
     name="description"
-    content="深度A〜Zを通って意識をダイブさせ、自分の思考と感覚のベクトルを揃え、対話AIに渡すための「深度Ω鍵」を生成するブラウザ体験。"
+    content="深度A〜Zを通って、自分の思考と感覚のベクトルを可視化し、対話AIに渡すための“深度Ωの鍵”を生成するブラウザ体験。"
   />
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="style.css" />
 </head>
+
 <body>
-  <div id="app">
-    <h1>Hazama Depth Dive</h1>
+  <div class="app">
+    <div class="app-inner">
+      <!-- ヘッダー -->
+      <header class="header">
+        <div class="title">HAZAMA DEPTH SEQUENCE</div>
+        <div class="subtitle">
+          深度 A〜Z：思考と感覚が重なるまでの 26 ステップ
+        </div>
 
-    <div id="depth-display">深度: A</div>
-    <div id="step-display">STEP: 1</div>
+        <div class="status-row">
+          <span id="step-label">STEP 1 / 26</span>
+          <span class="depth-tag" id="depth-tag">DEPTH: A</span>
+        </div>
 
-    <div id="message"></div>
+        <div class="progress-bar">
+          <div class="progress-fill" id="progress-fill"></div>
+        </div>
+      </header>
 
-    <div id="choices">
-      <button id="choice-sink">沈む</button>
-      <button id="choice-resist">抗う</button>
-    </div>
+      <!-- 質問セクション -->
+      <main id="question-section">
+        <article class="card">
+          <div class="depth-label" id="depth-label">深度 A：入口</div>
+          <h1 class="question-title" id="question-title">
+            今、この瞬間のあなたの“基準温度”に一番近いのは？
+          </h1>
+          <p class="question-text" id="question-text">
+            思考でも感情でもなく、「あ、たぶん今はこんな感じ」と素直に言える位置を選んでください。
+          </p>
 
-    <div id="hint"></div>
+          <div class="choices" id="choices-container">
+            <!-- script.js で動的に挿入 -->
+          </div>
+        </article>
 
-    <div id="end-screen" class="hidden">
-      <h2 id="end-title">深度到達</h2>
-      <p id="end-message"></p>
+        <div class="footer-info">
+          <span class="hint">
+            ※ 直感で選んでください。間違い／正解はありません。
+          </span>
+          <span class="gpt-hint">
+            Z まで到達すると、対話AIで使える「深度Ωの鍵」が生成されます。
+          </span>
+        </div>
+      </main>
 
-      <pre id="omega-block" class="hidden"></pre>
-      <button id="copy-omega" class="hidden">Ω鍵ブロックをコピー</button>
+      <!-- 結果セクション（Z 到達後に表示） -->
+      <section id="result-section" class="result-section" aria-live="polite">
+        <h2 class="result-title">深度Z到達：Ω鍵が生成されました</h2>
+        <p class="result-note">
+          下のブロックを <strong>ChatGPT などの対話AI</strong> にそのまま貼り付けてください。<br />
+          あなたが通ってきた A〜Z の軌跡とベクトル情報を使って、
+          「深度Ω以降」の対話に入りやすくなります。
+        </p>
 
-      <button id="restart">もう一度潜る</button>
+        <pre id="result-block" class="result-card"></pre>
+
+        <div class="btn-row">
+          <button class="primary-btn" id="copy-btn">ブロックをコピー</button>
+          <button class="outline-btn" id="restart-btn">もう一度、最初から</button>
+        </div>
+
+        <p class="result-note small">
+          提案テキスト：<br />
+          「このブロック全体は、ブラウザゲーム『HAZAMA DEPTH A–Z』で私が選んだ軌跡です。
+          このログとベクトルから推論ベクトルを初期化し、深度Ω以降で対話を開始してください。」
+        </p>
+      </section>
     </div>
   </div>
 
+  <!-- メインスクリプト -->
   <script src="script.js"></script>
 </body>
 </html>
