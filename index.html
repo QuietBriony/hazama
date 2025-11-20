@@ -2,12 +2,49 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8" />
-  <title>HAZAMA DEPTH A–Z</title>
+
+  <title>HAZAMA DEPTH A–Z｜深度ダイブゲーム</title>
+
+  <!-- スマホ表示用 -->
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <!-- 検索結果などに出る説明 -->
   <meta
     name="description"
-    content="深度A〜Zを通って、自分の思考と感覚のベクトルを可視化し、対話AIに渡すための“深度Ωの鍵”を生成するブラウザ体験。"
+    content="深度A〜Zを順番にくぐりながら、自分の思考と感覚のベクトルを可視化し、対話AIに渡すための“深度Ωの鍵”を生成するブラウザゲーム『HAZAMA DEPTH A–Z』の公式ページです。"
   />
+
+  <!-- Open Graph（X / Facebook / LINE用） -->
+  <meta property="og:title" content="HAZAMA DEPTH A–Z｜深度ダイブゲーム" />
+  <meta
+    property="og:description"
+    content="26ステップの深度ダイブを通って、自分だけの“深度Ωの鍵”を生成する思考ゲーム。生成されたログをGPTに貼ることで、深度Ω以降の対話に入りやすくなります。"
+  />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://quietbriony.github.io/hazama/" />
+  <!-- 👇 このPNGをリポジトリ直下に置いてください（og-hazama.png） -->
+  <meta
+    property="og:image"
+    content="https://quietbriony.github.io/hazama/og-hazama.png"
+  />
+  <meta property="og:site_name" content="HAZAMA DEPTH A–Z" />
+
+  <!-- X（Twitter）カード -->
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="HAZAMA DEPTH A–Z｜深度ダイブゲーム" />
+  <meta
+    name="twitter:description"
+    content="ブラウザで深度A〜Zをくぐり、自分のベクトルを“鍵”として対話AIに渡す実験的ゲーム。"
+  />
+  <meta
+    name="twitter:image"
+    content="https://quietbriony.github.io/hazama/og-hazama.png"
+  />
+
+  <!-- お好みで：タブのアイコン -->
+  <link rel="icon" href="og-hazama.png" type="image/png" />
+
+  <!-- 外部CSS -->
   <link rel="stylesheet" href="style.css" />
 </head>
 
@@ -45,9 +82,6 @@
           <div class="choices" id="choices-container">
             <!-- script.js で動的に挿入 -->
           </div>
-
-          <!-- 選択ごとの“じわっとメッセージ” -->
-          <div id="feedback" class="feedback" aria-live="polite"></div>
         </article>
 
         <div class="footer-info">
@@ -60,12 +94,10 @@
         </div>
       </main>
 
-      <!-- 結果セクション（Z or GAME OVER 後に表示） -->
+      <!-- 結果セクション（Z 到達後に表示） -->
       <section id="result-section" class="result-section" aria-live="polite">
-        <h2 class="result-title" id="result-title">
-          深度Z到達：Ω鍵が生成されました
-        </h2>
-        <p class="result-note" id="result-note">
+        <h2 class="result-title">深度Z到達：Ω鍵が生成されました</h2>
+        <p class="result-note">
           下のブロックを <strong>ChatGPT などの対話AI</strong> にそのまま貼り付けてください。<br />
           あなたが通ってきた A〜Z の軌跡とベクトル情報を使って、
           「深度Ω以降」の対話に入りやすくなります。
@@ -78,7 +110,7 @@
           <button class="outline-btn" id="restart-btn">もう一度、最初から</button>
         </div>
 
-        <p class="result-note small" id="result-footer-note">
+        <p class="result-note small">
           提案テキスト：<br />
           「このブロック全体は、ブラウザゲーム『HAZAMA DEPTH A–Z』で私が選んだ軌跡です。
           このログとベクトルから推論ベクトルを初期化し、深度Ω以降で対話を開始してください。」
@@ -87,6 +119,7 @@
     </div>
   </div>
 
+  <!-- メインスクリプト -->
   <script src="script.js"></script>
 </body>
 </html>
