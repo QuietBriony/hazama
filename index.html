@@ -2,47 +2,42 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8" />
+  <title>HAZAMA DEPTH A–Z｜深度Ωの鍵ジェネレーター</title>
 
-  <title>HAZAMA DEPTH A–Z｜深度ダイブゲーム</title>
-
-  <!-- スマホ表示用 -->
+  <!-- ビューポート（スマホ用レイアウト） -->
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-  <!-- 検索結果などに出る説明 -->
+  <!-- 検索・概要用 -->
   <meta
     name="description"
-    content="深度A〜Zを順番にくぐりながら、自分の思考と感覚のベクトルを可視化し、対話AIに渡すための“深度Ωの鍵”を生成するブラウザゲーム『HAZAMA DEPTH A–Z』の公式ページです。"
+    content="深度A〜Zを通って、自分の思考と感覚のベクトルを可視化し、対話AIに渡すための“深度Ωの鍵”を生成するブラウザ体験。"
   />
 
-  <!-- Open Graph（X / Facebook / LINE用） -->
-  <meta property="og:title" content="HAZAMA DEPTH A–Z｜深度ダイブゲーム" />
+  <!-- OGP（SNSでURLを貼ったときのプレビュー） -->
+  <meta property="og:title" content="HAZAMA DEPTH A–Z｜深度Ωの鍵ジェネレーター" />
   <meta
     property="og:description"
-    content="26ステップの深度ダイブを通って、自分だけの“深度Ωの鍵”を生成する思考ゲーム。生成されたログをGPTに貼ることで、深度Ω以降の対話に入りやすくなります。"
+    content="26の問いを通って、自分だけの“深度ベクトル”を生成し、GPTなどの対話AIに渡すための鍵をつくるブラウザ体験。"
   />
   <meta property="og:type" content="website" />
   <meta property="og:url" content="https://quietbriony.github.io/hazama/" />
-  <!-- 👇 このPNGをリポジトリ直下に置いてください（og-hazama.png） -->
+  <!-- アイキャッチ画像（後で hazama-og.png をリポジトリに置けばOK） -->
   <meta
     property="og:image"
-    content="https://quietbriony.github.io/hazama/og-hazama.png"
+    content="https://quietbriony.github.io/hazama/hazama-og.png"
   />
-  <meta property="og:site_name" content="HAZAMA DEPTH A–Z" />
 
-  <!-- X（Twitter）カード -->
+  <!-- Twitterカード設定 -->
   <meta name="twitter:card" content="summary_large_image" />
-  <meta name="twitter:title" content="HAZAMA DEPTH A–Z｜深度ダイブゲーム" />
+  <meta name="twitter:title" content="HAZAMA DEPTH A–Z｜深度Ωの鍵ジェネレーター" />
   <meta
     name="twitter:description"
-    content="ブラウザで深度A〜Zをくぐり、自分のベクトルを“鍵”として対話AIに渡す実験的ゲーム。"
+    content="深度A〜Zで、自分の思考と感覚のベクトルを可視化し、“深度Ωの鍵”としてGPTに渡す。"
   />
   <meta
     name="twitter:image"
-    content="https://quietbriony.github.io/hazama/og-hazama.png"
+    content="https://quietbriony.github.io/hazama/hazama-og.png"
   />
-
-  <!-- お好みで：タブのアイコン -->
-  <link rel="icon" href="og-hazama.png" type="image/png" />
 
   <!-- 外部CSS -->
   <link rel="stylesheet" href="style.css" />
@@ -82,6 +77,9 @@
           <div class="choices" id="choices-container">
             <!-- script.js で動的に挿入 -->
           </div>
+
+          <!-- 選択後にじわっと出るメッセージ -->
+          <div id="after-message" class="after-message"></div>
         </article>
 
         <div class="footer-info">
