@@ -1,4 +1,4 @@
-/* ===== リセット ===== */
+/* ===== 全体レイアウト ===== */
 * {
   box-sizing: border-box;
   margin: 0;
@@ -10,6 +10,7 @@ body {
   font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue",
     "Segoe UI", sans-serif;
   color: #e9f5ff;
+  /* チェレンコフ光っぽい濃青グラデーション */
   background: radial-gradient(circle at 20% 20%, #3bb4ff 0, #001327 55%, #00040a 100%);
   display: flex;
   align-items: center;
@@ -17,28 +18,28 @@ body {
   padding: 16px;
 }
 
-/* ===== コンテナ ===== */
 .app {
   width: 100%;
   max-width: 760px;
-  background: rgba(2, 12, 28, 0.9);
+  background: rgba(2, 12, 28, 0.8);
   border-radius: 20px;
   border: 1px solid rgba(144, 202, 249, 0.35);
   box-shadow:
-    0 0 40px rgba(0, 163, 255, 0.3),
-    0 0 120px rgba(0, 88, 179, 0.4);
+    0 0 40px rgba(0, 163, 255, 0.25),
+    0 0 120px rgba(0, 88, 179, 0.35);
   padding: 20px 20px 24px;
   position: relative;
   overflow: hidden;
 }
 
+/* うっすら曼荼羅風の背景ライン（透明） */
 .app::before {
   content: "";
   position: absolute;
   inset: -40%;
   background:
-    radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.06), transparent 60%),
-    repeating-radial-gradient(circle at 50% 50%, rgba(150, 210, 255, 0.18), transparent 4px);
+    radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.05), transparent 55%),
+    repeating-radial-gradient(circle at 50% 50%, rgba(150, 210, 255, 0.15), transparent 4px);
   mix-blend-mode: screen;
   opacity: 0.35;
   pointer-events: none;
@@ -52,7 +53,7 @@ body {
 /* ===== ヘッダー ===== */
 .title {
   font-size: 1.2rem;
-  letter-spacing: 0.14em;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
   color: #bbdefb;
   margin-bottom: 4px;
@@ -70,8 +71,12 @@ body {
   justify-content: space-between;
   font-size: 0.78rem;
   color: #b0c4de;
-  margin-bottom: 6px;
+  margin-bottom: 4px;
   gap: 8px;
+}
+
+.status-row span {
+  white-space: nowrap;
 }
 
 .depth-tag {
@@ -102,11 +107,11 @@ body {
 .card {
   background: linear-gradient(
     135deg,
-    rgba(10, 25, 47, 0.94),
-    rgba(13, 32, 64, 0.98)
+    rgba(10, 25, 47, 0.92),
+    rgba(13, 32, 64, 0.96)
   );
   border-radius: 16px;
-  border: 1px solid rgba(144, 202, 249, 0.4);
+  border: 1px solid rgba(144, 202, 249, 0.35);
   padding: 16px 14px 14px;
   margin-bottom: 12px;
 }
@@ -139,8 +144,8 @@ body {
 .choice-btn {
   width: 100%;
   border-radius: 999px;
-  border: 1px solid rgba(129, 212, 250, 0.55);
-  background: rgba(3, 22, 46, 0.95);
+  border: 1px solid rgba(129, 212, 250, 0.5);
+  background: rgba(3, 22, 46, 0.9);
   color: #e3f2fd;
   padding: 9px 12px;
   font-size: 0.9rem;
@@ -183,14 +188,36 @@ body {
 
 .choice-btn:hover {
   background: rgba(6, 39, 80, 0.98);
-  box-shadow: 0 0 16px rgba(33, 150, 243, 0.45);
+  box-shadow: 0 0 16px rgba(33, 150, 243, 0.4);
   transform: translateY(-1px);
-  border-color: rgba(187, 222, 251, 0.95);
+  border-color: rgba(187, 222, 251, 0.9);
 }
 
 .choice-btn:active {
   transform: translateY(0);
   box-shadow: none;
+}
+
+.choice-btn:disabled {
+  opacity: 0.6;
+  cursor: default;
+  box-shadow: none;
+}
+
+/* ===== 選択ごとのフィードバック ===== */
+.feedback {
+  margin-top: 10px;
+  min-height: 1.4em;
+  font-size: 0.8rem;
+  color: #b0c4de;
+  opacity: 0;
+  transform: translateY(4px);
+  transition: opacity 0.5s ease-out, transform 0.5s ease-out;
+}
+
+.feedback.visible {
+  opacity: 1;
+  transform: translateY(0);
 }
 
 /* ===== フッター ===== */
@@ -220,32 +247,14 @@ body {
   margin-top: 8px;
 }
 
-.result-title {
-  font-size: 0.96rem;
-  color: #e1f5fe;
-  margin-bottom: 6px;
-}
-
-.result-note {
-  font-size: 0.8rem;
-  color: #b0c4de;
-  margin-top: 4px;
-  line-height: 1.6;
-}
-
-.result-note.small {
-  font-size: 0.76rem;
-  opacity: 0.9;
-}
-
 .result-card {
   background: linear-gradient(
     135deg,
-    rgba(4, 20, 42, 0.97),
-    rgba(6, 26, 56, 0.99)
+    rgba(4, 20, 42, 0.95),
+    rgba(6, 26, 56, 0.98)
   );
   border-radius: 14px;
-  border: 1px solid rgba(129, 212, 250, 0.6);
+  border: 1px solid rgba(129, 212, 250, 0.5);
   padding: 12px 12px 12px;
   margin-top: 6px;
   max-height: 320px;
@@ -258,7 +267,35 @@ body {
   color: #e0f7fa;
 }
 
-/* ===== ボタン ===== */
+.result-title {
+  font-size: 0.9rem;
+  color: #e1f5fe;
+  margin-bottom: 6px;
+}
+
+.result-note {
+  font-size: 0.78rem;
+  color: #b0c4de;
+  margin-top: 4px;
+  line-height: 1.6;
+}
+
+.result-note.small {
+  font-size: 0.72rem;
+  opacity: 0.85;
+}
+
+/* GAME OVER 用 */
+.result-title.game-over {
+  color: #ff8a80;
+}
+
+.result-card.game-over {
+  border-color: rgba(255, 138, 128, 0.8);
+  color: #ffebee;
+}
+
+/* ボタン行 */
 .btn-row {
   margin-top: 8px;
   display: flex;
@@ -286,21 +323,20 @@ body {
 }
 
 .primary-btn {
-  border-color: rgba(255, 213, 79, 0.9);
+  border-color: rgba(255, 213, 79, 0.85);
   color: #fff8e1;
   background: radial-gradient(circle at 20% 0%, #ffe082, #ffca28);
-  box-shadow: 0 0 14px rgba(255, 213, 79, 0.6);
+  box-shadow: 0 0 14px rgba(255, 213, 79, 0.55);
 }
 
 .outline-btn:hover {
-  background: rgba(13, 71, 161, 0.65);
+  background: rgba(13, 71, 161, 0.6);
 }
 
 .primary-btn:hover {
-  filter: brightness(1.06);
+  filter: brightness(1.05);
 }
 
-/* ===== レスポンシブ ===== */
 @media (max-width: 480px) {
   .app {
     padding: 16px 14px 18px;
