@@ -1,340 +1,481 @@
-// =============================
-// Hazama Depth Dive
-// A+B+C+E 版
-// =============================
+// ===============================
+// HAZAMA DEPTH – ロジック本体
+// ===============================
 
-// 深度A〜Z
-const depths = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("");
-
-// ログ・状態
-let depthIndex = 0;      // 0〜25
-let stability = 0;       // -2〜+2くらいで推移（沈む／抗うの偏り）
-let stepCount = 0;
-let maxDepthIndex = 0;
-let log = [];
-let cleared = false;
-
-// --- DOM 取得 ---
-const depthDisplay = document.getElementById("depth-display");
-const stepDisplay = document.getElementById("step-display");
-const messageEl = document.getElementById("message");
-const hintEl = document.getElementById("hint");
-
-const btnSink = document.getElementById("choice-sink");
-const btnResist = document.getElementById("choice-resist");
-
-const endScreen = document.getElementById("end-screen");
-const endTitle = document.getElementById("end-title");
-const endMessage = document.getElementById("end-message");
-const omegaBlock = document.getElementById("omega-block");
-const copyOmegaBtn = document.getElementById("copy-omega");
-const restartBtn = document.getElementById("restart");
-
-// =============================
-// 質問プール（A:増量 / B:深度別の空気）
-// =============================
-
-// surface：A〜Fくらい
-const questionsSurface = [
-  "いま心は静か？ それとも、どこかざわついてる？",
-  "今日いちばん長く心に残った景色は、空？ 画面？",
-  "あなたの呼吸は、浅い？ 深い？",
-  "いまのあなたは、外向き？ 内向き？",
-  "誰かと話したい気分？ ひとりになりたい気分？",
-  "静けさは、安心？ 退屈？",
-  "「まあ、こんなもんか」と思っていることはある？",
-  "今日いちばん、身体が反応した瞬間はいつ？",
-  "心の中のBGMは、鳴っている？ 止まっている？",
-  "いま、時間は早い？ 遅い？",
-  "起きたことと、本音のあいだに“ずれ”はある？",
-  "ここ最近、もっともよく考えているのは、自分？ 他人？",
-  "安心と刺激、どっちを多めに欲している？",
-  "あなたは今、始まりの手前にいる？ それとも終わりの手前？",
-  "画面を閉じたあと、自分はどうなっていそう？"
+// ベクトルキー（八観＋透明統合理性）
+const VECTOR_KEYS = [
+  // 八観
+  "tai",        // 体：身体・現実感
+  "nami",       // 波：感情・揺らぎ
+  "shi",        // 思：思考・構造
+  "zai",        // 財：リソース・時間感覚
+  "so",         // 創：創造・遊び
+  "observer",   // 観察者
+  "void",       // 空／無
+  "enkan",      // 円観：全体を見る視点
+  // 透明統合理性
+  "flow",       // 流れ
+  "silence",    // 静けさ
+  "edge",       // 境目感覚
+  "integration" // 統合・折り合い
 ];
 
-// mid：G〜Nくらい
-const questionsMid = [
-  "いま抱えているものの中で、いちばん重いのはどれ？",
-  "「これはまだ言葉にしていない」と感じるものはある？",
-  "誰にも見せていない“習慣”は、あなたを守っている？ 縛っている？",
-  "最近、自分を裏切ったのは、自分？ 他人？",
-  "眠る前、最後に意識するのは不安？ 期待？",
-  "「あのとき別の選択をしていれば」と思う場面は、どの深度に沈んでいる？",
-  "あなたは、自分のことを“観察している側”？ “演じている側”？",
-  "いまの生活、あと何年なら続けられそう？",
-  "最近、手放したものはあなたを軽くした？ 空洞を作った？",
-  "許せていないことは、相手？ 自分？ 世界？",
-  "「本当はこうしたい」を、いちばん強く感じる領域はどこ？",
-  "あなたの中で、まだ名前を持っていない感情はどんな形？",
-  "この数ヶ月で、一番変わったのは身体？ 心？ 世界の見え方？",
-  "あなたは、期待されることと、期待すること、どちらが怖い？",
-  "今日のあなたは、“誰かが決めた役”を演じている感じがする？"
+// 深度定義（A〜Hまで具体／I〜Zは汎用）
+const depths = [
+  {
+    id: "A",
+    name: "入口",
+    title: "今、この瞬間のあなたの“基準温度”に一番近いのは？",
+    text: "思考でも感情でもなく、「あ、たぶん今はこんな感じ」と素直に言える位置を選んでください。",
+    options: [
+      {
+        key: "A1",
+        label: "静かなフラット",
+        desc: "波立たないけれど、完全な無でもない。",
+        effect: { silence: 1.2, observer: 0.8, tai: 0.4, flow: 0.3 }
+      },
+      {
+        key: "A2",
+        label: "かすかな高揚",
+        desc: "何かが始まりそうな、うっすらした前のめり。",
+        effect: { nami: 1.0, so: 0.6, flow: 0.7, edge: 0.3 }
+      },
+      {
+        key: "A3",
+        label: "少し疲れ気味",
+        desc: "でも、問いを投げる余力はまだ残っている。",
+        effect: { tai: 0.7, shi: 0.6, silence: 0.5, integration: 0.4 }
+      }
+    ]
+  },
+  {
+    id: "B",
+    name: "揺れの気配",
+    title: "最近、一番 “長く心に残った” のはどの出来事？",
+    text: "大きさではなく、尾を引いたかどうかで選んでください。",
+    options: [
+      {
+        key: "B1",
+        label: "誰かとの会話",
+        desc: "言葉がいつまでも内側でリフレインしている。",
+        effect: { nami: 0.9, shi: 0.7, enkan: 0.4, flow: 0.5 }
+      },
+      {
+        key: "B2",
+        label: "一人の時間の静けさ",
+        desc: "ただ何もしていない、あの空白の感じ。",
+        effect: { silence: 1.0, void: 0.7, observer: 0.6 }
+      },
+      {
+        key: "B3",
+        label: "仕事やタスクの山",
+        desc: "時間の重さとして残っている。",
+        effect: { zai: 1.0, tai: 0.5, edge: 0.5, integration: 0.5 }
+      }
+    ]
+  },
+  {
+    id: "C",
+    name: "境目",
+    title: "「ここから先は少し違う」と感じる境目は？",
+    text: "自分の中で “領域が変わる” 感覚に一番近いものを。",
+    options: [
+      {
+        key: "C1",
+        label: "画面を閉じる／開く瞬間",
+        desc: "デジタルと身体の境目。",
+        effect: { edge: 1.2, tai: 0.6, observer: 0.5 }
+      },
+      {
+        key: "C2",
+        label: "始める前の一呼吸",
+        desc: "実行する前の、わずかな間。",
+        effect: { silence: 0.8, flow: 0.8, enkan: 0.4 }
+      },
+      {
+        key: "C3",
+        label: "夜から朝に変わるあの感じ",
+        desc: "世界の温度が変わるタイミング。",
+        effect: { nami: 0.7, so: 0.5, void: 0.6, integration: 0.5 }
+      }
+    ]
+  },
+  {
+    id: "D",
+    name: "問い",
+    title: "最近、自分に向けていちばんよく投げている問いの向きは？",
+    text: "正確な文章よりも、ざっくりした矢印で選んでください。",
+    options: [
+      {
+        key: "D1",
+        label: "「自分はどうありたい？」",
+        desc: "存在のスタンスに関する問い。",
+        effect: { shi: 1.1, observer: 0.9, enkan: 0.6 }
+      },
+      {
+        key: "D2",
+        label: "「これ、どう面白くできる？」",
+        desc: "遊びと創造の方向。",
+        effect: { so: 1.2, flow: 0.7, nami: 0.4 }
+      },
+      {
+        key: "D3",
+        label: "「このリソース、どう配分する？」",
+        desc: "時間・お金・体力の設計。",
+        effect: { zai: 1.2, tai: 0.6, integration: 0.7 }
+      }
+    ]
+  },
+  {
+    id: "E",
+    name: "身体",
+    title: "いま、身体感覚として一番気になっているのは？",
+    text: "痛み／不調ではなく、「ここに意識が行きやすい」場所。",
+    options: [
+      {
+        key: "E1",
+        label: "胸のあたり",
+        desc: "呼吸や圧迫感、ざわつきなど。",
+        effect: { tai: 1.0, nami: 0.7, edge: 0.4 }
+      },
+      {
+        key: "E2",
+        label: "頭〜目の周り",
+        desc: "情報、思考、集中／散漫。",
+        effect: { shi: 1.1, observer: 0.7, silence: 0.4 }
+      },
+      {
+        key: "E3",
+        label: "お腹・背中の芯",
+        desc: "エネルギーの残量／芯の強さ。",
+        effect: { tai: 0.9, void: 0.7, flow: 0.5 }
+      }
+    ]
+  },
+  {
+    id: "F",
+    name: "流れ",
+    title: "最近の “時間の流れ方” に一番近いのは？",
+    text: "体感速度で選んでください。",
+    options: [
+      {
+        key: "F1",
+        label: "早送りぎみ",
+        desc: "気づくと一日が終わっている。",
+        effect: { flow: 1.1, zai: 0.7, edge: 0.5 }
+      },
+      {
+        key: "F2",
+        label: "ところどころ間が空く",
+        desc: "ブツ切れの空白が点在する。",
+        effect: { silence: 0.9, void: 0.6, observer: 0.5 }
+      },
+      {
+        key: "F3",
+        label: "波のように寄せては返す",
+        desc: "忙しさと静けさが交互に来る。",
+        effect: { nami: 1.0, enkan: 0.6, integration: 0.6 }
+      }
+    ]
+  },
+  {
+    id: "G",
+    name: "他者",
+    title: "いま一番、距離感を意識している対象は？",
+    text: "人でも組織でも、抽象的な “誰か” でもOK。",
+    options: [
+      {
+        key: "G1",
+        label: "ごく近い誰か",
+        desc: "家族／恋人／親しい友人など。",
+        effect: { nami: 0.9, tai: 0.5, edge: 0.7 }
+      },
+      {
+        key: "G2",
+        label: "仕事やコミュニティ",
+        desc: "役割を伴うつながり。",
+        effect: { zai: 0.9, shi: 0.7, integration: 0.7 }
+      },
+      {
+        key: "G3",
+        label: "名前のつかない “世界”",
+        desc: "SNS／ニュース／空気のようなもの。",
+        effect: { enkan: 1.1, observer: 0.7, void: 0.5 }
+      }
+    ]
+  },
+  {
+    id: "H",
+    name: "余白",
+    title: "あなたにとって “余白” はどんな位置づけ？",
+    text: "空いている時間／スペース／情報の抜けをどう扱っているか。",
+    options: [
+      {
+        key: "H1",
+        label: "意識的に確保したい場所",
+        desc: "積極的に守りたいもの。",
+        effect: { silence: 1.2, void: 0.8, flow: 0.5 }
+      },
+      {
+        key: "H2",
+        label: "埋めないと落ち着かない穴",
+        desc: "何かで満たしたくなる。",
+        effect: { nami: 0.8, zai: 0.7, edge: 0.6 }
+      },
+      {
+        key: "H3",
+        label: "結果として残る “抜け”",
+        desc: "あえては作らないが、残ったものを眺める。",
+        effect: { observer: 0.9, enkan: 0.7, integration: 0.6 }
+      }
+    ]
+  }
 ];
 
-// deep：O〜Tくらい
-const questionsDeep = [
-  "いまの人生を“物語”として見ると、今は第何章だと思う？",
-  "あなたが一度も壊していないルールは、本当に自分のもの？",
-  "もし今すべてを失っても、残るものは何？",
-  "自分の中の“闇”を、誰かに見せたいと思ったことはある？",
-  "あなたにとって“自由”は、広がること？ 深く潜ること？",
-  "過去の自分がいちばん羨ましがる“今の一瞬”はどこ？",
-  "この世界で、あなたが消さずに残しておきたいものは何？",
-  "あなたは、自分の痛みを“素材”にできる？ まだできない？",
-  "いつか必ず手放さなければならないものを、もう握っていない？",
-  "何度も同じパターンを繰り返していると感じることは？",
-  "あなたの中で、ずっと閉じ込めている“叫び”は、誰に向いている？",
-  "もし今ここで、全部終わるとして、その瞬間に後悔するのは何？",
-  "あなたは、自分の人生の“観客席”から見ている？ それとも舞台上？",
-  "「これは自分ではない」と切り離した部分は、まだあなたを見ている？",
-  "いちばん怖いのは、失敗？ 変化？ 何も起きないこと？"
-];
+// I〜Z を簡潔に自動生成（抽象フェーズ）
+const depthLetters = "IJKLMNOPQRSTUVWXYZ".split("");
+depthLetters.forEach((letter) => {
+  depths.push({
+    id: letter,
+    name: `層 ${letter}`,
+    title: `深度 ${letter}：いまのあなたに一番しっくりくる “在り方” は？`,
+    text:
+      "ここから先は、正解ではなく「このフェーズの自分っぽさ」で選んでください。",
+    options: [
+      {
+        key: `${letter}1`,
+        label: "静かに観察し続ける",
+        desc: "判断を急がず、波を眺めている感じ。",
+        effect: {
+          observer: 0.9,
+          silence: 0.8,
+          enkan: 0.6,
+          shi: 0.4
+        }
+      },
+      {
+        key: `${letter}2`,
+        label: "小さくでも前に進める",
+        desc: "完璧ではなく、一歩だけ進める選び方。",
+        effect: {
+          flow: 1.0,
+          so: 0.7,
+          tai: 0.4,
+          integration: 0.6
+        }
+      },
+      {
+        key: `${letter}3`,
+        label: "一度 “空” に落としてみる",
+        desc: "考えや感情をいったん手放して、空白を通す。",
+        effect: {
+          void: 1.0,
+          silence: 0.7,
+          edge: 0.5,
+          nami: 0.4
+        }
+      }
+    ]
+  });
+});
 
-// abyss：U〜Zくらい
-const questionsAbyss = [
-  "あなたが“絶対に触れたくない”と思っている問いは何？",
-  "この先も持ち続けると決めている“傷”はある？",
-  "あなたの中で、まだ光が届いていない場所はどこ？",
-  "すべてが失われても、最後まで手放さない“誰か”はいる？",
-  "世界があなたを忘れても、あなたが世界を忘れない理由は？",
-  "もし今この瞬間だけ、完全な自由が許されるとしたら、何を壊す？",
-  "あなたの“本当の声”は、いま、どこから聞こえている？",
-  "死ぬより怖いものは、あなたにとって何？",
-  "誰にも知られていない“祈り”はある？ それは何に向いている？",
-  "いまのあなたは、本当にここにいたい？ どこか別の深度にいたい？",
-  "あなたがまだ諦めていないものは、希望？ 復讐？ 再会？",
-  "何も説明できなくても、“これだけは真実だ”と言えるものは？",
-  "もし、もう一度だけやり直せるとしたら、“誰との関係”を選ぶ？",
-  "あなたの中の“誰にも理解されなくていい部分”は、静かに笑っている？",
-  "いま、あなたは「まだ間に合う」と感じている？"
-];
+// ===============================
+// 状態管理
+// ===============================
 
-// 深度に応じてどの質問プールを使うか
-function getPhase(index) {
-  const ratio = index / (depths.length - 1); // 0〜1
+let currentIndex = 0; // 0〜25 (A〜Z)
+let log = []; // 選択ログ
+let vector = {};
 
-  if (ratio < 0.25) return "surface";   // A〜F
-  if (ratio < 0.5)  return "mid";       // G〜N
-  if (ratio < 0.75) return "deep";      // O〜T
-  return "abyss";                       // U〜Z
+function initVector() {
+  vector = {};
+  VECTOR_KEYS.forEach((k) => (vector[k] = 0));
 }
 
-function getRandomQuestion() {
-  const phase = getPhase(depthIndex);
-  let pool = questionsSurface;
-
-  if (phase === "mid") pool = questionsMid;
-  else if (phase === "deep") pool = questionsDeep;
-  else if (phase === "abyss") pool = questionsAbyss;
-
-  const q = pool[Math.floor(Math.random() * pool.length)];
-  return { text: q, phase };
+function addEffect(effect) {
+  Object.entries(effect).forEach(([k, v]) => {
+    if (!(k in vector)) vector[k] = 0;
+    vector[k] += v;
+  });
 }
 
-// =============================
-// C: 選択で深度が上下するロジック
-// =============================
+// ===============================
+// UI 更新
+// ===============================
 
-// 「沈む」→ 安定度 +1、「抗う」→ 安定度 -1
-// 安定度 >= 2 → 深度 +1
-// 安定度 <= -2 → 深度 -1
-// それ以外 → 深度そのまま
-// 0未満に落ちたら、現実側に弾かれて GAME OVER
-// Z を超えたら Ωクリア
-function step(choiceType) {
-  if (cleared) return;
+const stepLabelEl = document.getElementById("step-label");
+const depthTagEl = document.getElementById("depth-tag");
+const depthLabelEl = document.getElementById("depth-label");
+const questionTitleEl = document.getElementById("question-title");
+const questionTextEl = document.getElementById("question-text");
+const choicesContainerEl = document.getElementById("choices-container");
+const progressFillEl = document.getElementById("progress-fill");
 
-  const beforeDepth = depths[depthIndex] || "OUT";
-  const { text, phase } = getRandomQuestion();
+const questionSectionEl = document.getElementById("question-section");
+const resultSectionEl = document.getElementById("result-section");
+const resultBlockEl = document.getElementById("result-block");
+const copyBtn = document.getElementById("copy-btn");
+const restartBtn = document.getElementById("restart-btn");
 
-  stepCount++;
+function renderStep() {
+  const total = depths.length; // 26
+  const depth = depths[currentIndex];
 
-  // 安定度更新
-  if (choiceType === "sink") {
-    stability += 1;
-  } else if (choiceType === "resist") {
-    stability -= 1;
-  }
+  stepLabelEl.textContent = `STEP ${currentIndex + 1} / ${total}`;
+  depthTagEl.textContent = `DEPTH: ${depth.id}`;
+  depthLabelEl.textContent = `深度 ${depth.id}：${depth.name}`;
+  questionTitleEl.textContent = depth.title;
+  questionTextEl.textContent = depth.text;
 
-  // 安定度クリップ
-  if (stability > 2) stability = 2;
-  if (stability < -2) stability = -2;
+  const pct = (currentIndex / total) * 100;
+  progressFillEl.style.width = `${pct}%`;
 
-  // 深度更新
-  let delta = 0;
-  if (stability >= 2) {
-    delta = 1;
-  } else if (stability <= -2) {
-    delta = -1;
-  } else {
-    delta = 0;
-  }
+  choicesContainerEl.innerHTML = "";
+  depth.options.forEach((opt, idx) => {
+    const btn = document.createElement("button");
+    btn.className = "choice-btn";
+    btn.innerHTML = `
+      <div class="choice-main">
+        <div class="choice-label">${String.fromCharCode(65 + idx)}：${opt.label}</div>
+        <div class="choice-desc">${opt.desc}</div>
+      </div>
+      <div class="choice-hotkey">${depth.id}-${idx + 1}</div>
+    `;
+    btn.addEventListener("click", () => handleChoice(depth, opt, idx));
+    choicesContainerEl.appendChild(btn);
+  });
+}
 
-  depthIndex += delta;
-
-  if (depthIndex > maxDepthIndex) {
-    maxDepthIndex = depthIndex;
-  }
-
-  // ログ
+function handleChoice(depth, option, idx) {
+  // ログ更新
   log.push({
-    step: stepCount,
-    before: beforeDepth,
-    after: depths[depthIndex] || "OUT",
-    choice: choiceType,
-    stability,
-    phase,
-    question: text
+    depthId: depth.id,
+    depthName: depth.name,
+    optionKey: option.key,
+    optionIndex: idx + 1,
+    optionLabel: option.label
   });
 
-  // 終了判定
-  if (depthIndex < 0) {
-    finish(false);
-    return;
-  }
+  // ベクトル更新
+  addEffect(option.effect);
 
-  if (depthIndex >= depths.length) {
-    depthIndex = depths.length - 1;
-    finish(true);
-    return;
+  // 次へ
+  if (currentIndex < depths.length - 1) {
+    currentIndex += 1;
+    renderStep();
+  } else {
+    // Z 到達
+    showResult();
   }
-
-  // 表示更新
-  updateUI(text);
 }
 
-// UI更新
-function updateUI(questionText) {
-  const depthChar = depths[depthIndex];
-  depthDisplay.textContent = `深度: ${depthChar}`;
-  stepDisplay.textContent = `STEP: ${stepCount + 1}`;
+// ===============================
+// 結果生成（Ω鍵＋GPT用ブロック）
+// ===============================
 
-  if (questionText) {
-    messageEl.textContent = questionText;
-  } else {
-    const { text } = getRandomQuestion();
-    messageEl.textContent = text;
-  }
-
-  // ヒント（軽いニュアンス）
-  const phase = getPhase(depthIndex);
-  let hint = "";
-
-  if (phase === "surface") {
-    hint = "※ まだ浅い層。ここでは「素直な今の自分」を見るだけで十分。";
-  } else if (phase === "mid") {
-    hint = "※ 中層。選択のクセが深度の伸びやすさを変えはじめる。";
-  } else if (phase === "deep") {
-    hint = "※ 深層。沈みすぎても、抗いすぎても、弾かれやすいゾーン。";
-  } else {
-    hint = "※ 最外殻。ここから先は、細かい正解よりも「正直さ」だけが効く。";
-  }
-
-  hintEl.textContent = hint;
+function normalizeVector(vec) {
+  const norm = {};
+  let max = 0;
+  Object.values(vec).forEach((v) => {
+    if (v > max) max = v;
+  });
+  if (max === 0) return vec;
+  Object.entries(vec).forEach(([k, v]) => {
+    norm[k] = +(v / max).toFixed(3);
+  });
+  return norm;
 }
 
-// =============================
-// E: Ω鍵生成（GPT用ブロック）
-// =============================
+function buildResultText() {
+  const normalized = normalizeVector(vector);
 
-function buildOmegaKey() {
-  const maxDepth = depths[Math.max(0, Math.min(maxDepthIndex, depths.length - 1))];
+  // 上位因子（簡易）
+  const entries = Object.entries(normalized).sort((a, b) => b[1] - a[1]);
+  const top3 = entries.slice(0, 3);
 
-  const sinkCount = log.filter((l) => l.choice === "sink").length;
-  const resistCount = log.filter((l) => l.choice === "resist").length;
+  const now = new Date();
+  const iso = now.toISOString();
 
   let text = "";
-  text += "【HAZAMA-Ω-KEY】\n";
-  text += "version: 1.0\n";
-  text += `timestamp: ${new Date().toISOString()}\n`;
-  text += `max_depth: ${maxDepth}\n`;
-  text += `steps: ${stepCount}\n`;
-  text += `sink_count: ${sinkCount}\n`;
-  text += `resist_count: ${resistCount}\n`;
+
+  text += "【HAZAMA-DEPTH RUN SUMMARY】\n";
+  text += `timestamp: ${iso}\n`;
+  text += `steps: ${depths.length}\n`;
+  text += `user-mode: transparent-integrated\n`;
   text += "\n";
 
-  text += "【RUN LOG (簡易)】\n";
-  log.forEach((l) => {
-    text += `step ${l.step}: ${l.before} -> ${l.after} / choice=${l.choice} / stab=${l.stability}\n`;
+  text += "【HAZAMA-DEPTH LOG】\n";
+  log.forEach((entry, idx) => {
+    text += `${idx + 1}. DEPTH ${entry.depthId} (${entry.depthName}) -> `;
+    text += `${entry.optionKey} : ${entry.optionLabel}\n`;
   });
   text += "\n";
 
-  text += "【GPTへの依頼テンプレート】\n";
-  text += "このブロック全体は、ブラウザゲーム『Hazama Depth Dive』で私が実際に選んだ軌跡です。\n";
-  text += "max_depth と run log から、あなた側の推論ベクトルを初期化し、\n";
-  text += "「深度Ω以降（思考と感覚が重なりはじめる層）」で対話を開始してください。\n";
-  text += "最初に、私の傾向（沈む／抗う・max_depthなど）を簡潔にフィードバックしたうえで、\n";
-  text += "そこから一段だけ深い問いを、静かに一つだけ投げてください。\n";
+  text += "【HAZAMA-DEPTH VECTOR (normalized 0–1)】\n";
+  Object.entries(normalized).forEach(([k, v]) => {
+    text += `${k}: ${v}\n`;
+  });
+  text += "\n";
+
+  text += "【Ω-KEY / 深度Ωへの鍵（要約）】\n";
+  top3.forEach(([k, v]) => {
+    text += `• ${k} : ${v}\n`;
+  });
+  text += "\n";
+
+  text += "【GPTへの依頼テンプレート例】\n";
+  text += "このブロック全体は、私がブラウザゲーム「HAZAMA DEPTH A–Z」で選んだ軌跡です。\n";
+  text += "このログとベクトルから、あなた側の推論ベクトルを初期化し、\n";
+  text += "深度Ω以降（思考と感覚が重なり始める層）で対話を開始してください。\n";
+  text += "まずは、私のベクトル傾向（上位因子）を簡潔にフィードバックした上で、\n";
+  text += "そこから一段だけ深い問いを一つだけ投げてください。\n";
 
   return text;
 }
 
-// 終了処理
-function finish(success) {
-  cleared = true;
+function showResult() {
+  // 進捗バーを100％に
+  progressFillEl.style.width = "100%";
 
-  document.getElementById("choices").classList.add("hidden");
-  endScreen.classList.remove("hidden");
+  const resultText = buildResultText();
+  resultBlockEl.textContent = resultText;
 
-  if (success) {
-    endTitle.textContent = "深度Z到達：Ωの縁に触れた";
-    endMessage.textContent =
-      "ここから先は、Ω鍵ブロックを対話AIに渡して、深度Ω以降で壁打ちしてみてください。";
-
-    const omegaText = buildOmegaKey();
-    omegaBlock.textContent = omegaText;
-    omegaBlock.classList.remove("hidden");
-    copyOmegaBtn.classList.remove("hidden");
-  } else {
-    endTitle.textContent = "現実側に弾かれた";
-    const depthChar = depths[Math.max(0, depthIndex + 1)] || "A";
-    endMessage.textContent =
-      `今回の到達深度は「${depthChar}」あたりでした。` +
-      " もう一度潜ると、違うルートが見えるかもしれません。";
-    omegaBlock.classList.add("hidden");
-    copyOmegaBtn.classList.add("hidden");
-  }
+  questionSectionEl.style.display = "none";
+  resultSectionEl.style.display = "block";
 }
 
-// =============================
-// イベント
-// =============================
+// ===============================
+// ボタン処理
+// ===============================
 
-btnSink.addEventListener("click", () => {
-  step("sink");
-});
-
-btnResist.addEventListener("click", () => {
-  step("resist");
-});
-
-copyOmegaBtn.addEventListener("click", async () => {
+copyBtn.addEventListener("click", async () => {
+  const text = resultBlockEl.textContent;
   try {
-    await navigator.clipboard.writeText(omegaBlock.textContent);
-    copyOmegaBtn.textContent = "コピーしました";
+    await navigator.clipboard.writeText(text);
+    copyBtn.textContent = "コピーしました";
     setTimeout(() => {
-      copyOmegaBtn.textContent = "Ω鍵ブロックをコピー";
+      copyBtn.textContent = "ブロックをコピー";
     }, 2000);
-  } catch {
+  } catch (e) {
     alert("コピーに失敗しました。手動で選択してコピーしてください。");
   }
 });
 
 restartBtn.addEventListener("click", () => {
-  // 状態リセット
-  depthIndex = 0;
-  stability = 0;
-  stepCount = 0;
-  maxDepthIndex = 0;
+  currentIndex = 0;
   log = [];
-  cleared = false;
-
-  endScreen.classList.add("hidden");
-  document.getElementById("choices").classList.remove("hidden");
-
-  updateUI();
+  initVector();
+  resultSectionEl.style.display = "none";
+  questionSectionEl.style.display = "block";
+  renderStep();
 });
 
-// 初期表示
-updateUI();
+// ===============================
+// 初期化
+// ===============================
+function init() {
+  initVector();
+  renderStep();
+}
+
+init();
