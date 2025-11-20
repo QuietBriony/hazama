@@ -45,6 +45,9 @@
           <div class="choices" id="choices-container">
             <!-- script.js で動的に挿入 -->
           </div>
+
+          <!-- 選択ごとの“じわっとメッセージ” -->
+          <div id="feedback" class="feedback" aria-live="polite"></div>
         </article>
 
         <div class="footer-info">
@@ -57,10 +60,12 @@
         </div>
       </main>
 
-      <!-- 結果セクション（Z 到達後に表示） -->
+      <!-- 結果セクション（Z or GAME OVER 後に表示） -->
       <section id="result-section" class="result-section" aria-live="polite">
-        <h2 class="result-title">深度Z到達：Ω鍵が生成されました</h2>
-        <p class="result-note">
+        <h2 class="result-title" id="result-title">
+          深度Z到達：Ω鍵が生成されました
+        </h2>
+        <p class="result-note" id="result-note">
           下のブロックを <strong>ChatGPT などの対話AI</strong> にそのまま貼り付けてください。<br />
           あなたが通ってきた A〜Z の軌跡とベクトル情報を使って、
           「深度Ω以降」の対話に入りやすくなります。
@@ -73,7 +78,7 @@
           <button class="outline-btn" id="restart-btn">もう一度、最初から</button>
         </div>
 
-        <p class="result-note small">
+        <p class="result-note small" id="result-footer-note">
           提案テキスト：<br />
           「このブロック全体は、ブラウザゲーム『HAZAMA DEPTH A–Z』で私が選んだ軌跡です。
           このログとベクトルから推論ベクトルを初期化し、深度Ω以降で対話を開始してください。」
