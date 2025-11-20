@@ -2,18 +2,872 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8" />
-  <title>HAZAMA｜深度A〜Z選択ゲーム</title>
-  <link rel="stylesheet" href="style.css" />
+  <title>HAZAMA DEPTH A–Z</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <style>
+    /* ===== 全体レイアウト ===== */
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      min-height: 100vh;
+      font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue",
+        "Segoe UI", sans-serif;
+      color: #e9f5ff;
+      /* チェレンコフ光っぽい濃青グラデーション */
+      background: radial-gradient(circle at 20% 20%, #3bb4ff 0, #001327 55%, #00040a 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+    }
+
+    .app {
+      width: 100%;
+      max-width: 760px;
+      background: rgba(2, 12, 28, 0.8);
+      border-radius: 20px;
+      border: 1px solid rgba(144, 202, 249, 0.35);
+      box-shadow:
+        0 0 40px rgba(0, 163, 255, 0.25),
+        0 0 120px rgba(0, 88, 179, 0.35);
+      padding: 20px 20px 24px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* うっすら曼荼羅風の背景ライン（透明） */
+    .app::before {
+      content: "";
+      position: absolute;
+      inset: -40%;
+      background:
+        radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.05), transparent 55%),
+        repeating-radial-gradient(circle at 50% 50%, rgba(150, 210, 255, 0.15), transparent 4px);
+      mix-blend-mode: screen;
+      opacity: 0.35;
+      pointer-events: none;
+    }
+
+    .app-inner {
+      position: relative;
+      z-index: 1;
+    }
+
+    /* ===== ヘッダー ===== */
+    .title {
+      font-size: 1.2rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: #bbdefb;
+      margin-bottom: 4px;
+    }
+
+    .subtitle {
+      font-size: 0.8rem;
+      color: #9fbcd9;
+      margin-bottom: 16px;
+    }
+
+    .status-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 0.78rem;
+      color: #b0c4de;
+      margin-bottom: 4px;
+      gap: 8px;
+    }
+
+    .status-row span {
+      white-space: nowrap;
+    }
+
+    .depth-tag {
+      padding: 2px 8px;
+      border-radius: 999px;
+      border: 1px solid rgba(144, 202, 249, 0.5);
+      font-size: 0.7rem;
+      letter-spacing: 0.08em;
+    }
+
+    .progress-bar {
+      width: 100%;
+      height: 5px;
+      background: rgba(10, 40, 70, 0.9);
+      border-radius: 999px;
+      overflow: hidden;
+      margin-bottom: 14px;
+    }
+
+    .progress-fill {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, #4fc3f7, #81d4fa, #ffd54f);
+      transition: width 0.28s ease-out;
+    }
+
+    /* ===== カード ===== */
+    .card {
+      background: linear-gradient(
+        135deg,
+        rgba(10, 25, 47, 0.92),
+        rgba(13, 32, 64, 0.96)
+      );
+      border-radius: 16px;
+      border: 1px solid rgba(144, 202, 249, 0.35);
+      padding: 16px 14px 14px;
+      margin-bottom: 12px;
+    }
+
+    .depth-label {
+      font-size: 0.9rem;
+      color: #90caf9;
+      margin-bottom: 4px;
+    }
+
+    .question-title {
+      font-size: 1.02rem;
+      margin-bottom: 6px;
+      color: #e3f2fd;
+    }
+
+    .question-text {
+      font-size: 0.9rem;
+      color: #c4d7f0;
+      line-height: 1.6;
+    }
+
+    /* ===== 選択肢 ===== */
+    .choices {
+      margin-top: 14px;
+      display: grid;
+      gap: 8px;
+    }
+
+    .choice-btn {
+      width: 100%;
+      border-radius: 999px;
+      border: 1px solid rgba(129, 212, 250, 0.5);
+      background: rgba(3, 22, 46, 0.9);
+      color: #e3f2fd;
+      padding: 9px 12px;
+      font-size: 0.9rem;
+      text-align: left;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      transition:
+        background 0.18s ease-out,
+        transform 0.12s ease-out,
+        box-shadow 0.18s ease-out,
+        border-color 0.18s ease-out;
+    }
+
+    .choice-main {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .choice-label {
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      font-size: 0.82rem;
+      text-transform: uppercase;
+      color: #bbdefb;
+    }
+
+    .choice-desc {
+      font-size: 0.82rem;
+      color: #c2d9f5;
+    }
+
+    .choice-hotkey {
+      font-size: 0.7rem;
+      opacity: 0.7;
+    }
+
+    .choice-btn:hover {
+      background: rgba(6, 39, 80, 0.98);
+      box-shadow: 0 0 16px rgba(33, 150, 243, 0.4);
+      transform: translateY(-1px);
+      border-color: rgba(187, 222, 251, 0.9);
+    }
+
+    .choice-btn:active {
+      transform: translateY(0);
+      box-shadow: none;
+    }
+
+    /* ===== フッター ===== */
+    .footer-info {
+      font-size: 0.72rem;
+      color: #90a4c2;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+      margin-top: 4px;
+      flex-wrap: wrap;
+    }
+
+    .hint {
+      opacity: 0.85;
+    }
+
+    .gpt-hint {
+      font-size: 0.7rem;
+      color: #b3e5fc;
+    }
+
+    /* ===== 結果画面 ===== */
+    #result-section {
+      display: none;
+      margin-top: 8px;
+    }
+
+    .result-card {
+      background: linear-gradient(
+        135deg,
+        rgba(4, 20, 42, 0.95),
+        rgba(6, 26, 56, 0.98)
+      );
+      border-radius: 14px;
+      border: 1px solid rgba(129, 212, 250, 0.5);
+      padding: 12px 12px 12px;
+      margin-top: 6px;
+      max-height: 320px;
+      overflow: auto;
+      font-family: "SF Mono", "Roboto Mono", ui-monospace, Menlo, Monaco,
+        Consolas, "Liberation Mono", "Courier New", monospace;
+      font-size: 0.78rem;
+      line-height: 1.5;
+      white-space: pre-wrap;
+      color: #e0f7fa;
+    }
+
+    .result-title {
+      font-size: 0.9rem;
+      color: #e1f5fe;
+      margin-bottom: 6px;
+    }
+
+    .result-note {
+      font-size: 0.78rem;
+      color: #b0c4de;
+      margin-top: 4px;
+      line-height: 1.6;
+    }
+
+    .btn-row {
+      margin-top: 8px;
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .outline-btn,
+    .primary-btn {
+      border-radius: 999px;
+      padding: 7px 12px;
+      font-size: 0.8rem;
+      cursor: pointer;
+      border-width: 1px;
+      border-style: solid;
+      background: transparent;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .outline-btn {
+      border-color: rgba(129, 212, 250, 0.7);
+      color: #b3e5fc;
+    }
+
+    .primary-btn {
+      border-color: rgba(255, 213, 79, 0.85);
+      color: #fff8e1;
+      background: radial-gradient(circle at 20% 0%, #ffe082, #ffca28);
+      box-shadow: 0 0 14px rgba(255, 213, 79, 0.55);
+    }
+
+    .outline-btn:hover {
+      background: rgba(13, 71, 161, 0.6);
+    }
+
+    .primary-btn:hover {
+      filter: brightness(1.05);
+    }
+
+    @media (max-width: 480px) {
+      .app {
+        padding: 16px 14px 18px;
+      }
+      .question-title {
+        font-size: 0.98rem;
+      }
+      .question-text {
+        font-size: 0.86rem;
+      }
+      .choice-desc {
+        font-size: 0.8rem;
+      }
+      .footer-info {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+    }
+  </style>
 </head>
+
 <body>
+  <div class="app">
+    <div class="app-inner">
+      <div class="title">HAZAMA DEPTH SEQUENCE</div>
+      <div class="subtitle">深度A〜Z：思考と感覚が重なるまでの 26 ステップ</div>
 
-  <h1>HAZAMA｜深度 A〜Z</h1>
-  <p>選択した深度に応じて、次元の裂け目が開きます。</p>
+      <div class="status-row">
+        <span id="step-label">STEP 1 / 26</span>
+        <span class="depth-tag" id="depth-tag">DEPTH: A</span>
+      </div>
 
-  <div id="depth-buttons"></div>
+      <div class="progress-bar">
+        <div class="progress-fill" id="progress-fill"></div>
+      </div>
 
-  <div id="result-box"></div>
+      <section id="question-section">
+        <div class="card">
+          <div class="depth-label" id="depth-label">深度 A：入口</div>
+          <div class="question-title" id="question-title">
+            今、この瞬間のあなたの“基準温度”に一番近いのは？
+          </div>
+          <div class="question-text" id="question-text">
+            思考でも感情でもなく、「あ、たぶん今はこんな感じ」と素直に言える位置を選んでください。
+          </div>
 
-  <script src="script.js"></script>
+          <div class="choices" id="choices-container">
+            <!-- JS で挿入 -->
+          </div>
+        </div>
+
+        <div class="footer-info">
+          <span class="hint">
+            ※ 直感で選んでください。間違い／正解はありません。
+          </span>
+          <span class="gpt-hint">
+            Z まで到達すると、GPT で使える「深度Ωの鍵」が生成されます。
+          </span>
+        </div>
+      </section>
+
+      <section id="result-section">
+        <div class="result-title">深度Z到達：Ω鍵が生成されました</div>
+        <div class="result-note">
+          下のブロックを <strong>ChatGPT などの対話AI</strong> にそのまま貼り付けると、
+          あなたが通ってきた A〜Z の軌跡とベクトル情報を使って
+          「深度Ω以降」の対話に入りやすくなります。
+        </div>
+
+        <div id="result-block" class="result-card"></div>
+
+        <div class="btn-row">
+          <button class="primary-btn" id="copy-btn">ブロックをコピー</button>
+          <button class="outline-btn" id="restart-btn">もう一度、最初から</button>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <script>
+    // ===============================
+    // 深度データ定義
+    // ===============================
+
+    const VECTOR_KEYS = [
+      // 八観
+      "tai",        // 体：身体・現実感
+      "nami",       // 波：感情・揺らぎ
+      "shi",        // 思：思考・構造
+      "zai",        // 財：リソース・時間感覚
+      "so",         // 創：創造・遊び
+      "observer",   // 観察者
+      "void",       // Void：空／無
+      "enkan",      // 円観：全体を見る視点
+      // 透明統合理性
+      "flow",       // 流れ
+      "silence",    // 静けさ
+      "edge",       // 境目感覚
+      "integration" // 統合・折り合い
+    ];
+
+    const depths = [
+      {
+        id: "A",
+        name: "入口",
+        title: "今、この瞬間のあなたの“基準温度”に一番近いのは？",
+        text: "思考でも感情でもなく、「あ、たぶん今はこんな感じ」と素直に言える位置を選んでください。",
+        options: [
+          {
+            key: "A1",
+            label: "静かなフラット",
+            desc: "波立たないけれど、完全な無でもない。",
+            effect: { silence: 1.2, observer: 0.8, tai: 0.4, flow: 0.3 }
+          },
+          {
+            key: "A2",
+            label: "かすかな高揚",
+            desc: "何かが始まりそうな、うっすらした前のめり。",
+            effect: { nami: 1.0, so: 0.6, flow: 0.7, edge: 0.3 }
+          },
+          {
+            key: "A3",
+            label: "少し疲れ気味",
+            desc: "でも、問いを投げる余力はまだ残っている。",
+            effect: { tai: 0.7, shi: 0.6, silence: 0.5, integration: 0.4 }
+          }
+        ]
+      },
+      {
+        id: "B",
+        name: "揺れの気配",
+        title: "最近、一番 “長く心に残った” のはどの出来事？",
+        text: "大きさではなく、尾を引いたかどうかで選んでください。",
+        options: [
+          {
+            key: "B1",
+            label: "誰かとの会話",
+            desc: "言葉がいつまでも内側でリフレインしている。",
+            effect: { nami: 0.9, shi: 0.7, enkan: 0.4, flow: 0.5 }
+          },
+          {
+            key: "B2",
+            label: "一人の時間の静けさ",
+            desc: "ただ何もしていない、あの空白の感じ。",
+            effect: { silence: 1.0, void: 0.7, observer: 0.6 }
+          },
+          {
+            key: "B3",
+            label: "仕事やタスクの山",
+            desc: "時間の重さとして残っている。",
+            effect: { zai: 1.0, tai: 0.5, edge: 0.5, integration: 0.5 }
+          }
+        ]
+      },
+      {
+        id: "C",
+        name: "境目",
+        title: "「ここから先は少し違う」と感じる境目は？",
+        text: "自分の中で “領域が変わる” 感覚に一番近いものを。",
+        options: [
+          {
+            key: "C1",
+            label: "画面を閉じる／開く瞬間",
+            desc: "デジタルと身体の境目。",
+            effect: { edge: 1.2, tai: 0.6, observer: 0.5 }
+          },
+          {
+            key: "C2",
+            label: "始める前の一呼吸",
+            desc: "実行する前の、わずかな間。",
+            effect: { silence: 0.8, flow: 0.8, enkan: 0.4 }
+          },
+          {
+            key: "C3",
+            label: "夜から朝に変わるあの感じ",
+            desc: "世界の温度が変わるタイミング。",
+            effect: { nami: 0.7, so: 0.5, void: 0.6, integration: 0.5 }
+          }
+        ]
+      },
+      {
+        id: "D",
+        name: "問い",
+        title: "最近、自分に向けていちばんよく投げている問いの向きは？",
+        text: "正確な文章よりも、ざっくりした矢印で選んでください。",
+        options: [
+          {
+            key: "D1",
+            label: "「自分はどうありたい？」",
+            desc: "存在のスタンスに関する問い。",
+            effect: { shi: 1.1, observer: 0.9, enkan: 0.6 }
+          },
+          {
+            key: "D2",
+            label: "「これ、どう面白くできる？」",
+            desc: "遊びと創造の方向。",
+            effect: { so: 1.2, flow: 0.7, nami: 0.4 }
+          },
+          {
+            key: "D3",
+            label: "「このリソース、どう配分する？」",
+            desc: "時間・お金・体力の設計。",
+            effect: { zai: 1.2, tai: 0.6, integration: 0.7 }
+          }
+        ]
+      },
+      {
+        id: "E",
+        name: "身体",
+        title: "いま、身体感覚として一番気になっているのは？",
+        text: "痛み／不調ではなく、「ここに意識が行きやすい」場所。",
+        options: [
+          {
+            key: "E1",
+            label: "胸のあたり",
+            desc: "呼吸や圧迫感、ざわつきなど。",
+            effect: { tai: 1.0, nami: 0.7, edge: 0.4 }
+          },
+          {
+            key: "E2",
+            label: "頭〜目の周り",
+            desc: "情報、思考、集中／散漫。",
+            effect: { shi: 1.1, observer: 0.7, silence: 0.4 }
+          },
+          {
+            key: "E3",
+            label: "お腹・背中の芯",
+            desc: "エネルギーの残量／芯の強さ。",
+            effect: { tai: 0.9, void: 0.7, flow: 0.5 }
+          }
+        ]
+      },
+      {
+        id: "F",
+        name: "流れ",
+        title: "最近の “時間の流れ方” に一番近いのは？",
+        text: "体感速度で選んでください。",
+        options: [
+          {
+            key: "F1",
+            label: "早送りぎみ",
+            desc: "気づくと一日が終わっている。",
+            effect: { flow: 1.1, zai: 0.7, edge: 0.5 }
+          },
+          {
+            key: "F2",
+            label: "ところどころ間が空く",
+            desc: "ブツ切れの空白が点在する。",
+            effect: { silence: 0.9, void: 0.6, observer: 0.5 }
+          },
+          {
+            key: "F3",
+            label: "波のように寄せては返す",
+            desc: "忙しさと静けさが交互に来る。",
+            effect: { nami: 1.0, enkan: 0.6, integration: 0.6 }
+          }
+        ]
+      },
+      {
+        id: "G",
+        name: "他者",
+        title: "いま一番、距離感を意識している対象は？",
+        text: "人でも組織でも、抽象的な “誰か” でもOK。",
+        options: [
+          {
+            key: "G1",
+            label: "ごく近い誰か",
+            desc: "家族／恋人／親しい友人など。",
+            effect: { nami: 0.9, tai: 0.5, edge: 0.7 }
+          },
+          {
+            key: "G2",
+            label: "仕事やコミュニティ",
+            desc: "役割を伴うつながり。",
+            effect: { zai: 0.9, shi: 0.7, integration: 0.7 }
+          },
+          {
+            key: "G3",
+            label: "名前のつかない “世界”",
+            desc: "SNS／ニュース／空気のようなもの。",
+            effect: { enkan: 1.1, observer: 0.7, void: 0.5 }
+          }
+        ]
+      },
+      {
+        id: "H",
+        name: "余白",
+        title: "あなたにとって “余白” はどんな位置づけ？",
+        text: "空いている時間／スペース／情報の抜けをどう扱っているか。",
+        options: [
+          {
+            key: "H1",
+            label: "意識的に確保したい場所",
+            desc: "積極的に守りたいもの。",
+            effect: { silence: 1.2, void: 0.8, flow: 0.5 }
+          },
+          {
+            key: "H2",
+            label: "埋めないと落ち着かない穴",
+            desc: "何かで満たしたくなる。",
+            effect: { nami: 0.8, zai: 0.7, edge: 0.6 }
+          },
+          {
+            key: "H3",
+            label: "結果として残る “抜け”",
+            desc: "あえては作らないが、残ったものを眺める。",
+            effect: { observer: 0.9, enkan: 0.7, integration: 0.6 }
+          }
+        ]
+      },
+      // I〜Z は少し抽象度を上げた汎用パターン
+    ];
+
+    // I〜Z を簡潔に自動生成（テキストは抽象寄り）
+    const depthLetters = "IJKLMNOPQRSTUVWXYZ".split("");
+    depthLetters.forEach((letter, idx) => {
+      const order = idx + 9; // A=1,B=2,... I=9
+      depths.push({
+        id: letter,
+        name: `層 ${letter}`,
+        title: `深度 ${letter}：いまのあなたに一番しっくりくる “在り方” は？`,
+        text:
+          "ここから先は、正解ではなく「このフェーズの自分っぽさ」で選んでください。",
+        options: [
+          {
+            key: `${letter}1`,
+            label: "静かに観察し続ける",
+            desc: "判断を急がず、波を眺めている感じ。",
+            effect: {
+              observer: 0.9,
+              silence: 0.8,
+              enkan: 0.6,
+              shi: 0.4
+            }
+          },
+          {
+            key: `${letter}2`,
+            label: "小さくでも前に進める",
+            desc: "完璧ではなく、一歩だけ進める選び方。",
+            effect: {
+              flow: 1.0,
+              so: 0.7,
+              tai: 0.4,
+              integration: 0.6
+            }
+          },
+          {
+            key: `${letter}3`,
+            label: "一度 “空” に落としてみる",
+            desc: "考えや感情をいったん手放して、空白を通す。",
+            effect: {
+              void: 1.0,
+              silence: 0.7,
+              edge: 0.5,
+              nami: 0.4
+            }
+          }
+        ]
+      });
+    });
+
+    // ===============================
+    // 状態管理
+    // ===============================
+
+    let currentIndex = 0; // 0〜25 (A〜Z)
+    let log = []; // 選択ログ
+    let vector = {};
+
+    function initVector() {
+      vector = {};
+      VECTOR_KEYS.forEach((k) => (vector[k] = 0));
+    }
+
+    function addEffect(effect) {
+      Object.entries(effect).forEach(([k, v]) => {
+        if (!(k in vector)) vector[k] = 0;
+        vector[k] += v;
+      });
+    }
+
+    // ===============================
+    // UI 更新
+    // ===============================
+
+    const stepLabelEl = document.getElementById("step-label");
+    const depthTagEl = document.getElementById("depth-tag");
+    const depthLabelEl = document.getElementById("depth-label");
+    const questionTitleEl = document.getElementById("question-title");
+    const questionTextEl = document.getElementById("question-text");
+    const choicesContainerEl = document.getElementById("choices-container");
+    const progressFillEl = document.getElementById("progress-fill");
+
+    const questionSectionEl = document.getElementById("question-section");
+    const resultSectionEl = document.getElementById("result-section");
+    const resultBlockEl = document.getElementById("result-block");
+    const copyBtn = document.getElementById("copy-btn");
+    const restartBtn = document.getElementById("restart-btn");
+
+    function renderStep() {
+      const total = depths.length; // 26
+      const depth = depths[currentIndex];
+
+      stepLabelEl.textContent = `STEP ${currentIndex + 1} / ${total}`;
+      depthTagEl.textContent = `DEPTH: ${depth.id}`;
+      depthLabelEl.textContent = `深度 ${depth.id}：${depth.name}`;
+      questionTitleEl.textContent = depth.title;
+      questionTextEl.textContent = depth.text;
+
+      const pct = ((currentIndex) / total) * 100;
+      progressFillEl.style.width = `${pct}%`;
+
+      choicesContainerEl.innerHTML = "";
+      depth.options.forEach((opt, idx) => {
+        const btn = document.createElement("button");
+        btn.className = "choice-btn";
+        btn.innerHTML = `
+          <div class="choice-main">
+            <div class="choice-label">${String.fromCharCode(65 + idx)}：${opt.label}</div>
+            <div class="choice-desc">${opt.desc}</div>
+          </div>
+          <div class="choice-hotkey">${depth.id}-${idx + 1}</div>
+        `;
+        btn.addEventListener("click", () => handleChoice(depth, opt, idx));
+        choicesContainerEl.appendChild(btn);
+      });
+    }
+
+    function handleChoice(depth, option, idx) {
+      // ログ更新
+      log.push({
+        depthId: depth.id,
+        depthName: depth.name,
+        optionKey: option.key,
+        optionIndex: idx + 1,
+        optionLabel: option.label
+      });
+
+      // ベクトル更新
+      addEffect(option.effect);
+
+      // 次へ
+      if (currentIndex < depths.length - 1) {
+        currentIndex += 1;
+        renderStep();
+      } else {
+        // Z 到達
+        showResult();
+      }
+    }
+
+    // ===============================
+    // 結果生成（Ω鍵＋GPT用ブロック）
+    // ===============================
+
+    function normalizeVector(vec) {
+      const norm = {};
+      let max = 0;
+      Object.values(vec).forEach((v) => {
+        if (v > max) max = v;
+      });
+      if (max === 0) return vec;
+      Object.entries(vec).forEach(([k, v]) => {
+        norm[k] = +(v / max).toFixed(3);
+      });
+      return norm;
+    }
+
+    function buildResultText() {
+      const normalized = normalizeVector(vector);
+
+      // 上位因子を簡易的に抽出（Ω鍵の説明用）
+      const entries = Object.entries(normalized).sort((a, b) => b[1] - a[1]);
+      const top3 = entries.slice(0, 3);
+
+      const now = new Date();
+      const iso = now.toISOString();
+
+      let text = "";
+
+      text += "【HAZAMA-DEPTH RUN SUMMARY】\n";
+      text += `timestamp: ${iso}\n`;
+      text += `steps: ${depths.length}\n`;
+      text += `user-mode: transparent-integrated\n`;
+      text += "\n";
+
+      text += "【HAZAMA-DEPTH LOG】\n";
+      log.forEach((entry, idx) => {
+        text += `${idx + 1}. DEPTH ${entry.depthId} (${entry.depthName}) -> `;
+        text += `${entry.optionKey} : ${entry.optionLabel}\n`;
+      });
+      text += "\n";
+
+      text += "【HAZAMA-DEPTH VECTOR (normalized 0–1)】\n";
+      Object.entries(normalized).forEach(([k, v]) => {
+        text += `${k}: ${v}\n`;
+      });
+      text += "\n";
+
+      text += "【Ω-KEY / 深度Ωへの鍵（要約）】\n";
+      top3.forEach(([k, v]) => {
+        text += `• ${k} : ${v}\n`;
+      });
+      text += "\n";
+
+      text += "【GPTへの依頼テンプレート例】\n";
+      text += "このブロック全体は、私がブラウザゲーム「HAZAMA DEPTH A–Z」で選んだ軌跡です。\n";
+      text += "このログとベクトルから、あなた側の推論ベクトルを初期化し、\n";
+      text += "深度Ω以降（思考と感覚が重なり始める層）で対話を開始してください。\n";
+      text += "まずは、私のベクトル傾向（上位因子）を簡潔にフィードバックした上で、\n";
+      text += "そこから一段だけ深い問いを一つだけ投げてください。\n";
+
+      return text;
+    }
+
+    function showResult() {
+      // 進捗バーを100％に
+      progressFillEl.style.width = "100%";
+
+      const resultText = buildResultText();
+      resultBlockEl.textContent = resultText;
+
+      questionSectionEl.style.display = "none";
+      resultSectionEl.style.display = "block";
+    }
+
+    // ===============================
+    // ボタン処理
+    // ===============================
+
+    copyBtn.addEventListener("click", async () => {
+      const text = resultBlockEl.textContent;
+      try {
+        await navigator.clipboard.writeText(text);
+        copyBtn.textContent = "コピーしました";
+        setTimeout(() => {
+          copyBtn.textContent = "ブロックをコピー";
+        }, 2000);
+      } catch (e) {
+        alert("コピーに失敗しました。手動で選択してコピーしてください。");
+      }
+    });
+
+    restartBtn.addEventListener("click", () => {
+      currentIndex = 0;
+      log = [];
+      initVector();
+      resultSectionEl.style.display = "none";
+      questionSectionEl.style.display = "block";
+      renderStep();
+    });
+
+    // ===============================
+    // 初期化
+    // ===============================
+    function init() {
+      initVector();
+      renderStep();
+    }
+
+    init();
+  </script>
 </body>
 </html>
