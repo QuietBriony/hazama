@@ -1,16 +1,16 @@
-/* ===== 全体レイアウト ===== */
+/* ===== 共通リセット ===== */
 * {
   box-sizing: border-box;
   margin: 0;
   padding: 0;
 }
 
+/* ===== 背景全体（チェレンコフ光グラデ） ===== */
 body {
   min-height: 100vh;
-  font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue",
-    "Segoe UI", sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", "Segoe UI",
+    sans-serif;
   color: #e9f5ff;
-  /* チェレンコフ光っぽい濃青グラデーション */
   background: radial-gradient(circle at 20% 20%, #3bb4ff 0, #001327 55%, #00040a 100%);
   display: flex;
   align-items: center;
@@ -18,10 +18,11 @@ body {
   padding: 16px;
 }
 
+/* ===== アプリ枠 ===== */
 .app {
   width: 100%;
   max-width: 760px;
-  background: rgba(2, 12, 28, 0.8);
+  background: rgba(2, 12, 28, 0.86);
   border-radius: 20px;
   border: 1px solid rgba(144, 202, 249, 0.35);
   box-shadow:
@@ -39,7 +40,7 @@ body {
   inset: -40%;
   background:
     radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.05), transparent 55%),
-    repeating-radial-gradient(circle at 50% 50%, rgba(150, 210, 255, 0.15), transparent 4px);
+    repeating-radial-gradient(circle at 50% 50%, rgba(150, 210, 255, 0.12), transparent 4px);
   mix-blend-mode: screen;
   opacity: 0.35;
   pointer-events: none;
@@ -75,10 +76,6 @@ body {
   gap: 8px;
 }
 
-.status-row span {
-  white-space: nowrap;
-}
-
 .depth-tag {
   padding: 2px 8px;
   border-radius: 999px;
@@ -87,6 +84,7 @@ body {
   letter-spacing: 0.08em;
 }
 
+/* ===== 進捗バー ===== */
 .progress-bar {
   width: 100%;
   height: 5px;
@@ -134,7 +132,7 @@ body {
   line-height: 1.6;
 }
 
-/* ===== 選択肢 ===== */
+/* ===== 選択肢ボタン ===== */
 .choices {
   margin-top: 14px;
   display: grid;
@@ -159,7 +157,13 @@ body {
     background 0.18s ease-out,
     transform 0.12s ease-out,
     box-shadow 0.18s ease-out,
-    border-color 0.18s ease-out;
+    border-color 0.18s ease-out,
+    opacity 0.18s ease-out;
+}
+
+.choice-btn.disabled {
+  opacity: 0.5;
+  cursor: default;
 }
 
 .choice-main {
@@ -186,38 +190,30 @@ body {
   opacity: 0.7;
 }
 
-.choice-btn:hover {
+.choice-btn:hover:not(.disabled) {
   background: rgba(6, 39, 80, 0.98);
   box-shadow: 0 0 16px rgba(33, 150, 243, 0.4);
   transform: translateY(-1px);
   border-color: rgba(187, 222, 251, 0.9);
 }
 
-.choice-btn:active {
+.choice-btn:active:not(.disabled) {
   transform: translateY(0);
   box-shadow: none;
 }
 
-.choice-btn:disabled {
-  opacity: 0.6;
-  cursor: default;
-  box-shadow: none;
-}
-
-/* ===== 選択ごとのフィードバック ===== */
-.feedback {
-  margin-top: 10px;
-  min-height: 1.4em;
+/* ===== 選択後メッセージ ===== */
+.after-message {
+  margin-top: 12px;
   font-size: 0.8rem;
-  color: #b0c4de;
+  color: #b3e5fc;
+  min-height: 1.2em;
   opacity: 0;
-  transform: translateY(4px);
-  transition: opacity 0.5s ease-out, transform 0.5s ease-out;
+  transition: opacity 0.4s ease-out;
 }
 
-.feedback.visible {
+.after-message.visible {
   opacity: 1;
-  transform: translateY(0);
 }
 
 /* ===== フッター ===== */
@@ -259,8 +255,8 @@ body {
   margin-top: 6px;
   max-height: 320px;
   overflow: auto;
-  font-family: "SF Mono", "Roboto Mono", ui-monospace, Menlo, Monaco,
-    Consolas, "Liberation Mono", "Courier New", monospace;
+  font-family: "SF Mono", "Roboto Mono", ui-monospace, Menlo, Monaco, Consolas,
+    "Liberation Mono", "Courier New", monospace;
   font-size: 0.78rem;
   line-height: 1.5;
   white-space: pre-wrap;
@@ -281,21 +277,11 @@ body {
 }
 
 .result-note.small {
-  font-size: 0.72rem;
+  font-size: 0.74rem;
   opacity: 0.85;
 }
 
-/* GAME OVER 用 */
-.result-title.game-over {
-  color: #ff8a80;
-}
-
-.result-card.game-over {
-  border-color: rgba(255, 138, 128, 0.8);
-  color: #ffebee;
-}
-
-/* ボタン行 */
+/* ===== 結果ボタン ===== */
 .btn-row {
   margin-top: 8px;
   display: flex;
@@ -337,6 +323,7 @@ body {
   filter: brightness(1.05);
 }
 
+/* ===== レスポンシブ ===== */
 @media (max-width: 480px) {
   .app {
     padding: 16px 14px 18px;
