@@ -1,0 +1,33 @@
+body {
+  background: #0d0f12;
+  color: #cfe7ff;
+  font-family: 'Helvetica', sans-serif;
+  padding: 40px;
+}
+
+h1 {
+  color: #9acaff;
+  margin-bottom: 10px;
+}
+
+#depth-buttons button {
+  background: #1a2330;
+  border: 1px solid #3d4d63;
+  padding: 10px 18px;
+  margin: 5px;
+  border-radius: 6px;
+  color: #cfe7ff;
+  cursor: pointer;
+}
+
+#depth-buttons button:hover {
+  background: #253246;
+}
+
+#result-box {
+  margin-top: 40px;
+  padding: 20px;
+  background: #111820;
+  border-left: 3px solid #4da3ff;
+  min-height: 120px;
+}
