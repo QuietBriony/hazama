@@ -1,46 +1,527 @@
 {
+  "mode": "normal",
   "depths": [
     {
       "id": "A",
-      "title": "深度A：表面",
-      "text": "いまの自分の状態に一番近いのはどれ？",
+      "title": {
+        "jp": "深度A：表面",
+        "en": "Depth A: Surface"
+      },
+      "theme": {
+        "jp": "皮膜としての自分",
+        "en": "Your outer skin of self"
+      },
+      "text": {
+        "jp": "いまのあなたの「表面」に一番近いのは？　考えすぎず、いまの自分の皮膜に近いものを選んでください。",
+        "en": "Which one feels closest to your current surface state? Don’t overthink it, just pick what matches your outer layer."
+      },
       "options": [
         {
-          "label": "すこし静か",
-          "desc": "落ち着いている。",
+          "type": "sink",
+          "label": {
+            "jp": "静かだけれど、少し冷たい",
+            "en": "Quiet, with a slight chill"
+          },
+          "desc": {
+            "jp": "感情は大きく動いていないが、どこか温度が低い感じ。",
+            "en": "Emotions are not loud, but the temperature feels slightly low."
+          },
           "effect": {
-            "silence": 1
+            "silence": 1.0,
+            "tai": 0.5
           }
         },
         {
-          "label": "すこしざわつく",
-          "desc": "わずかに波立っている。",
+          "type": "drift",
+          "label": {
+            "jp": "外からの刺激でざわついている",
+            "en": "Stirred by outside noise"
+          },
+          "desc": {
+            "jp": "通知や人の気配に、表面だけがずっと揺れている感じ。",
+            "en": "Your surface keeps moving from notifications and other people’s presence."
+          },
           "effect": {
-            "nami": 1
+            "wave": 1.0,
+            "tai": 0.3
+          }
+        },
+        {
+          "type": "float",
+          "label": {
+            "jp": "よくわからないけど、どこか空中にいる",
+            "en": "Not sure, almost floating somewhere"
+          },
+          "desc": {
+            "jp": "自分の輪郭が、ふわっと離れているような感覚。",
+            "en": "Your own outline feels slightly detached and floating."
+          },
+          "effect": {
+            "nam": 0.8,
+            "wave": 0.4
           }
         }
-      ]
+      ],
+      "dive_req": {
+        "silence": 0,
+        "wave": 0
+      }
     },
     {
       "id": "B",
-      "title": "深度B：揺れ",
-      "text": "最近、一番心に残っている揺れは？",
+      "title": {
+        "jp": "深度B：揺れの残像",
+        "en": "Depth B: Residual Ripples"
+      },
+      "theme": {
+        "jp": "さっきまでの出来事の余韻",
+        "en": "Afterimages of recent events"
+      },
+      "text": {
+        "jp": "最近の出来事の中で、いまも静かに尾を引いている「揺れ」に一番近いのは？",
+        "en": "Among recent events, which lingering ripple still quietly remains in you?"
+      },
       "options": [
         {
-          "label": "会話の余韻",
-          "desc": "誰かとのやりとり。",
+          "type": "sink",
+          "label": {
+            "jp": "特定の会話の一節が、繰り返し浮かぶ",
+            "en": "A fragment of conversation keeps replaying"
+          },
+          "desc": {
+            "jp": "言葉の温度ごと、内側でリフレインしている感じ。",
+            "en": "The words replay inside you, along with their emotional temperature."
+          },
           "effect": {
-            "nami": 1
+            "wave": 1.0,
+            "silence": 0.5
           }
         },
         {
-          "label": "静かな時間",
-          "desc": "ひとりの静けさ。",
+          "type": "drift",
+          "label": {
+            "jp": "場の空気そのものが、しばらく残っている",
+            "en": "The air of that place still lingers"
+          },
+          "desc": {
+            "jp": "誰のものでもない気配だけが、内側で続いている。",
+            "en": "No one in particular, just the atmosphere remains inside."
+          },
           "effect": {
-            "silence": 1
+            "wave": 0.7,
+            "tai": 0.4,
+            "nam": 0.3
+          }
+        },
+        {
+          "type": "float",
+          "label": {
+            "jp": "具体的な出来事は思い出せないが、ざわざわだけが残っている",
+            "en": "You can’t recall details, only a vague unrest"
+          },
+          "desc": {
+            "jp": "内容は薄れ、感触だけが浮いている。",
+            "en": "The story has faded, only the texture remains."
+          },
+          "effect": {
+            "nam": 0.9,
+            "wave": 0.5
           }
         }
-      ]
+      ],
+      "dive_req": {
+        "wave": 0
+      }
+    },
+    {
+      "id": "C",
+      "title": {
+        "jp": "深度C：境目",
+        "en": "Depth C: Threshold"
+      },
+      "theme": {
+        "jp": "こちらとあちらの区切り",
+        "en": "The line between here and there"
+      },
+      "text": {
+        "jp": "いまのあなたにとって、一番「ここから先は少し違う」と感じる境目は？",
+        "en": "For you right now, which threshold feels like 'beyond this, things are different'?"
+      },
+      "options": [
+        {
+          "type": "sink",
+          "label": {
+            "jp": "画面を閉じて、身体に戻る瞬間",
+            "en": "The moment you close the screen and return to your body"
+          },
+          "desc": {
+            "jp": "数字や文字から、呼吸のリズムに戻っていく境目。",
+            "en": "The threshold from numbers and text back to your breathing rhythm."
+          },
+          "effect": {
+            "tai": 0.8,
+            "silence": 0.7
+          }
+        },
+        {
+          "type": "drift",
+          "label": {
+            "jp": "「やる前の一呼吸」を置けるかどうか",
+            "en": "Whether you can take one breath before acting"
+          },
+          "desc": {
+            "jp": "すぐ動くか、いったん間を挟めるかの境目。",
+            "en": "The line between reacting immediately and taking a small pause."
+          },
+          "effect": {
+            "silence": 0.8,
+            "wave": 0.4
+          }
+        },
+        {
+          "type": "float",
+          "label": {
+            "jp": "境目そのものが曖昧になっている",
+            "en": "The threshold itself feels blurred"
+          },
+          "desc": {
+            "jp": "どこからが自分で、どこからが外側か分かりにくい。",
+            "en": "It’s hard to tell where you end and the outside begins."
+          },
+          "effect": {
+            "nam": 0.9,
+            "silence": 0.3
+          }
+        }
+      ],
+      "dive_req": {
+        "silence": 0
+      }
+    },
+    {
+      "id": "D",
+      "title": {
+        "jp": "深度D：影の輪郭",
+        "en": "Depth D: Shadow Outline"
+      },
+      "theme": {
+        "jp": "ふだんあまり見ない側面",
+        "en": "The side you don’t usually look at"
+      },
+      "text": {
+        "jp": "最近、「これはあまり直視したくないな」とぼんやり感じているものは？",
+        "en": "Lately, what have you vaguely felt like you don’t want to look at directly?"
+      },
+      "options": [
+        {
+          "type": "sink",
+          "label": {
+            "jp": "やれていないこと・先送りしていること",
+            "en": "Things you haven’t done, tasks you keep postponing"
+          },
+          "desc": {
+            "jp": "積もったタスクの影。",
+            "en": "The shadow of accumulated tasks."
+          },
+          "effect": {
+            "wave": 0.6,
+            "silence": 0.4
+          }
+        },
+        {
+          "type": "drift",
+          "label": {
+            "jp": "誰かへの小さな嫉妬やひっかかり",
+            "en": "Small envies or hooks toward someone"
+          },
+          "desc": {
+            "jp": "口には出さないが、時々ちらつく感情。",
+            "en": "Not spoken aloud, but it flickers at times."
+          },
+          "effect": {
+            "wave": 0.8,
+            "nam": 0.4
+          }
+        },
+        {
+          "type": "float",
+          "label": {
+            "jp": "よく分からない不安の塊",
+            "en": "A lump of anxiety with no clear shape"
+          },
+          "desc": {
+            "jp": "中身は分からないが、確かに重さだけはある。",
+            "en": "You don’t know what’s inside, but the weight is real."
+          },
+          "effect": {
+            "nam": 1.0,
+            "wave": 0.5
+          }
+        }
+      ],
+      "dive_req": {
+        "wave": 0
+      }
+    },
+    {
+      "id": "E",
+      "title": {
+        "jp": "深度E：反響野",
+        "en": "Depth E: Echo Field"
+      },
+      "theme": {
+        "jp": "内側で響き続ける空間",
+        "en": "The inner space where things keep echoing"
+      },
+      "text": {
+        "jp": "いまのあなたの内側で、いちばん長く反響している気配に近いのは？",
+        "en": "What kind of presence keeps echoing the longest inside you right now?"
+      },
+      "options": [
+        {
+          "type": "sink",
+          "label": {
+            "jp": "静かながら、奥のほうで続く低い音",
+            "en": "A low, quiet sound that continues in the back"
+          },
+          "desc": {
+            "jp": "はっきりとは聞こえないが、消えずに続いている。",
+            "en": "Not clear, but it doesn’t disappear."
+          },
+          "effect": {
+            "silence": 1.0,
+            "tai": 0.4
+          }
+        },
+        {
+          "type": "drift",
+          "label": {
+            "jp": "ときどき波のように押し寄せる感情",
+            "en": "Emotions that sometimes rush in like waves"
+          },
+          "desc": {
+            "jp": "落ち着いている時間と、突然押し寄せる時間が交互に来る。",
+            "en": "Calm moments alternate with sudden surges."
+          },
+          "effect": {
+            "wave": 1.0,
+            "silence": 0.3
+          }
+        },
+        {
+          "type": "float",
+          "label": {
+            "jp": "響いているのかどうかも分からない「空っぽさ」",
+            "en": "An emptiness where you don’t know if something echoes or not"
+          },
+          "desc": {
+            "jp": "音も感情も薄く、ただ空の感じだけがある。",
+            "en": "No clear sound or feeling, just a sense of emptiness."
+          },
+          "effect": {
+            "nam": 0.9,
+            "silence": 0.5
+          }
+        }
+      ],
+      "dive_req": {
+        "silence": 0
+      }
+    },
+    {
+      "id": "F",
+      "title": {
+        "jp": "深度F：観察者の盲点",
+        "en": "Depth F: Observer’s Blind Spot"
+      },
+      "theme": {
+        "jp": "自分で自分を見ているときの、見えていない部分",
+        "en": "What you can’t see while watching yourself"
+      },
+      "text": {
+        "jp": "「自分を見ている自分」を想像したとき、その視界から漏れていると感じるのは？",
+        "en": "When you imagine 'you, watching yourself', what feels left out of that gaze?"
+      },
+      "options": [
+        {
+          "type": "sink",
+          "label": {
+            "jp": "身体の細かいクセや違和感",
+            "en": "Small bodily habits or discomforts"
+          },
+          "desc": {
+            "jp": "姿勢・呼吸・食べ方など、意識しないと見えないところ。",
+            "en": "Posture, breathing, the way you eat—things you only notice if you look closely."
+          },
+          "effect": {
+            "tai": 0.8,
+            "silence": 0.4
+          }
+        },
+        {
+          "type": "drift",
+          "label": {
+            "jp": "感情が動いた直前の一瞬",
+            "en": "The tiny moment just before your emotions move"
+          },
+          "desc": {
+            "jp": "怒りや悲しみが立ち上がる前の、ほぼ無色の瞬間。",
+            "en": "Almost colorless moments right before anger or sadness rises."
+          },
+          "effect": {
+            "wave": 0.8,
+            "silence": 0.5
+          }
+        },
+        {
+          "type": "float",
+          "label": {
+            "jp": "そもそも観察者がどこにいるのか分からない",
+            "en": "You’re not sure where the observer is at all"
+          },
+          "desc": {
+            "jp": "見ているのか、見られているのかも曖昧になる。",
+            "en": "It becomes unclear whether you’re watching or being watched."
+          },
+          "effect": {
+            "nam": 1.0,
+            "silence": 0.3
+          }
+        }
+      ],
+      "dive_req": {
+        "silence": 0
+      }
+    },
+    {
+      "id": "G",
+      "title": {
+        "jp": "深度G：境界膜",
+        "en": "Depth G: Membrane"
+      },
+      "theme": {
+        "jp": "内側と外側を分ける薄い膜",
+        "en": "A thin membrane between inside and outside"
+      },
+      "text": {
+        "jp": "いまのあなたの「内と外の境界」に一番近いイメージは？",
+        "en": "Which image feels closest to the boundary between inner and outer you right now?"
+      },
+      "options": [
+        {
+          "type": "sink",
+          "label": {
+            "jp": "やわらかく、ゆっくり波打つ膜",
+            "en": "A soft membrane that ripples slowly"
+          },
+          "desc": {
+            "jp": "外の揺れを、少し遅れて内側に伝える。",
+            "en": "It passes outer ripples inward with a gentle delay."
+          },
+          "effect": {
+            "wave": 0.7,
+            "silence": 0.5
+          }
+        },
+        {
+          "type": "drift",
+          "label": {
+            "jp": "ところどころ穴のあいた膜",
+            "en": "A membrane with small holes"
+          },
+          "desc": {
+            "jp": "情報や感情が、思ったより簡単に内側へ入ってくる。",
+            "en": "Information and emotions enter more easily than you expect."
+          },
+          "effect": {
+            "wave": 0.8,
+            "tai": 0.3
+          }
+        },
+        {
+          "type": "float",
+          "label": {
+            "jp": "膜そのものが溶けかけている",
+            "en": "The membrane itself is dissolving"
+          },
+          "desc": {
+            "jp": "内と外の区別があいまいになりつつある。",
+            "en": "The line between inside and outside is fading."
+          },
+          "effect": {
+            "nam": 1.0,
+            "wave": 0.4
+          }
+        }
+      ],
+      "dive_req": {
+        "wave": 0
+      }
+    },
+    {
+      "id": "H",
+      "title": {
+        "jp": "深度H：底圧",
+        "en": "Depth H: Quiet Pressure"
+      },
+      "theme": {
+        "jp": "音にならない重さ",
+        "en": "A weight that makes no sound"
+      },
+      "text": {
+        "jp": "いまのあなたの「奥のほうの重さ」に一番近いのは？",
+        "en": "Which feels closest to the deep weight inside you right now?"
+      },
+      "options": [
+        {
+          "type": "sink",
+          "label": {
+            "jp": "ゆっくり沈み込む、静かな重さ",
+            "en": "A slow, quiet sinking weight"
+          },
+          "desc": {
+            "jp": "苦しいわけではないが、明らかに重力が増している感じ。",
+            "en": "Not exactly painful, but the gravity is clearly stronger."
+          },
+          "effect": {
+            "silence": 1.0,
+            "tai": 0.6
+          }
+        },
+        {
+          "type": "drift",
+          "label": {
+            "jp": "波のように寄せては返す重さ",
+            "en": "A weight that comes and goes like waves"
+          },
+          "desc": {
+            "jp": "軽くなったり重くなったりを、周期的にくり返す。",
+            "en": "It grows lighter and heavier in cycles."
+          },
+          "effect": {
+            "wave": 1.0,
+            "silence": 0.4
+          }
+        },
+        {
+          "type": "float",
+          "label": {
+            "jp": "重さがあるのに、なぜか自分のものではない感じ",
+            "en": "A weight that feels present, yet not quite yours"
+          },
+          "desc": {
+            "jp": "誰か別の人の感覚を背負っているような奇妙さ。",
+            "en": "A strange sense of carrying someone else’s feeling."
+          },
+          "effect": {
+            "nam": 1.0,
+            "silence": 0.3
+          }
+        }
+      ],
+      "dive_req": {
+        "silence": 0
+      }
     }
   ]
 }
