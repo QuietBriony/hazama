@@ -1,26 +1,58 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-<meta charset="UTF-8">
-<title>HAZAMA DEPTH GAME</title>
-<link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8" />
+  <title>HAZAMA DEPTH DIVE</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="stylesheet" href="style.css" />
 </head>
-
 <body>
-<button id="lang-switch">EN/JP</button>
+  <div class="bg-orbit"></div>
+  <div class="bg-noise"></div>
 
-<div id="container">
-  <h1>HAZAMA DEPTH GAME</h1>
+  <header class="site-header">
+    <div class="site-title">HAZAMA DEPTH DIVE</div>
+    <button id="lang-switch" class="chip-button" type="button">EN/JP</button>
+  </header>
 
-  <div class="depth-label" id="depth-display">Depth: --</div>
+  <main class="app">
+    <section id="question-section" class="card card-main">
+      <div class="depth-row">
+        <span id="depth-label" class="depth-label">Depth: --</span>
+        <span id="step-label" class="step-label">STEP 0 / 0</span>
+        <span id="mode-label" class="mode-label">MODE: NORMAL</span>
+      </div>
 
-  <div id="text">読み込み中…</div>
+      <h1 id="question-title" class="question-title">読み込み中…</h1>
+      <p id="question-text" class="question-text"></p>
 
-  <div id="options"></div>
+      <div id="options" class="options"></div>
 
-  <div id="log"></div>
-</div>
+      <p id="hint-text" class="hint-text">
+        静かなほう・落ちるほうを選ぶほど、深く沈んでいきます。
+      </p>
 
-<script src="script.js"></script>
+      <div class="log-panel">
+        <div class="log-title">最近の沈みログ</div>
+        <pre id="log-view" class="log-view"></pre>
+      </div>
+    </section>
+
+    <section id="result-section" class="card card-result hidden">
+      <h2 class="result-title">深度ゴール到達</h2>
+      <p class="result-text">
+        あなたは今回、定義された深度の最下層まで沈みました。<br />
+        下のブロックをそのまま ChatGPT などの対話AI に貼り付けると、
+        「深度キー」として使えます。
+      </p>
+      <pre id="result-block" class="result-block"></pre>
+      <div class="btn-row">
+        <button id="copy-btn" class="primary-btn" type="button">ブロックをコピー</button>
+        <button id="restart-btn" class="outline-btn" type="button">もう一度沈む</button>
+      </div>
+    </section>
+  </main>
+
+  <script src="script.js"></script>
 </body>
 </html>
