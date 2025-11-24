@@ -1,58 +1,28 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8" />
-  <title>HAZAMA DEPTH DIVE</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <link rel="stylesheet" href="style.css" />
+  <meta charset="UTF-8">
+  <title>HAZAMA DEPTH DIVE v3</title>
+  <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-  <div class="bg-orbit"></div>
-  <div class="bg-noise"></div>
+<div id="app">
+  <h1>HAZAMA DEPTH DIVE v3</h1>
 
-  <header class="site-header">
-    <div class="site-title">HAZAMA DEPTH DIVE</div>
-    <button id="lang-switch" class="chip-button" type="button">EN/JP</button>
-  </header>
+  <div id="scene-area">
+    <div id="depth-title"></div>
+    <div id="depth-text"></div>
+    <div id="option-area"></div>
+    <div id="log-preview"></div>
+  </div>
 
-  <main class="app">
-    <section id="question-section" class="card card-main">
-      <div class="depth-row">
-        <span id="depth-label" class="depth-label">Depth: --</span>
-        <span id="step-label" class="step-label">STEP 0 / 0</span>
-        <span id="mode-label" class="mode-label">MODE: NORMAL</span>
-      </div>
+  <div id="result-area" class="hidden">
+    <h2>深度ログ（Depth-Key）</h2>
+    <pre id="result-text"></pre>
+    <button id="retry-btn">もう一度潜る</button>
+  </div>
 
-      <h1 id="question-title" class="question-title">読み込み中…</h1>
-      <p id="question-text" class="question-text"></p>
-
-      <div id="options" class="options"></div>
-
-      <p id="hint-text" class="hint-text">
-        静かなほう・落ちるほうを選ぶほど、深く沈んでいきます。
-      </p>
-
-      <div class="log-panel">
-        <div class="log-title">最近の沈みログ</div>
-        <pre id="log-view" class="log-view"></pre>
-      </div>
-    </section>
-
-    <section id="result-section" class="card card-result hidden">
-      <h2 class="result-title">深度ゴール到達</h2>
-      <p class="result-text">
-        あなたは今回、定義された深度の最下層まで沈みました。<br />
-        下のブロックをそのまま ChatGPT などの対話AI に貼り付けると、
-        「深度キー」として使えます。
-      </p>
-      <pre id="result-block" class="result-block"></pre>
-      <div class="btn-row">
-        <button id="copy-btn" class="primary-btn" type="button">ブロックをコピー</button>
-        <button id="restart-btn" class="outline-btn" type="button">もう一度沈む</button>
-      </div>
-    </section>
-  </main>
-
-  <script src="script.js"></script>
+</div>
+<script src="main.js"></script>
 </body>
 </html>
