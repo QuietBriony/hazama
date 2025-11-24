@@ -1,514 +1,132 @@
 {
-  "mode": "normal",
+  "meta": {
+    "version": "3.0",
+    "engine": "Hazama Engine v1",
+    "description": "深度A〜H＋Ω＋◎。曼荼羅・物語・ゲームロジックの統合データ構造。",
+    "lastUpdate": "2025-11-25"
+  },
+
   "depths": [
+
     {
       "id": "A",
-      "title": {
-        "jp": "表面",
-        "en": "Surface"
-      },
-      "theme": {
-        "jp": "いまの「表面」の温度",
-        "en": "The current temperature of your surface"
-      },
-      "text": {
-        "jp": "いまのあなたの「表面」に一番近い感触は？ ざっくりでよいので、いまの皮膜に近いものを選んでください。",
-        "en": "Which sensation feels closest to your current surface? Roughly choose what matches your outer layer right now."
-      },
-      "options": [
-        {
-          "type": "sink",
-          "label": {
-            "jp": "静かだけれど、少し冷たい",
-            "en": "Quiet, with a slight chill"
-          },
-          "desc": {
-            "jp": "感情は大きく動いていないが、どこか温度が低い感じ。",
-            "en": "Emotions aren’t loud, yet the temperature feels a bit low."
-          },
-          "effect": {
-            "silence": 1.0,
-            "tai": 0.4
-          }
-        },
-        {
-          "type": "drift",
-          "label": {
-            "jp": "外からの刺激でざわついている",
-            "en": "Stirred by outside noise"
-          },
-          "desc": {
-            "jp": "通知や人の気配に、表面だけがずっと揺れている感じ。",
-            "en": "Your surface keeps moving from notifications and others’ presence."
-          },
-          "effect": {
-            "wave": 1.0,
-            "tai": 0.3
-          }
-        },
-        {
-          "type": "float",
-          "label": {
-            "jp": "自分の輪郭が、ふわっと浮いている",
-            "en": "Your outline feels softly floating"
-          },
-          "desc": {
-            "jp": "ここにいるのだけれど、少し上の空にいるような感じ。",
-            "en": "You’re here, yet a part of you feels slightly above and away."
-          },
-          "effect": {
-            "nam": 0.8,
-            "wave": 0.4
-          }
-        }
-      ],
-      "dive_req": {}
+      "title": "深度A：入口／薄明の層",
+      "lore": "視界がまだ輪郭を保っている最浅層。世界はゆらぎ、あなたが『ここ』にいることだけが確定している。すべては始まり、まだ何も選ばれていない。",
+      "visualPrompt": "薄明・青い靄・静かな水面・最初の門・柔らかい光",
+      "themes": ["起点", "認識", "境界", "初期化"],
+      "choices": [
+        { "text": "深度Bへ進む", "target": "B" },
+        { "text": "◎（全図）を覗く", "target": "◎" }
+      ]
     },
+
     {
       "id": "B",
-      "title": {
-        "jp": "揺れの残像",
-        "en": "Residual Ripples"
-      },
-      "theme": {
-        "jp": "さっきまでの出来事の余韻",
-        "en": "Afterimages of recent events"
-      },
-      "text": {
-        "jp": "最近の出来事の中で、いまも静かに尾を引いている「揺れ」に一番近いのは？",
-        "en": "Among recent events, which lingering ripple still quietly remains in you?"
-      },
-      "options": [
-        {
-          "type": "sink",
-          "label": {
-            "jp": "特定の会話の一節が、繰り返し浮かぶ",
-            "en": "A fragment of conversation keeps replaying"
-          },
-          "desc": {
-            "jp": "言葉の温度ごと、内側でリフレインしている感じ。",
-            "en": "The words replay inside you, along with their emotional temperature."
-          },
-          "effect": {
-            "wave": 1.0,
-            "silence": 0.5
-          }
-        },
-        {
-          "type": "drift",
-          "label": {
-            "jp": "場の空気そのものが、しばらく残っている",
-            "en": "The air of that place still lingers"
-          },
-          "desc": {
-            "jp": "誰のものでもない気配だけが、内側で続いている。",
-            "en": "No one in particular, just the atmosphere remains inside."
-          },
-          "effect": {
-            "wave": 0.7,
-            "tai": 0.4,
-            "nam": 0.3
-          }
-        },
-        {
-          "type": "float",
-          "label": {
-            "jp": "出来事は薄れ、ざわざわだけが残っている",
-            "en": "The story fades, only a vague unrest remains"
-          },
-          "desc": {
-            "jp": "内容は思い出せないが、落ち着かない感触だけが浮いている。",
-            "en": "You can’t recall details, only the unsettled texture stays."
-          },
-          "effect": {
-            "nam": 0.9,
-            "wave": 0.5
-          }
-        }
-      ],
-      "dive_req": {}
+      "title": "深度B：記憶の回廊",
+      "lore": "細長い廊下に、自分の記憶ではない情景が額縁のように並ぶ。触れるたびに“誰かの思考”が流れ込んでくる。世界はまだ優しい。",
+      "visualPrompt": "長い回廊・額縁・青白い光・記憶の粒子・静謐",
+      "themes": ["記憶", "観察", "追体験"],
+      "choices": [
+        { "text": "深度Cへ進む", "target": "C" },
+        { "text": "深度Aに戻る", "target": "A" }
+      ]
     },
+
     {
       "id": "C",
-      "title": {
-        "jp": "境目",
-        "en": "Threshold"
-      },
-      "theme": {
-        "jp": "こちらとあちらの区切り",
-        "en": "The line between here and there"
-      },
-      "text": {
-        "jp": "いまのあなたにとって、一番「ここから先は少し違う」と感じる境目は？",
-        "en": "For you right now, which threshold feels like “beyond this, things change a bit”?"
-      },
-      "options": [
-        {
-          "type": "sink",
-          "label": {
-            "jp": "画面を閉じて、身体に戻る瞬間",
-            "en": "The moment you close the screen and return to your body"
-          },
-          "desc": {
-            "jp": "数字や文字から、呼吸のリズムに戻っていく境目。",
-            "en": "The shift from numbers and texts back to your breathing rhythm."
-          },
-          "effect": {
-            "tai": 0.8,
-            "silence": 0.7
-          }
-        },
-        {
-          "type": "drift",
-          "label": {
-            "jp": "「やる前の一呼吸」を置けるかどうか",
-            "en": "Whether you can place one breath before acting"
-          },
-          "desc": {
-            "jp": "すぐ動くか、いったん間を挟めるかの境目。",
-            "en": "The line between reacting immediately and inserting a small pause."
-          },
-          "effect": {
-            "silence": 0.8,
-            "wave": 0.4
-          }
-        },
-        {
-          "type": "float",
-          "label": {
-            "jp": "自分と外側の境目が曖昧になっている",
-            "en": "The border between you and outside feels blurred"
-          },
-          "desc": {
-            "jp": "どこからが自分で、どこからが世界か分かりにくい。",
-            "en": "It’s hard to tell where you end and the world begins."
-          },
-          "effect": {
-            "nam": 0.9,
-            "silence": 0.3
-          }
-        }
-      ],
-      "dive_req": {}
+      "title": "深度C：分岐の庭",
+      "lore": "柔らかな土と草の匂い。複数の道が同時に存在し、選択の瞬間ごとに“別のあなた”が生まれていく。庭そのものが意思を持つ。",
+      "visualPrompt": "分岐する小径・淡い緑・霧・多重影・静かな風",
+      "themes": ["選択", "多世界", "分岐", "生成"],
+      "choices": [
+        { "text": "深度Dへ進む", "target": "D" },
+        { "text": "深度Bへ戻る", "target": "B" }
+      ]
     },
+
     {
       "id": "D",
-      "title": {
-        "jp": "影の輪郭",
-        "en": "Shadow Outline"
-      },
-      "theme": {
-        "jp": "ふだんあまり見ない側面",
-        "en": "The side you don’t usually look at"
-      },
-      "text": {
-        "jp": "最近、「これはあまり直視したくないな」とぼんやり感じているものは？",
-        "en": "Lately, what have you vaguely felt you don’t want to look at directly?"
-      },
-      "options": [
-        {
-          "type": "sink",
-          "label": {
-            "jp": "先送りしていること・積もったタスク",
-            "en": "Postponed tasks piling up"
-          },
-          "desc": {
-            "jp": "見ないふりをしているToDoの影。",
-            "en": "The shadow of ToDos you pretend not to see."
-          },
-          "effect": {
-            "wave": 0.6,
-            "silence": 0.4
-          }
-        },
-        {
-          "type": "drift",
-          "label": {
-            "jp": "誰かへの小さな嫉妬やひっかかり",
-            "en": "Small envies or hooks toward someone"
-          },
-          "desc": {
-            "jp": "口には出さないが、時々ちらつく感情。",
-            "en": "Unspoken, yet flickering feelings toward someone."
-          },
-          "effect": {
-            "wave": 0.8,
-            "nam": 0.4
-          }
-        },
-        {
-          "type": "float",
-          "label": {
-            "jp": "理由の分からない不安の塊",
-            "en": "A lump of anxiety with no clear reason"
-          },
-          "desc": {
-            "jp": "中身は分からないが、確かに重さだけはある。",
-            "en": "You don’t know what’s inside, yet the weight is real."
-          },
-          "effect": {
-            "nam": 1.0,
-            "wave": 0.5
-          }
-        }
-      ],
-      "dive_req": {}
+      "title": "深度D：意識の縁",
+      "lore": "輪郭が緩やかに溶け、あなたと世界の境界が希薄になっていく。思ったことが“現象”として滲み出るため、制御が試される層。",
+      "visualPrompt": "溶解する形・中空・紫の断片・意識の波紋",
+      "themes": ["境界消失", "創発", "操作"],
+      "choices": [
+        { "text": "深度Eへ進む", "target": "E" },
+        { "text": "深度Cへ戻る", "target": "C" }
+      ]
     },
+
     {
       "id": "E",
-      "title": {
-        "jp": "反響野",
-        "en": "Echo Field"
-      },
-      "theme": {
-        "jp": "内側で響き続ける空間",
-        "en": "The inner field where echoes stay"
-      },
-      "text": {
-        "jp": "いまのあなたの内側で、いちばん長く反響している気配に近いのは？",
-        "en": "What kind of presence keeps echoing the longest inside you now?"
-      },
-      "options": [
-        {
-          "type": "sink",
-          "label": {
-            "jp": "静かながら、奥で続く低い音",
-            "en": "A low, quiet sound continuing in the back"
-          },
-          "desc": {
-            "jp": "はっきりとは聞こえないが、消えずに続いている。",
-            "en": "Not clear, yet it doesn’t disappear."
-          },
-          "effect": {
-            "silence": 1.0,
-            "tai": 0.4
-          }
-        },
-        {
-          "type": "drift",
-          "label": {
-            "jp": "ときどき波のように押し寄せる感情",
-            "en": "Emotions that rush in like waves from time to time"
-          },
-          "desc": {
-            "jp": "落ち着いている時間と、突然押し寄せる時間が交互に来る。",
-            "en": "Calm and sudden surges alternate."
-          },
-          "effect": {
-            "wave": 1.0,
-            "silence": 0.3
-          }
-        },
-        {
-          "type": "float",
-          "label": {
-            "jp": "響いているのかどうかも分からない「空っぽさ」",
-            "en": "An emptiness where you’re not sure anything echoes"
-          },
-          "desc": {
-            "jp": "音も感情も薄く、ただ空の感じだけがある。",
-            "en": "No sound, no distinct feeling, only emptiness."
-          },
-          "effect": {
-            "nam": 0.9,
-            "silence": 0.5
-          }
-        }
-      ],
-      "dive_req": {
-        "silence": 0
-      }
+      "title": "深度E：反転域",
+      "lore": "外と内、表と裏、主観と客観が反転し続ける領域。意味と言葉の結びつきが揺らぎ、思考が“影のように”独立して歩き出す。",
+      "visualPrompt": "反転する影・黒い鏡・自己像のズレ・パラドックス構造",
+      "themes": ["反転", "影", "認知の転位"],
+      "choices": [
+        { "text": "深度Fへ進む", "target": "F" },
+        { "text": "深度Dへ戻る", "target": "D" }
+      ]
     },
+
     {
       "id": "F",
-      "title": {
-        "jp": "観察者の盲点",
-        "en": "Observer’s Blind Spot"
-      },
-      "theme": {
-        "jp": "自分を眺めているときに見えていない部分",
-        "en": "What you can’t see while watching yourself"
-      },
-      "text": {
-        "jp": "「自分を眺めている自分」を想像したとき、一番見えにくいのはどのあたり？",
-        "en": "When you picture ‘you watching yourself’, which zone is hardest to see?"
-      },
-      "options": [
-        {
-          "type": "sink",
-          "label": {
-            "jp": "身体の感覚そのもの",
-            "en": "The raw sensations of your body"
-          },
-          "desc": {
-            "jp": "頭の中の言葉ばかりで、身体の細かな信号は拾いにくい。",
-            "en": "Words in the head are loud, subtle bodily signals are faint."
-          },
-          "effect": {
-            "tai": 0.8,
-            "silence": 0.4
-          }
-        },
-        {
-          "type": "drift",
-          "label": {
-            "jp": "感情の揺れ幅",
-            "en": "The amplitude of your emotions"
-          },
-          "desc": {
-            "jp": "どのくらい揺れているのか、実際のところはよく分からない。",
-            "en": "You’re not sure how big the real swings are."
-          },
-          "effect": {
-            "wave": 0.9,
-            "nam": 0.4
-          }
-        },
-        {
-          "type": "float",
-          "label": {
-            "jp": "そもそも「観察している自分」の位置",
-            "en": "Where the observing self itself is located"
-          },
-          "desc": {
-            "jp": "どこから見ているのか、その座標がふわふわしている。",
-            "en": "The coordinates of ‘where you watch from’ feel fuzzy."
-          },
-          "effect": {
-            "nam": 1.0,
-            "silence": 0.4
-          }
-        }
-      ],
-      "dive_req": {}
+      "title": "深度F：静止する時間",
+      "lore": "すべての時間が止まり、ただ“意図だけ”が進む層。動くのはあなたの内側だけで、世界は応答しない。その静けさは安らぎであり、試練でもある。",
+      "visualPrompt": "停止した時計・白い砂・無音・動かない影",
+      "themes": ["停止", "沈黙", "意識の芯"],
+      "choices": [
+        { "text": "深度Gへ進む", "target": "G" },
+        { "text": "深度Eへ戻る", "target": "E" }
+      ]
     },
+
     {
       "id": "G",
-      "title": {
-        "jp": "境界圧",
-        "en": "Boundary Pressure"
-      },
-      "theme": {
-        "jp": "他者との距離で生まれる圧力",
-        "en": "Pressure born from distance with others"
-      },
-      "text": {
-        "jp": "最近、一番「距離感」を意識している対象に近いのは？",
-        "en": "Lately, which target feels most related to your sense of distance?"
-      },
-      "options": [
-        {
-          "type": "sink",
-          "label": {
-            "jp": "ごく近い誰か（家族・恋人・親しい友人）",
-            "en": "Someone very close (family, partner, close friend)"
-          },
-          "desc": {
-            "jp": "近さゆえに、微妙なズレや沈黙が重くなる距離。",
-            "en": "Closeness makes subtle misalignments and silence heavier."
-          },
-          "effect": {
-            "wave": 0.7,
-            "tai": 0.4
-          }
-        },
-        {
-          "type": "drift",
-          "label": {
-            "jp": "仕事やコミュニティ上の関係",
-            "en": "Work / community relationships"
-          },
-          "desc": {
-            "jp": "役割としての自分と、素の自分の境目が問われる距離。",
-            "en": "A distance where your role-self and bare-self are questioned."
-          },
-          "effect": {
-            "wave": 0.8,
-            "nam": 0.3
-          }
-        },
-        {
-          "type": "float",
-          "label": {
-            "jp": "名前のつかない「世界そのもの」",
-            "en": "The nameless ‘world itself’"
-          },
-          "desc": {
-            "jp": "SNSやニュースなど、巨大な空気との距離感。",
-            "en": "Distance to the huge atmosphere of SNS, news, and the world."
-          },
-          "effect": {
-            "nam": 1.0,
-            "silence": 0.3
-          }
-        }
-      ],
-      "dive_req": {}
+      "title": "深度G：生成の環（リング）",
+      "lore": "世界が自律的に“思想の形”を生成する層。あなたの存在がトリガーになり、環状に新しい構造が芽吹く。Hazamaの中核にもっとも近い。",
+      "visualPrompt": "円環構造・幾何学・金のライン・生成される文様",
+      "themes": ["生成", "構造", "円環", "法則"],
+      "choices": [
+        { "text": "深度Hへ進む", "target": "H" },
+        { "text": "深度Fへ戻る", "target": "F" }
+      ]
     },
+
     {
       "id": "H",
-      "title": {
-        "jp": "深層野",
-        "en": "Deep Field"
-      },
-      "theme": {
-        "jp": "静けさと揺れが同居している層",
-        "en": "The layer where quiet and waves coexist"
-      },
-      "text": {
-        "jp": "いまのあなたの「かなり深いところ」に一番近いのは？",
-        "en": "Which image feels closest to your fairly deep inner layer right now?"
-      },
-      "options": [
-        {
-          "type": "sink",
-          "label": {
-            "jp": "静かな湖の底で、わずかに揺れる砂",
-            "en": "Sand gently moving at the bottom of a quiet lake"
-          },
-          "desc": {
-            "jp": "ほとんど動きはないが、ごく細かい揺れは続いている。",
-            "en": "Almost still, yet very small motions continue."
-          },
-          "effect": {
-            "silence": 1.2,
-            "tai": 0.5
-          }
-        },
-        {
-          "type": "drift",
-          "label": {
-            "jp": "暗い海の中で、ときどき遠くの波音がする",
-            "en": "In a dark sea, distant waves sound from time to time"
-          },
-          "desc": {
-            "jp": "自分の内側のどこかで、まだ波は生きている感覚。",
-            "en": "Somewhere inside, the waves are still alive."
-          },
-          "effect": {
-            "wave": 1.0,
-            "silence": 0.4
-          }
-        },
-        {
-          "type": "float",
-          "label": {
-            "jp": "深さはあるが、何も手触りがない空間",
-            "en": "A deep space with no tangible texture"
-          },
-          "desc": {
-            "jp": "深度だけが測れるが、そこに何があるか分からない。",
-            "en": "You can feel the depth, but not what fills it."
-          },
-          "effect": {
-            "nam": 1.0,
-            "silence": 0.5
-          }
-        }
-      ],
-      "dive_req": {
-        "silence": 0
-      }
+      "title": "深度H：観測者の門",
+      "lore": "すべての層を貫く視点が現れる地点。あなたは“あなたを見る存在”に触れ、世界のルールが一度だけ書き換え可能になる。Hazamaの最初の頂点。",
+      "visualPrompt": "巨大な門・光の柱・観測者・無音の震え",
+      "themes": ["観測者", "俯瞰", "書換え", "同期"],
+      "choices": [
+        { "text": "深度Ωへ進む", "target": "Ω" },
+        { "text": "深度Gへ戻る", "target": "G" }
+      ]
+    },
+
+    {
+      "id": "Ω",
+      "title": "深度Ω：虚空（Void）",
+      "lore": "形も意味も溶け、ただ“純粋な可能性”だけが渦巻く深層。恐怖と自由が隣り合い、選択は完全に開かれている。Hazamaの無限面。",
+      "visualPrompt": "黒い無形・揺れる薄光・深度の渦・抽象の極点",
+      "themes": ["Void", "可能性", "無限", "再構築"],
+      "choices": [
+        { "text": "◎（円観）へ進む", "target": "◎" },
+        { "text": "深度Hへ戻る", "target": "H" }
+      ]
+    },
+
+    {
+      "id": "◎",
+      "title": "深度◎：円観／Hazama全図",
+      "lore": "過去すべての層が同時に見え、時間・因果・選択が円環としてつながる最終層。ここに到達した者だけが、物語そのものを編集できる。",
+      "visualPrompt": "曼荼羅・幾何学・多層世界・透明の球体・光の線",
+      "themes": ["円観", "統合", "俯瞰", "再定義"],
+      "choices": [
+        { "text": "深度A（再誕）へ戻る", "target": "A" },
+        { "text": "深度Ωへ戻る", "target": "Ω" }
+      ]
     }
+
   ]
 }
