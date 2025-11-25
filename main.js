@@ -1,87 +1,64 @@
-// ===============================
-// Hazama Engine v1.1 (2025-11)
-// depths.json v1.1 対応 / Safari最適化
-// ===============================
+// main.js v1.1 — Hazama Engine (A_start → Ω loop) 
+// GitHub raw 読み込み / Safari・iOS キャッシュ完全無効化
 
-// GitHub RAW から常に最新を取得（キャッシュ禁止）
-const DEPTHS_URL =
-  "https://raw.githubusercontent.com/QuietBriony/hazama/master/depths.json";
-
-// 深度データ
 let depths = {};
-let currentDepthId = "A_start";   // v1.1 初期ノード
+let currentDepthId = "A_start";
 
-// -------------------------------
-// depths.json 読み込み
-// -------------------------------
+// GitHub Raw を常に最新取得（キャッシュ完全無効化）
 async function loadDepths() {
-  try {
-    const response = await fetch(DEPTHS_URL, {
-      method: "GET",
-      cache: "no-store",     // ← Safari / iOS キャッシュ回避
-      headers: {
-        "Content-Type": "application/json"
-      }
+    const url = "https://raw.githubusercontent.com/QuietBriony/hazama/master/depths.json";
+
+    const response = await fetch(url, {
+        method: "GET",
+        cache: "no-store",
+        headers: { "Cache-Control": "no-store" }
     });
 
-    if (!response.ok) {
-      throw new Error(`HTTP error: ${response.status}`);
+    if (!response.ok) throw new Error("depths.json 読み込み失敗");
+    depths = await response.json();
+}
+
+// 深度反映
+function renderDepth(id) {
+    const depth = depths[id];
+    if (!depth) {
+        document.getElementById("story").innerHTML = `<p>読み込みエラー：${id} が存在しません。</p>`;
+        document.getElementById("options").innerHTML = "";
+        return;
     }
 
-    depths = await response.json();
-    console.log("depths loaded:", depths);
+    currentDepthId = id;
 
-    renderDepth(currentDepthId);
+    // Story
+    document.getElementById("story").innerHTML = `
+        <h2>${depth.title}</h2>
+        <p>${depth.description}</p>
+    `;
 
-  } catch (error) {
-    console.error("Error loading depths:", error);
-    document.getElementById("story").innerText =
-      "深度データの読み込みに失敗しました。しばらくしてから再試行してください。";
-  }
+    // Options
+    const optionsDiv = document.getElementById("options");
+    optionsDiv.innerHTML = "";
+
+    if (!depth.options || depth.options.length === 0) {
+        const backButton = document.createElement("button");
+        backButton.textContent = "入口へ戻る";
+        backButton.onclick = () => renderDepth("A_start");
+        optionsDiv.appendChild(backButton);
+        return;
+    }
+
+    depth.options.forEach(opt => {
+        const btn = document.createElement("button");
+        btn.textContent = opt.text;
+        btn.onclick = () => renderDepth(opt.next);
+        optionsDiv.appendChild(btn);
+    });
 }
 
-// -------------------------------
-// 画面描画
-// -------------------------------
-function renderDepth(depthId) {
-  const depth = depths[depthId];
-  if (!depth) {
-    console.error("Unknown depth:", depthId);
-    return;
-  }
-
-  currentDepthId = depthId;
-
-  // --- 本文 ---
-  const storyElem = document.getElementById("story");
-  storyElem.innerHTML = `
-    <h2>${depth.title}</h2>
-    ${depth.story.map(line => `<p>${line}</p>`).join("")}
-  `;
-
-  // --- 選択肢 ---
-  const optionsElem = document.getElementById("options");
-  optionsElem.innerHTML = "";
-
-  // 選択肢が無い場合（A_reborn など）
-  if (!depth.options || depth.options.length === 0) {
-    const btn = document.createElement("button");
-    btn.textContent = "入口へ戻る（A_start）";
-    btn.onclick = () => renderDepth("A_start");
-    optionsElem.appendChild(btn);
-    return;
-  }
-
-  // 選択肢がある場合
-  depth.options.forEach(opt => {
-    const btn = document.createElement("button");
-    btn.textContent = opt.text;
-    btn.onclick = () => renderDepth(opt.next);
-    optionsElem.appendChild(btn);
-  });
+// 初期起動
+async function startHazama() {
+    await loadDepths();
+    renderDepth("A_start");
 }
 
-// -------------------------------
-// ページロード
-// -------------------------------
-window.addEventListener("load", loadDepths);
+startHazama();
