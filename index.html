@@ -6,14 +6,27 @@
   <title>Hazama — Depth Navigator</title>
   <link rel="stylesheet" href="style.css" />
 </head>
+
 <body>
   <div id="app">
-    <h1>Hazama / Depth Navigator</h1>
-    <div id="story"></div>
-    <div id="options"></div>
+    <header>
+      <h1>Hazama / Depth Navigator</h1>
+      <p id="depth-title"></p>
+      <p id="depth-description"></p>
+    </header>
+
+    <main>
+      <section id="story-container">
+        <div id="story"></div>
+      </section>
+
+      <section id="options-container">
+        <h2>選択肢</h2>
+        <div id="options"></div>
+      </section>
+    </main>
   </div>
 
-  <!-- vパラメータで main.js のキャッシュ破壊（軽め） -->
-  <script src="main.js?v=1"></script>
+  <script src="main.js"></script>
 </body>
 </html>
