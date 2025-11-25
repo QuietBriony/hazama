@@ -2,27 +2,21 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
-  <title>HAZAMA DEPTH DIVE v3</title>
+  <title>Hazama Engine v1</title>
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-<div id="app">
-  <h1>HAZAMA DEPTH DIVE v3</h1>
+  <div id="app">
+    <header>
+      <h1 id="depth-title"></h1>
+      <p id="depth-description"></p>
+    </header>
 
-  <div id="scene-area">
-    <div id="depth-title"></div>
-    <div id="depth-text"></div>
-    <div id="option-area"></div>
-    <div id="log-preview"></div>
+    <section id="story-container"></section>
+
+    <section id="options"></section>
   </div>
 
-  <div id="result-area" class="hidden">
-    <h2>深度ログ（Depth-Key）</h2>
-    <pre id="result-text"></pre>
-    <button id="retry-btn">もう一度潜る</button>
-  </div>
-
-</div>
-<script src="main.js"></script>
+  <script src="main.js"></script>
 </body>
 </html>
