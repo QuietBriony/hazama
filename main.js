@@ -1,101 +1,81 @@
-// ---------------------------------------------------------
-// Hazama Engine — main.js (GitHub版 v3 安定化)
-// ---------------------------------------------------------
+// ===============================
+// Hazama Engine v1.1 (2025-11)
+// depths.json v1.1 対応
+// ===============================
 
+// GitHub RAW から直接読み込む（cache no-store）
+const DEPTHS_URL =
+  "https://raw.githubusercontent.com/QuietBriony/hazama/master/depths.json";
+
+/** 深度データ保持 */
 let depths = {};
-let currentDepthId = "A";
+let currentDepthId = "A_start";   // v1.1 — 初期は A_start
 
-// ---------------------------------------------
-// 1) depths.json の安定ロード（相対パス固定）
-//   - GitHub Pages / ローカル / iPhone すべて対応
-// ---------------------------------------------
+/** GitHub raw から depths.json を取得 */
 async function loadDepths() {
   try {
-    const res = await fetch("./depths.json", {
-      cache: "no-cache"
+    const response = await fetch(DEPTHS_URL, {
+      method: "GET",
+      cache: "no-store", // ← Safari/iOS キャッシュ対策
+      headers: {
+        "Content-Type": "application/json"
+      }
     });
-    depths = await res.json();
-  } catch (e) {
-    console.error("depths.json の読み込みに失敗:", e);
+
+    if (!response.ok) {
+      throw new Error(`HTTP error: ${response.status}`);
+    }
+
+    depths = await response.json();
+    console.log("depths loaded:", depths);
+
+    // 初期表示
+    renderDepth(currentDepthId);
+  } catch (error) {
+    console.error("Error loading depths:", error);
+    document.getElementById("story").innerText =
+      "深度データの読み込みに失敗しました。少し待ってから再読み込みしてください。";
   }
 }
 
-// ---------------------------------------------
-// 2) UI の DOM 要素
-// ---------------------------------------------
-const titleEl = document.getElementById("depth-title");
-const descEl = document.getElementById("depth-description");
-const storyEl = document.getElementById("story");
-const optionsDiv = document.getElementById("options");
-
-// ---------------------------------------------
-// 3) 深度レンダリング
-// ---------------------------------------------
-function renderDepth(id) {
-  const depth = depths[id];
-
+/** 深度を画面に描画 */
+function renderDepth(depthId) {
+  const depth = depths[depthId];
   if (!depth) {
-    console.warn(`Unknown depth id: ${id}`);
+    console.error("Unknown depth:", depthId);
     return;
   }
 
-  currentDepthId = id;
+  currentDepthId = depthId;
 
-  titleEl.textContent = `${depth.id} — ${depth.title}`;
-  descEl.textContent = depth.description;
-  storyEl.innerHTML = "";
+  // タイトル・文章
+  const storyElem = document.getElementById("story");
+  storyElem.innerHTML = `
+    <h2>${depth.title}</h2>
+    ${depth.story.map(line => `<p>${line}</p>`).join("")}
+  `;
 
-  // ---------- Story 表示 ----------
-  depth.story.forEach(line => {
-    const p = document.createElement("p");
-    p.textContent = line;
-    storyEl.appendChild(p);
-  });
+  // 選択肢
+  const optionsElem = document.getElementById("options");
+  optionsElem.innerHTML = "";
 
-  // ---------- 選択肢 ----------
-  optionsDiv.innerHTML = "";
-
-  if (depth.options && depth.options.length > 0) {
-    depth.options.forEach(opt => {
-      const btn = document.createElement("button");
-      btn.className = "option-btn";
-      btn.textContent = opt.text;
-      btn.onclick = () => {
-        const next = opt.next;
-        if (next && depths[next]) {
-          renderDepth(next);
-        } else {
-          console.warn("Next depth not found:", next);
-        }
-      };
-      optionsDiv.appendChild(btn);
-    });
-  } else {
-    // ---------------------------------------------
-    // 4) 選択肢が無い深度の処理
-    //    → auto-next が定義されていれば自動遷移
-    // ---------------------------------------------
-    if (depth.next && depths[depth.next]) {
-      renderDepth(depth.next);
-      return;
-    }
-
-    // 何も無ければメッセージ表示
-    const p = document.createElement("p");
-    p.textContent = "この深度には選択肢がありません。";
-    optionsDiv.appendChild(p);
+  // options がない（A_reborn 等）場合のハンドリング
+  if (!depth.options || depth.options.length === 0) {
+    const btn = document.createElement("button");
+    btn.textContent = "入口へ戻る（A_start）";
+    btn.onclick = () => renderDepth("A_start");
+    optionsElem.appendChild(btn);
+    return;
   }
+
+  // options がある場合
+  depth.options.forEach(opt => {
+    const btn = document.createElement("button");
+    btn.textContent = opt.text;
+    btn.onclick = () => renderDepth(opt.next);
+    optionsElem.appendChild(btn);
+  });
 }
 
-// ---------------------------------------------
-// 5) 初期化
-// ---------------------------------------------
-(async function init() {
-  await loadDepths();
-
-  // JSONの最初のキーを自動起点に
-  const firstKey = Object.keys(depths)[0];
-  if (firstKey) currentDepthId = firstKey;
-
-  renderDepth(currentDepthId);
-})();
+// ページロード時、depths を読み込む
+window.addEventListener("load", loadDepths);
