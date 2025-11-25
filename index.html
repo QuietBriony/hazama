@@ -2,30 +2,29 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Hazama — Depth Navigator</title>
+  <title>Hazama / Depth Navigator</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <link rel="stylesheet" href="style.css" />
 </head>
-
 <body>
-  <div id="app">
-    <header>
-      <h1>Hazama / Depth Navigator</h1>
-      <p id="depth-title"></p>
-      <p id="depth-description"></p>
+  <main id="app">
+    <header class="hz-header">
+      <h1 class="hz-title">Hazama / Depth Navigator</h1>
+      <p class="hz-subtitle">選択肢を辿って深度を移動します。</p>
     </header>
 
-    <main>
-      <section id="story-container">
-        <div id="story"></div>
-      </section>
+    <section id="story" class="hz-story">
+      深度データを読み込み中…
+    </section>
 
-      <section id="options-container">
-        <h2>選択肢</h2>
-        <div id="options"></div>
-      </section>
-    </main>
-  </div>
+    <section id="options" class="hz-options">
+      <!-- 選択肢ボタンは main.js から自動で追加されます -->
+    </section>
+  </main>
+
+  <footer class="hz-footer">
+    <small>GitHub Raw depths.json をリアルタイム読込中（Hazama main.js v1.4）</small>
+  </footer>
 
   <script src="main.js"></script>
 </body>
