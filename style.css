@@ -19,12 +19,17 @@ h1 {
   opacity: 0.85;
 }
 
-#story {
-  margin-bottom: 24px;
-  white-space: pre-wrap;
+h2 {
+  font-size: 1.2rem;
+  margin-bottom: 8px;
+}
+
+#story p {
+  margin: 0 0 12px;
 }
 
 #options {
+  margin-top: 24px;
   display: flex;
   flex-direction: column;
   gap: 12px;
