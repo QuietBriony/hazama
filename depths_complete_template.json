@@ -1,0 +1,498 @@
+{
+  "depths": [
+    {
+      "id": "A",
+      "text": {
+        "jp": "深度A — 物語テキスト（後で編集）。",
+        "en": "Depth A — narrative text (to be edited)."
+      },
+      "options": [
+        {
+          "label": {
+            "jp": "進む",
+            "en": "Proceed"
+          },
+          "effect": {
+            "body": 0.0
+          },
+          "next": "B"
+        }
+      ]
+    },
+    {
+      "id": "B",
+      "text": {
+        "jp": "深度B — 物語テキスト（後で編集）。",
+        "en": "Depth B — narrative text (to be edited)."
+      },
+      "options": [
+        {
+          "label": {
+            "jp": "進む",
+            "en": "Proceed"
+          },
+          "effect": {
+            "body": 0.0
+          },
+          "next": "C"
+        }
+      ]
+    },
+    {
+      "id": "C",
+      "text": {
+        "jp": "深度C — 物語テキスト（後で編集）。",
+        "en": "Depth C — narrative text (to be edited)."
+      },
+      "options": [
+        {
+          "label": {
+            "jp": "進む",
+            "en": "Proceed"
+          },
+          "effect": {
+            "body": 0.0
+          },
+          "next": "D"
+        }
+      ]
+    },
+    {
+      "id": "D",
+      "text": {
+        "jp": "深度D — 物語テキスト（後で編集）。",
+        "en": "Depth D — narrative text (to be edited)."
+      },
+      "options": [
+        {
+          "label": {
+            "jp": "進む",
+            "en": "Proceed"
+          },
+          "effect": {
+            "body": 0.0
+          },
+          "next": "E"
+        }
+      ]
+    },
+    {
+      "id": "E",
+      "text": {
+        "jp": "深度E — 物語テキスト（後で編集）。",
+        "en": "Depth E — narrative text (to be edited)."
+      },
+      "options": [
+        {
+          "label": {
+            "jp": "進む",
+            "en": "Proceed"
+          },
+          "effect": {
+            "body": 0.0
+          },
+          "next": "F"
+        }
+      ]
+    },
+    {
+      "id": "F",
+      "text": {
+        "jp": "深度F — 物語テキスト（後で編集）。",
+        "en": "Depth F — narrative text (to be edited)."
+      },
+      "options": [
+        {
+          "label": {
+            "jp": "進む",
+            "en": "Proceed"
+          },
+          "effect": {
+            "body": 0.0
+          },
+          "next": "G"
+        }
+      ]
+    },
+    {
+      "id": "G",
+      "text": {
+        "jp": "深度G — 物語テキスト（後で編集）。",
+        "en": "Depth G — narrative text (to be edited)."
+      },
+      "options": [
+        {
+          "label": {
+            "jp": "進む",
+            "en": "Proceed"
+          },
+          "effect": {
+            "body": 0.0
+          },
+          "next": "H"
+        }
+      ]
+    },
+    {
+      "id": "H",
+      "text": {
+        "jp": "深度H — 物語テキスト（後で編集）。",
+        "en": "Depth H — narrative text (to be edited)."
+      },
+      "options": [
+        {
+          "label": {
+            "jp": "進む",
+            "en": "Proceed"
+          },
+          "effect": {
+            "body": 0.0
+          },
+          "next": "I"
+        }
+      ]
+    },
+    {
+      "id": "I",
+      "text": {
+        "jp": "深度I — 物語テキスト（後で編集）。",
+        "en": "Depth I — narrative text (to be edited)."
+      },
+      "options": [
+        {
+          "label": {
+            "jp": "進む",
+            "en": "Proceed"
+          },
+          "effect": {
+            "body": 0.0
+          },
+          "next": "J"
+        }
+      ]
+    },
+    {
+      "id": "J",
+      "text": {
+        "jp": "深度J — 物語テキスト（後で編集）。",
+        "en": "Depth J — narrative text (to be edited)."
+      },
+      "options": [
+        {
+          "label": {
+            "jp": "進む",
+            "en": "Proceed"
+          },
+          "effect": {
+            "body": 0.0
+          },
+          "next": "K"
+        }
+      ]
+    },
+    {
+      "id": "K",
+      "text": {
+        "jp": "深度K — 物語テキスト（後で編集）。",
+        "en": "Depth K — narrative text (to be edited)."
+      },
+      "options": [
+        {
+          "label": {
+            "jp": "進む",
+            "en": "Proceed"
+          },
+          "effect": {
+            "body": 0.0
+          },
+          "next": "L"
+        }
+      ]
+    },
+    {
+      "id": "L",
+      "text": {
+        "jp": "深度L — 物語テキスト（後で編集）。",
+        "en": "Depth L — narrative text (to be edited)."
+      },
+      "options": [
+        {
+          "label": {
+            "jp": "進む",
+            "en": "Proceed"
+          },
+          "effect": {
+            "body": 0.0
+          },
+          "next": "M"
+        }
+      ]
+    },
+    {
+      "id": "M",
+      "text": {
+        "jp": "深度M — 物語テキスト（後で編集）。",
+        "en": "Depth M — narrative text (to be edited)."
+      },
+      "options": [
+        {
+          "label": {
+            "jp": "進む",
+            "en": "Proceed"
+          },
+          "effect": {
+            "body": 0.0
+          },
+          "next": "N"
+        }
+      ]
+    },
+    {
+      "id": "N",
+      "text": {
+        "jp": "深度N — 物語テキスト（後で編集）。",
+        "en": "Depth N — narrative text (to be edited)."
+      },
+      "options": [
+        {
+          "label": {
+            "jp": "進む",
+            "en": "Proceed"
+          },
+          "effect": {
+            "body": 0.0
+          },
+          "next": "O"
+        }
+      ]
+    },
+    {
+      "id": "O",
+      "text": {
+        "jp": "深度O — 物語テキスト（後で編集）。",
+        "en": "Depth O — narrative text (to be edited)."
+      },
+      "options": [
+        {
+          "label": {
+            "jp": "進む",
+            "en": "Proceed"
+          },
+          "effect": {
+            "body": 0.0
+          },
+          "next": "P"
+        }
+      ]
+    },
+    {
+      "id": "P",
+      "text": {
+        "jp": "深度P — 物語テキスト（後で編集）。",
+        "en": "Depth P — narrative text (to be edited)."
+      },
+      "options": [
+        {
+          "label": {
+            "jp": "進む",
+            "en": "Proceed"
+          },
+          "effect": {
+            "body": 0.0
+          },
+          "next": "Q"
+        }
+      ]
+    },
+    {
+      "id": "Q",
+      "text": {
+        "jp": "深度Q — 物語テキスト（後で編集）。",
+        "en": "Depth Q — narrative text (to be edited)."
+      },
+      "options": [
+        {
+          "label": {
+            "jp": "進む",
+            "en": "Proceed"
+          },
+          "effect": {
+            "body": 0.0
+          },
+          "next": "R"
+        }
+      ]
+    },
+    {
+      "id": "R",
+      "text": {
+        "jp": "深度R — 物語テキスト（後で編集）。",
+        "en": "Depth R — narrative text (to be edited)."
+      },
+      "options": [
+        {
+          "label": {
+            "jp": "進む",
+            "en": "Proceed"
+          },
+          "effect": {
+            "body": 0.0
+          },
+          "next": "S"
+        }
+      ]
+    },
+    {
+      "id": "S",
+      "text": {
+        "jp": "深度S — 物語テキスト（後で編集）。",
+        "en": "Depth S — narrative text (to be edited)."
+      },
+      "options": [
+        {
+          "label": {
+            "jp": "進む",
+            "en": "Proceed"
+          },
+          "effect": {
+            "body": 0.0
+          },
+          "next": "T"
+        }
+      ]
+    },
+    {
+      "id": "T",
+      "text": {
+        "jp": "深度T — 物語テキスト（後で編集）。",
+        "en": "Depth T — narrative text (to be edited)."
+      },
+      "options": [
+        {
+          "label": {
+            "jp": "進む",
+            "en": "Proceed"
+          },
+          "effect": {
+            "body": 0.0
+          },
+          "next": "U"
+        }
+      ]
+    },
+    {
+      "id": "U",
+      "text": {
+        "jp": "深度U — 物語テキスト（後で編集）。",
+        "en": "Depth U — narrative text (to be edited)."
+      },
+      "options": [
+        {
+          "label": {
+            "jp": "進む",
+            "en": "Proceed"
+          },
+          "effect": {
+            "body": 0.0
+          },
+          "next": "V"
+        }
+      ]
+    },
+    {
+      "id": "V",
+      "text": {
+        "jp": "深度V — 物語テキスト（後で編集）。",
+        "en": "Depth V — narrative text (to be edited)."
+      },
+      "options": [
+        {
+          "label": {
+            "jp": "進む",
+            "en": "Proceed"
+          },
+          "effect": {
+            "body": 0.0
+          },
+          "next": "W"
+        }
+      ]
+    },
+    {
+      "id": "W",
+      "text": {
+        "jp": "深度W — 物語テキスト（後で編集）。",
+        "en": "Depth W — narrative text (to be edited)."
+      },
+      "options": [
+        {
+          "label": {
+            "jp": "進む",
+            "en": "Proceed"
+          },
+          "effect": {
+            "body": 0.0
+          },
+          "next": "X"
+        }
+      ]
+    },
+    {
+      "id": "X",
+      "text": {
+        "jp": "深度X — 物語テキスト（後で編集）。",
+        "en": "Depth X — narrative text (to be edited)."
+      },
+      "options": [
+        {
+          "label": {
+            "jp": "進む",
+            "en": "Proceed"
+          },
+          "effect": {
+            "body": 0.0
+          },
+          "next": "Y"
+        }
+      ]
+    },
+    {
+      "id": "Y",
+      "text": {
+        "jp": "深度Y — 物語テキスト（後で編集）。",
+        "en": "Depth Y — narrative text (to be edited)."
+      },
+      "options": [
+        {
+          "label": {
+            "jp": "進む",
+            "en": "Proceed"
+          },
+          "effect": {
+            "body": 0.0
+          },
+          "next": "Z"
+        }
+      ]
+    },
+    {
+      "id": "Z",
+      "text": {
+        "jp": "深度Z — 物語テキスト（後で編集）。",
+        "en": "Depth Z — narrative text (to be edited)."
+      },
+      "options": [
+        {
+          "label": {
+            "jp": "進む",
+            "en": "Proceed"
+          },
+          "effect": {
+            "body": 0.0
+          },
+          "next": null
+        }
+      ]
+    }
+  ]
+}
