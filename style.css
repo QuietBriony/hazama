@@ -16,15 +16,15 @@ body {
 h1 {
   font-size: 1.4rem;
   margin-bottom: 16px;
-  opacity: 0.8;
+  opacity: 0.85;
 }
 
-#story p {
-  margin: 0 0 12px;
+#story {
+  margin-bottom: 24px;
+  white-space: pre-wrap;
 }
 
 #options {
-  margin-top: 24px;
   display: flex;
   flex-direction: column;
   gap: 12px;
