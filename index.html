@@ -1,22 +1,28 @@
 <!DOCTYPE html>
 <html lang="ja">
-<head>
-  <meta charset="UTF-8">
-  <title>Hazama Engine v1</title>
-  <link rel="stylesheet" href="styles.css">
-</head>
-<body>
-  <div id="app">
-    <header>
-      <h1 id="depth-title"></h1>
-      <p id="depth-description"></p>
-    </header>
-
-    <section id="story-container"></section>
-
-    <section id="options"></section>
-  </div>
-
-  <script src="main.js"></script>
-</body>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>hazama - Depth Navigator</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <div id="app">
+      <header>
+        <h1>hazama: Depth Navigator</h1>
+        <p id="depth-title">深度タイトルがここに表示されます</p>
+        <p id="depth-description">深度の説明がここに表示されます</p>
+      </header>
+      <main>
+        <section id="story-container">
+          <div id="story"></div>
+        </section>
+        <section id="options-container">
+          <h2>選択肢</h2>
+          <div id="options"></div>
+        </section>
+      </main>
+    </div>
+    <script src="main.js"></script>
+  </body>
 </html>
