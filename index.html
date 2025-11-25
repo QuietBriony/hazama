@@ -1,28 +1,45 @@
 <!DOCTYPE html>
 <html lang="ja">
-  <head>
+<head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>hazama - Depth Navigator</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Hazama — Depth Navigator</title>
     <link rel="stylesheet" href="style.css" />
-  </head>
-  <body>
+</head>
+
+<body>
     <div id="app">
-      <header>
-        <h1>hazama: Depth Navigator</h1>
-        <p id="depth-title">深度タイトルがここに表示されます</p>
-        <p id="depth-description">深度の説明がここに表示されます</p>
-      </header>
-      <main>
-        <section id="story-container">
-          <div id="story"></div>
-        </section>
-        <section id="options-container">
-          <h2>選択肢</h2>
-          <div id="options"></div>
-        </section>
-      </main>
+        <!-- タイトル -->
+        <header>
+            <h1>Hazama — Depth Navigator</h1>
+        </header>
+
+        <!-- メイン表示領域 -->
+        <main>
+            <!-- 深度タイトル -->
+            <h2 id="depth-title"></h2>
+
+            <!-- 深度説明 -->
+            <p id="depth-description"></p>
+
+            <!-- 深度本文（story） -->
+            <div id="story-container">
+                <div id="story"></div>
+            </div>
+
+            <!-- 選択肢リスト -->
+            <div id="options-container">
+                <div id="options"></div>
+            </div>
+        </main>
+
+        <!-- フッター -->
+        <footer>
+            <p class="footnote">© 2025 Hazama Project</p>
+        </footer>
     </div>
-    <script src="main.js"></script>
-  </body>
+
+    <!-- スクリプト（main.js） -->
+    <script src="main.js" defer></script>
+</body>
 </html>
