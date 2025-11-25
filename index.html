@@ -1,45 +1,20 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Hazama — Depth Navigator</title>
-    <link rel="stylesheet" href="style.css" />
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hazama Depth Navigator</title>
+    <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
     <div id="app">
-        <!-- タイトル -->
-        <header>
-            <h1>Hazama — Depth Navigator</h1>
-        </header>
-
-        <!-- メイン表示領域 -->
-        <main>
-            <!-- 深度タイトル -->
-            <h2 id="depth-title"></h2>
-
-            <!-- 深度説明 -->
-            <p id="depth-description"></p>
-
-            <!-- 深度本文（story） -->
-            <div id="story-container">
-                <div id="story"></div>
-            </div>
-
-            <!-- 選択肢リスト -->
-            <div id="options-container">
-                <div id="options"></div>
-            </div>
-        </main>
-
-        <!-- フッター -->
-        <footer>
-            <p class="footnote">© 2025 Hazama Project</p>
-        </footer>
+        <h1>Hazama / Depth Navigator</h1>
+        <div id="story"></div>
+        <div id="options"></div>
+        <button id="restart" style="display:none;">Restart</button>
     </div>
 
-    <!-- スクリプト（main.js） -->
-    <script src="main.js" defer></script>
+    <script src="main.js"></script>
 </body>
 </html>
