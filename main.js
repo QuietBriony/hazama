@@ -50,18 +50,26 @@ function renderDepth(id) {
   const optionsElem = document.getElementById("options");
 
   const title = depth.title || "";
-  const description = depth.description || "";
-  const storyLines = Array.isArray(depth.story)
-    ? depth.story
-    : typeof depth.story === "string"
-    ? [depth.story]
-    : [];
+const description = depth.description || "";
+const storyLines = Array.isArray(depth.story)
+  ? depth.story
+  : typeof depth.story === "string"
+  ? [depth.story]
+  : [];
 
-  storyElem.innerHTML = `
-    <h2>${title}</h2>
-    ${description ? `<p class="description">${description}</p>` : ""}
-    ${storyLines.map(line => `<p>${line}</p>`).join("")}
-  `;
+// DOM 存在チェック（将来 index.html いじっても即クラッシュしないように）
+const storyElem = document.getElementById("story");
+const optionsElem = document.getElementById("options");
+if (!storyElem || !optionsElem) {
+  console.error("#story または #options が見つかりません。index.html を確認してください。");
+  return;
+}
+
+storyElem.innerHTML = `
+  <h2>${title}</h2>
+  ${description ? `<p class="description">${description}</p>` : ""}
+  ${storyLines.map(line => `<p>${line}</p>`).join("")}
+`;
 
   optionsElem.innerHTML = "";
 
