@@ -4,6 +4,8 @@
 const APP_VERSION = "v2.1";
 
 function buildDepthsURL() {
+
+function buildDepthsURL() {
 // Hazama main.js v2.0
 // v0.1 core loop: 問い表示 → 入力 → ズラし返答 → 無音待機 → 次深度
 
@@ -74,6 +76,20 @@ window.addEventListener("unhandledrejection", (event) => {
 function syncFooterStatus() {
   const footer = document.querySelector(".hz-footer");
   if (!footer) return;
+
+  let status = footer.querySelector("#runtime-status");
+  if (!status) {
+    status = document.createElement("small");
+    status.id = "runtime-status";
+    footer.innerHTML = "";
+    footer.appendChild(status);
+  }
+
+  status.textContent = `ローカル hazama-depths.json を読込中（Hazama main.js ${APP_VERSION}）`;
+
+  const extras = footer.querySelectorAll("small:not(#runtime-status)");
+  extras.forEach((node) => node.remove());
+}
 
   let status = footer.querySelector("#runtime-status");
   if (!status) {
@@ -230,6 +246,30 @@ function createControlButton(label, onClick, disabled = false) {
   btn.onclick = onClick;
   return btn;
 }
+
+function setOptionButtonsDisabled(disabled) {
+  const optionButtons = document.querySelectorAll(".hz-option-btn");
+  optionButtons.forEach((btn) => {
+    btn.disabled = disabled;
+  });
+}
+
+function renderControls(optionsElem) {
+  const controlsWrap = document.createElement("div");
+  controlsWrap.className = "hz-controls";
+
+  const backBtn = createControlButton(
+    "戻る",
+    () => {
+      if (depthHistory.length === 0) return;
+      stopRequested = false;
+      clearPendingTimer();
+      if (activeLoopCleanup) activeLoopCleanup();
+      const prevDepth = depthHistory.pop();
+      renderDepth(prevDepth, { pushHistory: false });
+    },
+    depthHistory.length === 0
+  );
 
 
 function clearPendingTimer() {

@@ -63,6 +63,22 @@ python -m http.server 8080
 - つまり、実装とローカル確認はオフライン寄りで進められます。
 
 
+
+## 起動処理の安定確認（まずこれを実行）
+
+「深度データ読み込み中…」で止まるときは、次のスモークチェックを先に実行してください。
+
+```bash
+./scripts/startup-smoke.sh
+```
+
+通過条件:
+- `index.html` が `hazama-main.js?v=2.1` を参照している
+- `hazama-main.js` が `v2.1` で配信される
+- `hazama-depths.json` に `A_start` が存在する
+
+失敗した場合は、ブラウザで `Shift + Reload`（ハードリロード）後に再試行してください。
+
 ## GitHub Pages が Deployed になった後にやること
 
 `https://quietbriony.github.io/hazama/` が **Deployed (completed)** なら、公開自体は成功です。
