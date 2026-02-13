@@ -102,6 +102,13 @@ python -m http.server 8080
   - 3〜5秒の無音/停止
   - 次深度へ遷移
   - いつでも停止/戻るボタン
+
+
+### Issue 作成テンプレート（そのまま使う）
+
+GitHub の `New issue` で `v0.1 core loop` テンプレートを選ぶと、必要な DoD を埋めた状態で開始できます。
+
+- `.github/ISSUE_TEMPLATE/v0-1-core-loop.md`
 表示されたローカル URL にアクセスし、`/hazama-index.html` を開きます。
 
 ## 推奨開発フロー
