@@ -1,3 +1,9 @@
+// Hazama main.js v2.1
+// v0.1 core loop: 問い表示 → 入力 → ズラし返答 → 無音待機 → 次深度
+
+const APP_VERSION = "v2.1";
+
+function buildDepthsURL() {
 // Hazama main.js v2.0
 // v0.1 core loop: 問い表示 → 入力 → ズラし返答 → 無音待機 → 次深度
 
@@ -64,6 +70,24 @@ window.addEventListener("unhandledrejection", (event) => {
   showFatalStartupError(msg);
 });
 
+
+function syncFooterStatus() {
+  const footer = document.querySelector(".hz-footer");
+  if (!footer) return;
+
+  let status = footer.querySelector("#runtime-status");
+  if (!status) {
+    status = document.createElement("small");
+    status.id = "runtime-status";
+    footer.innerHTML = "";
+    footer.appendChild(status);
+  }
+
+  status.textContent = `ローカル hazama-depths.json を読込中（Hazama main.js ${APP_VERSION}）`;
+
+  const extras = footer.querySelectorAll("small:not(#runtime-status)");
+  extras.forEach((node) => node.remove());
+}
 function scheduleLoadingWatchdog() {
   clearTimeout(loadingWatchdogId);
   loadingWatchdogId = window.setTimeout(() => {
@@ -283,6 +307,26 @@ function renderControls(optionsElem) {
     },
     depthHistory.length === 0
   );
+
+  const stopBtn = createControlButton(stopRequested ? "停止中" : "停止", () => {
+    stopRequested = true;
+    clearPendingTimer();
+    if (activeLoopCleanup) activeLoopCleanup();
+    setOptionButtonsDisabled(false);
+    const storyElem = document.getElementById("story");
+    if (storyElem) {
+      storyElem.insertAdjacentHTML(
+        "beforeend",
+        `<p class="hz-status">⏸ 進行を停止しました。再開するには選択肢を押してください。</p>`
+      );
+    }
+  });
+
+  controlsWrap.appendChild(backBtn);
+  controlsWrap.appendChild(stopBtn);
+  optionsElem.appendChild(controlsWrap);
+}
+
   const backBtn = createControlButton("戻る", () => {
     if (depthHistory.length === 0) return;
     stopRequested = false;
@@ -595,6 +639,7 @@ async function loadDepths() {
 function bootstrapApp() {
   if (hasBootstrapped) return;
   hasBootstrapped = true;
+  syncFooterStatus();
   scheduleLoadingWatchdog();
   loadDepths();
 }
