@@ -1,7 +1,10 @@
 // Hazama main.js v1.6
 // v0.1 core loop: 問い表示 → 入力 → ズラし返答 → 無音待機 → 次深度
+// Hazama main.js v1.5
+// ローカルJSON読込 + キャッシュ回避 + 安全一式
 
 function buildDepthsURL() {
+  // ローカル配置の深度データを参照
   const base = "./hazama-depths.json";
   return `${base}?t=${Date.now()}&rnd=${Math.random()}`;
 }
