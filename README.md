@@ -174,3 +174,30 @@ python -m http.server 8080
 その場合は `http://127.0.0.1:8080/hazama-index.html` を開きます。
 
 - VS Code Dev Container / リモート環境 / Codex 環境では、`localhost` が「あなたのPC」ではなく「リモート側」を指すことがあります。ポートフォワード機能で公開された URL を使ってください。
+
+
+## PRを表示したのに「Merge」が出ないとき
+
+以下のどれかが原因です。上から順に確認してください。
+
+1. **すでにマージ済み**
+   - PR画面に `Merged` と表示されていれば作業完了です。
+
+2. **あなたの権限でマージできない**
+   - リポジトリ権限が `Write` 未満だとマージボタンが出ません。
+   - 管理者にマージ依頼するか、権限付与を依頼します。
+
+3. **Branch rules で必須チェック未通過**
+   - `Require a pull request before merging` / `Require status checks` が有効だと、
+     チェック完了までマージ不可です。
+   - PRの `Checks` タブで失敗ジョブを確認します。
+
+4. **コンフリクトがある**
+   - `This branch has conflicts` が出ている場合は、ブランチを更新して再pushします。
+
+### いま次にやること（最短）
+
+- PRが `Merged` なら次タスクへ進む
+- PRが `Open` なら `Checks` と `Conversation` の指摘を解消
+- その後、次は `feat: hazama codex v0.1 core loop` を1PRで実装
+
