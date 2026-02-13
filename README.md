@@ -61,6 +61,47 @@ python -m http.server 8080
 - **GitHubにPRを作るときだけ必要**です（push/PR API通信）。
 - つまり、実装とローカル確認はオフライン寄りで進められます。
 
+
+## GitHub Pages が Deployed になった後にやること
+
+`https://quietbriony.github.io/hazama/` が **Deployed (completed)** なら、公開自体は成功です。
+次は以下の順で進めると迷いません。
+
+1. 公開URLで表示確認
+   - `https://quietbriony.github.io/hazama/`
+   - タイトル表示、本文表示、選択肢ボタン遷移を1周確認
+
+2. 変更を入れる前に「1つだけ」Issueを作る
+   - 例: `feat: hazama codex v0.1 core loop`
+   - DoDを3〜5行で固定（PRの判断基準になる）
+
+3. ブランチを切って小さく実装
+   - 1PR=1目的（docs修正と機能追加を混ぜない）
+   - 例: `feat/v0-1-core-loop`
+
+4. ローカル確認 → PR作成 → Pages反映確認
+   - ローカル: `python -m http.server 8000` で `/` を確認
+   - PRマージ後: Actions の `pages-build-deployment` が completed になるのを待つ
+   - 再度公開URLを開いて反映確認
+
+## デプロイ画面の見方（要点）
+
+- **Active / Deployed (completed)**: 公開成功
+- **Failed**: ビルドエラー。Actionsログを確認
+- **古い表示のまま**: ブラウザキャッシュの可能性（再読み込み / シークレットウィンドウ）
+
+## 次の具体タスク（推奨）
+
+最短で進めるなら次はこれです。
+
+- `feat: hazama codex v0.1 core loop`
+  - 問い表示
+  - ユーザー入力
+  - 入力を少しズラして返答
+  - 3〜5秒の無音/停止
+  - 次深度へ遷移
+  - いつでも停止/戻るボタン
+
 ## 推奨開発フロー
 
 1. ブランチを作成する
