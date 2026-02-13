@@ -20,6 +20,7 @@ python -m http.server 8000
 ```
 
 ブラウザで `http://127.0.0.1:8000/` を開きます（`index.html` を追加済み）。
+ブラウザで `http://localhost:8000/hazama-index.html` を開きます。
 
 ### Node.js を使う場合
 
@@ -101,6 +102,7 @@ python -m http.server 8080
   - 3〜5秒の無音/停止
   - 次深度へ遷移
   - いつでも停止/戻るボタン
+表示されたローカル URL にアクセスし、`/hazama-index.html` を開きます。
 
 ## 推奨開発フロー
 
