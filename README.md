@@ -20,6 +20,7 @@ python -m http.server 8000
 ```
 
 ブラウザで `http://127.0.0.1:8000/` を開きます（`index.html` を追加済み）。
+ブラウザで `http://localhost:8000/hazama-index.html` を開きます。
 
 ### Node.js を使う場合
 
@@ -124,6 +125,7 @@ python -m http.server 8080
 GitHub の `New issue` で `v0.1 core loop` テンプレートを選ぶと、必要な DoD を埋めた状態で開始できます。
 
 - `.github/ISSUE_TEMPLATE/v0-1-core-loop.md`
+表示されたローカル URL にアクセスし、`/hazama-index.html` を開きます。
 
 ## 推奨開発フロー
 
