@@ -2,6 +2,21 @@
 // v0.1 core loop: 問い表示 → 入力 → ズラし返答 → 無音待機 → 次深度
 
 function buildDepthsURL() {
+// Hazama main.js v1.8
+// v0.1 core loop: 問い表示 → 入力 → ズラし返答 → 無音待機 → 次深度
+
+function buildDepthsURL() {
+// Hazama main.js v1.7
+// v0.1 core loop: 問い表示 → 入力 → ズラし返答 → 無音待機 → 次深度
+
+function buildDepthsURL() {
+// Hazama main.js v1.6
+// v0.1 core loop: 問い表示 → 入力 → ズラし返答 → 無音待機 → 次深度
+// Hazama main.js v1.5
+// ローカルJSON読込 + キャッシュ回避 + 安全一式
+
+function buildDepthsURL() {
+  // ローカル配置の深度データを参照
   const base = "./hazama-depths.json";
   return `${base}?t=${Date.now()}&rnd=${Math.random()}`;
 }
@@ -99,6 +114,59 @@ function createControlButton(label, onClick, disabled = false) {
   return btn;
 }
 
+
+function clearPendingTimer() {
+  if (pendingTimerId) {
+    clearTimeout(pendingTimerId);
+    pendingTimerId = null;
+  }
+}
+
+function escapeHtml(value) {
+  return String(value)
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#39;");
+}
+
+function shiftInput(text) {
+  const trimmed = (text || "").trim();
+  if (!trimmed) return "まだ言葉になっていない気配が、境界でゆらいでいる。";
+
+  const replacements = [
+    ["私", "わたしの影"],
+    ["僕", "ぼくの残響"],
+    ["あなた", "境界のあなた"],
+    ["いま", "いま/まだ"],
+    ["ここ", "こことその外"],
+    ["進", "にじむように進"]
+  ];
+
+  let shifted = trimmed;
+  for (const [from, to] of replacements) {
+    shifted = shifted.replace(from, to);
+  }
+
+  if (shifted === trimmed) {
+    shifted = `${trimmed}、と告げた声が半拍遅れて追いついてくる。`;
+  } else {
+    shifted = `${shifted}。`;
+    shifted = `${shifted}。`; 
+  }
+
+  return shifted;
+}
+
+function createControlButton(label, onClick, disabled = false) {
+  const btn = document.createElement("button");
+  btn.textContent = label;
+  btn.disabled = disabled;
+  btn.onclick = onClick;
+  return btn;
+}
+
 function setOptionButtonsDisabled(disabled) {
   const optionButtons = document.querySelectorAll(".hz-option-btn");
   optionButtons.forEach((btn) => {
@@ -122,6 +190,13 @@ function renderControls(optionsElem) {
     },
     depthHistory.length === 0
   );
+  const backBtn = createControlButton("戻る", () => {
+    if (depthHistory.length === 0) return;
+    stopRequested = false;
+    clearPendingTimer();
+    const prevDepth = depthHistory.pop();
+    renderDepth(prevDepth, { pushHistory: false });
+  }, depthHistory.length === 0);
 
   const stopBtn = createControlButton(stopRequested ? "停止中" : "停止", () => {
     stopRequested = true;
@@ -183,6 +258,9 @@ function renderDepth(depthId, config = { pushHistory: true }) {
     const homeBtn = createControlButton("入口へ戻る（A_start）", () => renderDepth("A_start"));
     homeBtn.className = "hz-option-btn";
     optionsElem.appendChild(homeBtn);
+    optionsElem.appendChild(
+      createControlButton("入口へ戻る（A_start）", () => renderDepth("A_start"))
+    );
     return;
   }
 
@@ -204,6 +282,9 @@ function beginCoreLoop(option) {
   stopRequested = false;
   isLoopActive = true;
   setOptionButtonsDisabled(true);
+  if (!storyElem || !optionsElem) return;
+
+  stopRequested = false;
 
   const question = option.text || "この深度で、あなたは何を選ぶ？";
   storyElem.insertAdjacentHTML(
@@ -223,10 +304,16 @@ function beginCoreLoop(option) {
   hint.textContent = "※ 連続タップ防止のため、この段階では他の選択肢は一時停止しています。";
 
   optionsElem.prepend(hint);
+    <input id="loopInput" type="text" placeholder="ここに入力" maxlength="200" />
+    <button id="loopSubmit">返答する</button>
+    <button id="loopCancel">停止</button>
+  `;
+
   optionsElem.prepend(loopBox);
 
   const input = loopBox.querySelector("#loopInput");
   const submit = loopBox.querySelector("#loopSubmit");
+  const cancel = loopBox.querySelector("#loopCancel");
 
   if (input) input.focus();
 
@@ -237,6 +324,8 @@ function beginCoreLoop(option) {
   };
 
   activeLoopCleanup = cleanup;
+
+  };
 
   const runTransition = () => {
     const userText = input ? input.value : "";
@@ -270,6 +359,15 @@ function beginCoreLoop(option) {
       submit.disabled = true;
       cleanup();
       runTransition();
+    };
+  }
+
+  if (cancel) {
+    cancel.onclick = () => {
+      stopRequested = true;
+      clearPendingTimer();
+      cleanup();
+      storyElem.insertAdjacentHTML("beforeend", `<p class="hz-status">⏸ 入力段階で停止しました。</p>`);
     };
   }
 
@@ -325,6 +423,25 @@ async function loadDepths() {
       throw lastError || new Error("depth data is empty");
     }
 
+async function loadDepths() {
+  const storyElem = document.getElementById("story");
+
+  try {
+    const response = await fetch(buildDepthsURL(), {
+      method: "GET",
+      cache: "no-store",
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/json"
+      }
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error: ${response.status}`);
+    }
+
+    depths = await response.json();
+
     if (!depths[currentDepthId]) {
       const keys = Object.keys(depths);
       currentDepthId = depths.A_start ? "A_start" : keys[0];
@@ -336,6 +453,9 @@ async function loadDepths() {
     console.error("Error loading depths:", error);
     if (storyElem) {
       clearLoadingWatchdog();
+  } catch (error) {
+    console.error("Error loading depths:", error);
+    if (storyElem) {
       storyElem.innerHTML = `
         <p>深度データの読み込みに失敗しました。待っても自動復旧しないため、再読み込みを試してください。</p>
         <p class="hz-status">確認: HTTPサーバ起動 / URLが <code>/hazama/</code> 末尾か / キャッシュ更新</p>
@@ -362,3 +482,9 @@ function bootstrapApp() {
 
 window.addEventListener("DOMContentLoaded", bootstrapApp);
 window.addEventListener("load", bootstrapApp);
+      storyElem.innerText = "深度データの読み込みに失敗しました。時間をおいて再試行してください。";
+    }
+  }
+}
+
+window.addEventListener("load", loadDepths);
