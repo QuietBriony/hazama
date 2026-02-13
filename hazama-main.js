@@ -1,3 +1,7 @@
+// Hazama main.js v2.0
+// v0.1 core loop: 問い表示 → 入力 → ズラし返答 → 無音待機 → 次深度
+
+function buildDepthsURL() {
 // Hazama main.js v1.9
 // v0.1 core loop: 問い表示 → 入力 → ズラし返答 → 無音待機 → 次深度
 
@@ -31,6 +35,70 @@ let activeLoopCleanup = null;
 let hasBootstrapped = false;
 let loadingWatchdogId = null;
 
+function showFatalStartupError(message) {
+  const storyElem = document.getElementById("story");
+  if (!storyElem) return;
+  clearLoadingWatchdog();
+  storyElem.innerHTML = `
+    <p>初期化でエラーが発生しました。</p>
+    <p class="hz-status">${escapeHtml(message)}</p>
+    <button id="retryLoadBtn">再読み込み</button>
+  `;
+
+  const retryBtn = document.getElementById("retryLoadBtn");
+  if (retryBtn) {
+    retryBtn.onclick = () => {
+      retryBtn.disabled = true;
+      loadDepths();
+    };
+  }
+}
+
+window.addEventListener("error", (event) => {
+  const msg = event?.message || "不明なエラー";
+  showFatalStartupError(msg);
+});
+
+window.addEventListener("unhandledrejection", (event) => {
+  const msg = event?.reason?.message || String(event?.reason || "不明なエラー");
+  showFatalStartupError(msg);
+});
+
+function scheduleLoadingWatchdog() {
+  clearTimeout(loadingWatchdogId);
+  loadingWatchdogId = window.setTimeout(() => {
+    const storyElem = document.getElementById("story");
+    if (!storyElem) return;
+
+    const currentText = storyElem.textContent || "";
+    if (!currentText.includes("深度データを読み込み中")) return;
+
+    storyElem.innerHTML = `
+      <p>読み込みが長引いています。待っても復旧しない場合があります。</p>
+      <p class="hz-status">確認: HTTPサーバ起動 / URL / キャッシュ再読込</p>
+      <button id="retryLoadBtn">再読み込み</button>
+    `;
+
+    const retryBtn = document.getElementById("retryLoadBtn");
+    if (retryBtn) {
+      retryBtn.onclick = () => {
+        retryBtn.disabled = true;
+        loadDepths();
+      };
+    }
+  }, 6000);
+}
+
+function clearLoadingWatchdog() {
+  if (!loadingWatchdogId) return;
+  clearTimeout(loadingWatchdogId);
+  loadingWatchdogId = null;
+}
+
+function clearPendingTimer() {
+  if (pendingTimerId) {
+    clearTimeout(pendingTimerId);
+    pendingTimerId = null;
 
 function scheduleLoadingWatchdog() {
   clearTimeout(loadingWatchdogId);
@@ -106,6 +174,31 @@ function shiftInput(text) {
   return shifted;
 }
 
+function escapeHtml(value) {
+  return String(value)
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#39;");
+}
+
+function shiftInput(text) {
+  const trimmed = (text || "").trim();
+  if (!trimmed) return "まだ言葉になっていない気配が、境界でゆらいでいる。";
+
+  const replacements = [
+    ["私", "わたしの影"],
+    ["僕", "ぼくの残響"],
+    ["あなた", "境界のあなた"],
+    ["いま", "いま/まだ"],
+    ["ここ", "こことその外"],
+    ["進", "にじむように進"]
+  ];
+
+  let shifted = trimmed;
+  for (const [from, to] of replacements) {
+    shifted = shifted.replace(from, to);
 function createControlButton(label, onClick, disabled = false) {
   const btn = document.createElement("button");
   btn.textContent = label;
@@ -382,6 +475,32 @@ function beginCoreLoop(option) {
 }
 
 async function fetchDepthsFrom(url) {
+  const controller = new AbortController();
+  const timeoutId = window.setTimeout(() => controller.abort(), 5000);
+
+  try {
+    const response = await fetch(url, {
+      method: "GET",
+      cache: "no-store",
+      headers: {
+        Accept: "application/json"
+      },
+      signal: controller.signal
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error: ${response.status}`);
+    }
+
+    return response.json();
+  } catch (error) {
+    if (error && error.name === "AbortError") {
+      throw new Error(`Timeout: ${url}`);
+    }
+    throw error;
+  } finally {
+    clearTimeout(timeoutId);
+  }
   const response = await fetch(url, {
     method: "GET",
     cache: "no-store",
@@ -482,6 +601,9 @@ function bootstrapApp() {
 
 window.addEventListener("DOMContentLoaded", bootstrapApp);
 window.addEventListener("load", bootstrapApp);
+if (document.readyState !== "loading") {
+  bootstrapApp();
+}
       storyElem.innerText = "深度データの読み込みに失敗しました。時間をおいて再試行してください。";
     }
   }
