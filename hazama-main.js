@@ -1,3 +1,7 @@
+// Hazama main.js v1.7
+// v0.1 core loop: 問い表示 → 入力 → ズラし返答 → 無音待機 → 次深度
+
+function buildDepthsURL() {
 // Hazama main.js v1.6
 // v0.1 core loop: 問い表示 → 入力 → ズラし返答 → 無音待機 → 次深度
 // Hazama main.js v1.5
@@ -14,6 +18,8 @@ let currentDepthId = "A_start";
 let depthHistory = [];
 let stopRequested = false;
 let pendingTimerId = null;
+let isLoopActive = false;
+let activeLoopCleanup = null;
 
 function clearPendingTimer() {
   if (pendingTimerId) {
@@ -52,6 +58,7 @@ function shiftInput(text) {
   if (shifted === trimmed) {
     shifted = `${trimmed}、と告げた声が半拍遅れて追いついてくる。`;
   } else {
+    shifted = `${shifted}。`;
     shifted = `${shifted}。`; 
   }
 
@@ -66,10 +73,29 @@ function createControlButton(label, onClick, disabled = false) {
   return btn;
 }
 
+function setOptionButtonsDisabled(disabled) {
+  const optionButtons = document.querySelectorAll(".hz-option-btn");
+  optionButtons.forEach((btn) => {
+    btn.disabled = disabled;
+  });
+}
+
 function renderControls(optionsElem) {
   const controlsWrap = document.createElement("div");
   controlsWrap.className = "hz-controls";
 
+  const backBtn = createControlButton(
+    "戻る",
+    () => {
+      if (depthHistory.length === 0) return;
+      stopRequested = false;
+      clearPendingTimer();
+      if (activeLoopCleanup) activeLoopCleanup();
+      const prevDepth = depthHistory.pop();
+      renderDepth(prevDepth, { pushHistory: false });
+    },
+    depthHistory.length === 0
+  );
   const backBtn = createControlButton("戻る", () => {
     if (depthHistory.length === 0) return;
     stopRequested = false;
@@ -81,6 +107,8 @@ function renderControls(optionsElem) {
   const stopBtn = createControlButton(stopRequested ? "停止中" : "停止", () => {
     stopRequested = true;
     clearPendingTimer();
+    if (activeLoopCleanup) activeLoopCleanup();
+    setOptionButtonsDisabled(false);
     const storyElem = document.getElementById("story");
     if (storyElem) {
       storyElem.insertAdjacentHTML(
@@ -111,6 +139,8 @@ function renderDepth(depthId, config = { pushHistory: true }) {
 
   clearPendingTimer();
   stopRequested = false;
+  isLoopActive = false;
+  activeLoopCleanup = null;
   currentDepthId = depthId;
 
   const title = depth.title || "";
@@ -131,6 +161,9 @@ function renderDepth(depthId, config = { pushHistory: true }) {
   renderControls(optionsElem);
 
   if (!Array.isArray(depth.options) || depth.options.length === 0) {
+    const homeBtn = createControlButton("入口へ戻る（A_start）", () => renderDepth("A_start"));
+    homeBtn.className = "hz-option-btn";
+    optionsElem.appendChild(homeBtn);
     optionsElem.appendChild(
       createControlButton("入口へ戻る（A_start）", () => renderDepth("A_start"))
     );
@@ -139,6 +172,7 @@ function renderDepth(depthId, config = { pushHistory: true }) {
 
   depth.options.forEach((opt) => {
     const btn = createControlButton(opt.text || "(無題の選択肢)", () => beginCoreLoop(opt));
+    btn.classList.add("hz-option-btn");
     optionsElem.appendChild(btn);
   });
 }
@@ -146,6 +180,14 @@ function renderDepth(depthId, config = { pushHistory: true }) {
 function beginCoreLoop(option) {
   const storyElem = document.getElementById("story");
   const optionsElem = document.getElementById("options");
+  if (!storyElem || !optionsElem || isLoopActive) return;
+
+  const existingBox = document.querySelector(".hz-loop-input");
+  if (existingBox) existingBox.remove();
+
+  stopRequested = false;
+  isLoopActive = true;
+  setOptionButtonsDisabled(true);
   if (!storyElem || !optionsElem) return;
 
   stopRequested = false;
@@ -159,6 +201,15 @@ function beginCoreLoop(option) {
   const loopBox = document.createElement("div");
   loopBox.className = "hz-loop-input";
   loopBox.innerHTML = `
+    <input id="loopInput" type="text" placeholder="入力は任意。未入力でも返答できます" maxlength="200" />
+    <button id="loopSubmit">返答する</button>
+  `;
+
+  const hint = document.createElement("p");
+  hint.className = "hz-loop-hint";
+  hint.textContent = "※ 連続タップ防止のため、この段階では他の選択肢は一時停止しています。";
+
+  optionsElem.prepend(hint);
     <input id="loopInput" type="text" placeholder="ここに入力" maxlength="200" />
     <button id="loopSubmit">返答する</button>
     <button id="loopCancel">停止</button>
@@ -174,6 +225,12 @@ function beginCoreLoop(option) {
 
   const cleanup = () => {
     if (loopBox.parentElement) loopBox.remove();
+    if (hint.parentElement) hint.remove();
+    activeLoopCleanup = null;
+  };
+
+  activeLoopCleanup = cleanup;
+
   };
 
   const runTransition = () => {
@@ -194,6 +251,8 @@ function beginCoreLoop(option) {
     pendingTimerId = window.setTimeout(() => {
       pendingTimerId = null;
       if (stopRequested) {
+        isLoopActive = false;
+        setOptionButtonsDisabled(false);
         storyElem.insertAdjacentHTML("beforeend", `<p class="hz-status">停止中のため遷移を中断しました。</p>`);
         return;
       }
@@ -203,6 +262,7 @@ function beginCoreLoop(option) {
 
   if (submit) {
     submit.onclick = () => {
+      submit.disabled = true;
       cleanup();
       runTransition();
     };
