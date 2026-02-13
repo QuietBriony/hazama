@@ -1,3 +1,7 @@
+// Hazama main.js v1.9
+// v0.1 core loop: 問い表示 → 入力 → ズラし返答 → 無音待機 → 次深度
+
+function buildDepthsURL() {
 // Hazama main.js v1.8
 // v0.1 core loop: 問い表示 → 入力 → ズラし返答 → 無音待機 → 次深度
 
@@ -24,6 +28,92 @@ let stopRequested = false;
 let pendingTimerId = null;
 let isLoopActive = false;
 let activeLoopCleanup = null;
+let hasBootstrapped = false;
+let loadingWatchdogId = null;
+
+
+function scheduleLoadingWatchdog() {
+  clearTimeout(loadingWatchdogId);
+  loadingWatchdogId = window.setTimeout(() => {
+    const storyElem = document.getElementById("story");
+    if (!storyElem) return;
+
+    const currentText = storyElem.textContent || "";
+    if (!currentText.includes("深度データを読み込み中")) return;
+
+    storyElem.innerHTML = `
+      <p>読み込みが長引いています。待っても復旧しない場合があります。</p>
+      <p class="hz-status">確認: HTTPサーバ起動 / URL / キャッシュ再読込</p>
+      <button id="retryLoadBtn">再読み込み</button>
+    `;
+
+    const retryBtn = document.getElementById("retryLoadBtn");
+    if (retryBtn) {
+      retryBtn.onclick = () => {
+        retryBtn.disabled = true;
+        loadDepths();
+      };
+    }
+  }, 6000);
+}
+
+function clearLoadingWatchdog() {
+  if (!loadingWatchdogId) return;
+  clearTimeout(loadingWatchdogId);
+  loadingWatchdogId = null;
+}
+
+function clearPendingTimer() {
+  if (pendingTimerId) {
+    clearTimeout(pendingTimerId);
+    pendingTimerId = null;
+  }
+}
+
+function escapeHtml(value) {
+  return String(value)
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#39;");
+}
+
+function shiftInput(text) {
+  const trimmed = (text || "").trim();
+  if (!trimmed) return "まだ言葉になっていない気配が、境界でゆらいでいる。";
+
+  const replacements = [
+    ["私", "わたしの影"],
+    ["僕", "ぼくの残響"],
+    ["あなた", "境界のあなた"],
+    ["いま", "いま/まだ"],
+    ["ここ", "こことその外"],
+    ["進", "にじむように進"]
+  ];
+
+  let shifted = trimmed;
+  for (const [from, to] of replacements) {
+    shifted = shifted.replace(from, to);
+  }
+
+  if (shifted === trimmed) {
+    shifted = `${trimmed}、と告げた声が半拍遅れて追いついてくる。`;
+  } else {
+    shifted = `${shifted}。`;
+  }
+
+  return shifted;
+}
+
+function createControlButton(label, onClick, disabled = false) {
+  const btn = document.createElement("button");
+  btn.textContent = label;
+  btn.disabled = disabled;
+  btn.onclick = onClick;
+  return btn;
+}
+
 
 function clearPendingTimer() {
   if (pendingTimerId) {
@@ -309,6 +399,7 @@ async function fetchDepthsFrom(url) {
 }
 
 async function loadDepths() {
+  scheduleLoadingWatchdog();
   const storyElem = document.getElementById("story");
   const candidates = [
     buildDepthsURL(),
@@ -357,6 +448,11 @@ async function loadDepths() {
     }
 
     renderDepth(currentDepthId, { pushHistory: false });
+    clearLoadingWatchdog();
+  } catch (error) {
+    console.error("Error loading depths:", error);
+    if (storyElem) {
+      clearLoadingWatchdog();
   } catch (error) {
     console.error("Error loading depths:", error);
     if (storyElem) {
@@ -373,6 +469,19 @@ async function loadDepths() {
           loadDepths();
         };
       }
+    }
+  }
+}
+
+function bootstrapApp() {
+  if (hasBootstrapped) return;
+  hasBootstrapped = true;
+  scheduleLoadingWatchdog();
+  loadDepths();
+}
+
+window.addEventListener("DOMContentLoaded", bootstrapApp);
+window.addEventListener("load", bootstrapApp);
       storyElem.innerText = "深度データの読み込みに失敗しました。時間をおいて再試行してください。";
     }
   }
