@@ -1,10 +1,10 @@
-// Hazama main.js v1.4
-// 完全キャッシュ破壊 + Raw最新版強制 + 安全一式
+// Hazama main.js v1.5
+// ローカルJSON読込 + キャッシュ回避 + 安全一式
 
 // --- 設定 ---
 function buildDepthsURL() {
-  // GitHub Raw の完全キャッシュ破壊
-  const base = "https://raw.githubusercontent.com/QuietBriony/hazama/master/depths.json";
+  // ローカル配置の深度データを参照
+  const base = "./hazama-depths.json";
   return `${base}?t=${Date.now()}&rnd=${Math.random()}`;
 }
 
