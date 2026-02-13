@@ -19,7 +19,7 @@ Hazama は、深度データ (`hazama-depths.json`) を読み込み、選択肢�
 python -m http.server 8000
 ```
 
-ブラウザで `http://localhost:8000/hazama-index.html` を開きます。
+ブラウザで `http://127.0.0.1:8000/` を開きます（`index.html` を追加済み）。
 
 ### Node.js を使う場合
 
@@ -27,7 +27,39 @@ python -m http.server 8000
 npx serve .
 ```
 
-表示されたローカル URL にアクセスし、`/hazama-index.html` を開きます。
+表示されたローカル URL にアクセスします（ルートの `index.html` で表示されます）。
+
+
+## 「全然進まない」ときの最短チェック
+
+1. リポジトリ直下でサーバを起動
+
+```bash
+cd /path/to/hazama
+python -m http.server 8000
+```
+
+2. 別ターミナルで応答確認
+
+```bash
+curl -I http://127.0.0.1:8000/
+```
+
+3. ブラウザは `http://127.0.0.1:8000/` を開く（`localhost` ではなく `127.0.0.1` 推奨）
+
+4. それでも駄目ならポート変更
+
+```bash
+python -m http.server 8080
+```
+
+5. リモート環境（Codespaces/Dev Container/Codex）ならポートフォワードURLを使う
+
+## エージェントのインターネットアクセスは必要？
+
+- **ローカル起動確認だけなら不要**です（このプロジェクトは静的ファイル + ローカルJSONのみ）。
+- **GitHubにPRを作るときだけ必要**です（push/PR API通信）。
+- つまり、実装とローカル確認はオフライン寄りで進められます。
 
 ## 推奨開発フロー
 
