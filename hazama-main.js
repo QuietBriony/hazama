@@ -1,3 +1,7 @@
+// Hazama main.js v1.8
+// v0.1 core loop: 問い表示 → 入力 → ズラし返答 → 無音待機 → 次深度
+
+function buildDepthsURL() {
 // Hazama main.js v1.7
 // v0.1 core loop: 問い表示 → 入力 → ズラし返答 → 無音待機 → 次深度
 
@@ -287,6 +291,47 @@ function beginCoreLoop(option) {
   }
 }
 
+async function fetchDepthsFrom(url) {
+  const response = await fetch(url, {
+    method: "GET",
+    cache: "no-store",
+    headers: {
+      Accept: "application/json",
+      "Content-Type": "application/json"
+    }
+  });
+
+  if (!response.ok) {
+    throw new Error(`HTTP error: ${response.status}`);
+  }
+
+  return response.json();
+}
+
+async function loadDepths() {
+  const storyElem = document.getElementById("story");
+  const candidates = [
+    buildDepthsURL(),
+    `./depths.json?t=${Date.now()}`
+  ];
+
+  try {
+    let lastError = null;
+
+    for (const url of candidates) {
+      try {
+        depths = await fetchDepthsFrom(url);
+        console.log("Loaded depths from:", url);
+        break;
+      } catch (error) {
+        lastError = error;
+      }
+    }
+
+    if (!depths || Object.keys(depths).length === 0) {
+      throw lastError || new Error("depth data is empty");
+    }
+
 async function loadDepths() {
   const storyElem = document.getElementById("story");
 
@@ -315,6 +360,19 @@ async function loadDepths() {
   } catch (error) {
     console.error("Error loading depths:", error);
     if (storyElem) {
+      storyElem.innerHTML = `
+        <p>深度データの読み込みに失敗しました。待っても自動復旧しないため、再読み込みを試してください。</p>
+        <p class="hz-status">確認: HTTPサーバ起動 / URLが <code>/hazama/</code> 末尾か / キャッシュ更新</p>
+        <button id="retryLoadBtn">再読み込み</button>
+      `;
+
+      const retryBtn = document.getElementById("retryLoadBtn");
+      if (retryBtn) {
+        retryBtn.onclick = () => {
+          retryBtn.disabled = true;
+          loadDepths();
+        };
+      }
       storyElem.innerText = "深度データの読み込みに失敗しました。時間をおいて再試行してください。";
     }
   }
