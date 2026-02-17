@@ -285,16 +285,20 @@ async function bootstrapApp(forceReset = false) {
 
     renderDepth("A_start", { pushHistory: false });
   } catch (error) {
-    const storyElem = document.getElementById("story");
-    if (storyElem) {
-      storyElem.innerHTML = `
-        <p>深度データの読み込みに失敗しました。</p>
-        <p class="hz-status">${escapeHtml(error.message || "unknown error")}</p>
-        <button id="retryLoadBtn">再読み込み</button>
-      `;
-      const retryBtn = document.getElementById("retryLoadBtn");
-      if (retryBtn) retryBtn.onclick = () => bootstrapApp(false);
-    }
+  console.error("Error loading depths:", error);
+  const storyElem = document.getElementById("story");
+  const statusElem = document.getElementById("runtime-status");
+  if (storyElem) {
+    storyElem.innerText =
+      "LOAD ERROR:\n" +
+      (error?.message || String(error)) +
+      "\n\nURL:\n" +
+      buildDepthsURL() +
+      "\n\nPAGE:\n" +
+      location.href;
+  }
+  if (statusElem) statusElem.innerText = `ERROR: ${location.href}`;
+}
   }
 }
 
