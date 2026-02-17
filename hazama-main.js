@@ -4,7 +4,9 @@
 const APP_VERSION = "v2.1";
 
 function buildDepthsURL() {
-  return `./hazama-depths.json?t=${Date.now()}&rnd=${Math.random()}`;
+  // GitHub Raw の完全キャッシュ破壊
+  const base = "./hazama-depths.json";
+  return `${base}?t=${Date.now()}&rnd=${Math.random()}`;
 }
 
 let depths = {};
@@ -42,15 +44,18 @@ function shiftInput(text, depthId) {
   const hash = window.HazamaSeed ? window.HazamaSeed.hashText(seedText) : "0000";
   const mode = parseInt(hash.slice(0, 2), 16) % 3;
 
-  if (mode === 0) return `${base} → 観測角度を半歩だけずらしてみる。`;
-  if (mode === 1) return `${base} → 同じ言葉を、別位相の自分が繰り返した。`;
-  return `${base} → 境界の向こうで意味がにじみ、輪郭が増えた。`;
-}
+    console.log("Loaded hazama-depths.json:", depths);
 
-function persistProgress(nodeId) {
-  if (!window.HazamaState) return;
-  window.HazamaState.saveProgress(nodeId, currentSeed);
-}
+    // スタートノードの存在確認
+    if (!depths[currentDepthId]) {
+      if (depths["A_start"]) currentDepthId = "A_start";
+      else if (depths["A"]) currentDepthId = "A";
+      else {
+        const keys = Object.keys(depths);
+        if (keys.length > 0) currentDepthId = keys[0];
+        else throw new Error("hazama-depths.json が空です。");
+      }
+    }
 
 function resetSession() {
   clearPendingTimer();
@@ -68,13 +73,15 @@ function stopToHub() {
   renderDepth("HUB_NIGHT", { pushHistory: false });
 }
 
-function createButton(label, onClick, className = "") {
-  const btn = document.createElement("button");
-  btn.textContent = label;
-  if (className) btn.className = className;
-  btn.onclick = onClick;
-  return btn;
-}
+// --- 描画 ---
+function renderDepth(depthId) {
+  const depth = depths[depthId];
+  if (!depth) {
+    console.error("Unknown depth:", depthId);
+    const s = document.getElementById("story");
+    if (s) s.innerText = `深度 ${depthId} が見つかりません。hazama-depths.json を確認してください。`;
+    return;
+  }
 
 function renderSessionControls(optionsElem) {
   const wrap = document.createElement("div");

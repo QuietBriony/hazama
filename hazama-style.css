@@ -146,16 +146,3 @@ body {
   font-size: 0.78rem;
   color: #94a3b8;
 }
-
-.hz-session-controls {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-  width: 100%;
-  margin-bottom: 0.5rem;
-}
-
-.hz-stop-btn {
-  border-color: #7f1d1d;
-  background: #3f0f14;
-}
