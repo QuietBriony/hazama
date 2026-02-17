@@ -106,3 +106,56 @@ body {
     text-align: left;
   }
 }
+
+.hz-controls {
+  display: flex;
+  gap: 0.5rem;
+  width: 100%;
+}
+
+.hz-loop-input {
+  display: flex;
+  gap: 0.5rem;
+  width: 100%;
+  margin-bottom: 0.5rem;
+}
+
+.hz-loop-input input {
+  flex: 1;
+  background: #0b1220;
+  color: #e5e7eb;
+  border: 1px solid #334155;
+  border-radius: 999px;
+  padding: 0.45rem 0.8rem;
+}
+
+.hz-status {
+  color: #93c5fd;
+  font-size: 0.9rem;
+}
+
+.hz-options button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+
+.hz-loop-hint {
+  width: 100%;
+  margin: 0 0 0.5rem;
+  font-size: 0.78rem;
+  color: #94a3b8;
+}
+
+.hz-session-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  width: 100%;
+  margin-bottom: 0.5rem;
+}
+
+.hz-stop-btn {
+  border-color: #7f1d1d;
+  background: #3f0f14;
+}
