@@ -9,6 +9,10 @@
     ],
     "options": [
       {
+        "text": "HUBへ入る",
+        "next": "HUB_NIGHT"
+      },
+      {
         "text": "足を一歩前へ進める",
         "next": "B"
       }
@@ -32,6 +36,10 @@
       {
         "text": "さらに進む",
         "next": "C"
+      },
+      {
+        "text": "HUBへ戻る",
+        "next": "HUB_NIGHT"
       }
     ]
   },
@@ -52,6 +60,10 @@
       {
         "text": "さらに進む",
         "next": "D"
+      },
+      {
+        "text": "HUBへ戻る",
+        "next": "HUB_NIGHT"
       }
     ]
   },
@@ -72,6 +84,10 @@
       {
         "text": "さらに進む",
         "next": "E"
+      },
+      {
+        "text": "HUBへ戻る",
+        "next": "HUB_NIGHT"
       }
     ]
   },
@@ -93,6 +109,10 @@
       {
         "text": "さらに進む",
         "next": "F"
+      },
+      {
+        "text": "HUBへ戻る",
+        "next": "HUB_NIGHT"
       }
     ]
   },
@@ -113,6 +133,10 @@
       {
         "text": "さらに進む",
         "next": "G"
+      },
+      {
+        "text": "HUBへ戻る",
+        "next": "HUB_NIGHT"
       }
     ]
   },
@@ -133,6 +157,10 @@
       {
         "text": "さらに進む",
         "next": "H"
+      },
+      {
+        "text": "HUBへ戻る",
+        "next": "HUB_NIGHT"
       }
     ]
   },
@@ -153,6 +181,10 @@
       {
         "text": "さらに進む",
         "next": "I"
+      },
+      {
+        "text": "HUBへ戻る",
+        "next": "HUB_NIGHT"
       }
     ]
   },
@@ -177,6 +209,10 @@
       {
         "text": "境界線を一つに絞る",
         "next": "K"
+      },
+      {
+        "text": "HUBへ戻る",
+        "next": "HUB_NIGHT"
       }
     ]
   },
@@ -201,6 +237,10 @@
       {
         "text": "距離を取る",
         "next": "K"
+      },
+      {
+        "text": "HUBへ戻る",
+        "next": "HUB_NIGHT"
       }
     ]
   },
@@ -224,6 +264,10 @@
       {
         "text": "波紋の外縁をなぞる",
         "next": "L"
+      },
+      {
+        "text": "HUBへ戻る",
+        "next": "HUB_NIGHT"
       }
     ]
   },
@@ -248,6 +292,10 @@
       {
         "text": "選ばずに眺め続ける",
         "next": "M"
+      },
+      {
+        "text": "HUBへ戻る",
+        "next": "HUB_NIGHT"
       }
     ]
   },
@@ -272,6 +320,10 @@
       {
         "text": "視線をずらして歩く",
         "next": "N"
+      },
+      {
+        "text": "HUBへ戻る",
+        "next": "HUB_NIGHT"
       }
     ]
   },
@@ -296,6 +348,10 @@
       {
         "text": "重なったまま進む",
         "next": "O"
+      },
+      {
+        "text": "HUBへ戻る",
+        "next": "HUB_NIGHT"
       }
     ]
   },
@@ -320,6 +376,10 @@
       {
         "text": "あえてリズムを外す",
         "next": "P"
+      },
+      {
+        "text": "HUBへ戻る",
+        "next": "HUB_NIGHT"
       }
     ]
   },
@@ -343,6 +403,10 @@
       {
         "text": "視線をかわし続ける",
         "next": "Q"
+      },
+      {
+        "text": "HUBへ戻る",
+        "next": "HUB_NIGHT"
       }
     ]
   },
@@ -367,6 +431,10 @@
       {
         "text": "いくつかのラベルだけ残す",
         "next": "R"
+      },
+      {
+        "text": "HUBへ戻る",
+        "next": "HUB_NIGHT"
       }
     ]
   },
@@ -390,6 +458,10 @@
       {
         "text": "リズムを抽出する",
         "next": "S"
+      },
+      {
+        "text": "HUBへ戻る",
+        "next": "HUB_NIGHT"
       }
     ]
   },
@@ -413,6 +485,10 @@
       {
         "text": "あえて視線を外す",
         "next": "T"
+      },
+      {
+        "text": "HUBへ戻る",
+        "next": "HUB_NIGHT"
       }
     ]
   },
@@ -436,6 +512,10 @@
       {
         "text": "外側から聴き続ける",
         "next": "U"
+      },
+      {
+        "text": "HUBへ戻る",
+        "next": "HUB_NIGHT"
       }
     ]
   },
@@ -459,6 +539,10 @@
       {
         "text": "違和感を抱えたまま進む",
         "next": "S"
+      },
+      {
+        "text": "HUBへ戻る",
+        "next": "HUB_NIGHT"
       }
     ]
   },
@@ -482,6 +566,10 @@
       {
         "text": "共鳴を抑えながら進む",
         "next": "Ω"
+      },
+      {
+        "text": "HUBへ戻る",
+        "next": "HUB_NIGHT"
       }
     ]
   },
@@ -501,6 +589,10 @@
       {
         "text": "別の円環へと飛び移る",
         "next": "X"
+      },
+      {
+        "text": "HUBへ戻る",
+        "next": "HUB_NIGHT"
       }
     ]
   },
@@ -520,6 +612,10 @@
       {
         "text": "境界のない場に身を投げ出す",
         "next": "Y"
+      },
+      {
+        "text": "HUBへ戻る",
+        "next": "HUB_NIGHT"
       }
     ]
   },
@@ -539,6 +635,10 @@
       {
         "text": "重なりの中心へ進む",
         "next": "Z"
+      },
+      {
+        "text": "HUBへ戻る",
+        "next": "HUB_NIGHT"
       }
     ]
   },
@@ -559,6 +659,10 @@
       {
         "text": "円環の中心へ飛び込む",
         "next": "Ω"
+      },
+      {
+        "text": "HUBへ戻る",
+        "next": "HUB_NIGHT"
       }
     ]
   },
@@ -582,6 +686,10 @@
       {
         "text": "再誕へ戻る",
         "next": "A_reborn"
+      },
+      {
+        "text": "HUBへ戻る",
+        "next": "HUB_NIGHT"
       }
     ]
   },
@@ -601,6 +709,38 @@
     ],
     "theme": "Ωの残響を帯びた新生A。円環の再誕点。",
     "color": "#88ccff",
-    "options": []
+    "options": [
+      {
+        "text": "HUBへ戻る",
+        "next": "HUB_NIGHT"
+      }
+    ]
+  },
+  "HUB_NIGHT": {
+    "id": "HUB_NIGHT",
+    "title": "HUB_NIGHT — 夜のハブ",
+    "description": "ここから巡礼・探索・リセットを選べます。",
+    "story": [
+      "深度の中心に戻ってきた。",
+      "呼吸を整えて、次の一歩を選ぶ。"
+    ],
+    "options": [
+      {
+        "text": "巡礼：A_startから進む",
+        "next": "B"
+      },
+      {
+        "text": "探索：深度Iへ",
+        "next": "I"
+      },
+      {
+        "text": "探索：深度Ωへ",
+        "next": "Ω"
+      },
+      {
+        "text": "終了/リセット",
+        "next": "A_start"
+      }
+    ]
   }
 }
