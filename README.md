@@ -2,23 +2,6 @@
 
 Hazama は、深度データ (`hazama-depths.json`) を読み込み、選択肢を辿ってストーリー深度を移動する静的 Web アプリです。
 
-
-## v0.1 Hub + Seed + Save/Resume
-
-How to run (5 lines):
-1. `python -m http.server 8000`
-2. ブラウザで `http://127.0.0.1:8000/` を開く
-3. 初回のみ Seed 入力（空欄でも可）
-4. HUB から巡礼/探索を選択
-5. `Resume` / `Reset` で再開・初期化
-
-Data stored locally:
-- `hazama_seed`（入力文そのものではなく、派生したseedのみ）
-- `hazama_progress`（nodeId / seed / lastVisitedAt）
-
-Reset:
-- 画面の `Reset` で保存状態を消去し、`A_start` からやり直します。
-
 ## 現在の構成
 
 - `hazama-index.html` : エントリーポイント
@@ -37,6 +20,7 @@ python -m http.server 8000
 ```
 
 ブラウザで `http://127.0.0.1:8000/` を開きます（`index.html` を追加済み）。
+ブラウザで `http://localhost:8000/hazama-index.html` を開きます。
 
 ### Node.js を使う場合
 
@@ -141,6 +125,7 @@ python -m http.server 8080
 GitHub の `New issue` で `v0.1 core loop` テンプレートを選ぶと、必要な DoD を埋めた状態で開始できます。
 
 - `.github/ISSUE_TEMPLATE/v0-1-core-loop.md`
+表示されたローカル URL にアクセスし、`/hazama-index.html` を開きます。
 
 ## 推奨開発フロー
 
