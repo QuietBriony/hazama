@@ -4,8 +4,8 @@
 const APP_VERSION = "v2.1";
 
 function buildDepthsURL() {
-  // GitHub Raw の完全キャッシュ破壊
-  const base = "./hazama-depths.json";
+  // location.href 基準で確実に /hazama/hazama-depths.json を解決する
+  const base = new URL("hazama-depths.json", location.href).toString();
   return `${base}?t=${Date.now()}&rnd=${Math.random()}`;
 }
 
