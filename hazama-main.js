@@ -1,23 +1,19 @@
-// Hazama main.js v2.1
-// v0.1: Hub + Seed + Save/Resume
+// Hazama main.js v2.2
+// Minimal, robust loader + renderer for GitHub Pages / Codespaces
+// v2.1: Hub + Seed + Save/Resume (UI is optional; code degrades gracefully)
 
-const APP_VERSION = "v2.1";
+const APP_VERSION = "v2.2";
 
-function buildDepthsURL() {
-  // location.href 基準で確実に /hazama/hazama-depths.json を解決する
-  const base = new URL("hazama-depths.json", location.href).toString();
-  return `${base}?t=${Date.now()}&rnd=${Math.random()}`;
-}
+const STATE_KEY = "hazama_state_v2";
+const DEFAULT_START = "A_start";
 
 let depths = {};
-let currentDepthId = "A_start";
-let depthHistory = [];
-let pendingTimerId = null;
-let isLoopActive = false;
-let currentSeed = "";
+let currentDepthId = DEFAULT_START;
 
-function escapeHtml(value) {
-  return String(value)
+function $(id) { return document.getElementById(id); }
+
+function escapeHtml(s) {
+  return String(s ?? "")
     .replaceAll("&", "&amp;")
     .replaceAll("<", "&lt;")
     .replaceAll(">", "&gt;")
@@ -25,281 +21,175 @@ function escapeHtml(value) {
     .replaceAll("'", "&#39;");
 }
 
-function clearPendingTimer() {
-  if (pendingTimerId) {
-    clearTimeout(pendingTimerId);
-    pendingTimerId = null;
-  }
+function setStatus(msg) {
+  const el = $("runtime-status");
+  if (el) el.textContent = msg;
+  // also log for debugging
+  console.log("[Hazama]", msg);
 }
 
-function syncFooterStatus() {
-  const status = document.getElementById("runtime-status");
-  if (!status) return;
-  status.textContent = `ローカル hazama-depths.json を読込中（Hazama main.js ${APP_VERSION}）`;
+function buildDepthsURL() {
+  // Resolve relative to the current page URL so it works on:
+  // - https://quietbriony.github.io/hazama/
+  // - http://127.0.0.1:8000/
+  // Add cache-busting to avoid GitHub Pages / browser cache traps.
+  const base = new URL("hazama-depths.json", location.href).toString();
+  return `${base}?t=${Date.now()}&rnd=${Math.random()}`;
 }
 
-function shiftInput(text, depthId) {
-  const base = String(text || "").trim() || "(無言)";
-  const seedText = `${currentSeed}:${depthId}:${base.length}`;
-  const hash = window.HazamaSeed ? window.HazamaSeed.hashText(seedText) : "0000";
-  const mode = parseInt(hash.slice(0, 2), 16) % 3;
-
-    console.log("Loaded hazama-depths.json:", depths);
-
-    // スタートノードの存在確認
-    if (!depths[currentDepthId]) {
-      if (depths["A_start"]) currentDepthId = "A_start";
-      else if (depths["A"]) currentDepthId = "A";
-      else {
-        const keys = Object.keys(depths);
-        if (keys.length > 0) currentDepthId = keys[0];
-        else throw new Error("hazama-depths.json が空です。");
-      }
-    }
-
-function resetSession() {
-  clearPendingTimer();
-  isLoopActive = false;
-  depthHistory = [];
-  if (window.HazamaState) window.HazamaState.clearProgress();
-  if (window.HazamaSeed) window.HazamaSeed.clearSeed();
-  currentSeed = "";
-  bootstrapApp(true);
+function loadState() {
+  try {
+    const raw = localStorage.getItem(STATE_KEY);
+    if (!raw) return null;
+    const s = JSON.parse(raw);
+    if (s && typeof s.currentDepthId === "string") return s;
+  } catch (_) {}
+  return null;
 }
 
-function stopToHub() {
-  clearPendingTimer();
-  isLoopActive = false;
-  renderDepth("HUB_NIGHT", { pushHistory: false });
+function saveState() {
+  try {
+    localStorage.setItem(STATE_KEY, JSON.stringify({
+      version: APP_VERSION,
+      currentDepthId,
+      ts: Date.now()
+    }));
+  } catch (_) {}
 }
 
-// --- 描画 ---
 function renderDepth(depthId) {
   const depth = depths[depthId];
   if (!depth) {
-    console.error("Unknown depth:", depthId);
-    const s = document.getElementById("story");
-    if (s) s.innerText = `深度 ${depthId} が見つかりません。hazama-depths.json を確認してください。`;
+    setStatus(`未知の深度ID: ${depthId}`);
+    const story = $("story");
+    if (story) story.innerHTML = `<p class="hz-error">深度 <b>${escapeHtml(depthId)}</b> が見つかりません。JSONの options.next を確認してください。</p>`;
     return;
   }
 
-function renderSessionControls(optionsElem) {
-  const wrap = document.createElement("div");
-  wrap.className = "hz-session-controls";
-
-  const resumeBtn = createButton("Resume", () => {
-    const saved = window.HazamaState ? window.HazamaState.loadProgress() : null;
-    if (!saved || !saved.nodeId) return;
-    renderDepth(saved.nodeId, { pushHistory: false });
-  });
-
-  const resetBtn = createButton("Reset", () => {
-    if (window.confirm("保存状態を消去して A_start に戻りますか？")) {
-      if (window.HazamaState) window.HazamaState.clearProgress();
-      renderDepth("A_start", { pushHistory: false });
-    }
-  });
-
-  const backBtn = createButton("戻る", () => {
-    if (depthHistory.length === 0) return;
-    const prev = depthHistory.pop();
-    renderDepth(prev, { pushHistory: false });
-  });
-
-  const stopBtn = createButton("STOP", stopToHub, "hz-stop-btn");
-
-  wrap.appendChild(resumeBtn);
-  wrap.appendChild(resetBtn);
-  wrap.appendChild(backBtn);
-  wrap.appendChild(stopBtn);
-  optionsElem.appendChild(wrap);
-}
-
-function renderDepth(depthId, config = { pushHistory: true }) {
-  const depth = depths[depthId];
-  const storyElem = document.getElementById("story");
-  const optionsElem = document.getElementById("options");
-  if (!depth || !storyElem || !optionsElem) return;
-
-  if (config.pushHistory && currentDepthId !== depthId && depths[currentDepthId]) {
-    depthHistory.push(currentDepthId);
-  }
-
-  clearPendingTimer();
-  isLoopActive = false;
   currentDepthId = depthId;
-  persistProgress(depthId);
+  saveState();
 
-  const storyLines = Array.isArray(depth.story)
-    ? depth.story
-    : typeof depth.story === "string"
-      ? [depth.story]
-      : [];
+  const storyEl = $("story");
+  const optionsEl = $("options");
 
-  storyElem.innerHTML = `
-    <h2>${escapeHtml(depth.title || "")}</h2>
-    ${depth.description ? `<p class="description">${escapeHtml(depth.description)}</p>` : ""}
-    ${storyLines.map((line) => `<p>${escapeHtml(line)}</p>`).join("")}
-  `;
-
-  optionsElem.innerHTML = "";
-  renderSessionControls(optionsElem);
-
-  const options = Array.isArray(depth.options) ? depth.options : [];
-  if (options.length === 0) {
-    optionsElem.appendChild(createButton("入口へ戻る（A_start）", () => renderDepth("A_start")));
+  if (!storyEl || !optionsEl) {
+    // If the DOM is missing, fail loudly in console but don't crash.
+    console.error("Required elements missing: #story or #options");
     return;
   }
 
-  options.forEach((opt) => {
-    const btn = createButton(opt.text || "(無題)", () => beginCoreLoop(opt, options.length));
-    btn.classList.add("hz-option-btn");
-    optionsElem.appendChild(btn);
-  });
-}
+  const title = depth.title || "";
+  const desc = depth.description || "";
+  const paragraphs = Array.isArray(depth.story) ? depth.story : [];
+  const theme = depth.theme || "";
 
-function setOptionButtonsDisabled(disabled) {
-  document.querySelectorAll(".hz-option-btn").forEach((btn) => {
-    btn.disabled = disabled;
-  });
-}
-
-function beginCoreLoop(option, currentOptionCount) {
-  const storyElem = document.getElementById("story");
-  const optionsElem = document.getElementById("options");
-  if (!storyElem || !optionsElem || isLoopActive) return;
-
-  isLoopActive = true;
-  setOptionButtonsDisabled(true);
-
-  const box = document.createElement("div");
-  box.className = "hz-loop-input";
-  box.innerHTML = `
-    <input id="loopInput" type="text" placeholder="1文入力（任意）" maxlength="200" />
-    <button id="loopSubmit">送信</button>
+  storyEl.innerHTML = `
+    <div class="hz-block">
+      <div class="hz-depth-title">${escapeHtml(title)}</div>
+      ${desc ? `<div class="hz-depth-desc">${escapeHtml(desc)}</div>` : ""}
+      ${theme ? `<div class="hz-depth-theme">${escapeHtml(theme)}</div>` : ""}
+    </div>
+    <div class="hz-block">
+      ${paragraphs.map(p => `<p>${escapeHtml(p)}</p>`).join("")}
+    </div>
   `;
-  optionsElem.prepend(box);
 
-  storyElem.insertAdjacentHTML("beforeend", `<p><strong>問い:</strong> ${escapeHtml(option.text || "次の一歩")}</p>`);
-
-  const input = box.querySelector("#loopInput");
-  const submit = box.querySelector("#loopSubmit");
-
-  const finalize = () => {
-    isLoopActive = false;
-    setOptionButtonsDisabled(false);
-    if (box.parentElement) box.remove();
-  };
-
-  const onSubmit = () => {
-    if (submit) submit.disabled = true;
-    const userText = input ? input.value : "";
-    const reframed = shiftInput(userText, currentDepthId);
-
-    storyElem.insertAdjacentHTML(
-      "beforeend",
-      `<p><strong>入力:</strong> ${escapeHtml(userText || "(無言)")}</p><p><strong>ズラし返答:</strong> ${escapeHtml(reframed)}</p>`
-    );
-
-    const waitMs = 3000 + Math.floor(Math.random() * 2001);
-    storyElem.insertAdjacentHTML("beforeend", `<p class="hz-status">pause… ${Math.round(waitMs / 1000)}秒</p>`);
-
-    pendingTimerId = window.setTimeout(() => {
-      pendingTimerId = null;
-      if (currentOptionCount === 1 && option.next) {
-        renderDepth(option.next);
-      } else {
-        finalize();
-      }
-    }, waitMs);
-  };
-
-  if (submit) submit.onclick = onSubmit;
-  if (input) {
-    input.focus();
-    input.addEventListener("keydown", (event) => {
-      if (event.key === "Enter") {
-        event.preventDefault();
-        onSubmit();
-      }
-    });
+  // Options
+  optionsEl.innerHTML = "";
+  const opts = Array.isArray(depth.options) ? depth.options : [];
+  if (opts.length === 0) {
+    const btn = document.createElement("button");
+    btn.className = "hz-btn";
+    btn.textContent = "最初へ戻る";
+    btn.onclick = () => renderDepth(DEFAULT_START);
+    optionsEl.appendChild(btn);
+  } else {
+    for (const o of opts) {
+      const btn = document.createElement("button");
+      btn.className = "hz-btn";
+      btn.textContent = o?.text ?? "…";
+      btn.onclick = () => {
+        const next = o?.next;
+        if (!next) return;
+        renderDepth(next);
+      };
+      optionsEl.appendChild(btn);
+    }
   }
-}
 
-function ensureHubTopology() {
-  if (!depths.HUB_NIGHT) return;
-
-  Object.entries(depths).forEach(([key, node]) => {
-    if (!node || typeof node !== "object" || key === "HUB_NIGHT") return;
-    if (!Array.isArray(node.options)) node.options = [];
-    const hasHub = node.options.some((opt) => opt && opt.next === "HUB_NIGHT");
-    if (!hasHub) node.options.push({ text: "HUBへ戻る", next: "HUB_NIGHT" });
-  });
-}
-
-async function fetchDepthsFrom(url) {
-  const controller = new AbortController();
-  const timeoutId = window.setTimeout(() => controller.abort(), 5000);
-  try {
-    const response = await fetch(url, { cache: "no-store", signal: controller.signal });
-    if (!response.ok) throw new Error(`HTTP error: ${response.status}`);
-    return response.json();
-  } finally {
-    clearTimeout(timeoutId);
-  }
+  setStatus(`OK: ${depthId}`);
 }
 
 async function loadDepths() {
-  const candidates = [buildDepthsURL(), `./depths.json?t=${Date.now()}`];
-  let lastError = null;
-
-  for (const url of candidates) {
-    try {
-      depths = await fetchDepthsFrom(url);
-      break;
-    } catch (error) {
-      lastError = error;
-    }
-  }
-
-  if (!depths || Object.keys(depths).length === 0) {
-    throw lastError || new Error("depth data is empty");
-  }
-
-  ensureHubTopology();
-}
-
-async function bootstrapApp(forceReset = false) {
-  syncFooterStatus();
+  setStatus("深度データを読み込み中…");
+  const url = buildDepthsURL();
 
   try {
-    await loadDepths();
+    const res = await fetch(url, { cache: "no-store" });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
 
-    currentSeed = window.HazamaSeed ? await window.HazamaSeed.ensureSeed() : "seedless";
-    const saved = !forceReset && window.HazamaState ? window.HazamaState.loadProgress() : null;
+    const json = await res.json();
+    if (!json || typeof json !== "object") throw new Error("JSON形式が不正です");
 
-    if (saved && saved.nodeId && depths[saved.nodeId]) {
-      renderDepth(saved.nodeId, { pushHistory: false });
-      return;
+    depths = json;
+
+    // determine start
+    const saved = loadState();
+    if (saved && depths[saved.currentDepthId]) currentDepthId = saved.currentDepthId;
+    else if (depths[DEFAULT_START]) currentDepthId = DEFAULT_START;
+    else {
+      // fallback: first key
+      const keys = Object.keys(depths);
+      currentDepthId = keys[0] || DEFAULT_START;
     }
 
-    renderDepth("A_start", { pushHistory: false });
-  } catch (error) {
-  console.error("Error loading depths:", error);
-  const storyElem = document.getElementById("story");
-  const statusElem = document.getElementById("runtime-status");
-  if (storyElem) {
-    storyElem.innerText =
-      "LOAD ERROR:\n" +
-      (error?.message || String(error)) +
-      "\n\nURL:\n" +
-      buildDepthsURL() +
-      "\n\nPAGE:\n" +
-      location.href;
-  }
-  if (statusElem) statusElem.innerText = `ERROR: ${location.href}`;
-}
+    renderDepth(currentDepthId);
+  } catch (e) {
+    console.error("Error loading depths:", e);
+    setStatus("深度データの読み込みに失敗");
+    const story = $("story");
+    const options = $("options");
+    if (story) {
+      story.innerHTML = `
+        <p class="hz-error">深度データの読み込みに失敗しました。</p>
+        <p class="hz-mono">URL: ${escapeHtml(url)}</p>
+        <p class="hz-mono">Error: ${escapeHtml(e?.message || String(e))}</p>
+      `;
+    }
+    if (options) {
+      options.innerHTML = "";
+      const btn = document.createElement("button");
+      btn.className = "hz-btn";
+      btn.textContent = "再試行";
+      btn.onclick = () => loadDepths();
+      options.appendChild(btn);
+    }
   }
 }
 
-window.addEventListener("DOMContentLoaded", () => bootstrapApp(false));
+window.addEventListener("error", (ev) => {
+  console.error("Uncaught error:", ev.error || ev.message);
+  setStatus("起動エラー（console参照）");
+});
+window.addEventListener("unhandledrejection", (ev) => {
+  console.error("Unhandled rejection:", ev.reason);
+  setStatus("起動エラー（console参照）");
+});
+
+document.addEventListener("DOMContentLoaded", () => {
+  // Show versions in footer if present
+  const v = $("app-version");
+  if (v) v.textContent = APP_VERSION;
+
+  // hook reset button if exists
+  const resetBtn = $("reset-progress");
+  if (resetBtn) {
+    resetBtn.addEventListener("click", () => {
+      try { localStorage.removeItem(STATE_KEY); } catch (_) {}
+      currentDepthId = DEFAULT_START;
+      renderDepth(currentDepthId);
+    });
+  }
+
+  loadDepths();
+});
