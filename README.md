@@ -226,3 +226,28 @@ python -m http.server 8080
 - PRが `Open` なら `Checks` と `Conversation` の指摘を解消
 - その後、次は `feat: hazama codex v0.1 core loop` を1PRで実装
 
+
+# Status
+
+This repository is a visual / conceptual reference for the wider creative stack.
+
+It may inform:
+- visual mood
+- void / boundary concepts
+- UI atmosphere
+- abstract worldbuilding
+- cyber / Zen / liminal aesthetic direction
+
+It should not be directly merged into Music runtime.
+
+Active music repos:
+- QuietBriony/Music: experimental reference-driven generative rig
+- QuietBriony/drum-floor: band groove generator
+- QuietBriony/namima: public-friendly ambient player
+
+Rules:
+- Do not add audio files or samples
+- Do not add dependencies
+- Do not add GitHub Actions
+- Do not treat this repo as a music runtime
+- Use this repo as reference-only unless intentionally reactivated
