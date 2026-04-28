@@ -26,9 +26,10 @@ root = Path('/tmp/hz_root.html').read_text(encoding='utf-8')
 js = Path('/tmp/hz_main.js').read_text(encoding='utf-8')
 depths = json.loads(Path('/tmp/hz_depths.json').read_text(encoding='utf-8'))
 
-assert 'hazama-main.js?v=2.1' in root, 'index.html が最新の script クエリを参照していません'
-assert 'Hazama main.js v2.1' in js, 'hazama-main.js バージョンが期待値ではありません'
+assert 'hazama-main.js?v=2.2' in root, 'index.html が最新の script クエリを参照していません'
+assert 'Hazama main.js v2.2' in js, 'hazama-main.js バージョンが期待値ではありません'
 assert 'A_start' in depths, 'hazama-depths.json に A_start がありません'
+assert 'HUB_NIGHT' in depths, 'hazama-depths.json に HUB_NIGHT がありません'
 print('OK: startup smoke passed')
 PY
 
