@@ -4,32 +4,41 @@
   <meta charset="UTF-8" />
   <title>Hazama / Depth Navigator</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <link rel="stylesheet" href="hazama-style.css?v=2.2" />
+  <link rel="stylesheet" href="hazama-style.css?v=2.9" />
 </head>
 <body>
   <main id="app">
     <header class="hz-header">
       <h1 class="hz-title">Hazama / Depth Navigator</h1>
-      <p class="hz-subtitle">選択肢を辿って深度を移動します。</p>
+      <p class="hz-subtitle">安定を保ちながら、選択肢と問いで深度を移動します。</p>
     </header>
 
-    <!-- main.js が書き換えるストーリーパネル -->
+    <figure class="hz-visual" aria-label="巨大構造を潜る探索者と目的ゲート">
+      <img class="hz-visual-depth" src="assets/hazama-descent-key.png" alt="" />
+      <span class="hz-gate-orb" aria-hidden="true">
+        <img src="assets/hazama-goal-mandala.png" alt="" />
+      </span>
+    </figure>
+
     <section id="story" class="hz-story">
       深度データを読み込み中…
     </section>
 
-    <!-- main.js がボタンを追加する領域 -->
-    <section id="options" class="hz-options">
-      <!-- options は main.js から自動生成 -->
-    </section>
+    <section id="options" class="hz-options"></section>
   </main>
 
   <footer class="hz-footer">
-    <small id="runtime-status">ローカル hazama-depths.json を読込中</small>
+    <div class="hz-footer-row">
+      <small id="runtime-status">ローカル hazama-depths.json を読込中</small>
+      <div class="hz-footer-actions">
+        <small id="app-version">v</small>
+        <button id="reset-progress" class="hz-reset" type="button">リセット</button>
+      </div>
+    </div>
   </footer>
 
-  <script src="hazama-seed.js?v=2.2"></script>
-  <script src="hazama-state.js?v=2.2"></script>
-  <script src="hazama-main.js?v=2.2"></script>
+  <script src="hazama-seed.js?v=2.9"></script>
+  <script src="hazama-state.js?v=2.9"></script>
+  <script src="hazama-main.js?v=2.9"></script>
 </body>
 </html>

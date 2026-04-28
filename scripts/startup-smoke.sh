@@ -17,6 +17,8 @@ done
 
 curl -fsS "$ROOT_URL/hazama-main.js" >/tmp/hz_main.js
 curl -fsS "$ROOT_URL/hazama-depths.json" >/tmp/hz_depths.json
+curl -fsS "$ROOT_URL/assets/hazama-descent-key.png" >/tmp/hz_descent.png
+curl -fsS "$ROOT_URL/assets/hazama-goal-mandala.png" >/tmp/hz_goal.png
 
 python3 - <<'PY'
 import json
@@ -26,8 +28,13 @@ root = Path('/tmp/hz_root.html').read_text(encoding='utf-8')
 js = Path('/tmp/hz_main.js').read_text(encoding='utf-8')
 depths = json.loads(Path('/tmp/hz_depths.json').read_text(encoding='utf-8'))
 
-assert 'hazama-main.js?v=2.2' in root, 'index.html が最新の script クエリを参照していません'
-assert 'Hazama main.js v2.2' in js, 'hazama-main.js バージョンが期待値ではありません'
+assert 'hazama-main.js?v=2.9' in root, 'index.html が最新の script クエリを参照していません'
+assert 'assets/hazama-descent-key.png' in root, 'index.html が探索者キービジュアルを参照していません'
+assert 'assets/hazama-goal-mandala.png' in root, 'index.html が曼荼羅ゲートを参照していません'
+assert 'Hazama main.js v2.9' in js, 'hazama-main.js バージョンが期待値ではありません'
+assert 'Gate Intelligence' in js, 'hazama-main.js にGIディレクターが見つかりません'
+assert 'createMusicPayload' in js, 'hazama-main.js にMusic sender payloadが見つかりません'
+assert 'postMessage' in js, 'hazama-main.js にMusic postMessage senderが見つかりません'
 assert 'A_start' in depths, 'hazama-depths.json に A_start がありません'
 assert 'HUB_NIGHT' in depths, 'hazama-depths.json に HUB_NIGHT がありません'
 print('OK: startup smoke passed')
