@@ -1,4 +1,4 @@
-// Hazama main.js v2.11
+// Hazama main.js v2.12
 // Minimal, robust loader + renderer for GitHub Pages / Codespaces.
 // v2.3 adds a lightweight deterministic game layer around depth pressure.
 // v2.5 animates the descent key visual and mandala goal gate.
@@ -8,8 +8,9 @@
 // v2.9 sends sanitized Hazama profiles to Music via hash boot and postMessage.
 // v2.10 arms Music sync on Hazama start and opens it on the first user gesture.
 // v2.11 aligns Music bridge stages with the Music hazama-profile receiver arc.
+// v2.12 adds Gate Run actions, win/loss, and game-forward GI feedback.
 
-const APP_VERSION = "v2.11";
+const APP_VERSION = "v2.12";
 
 const STATE_KEY = "hazama_state_v2";
 const SEED_KEY = "hazama_seed";
@@ -19,6 +20,8 @@ const HUB_DEPTH = "HUB_NIGHT";
 const CORE_MAX_INPUT = 80;
 const STABILITY_MAX = 100;
 const RESONANCE_MAX = 100;
+const GATE_RUN_MAX_CHARGE = 100;
+const GATE_RUN_TURN_LIMIT = 20;
 const MILESTONE_RANKS = [8, 14, 20, 27];
 const ACTIVE_AUDIO_PROVIDER = "music";
 const AUDIO_PROVIDERS = {
@@ -171,6 +174,12 @@ function createRunState() {
     steps: 0,
     entries: 0,
     bestRank: 0,
+    gateRunStatus: "running",
+    gateRunTurns: 0,
+    gateRunCharge: 0,
+    lastGateAction: "",
+    lastGateResult: "",
+    gateRunOutcomeAt: 0,
     lastDepthId: DEFAULT_START,
     lastChangedAt: Date.now()
   };
@@ -187,6 +196,12 @@ function normalizeRunState(data) {
     steps: Math.max(0, Number(src.steps) || 0),
     entries: Math.max(0, Number(src.entries) || 0),
     bestRank: clampNumber(src.bestRank ?? base.bestRank, 0, 28),
+    gateRunStatus: ["running", "won", "lost"].includes(src.gateRunStatus) ? src.gateRunStatus : base.gateRunStatus,
+    gateRunTurns: Math.max(0, Number(src.gateRunTurns) || 0),
+    gateRunCharge: clampNumber(src.gateRunCharge ?? base.gateRunCharge, 0, GATE_RUN_MAX_CHARGE),
+    lastGateAction: typeof src.lastGateAction === "string" ? src.lastGateAction.slice(0, 40) : base.lastGateAction,
+    lastGateResult: typeof src.lastGateResult === "string" ? src.lastGateResult.slice(0, 180) : base.lastGateResult,
+    gateRunOutcomeAt: Number(src.gateRunOutcomeAt) || base.gateRunOutcomeAt,
     lastDepthId: typeof src.lastDepthId === "string" ? src.lastDepthId : base.lastDepthId,
     lastChangedAt: Number(src.lastChangedAt) || base.lastChangedAt
   };
@@ -342,7 +357,10 @@ function buildGateIntelligence(depthId = currentDepthId) {
   const resonanceNorm = clampNumber(state.resonance / RESONANCE_MAX, 0, 1);
   const stabilityNorm = clampNumber(state.stability / STABILITY_MAX, 0, 1);
   const gateCharge = clampNumber(
-    rank * 1.45 + state.resonance * 0.58 + state.marks * 13 + state.entries * 1.4 - (100 - state.stability) * 0.08,
+    Math.max(
+      state.gateRunCharge || 0,
+      rank * 1.45 + state.resonance * 0.58 + state.marks * 13 + state.entries * 1.4 - (100 - state.stability) * 0.08
+    ),
     0,
     100
   );
@@ -356,7 +374,16 @@ function buildGateIntelligence(depthId = currentDepthId) {
   let objective = "問いに返して、ゲートの位相を充電する。";
   let route = "返す -> 沈黙 -> 次深度";
 
-  if (state.stability < 26) {
+  if (state.gateRunStatus === "won") {
+    objective = "Gate Run達成。開いた扉の先へ進むか、A'へ戻って次の周回を刻む。";
+    route = "Ω / A' / 退避";
+  } else if (state.gateRunStatus === "lost") {
+    objective = "Gate Run崩落。HUBで姿勢を戻し、退避から再起動する。";
+    route = "退避 -> 再起動";
+  } else if (state.gateRunCharge >= 82) {
+    objective = "ゲートは開きかけている。同期で仕上げるか、調律で安定を厚くする。";
+    route = "同期 / 調律";
+  } else if (state.stability < 26) {
     objective = "安定が薄い。HUBへ戻るか、問いで調律して崩落を避ける。";
     route = "返す / HUBへ戻る";
   } else if (phase === "OPEN") {
@@ -478,6 +505,10 @@ function buildMusicProfile(depthId = currentDepthId) {
       resonance: state.resonance,
       marks: state.marks,
       entries: state.entries,
+      gateRunStatus: state.gateRunStatus,
+      gateRunTurns: state.gateRunTurns,
+      gateRunCharge: Math.round(state.gateRunCharge),
+      lastGateAction: state.lastGateAction,
       rawInputStored: false
     },
     style: styleForMusicProfile(rank, state),
@@ -569,6 +600,10 @@ function sanitizeMusicSource(source = {}) {
     resonance: Math.round(clampNumber(source.resonance ?? getRunState().resonance, 0, RESONANCE_MAX)),
     marks: Math.round(clampNumber(source.marks ?? getRunState().marks, 0, 99)),
     entries: Math.max(0, Math.round(Number(source.entries ?? getRunState().entries) || 0)),
+    gateRunStatus: ["running", "won", "lost"].includes(source.gateRunStatus) ? source.gateRunStatus : getRunState().gateRunStatus,
+    gateRunTurns: Math.max(0, Math.round(Number(source.gateRunTurns ?? getRunState().gateRunTurns) || 0)),
+    gateRunCharge: Math.round(clampNumber(source.gateRunCharge ?? getRunState().gateRunCharge, 0, GATE_RUN_MAX_CHARGE)),
+    lastGateAction: cleanShortText(source.lastGateAction || getRunState().lastGateAction || ""),
     rawInputStored: false
   };
 }
@@ -839,6 +874,258 @@ function applyCoreReward(reward) {
   return runLog;
 }
 
+const GATE_RUN_ACTIONS = [
+  {
+    id: "dive",
+    title: "潜る",
+    meta: "深度圧を受けて、ゲート開度を強く進める。"
+  },
+  {
+    id: "observe",
+    title: "観測",
+    meta: "危険を抑えながら、次の形を読む。"
+  },
+  {
+    id: "tune",
+    title: "調律",
+    meta: "安定と共鳴を整えて、崩落を遠ざける。"
+  },
+  {
+    id: "sync",
+    title: "同期",
+    meta: "共鳴やしるしを使って、ゲートを一気に合わせる。"
+  },
+  {
+    id: "retreat",
+    title: "退避",
+    meta: "HUBへ戻り、安定を回復して立て直す。"
+  }
+];
+
+function gateRunStatusLabel(state = getRunState()) {
+  if (state.gateRunStatus === "won") return "GATE OPEN";
+  if (state.gateRunStatus === "lost") return "COLLAPSED";
+  if (state.gateRunCharge >= 82) return "FINAL ALIGN";
+  if (state.stability < 28) return "LOW STABILITY";
+  return "RUNNING";
+}
+
+function gateRunActionPreview(actionId) {
+  const state = getRunState();
+  const rank = depthRank(currentDepthId);
+  const gi = buildGateIntelligence(currentDepthId);
+  const risk = gi.risk;
+  const bonus = numericHash(`${ensureSeed()}|${currentDepthId}|${state.gateRunTurns}|${actionId}`) % 4;
+  const closed = state.gateRunStatus !== "running" && actionId !== "retreat";
+  const common = { disabled: navigationLocked || closed, result: "", title: "" };
+
+  if (actionId === "dive") {
+    const cost = 8 + Math.ceil(risk / 18);
+    const charge = 10 + Math.floor(rank / 4) + bonus;
+    return {
+      ...common,
+      result: `gate +${charge} / 安定 -${cost}`,
+      title: "深く潜って、ゲートの輪郭を押し広げる。"
+    };
+  }
+
+  if (actionId === "observe") {
+    const charge = 4 + bonus;
+    return {
+      ...common,
+      result: `gate +${charge} / 安定 +3`,
+      title: "観測線を増やし、無理なく開度を進める。"
+    };
+  }
+
+  if (actionId === "tune") {
+    const charge = 7 + Math.floor(state.resonance / 24) + bonus;
+    return {
+      ...common,
+      result: `gate +${charge} / 安定 +7`,
+      title: "位相を整え、次の同期に耐える土台を作る。"
+    };
+  }
+
+  if (actionId === "sync") {
+    const enough = state.resonance >= 16 || state.marks > 0 || state.gateRunCharge >= 82;
+    const charge = enough ? 18 + Math.min(10, state.marks * 3) + bonus : 4 + bonus;
+    return {
+      ...common,
+      disabled: common.disabled,
+      result: enough ? `gate +${charge} / 共鳴 -12` : `gate +${charge} / 同期不足`,
+      title: enough ? "共鳴を束ねて、扉へ直接接続する。" : "共鳴かしるしが薄い。小さな同期だけ通る。"
+    };
+  }
+
+  return {
+    ...common,
+    disabled: navigationLocked,
+    result: "安定 +18 / HUB",
+    title: state.gateRunStatus === "running"
+      ? "戻れるうちに戻り、走行を継続する。"
+      : "崩落/達成後の記録を閉じ、次の走行を起こす。"
+  };
+}
+
+function resetGateRunState(state) {
+  state.gateRunStatus = "running";
+  state.gateRunTurns = 0;
+  state.gateRunCharge = 0;
+  state.lastGateAction = "";
+  state.lastGateResult = "";
+  state.gateRunOutcomeAt = 0;
+}
+
+function resolveGateRunOutcome(state, notes) {
+  let targetDepthId = null;
+
+  if (state.gateRunCharge >= GATE_RUN_MAX_CHARGE) {
+    state.gateRunStatus = "won";
+    state.gateRunCharge = GATE_RUN_MAX_CHARGE;
+    state.gateRunOutcomeAt = Date.now();
+    notes.push("GATE OPEN");
+  } else if (state.stability <= 0 || state.gateRunTurns >= GATE_RUN_TURN_LIMIT) {
+    state.gateRunStatus = "lost";
+    state.gateRunOutcomeAt = Date.now();
+    state.stability = Math.max(24, state.stability);
+    state.resonance = clampNumber(state.resonance - 8, 0, RESONANCE_MAX);
+    targetDepthId = depths[HUB_DEPTH] ? HUB_DEPTH : DEFAULT_START;
+    notes.push("崩落。HUBへ退避");
+  }
+
+  return targetDepthId;
+}
+
+function applyGateRunAction(actionId) {
+  if (navigationLocked) return null;
+
+  const state = getRunState();
+  const action = GATE_RUN_ACTIONS.find((item) => item.id === actionId);
+  if (!action) return null;
+
+  const preview = gateRunActionPreview(actionId);
+  if (preview.disabled) {
+    runLog = "Gate Runは今は動かせません。沈黙が解けるのを待ってください。";
+    refreshRunPanel();
+    return null;
+  }
+
+  const rank = depthRank(currentDepthId);
+  const risk = buildGateIntelligence(currentDepthId).risk;
+  const bonus = numericHash(`${ensureSeed()}|${currentDepthId}|${state.gateRunTurns}|${actionId}`) % 4;
+  const notes = [`${action.title}: ${preview.result}`];
+  let chargeDelta = 0;
+  let stabilityDelta = 0;
+  let resonanceDelta = 0;
+  let marksDelta = 0;
+  let targetDepthId = null;
+
+  if (actionId === "retreat") {
+    if (state.gateRunStatus !== "running") resetGateRunState(state);
+    stabilityDelta = 18;
+    resonanceDelta = -6;
+    chargeDelta = -4;
+    targetDepthId = currentDepthId !== HUB_DEPTH && depths[HUB_DEPTH] ? HUB_DEPTH : null;
+  } else if (actionId === "dive") {
+    stabilityDelta = -(8 + Math.ceil(risk / 18));
+    resonanceDelta = 4 + Math.min(4, Math.ceil(rank / 9));
+    chargeDelta = 10 + Math.floor(rank / 4) + bonus;
+  } else if (actionId === "observe") {
+    stabilityDelta = 3;
+    resonanceDelta = 2;
+    chargeDelta = 4 + bonus;
+  } else if (actionId === "tune") {
+    stabilityDelta = 7;
+    resonanceDelta = 5;
+    chargeDelta = 7 + Math.floor(state.resonance / 24) + bonus;
+  } else if (actionId === "sync") {
+    const enough = state.resonance >= 16 || state.marks > 0 || state.gateRunCharge >= 82;
+    if (enough) {
+      resonanceDelta = -12;
+      marksDelta = state.marks > 0 ? -1 : 0;
+      chargeDelta = 18 + Math.min(10, state.marks * 3) + bonus;
+    } else {
+      stabilityDelta = -3;
+      resonanceDelta = 1;
+      chargeDelta = 4 + bonus;
+    }
+  }
+
+  state.gateRunTurns += 1;
+  state.stability = clampNumber(state.stability + stabilityDelta, 0, STABILITY_MAX);
+  state.resonance = clampNumber(state.resonance + resonanceDelta, 0, RESONANCE_MAX);
+  state.marks = clampNumber(state.marks + marksDelta, 0, 99);
+  state.gateRunCharge = clampNumber(state.gateRunCharge + chargeDelta, 0, GATE_RUN_MAX_CHARGE);
+  state.lastGateAction = actionId;
+  state.lastGateResult = notes.join(" / ");
+
+  const outcomeTarget = resolveGateRunOutcome(state, notes);
+  if (outcomeTarget) targetDepthId = outcomeTarget;
+
+  saveRunState();
+  runLog = notes.join(" / ");
+  syncVisualMotion(targetDepthId || currentDepthId);
+  return targetDepthId;
+}
+
+function renderGateRunTrack(state) {
+  const pct = clampNumber(state.gateRunCharge, 0, GATE_RUN_MAX_CHARGE);
+  const marker = clampNumber((depthRank(currentDepthId) / 28) * 100, 0, 100);
+  return `
+    <div class="hz-gate-run-track" aria-label="Gate Run charge">
+      <span class="hz-gate-run-fill" style="width: ${pct}%"></span>
+      <span class="hz-gate-run-marker" style="left: ${marker}%"></span>
+    </div>
+  `;
+}
+
+function renderGateRunPanelMarkup() {
+  const state = getRunState();
+  const statusClass = state.gateRunStatus === "won" ? "hz-gate-win" : state.gateRunStatus === "lost" ? "hz-gate-loss" : "";
+  const status = statusClass
+    ? `<span class="${statusClass}">${escapeHtml(gateRunStatusLabel(state))}</span>`
+    : `<span>${escapeHtml(gateRunStatusLabel(state))}</span>`;
+  const actionButtons = GATE_RUN_ACTIONS.map((action) => {
+    const preview = gateRunActionPreview(action.id);
+    return `
+      <button class="hz-gate-action" type="button" data-gate-action="${escapeHtml(action.id)}" title="${escapeHtml(preview.title)}"${preview.disabled ? " disabled" : ""}>
+        <span class="hz-gate-action-title">${escapeHtml(action.title)}</span>
+        <span class="hz-gate-action-meta">${escapeHtml(action.meta)}</span>
+        <span class="hz-gate-action-result">${escapeHtml(preview.result)}</span>
+      </button>
+    `;
+  }).join("");
+
+  return `
+    <section class="hz-gate-run-panel" aria-label="Gate Run">
+      <div class="hz-gate-run-head">
+        <span>Gate Run</span>
+        <span class="hz-gate-run-status">${status} / turn ${state.gateRunTurns} / ${Math.round(state.gateRunCharge)}%</span>
+      </div>
+      ${renderGateRunTrack(state)}
+      <div class="hz-gate-run-actions">
+        ${actionButtons}
+      </div>
+    </section>
+  `;
+}
+
+function bindGateRunControls() {
+  for (const btn of document.querySelectorAll("[data-gate-action]")) {
+    btn.addEventListener("click", () => {
+      const actionId = btn.getAttribute("data-gate-action");
+      const targetDepthId = applyGateRunAction(actionId);
+      if (targetDepthId && depths[targetDepthId] && targetDepthId !== currentDepthId) {
+        renderDepth(targetDepthId, { recordHistory: false, applyRun: false });
+        return;
+      }
+      refreshRunPanel();
+      setStatus(`Gate Run: ${actionId}`);
+    });
+  }
+}
+
 function renderGauge(label, value, max, toneClass) {
   const pct = clampNumber((value / max) * 100, 0, 100);
   return `
@@ -912,6 +1199,7 @@ function renderRunPanelMarkup() {
         <span>返答 <b>${state.entries}</b></span>
       </div>
       ${log}
+      ${renderGateRunPanelMarkup()}
       ${renderGateIntelligenceMarkup()}
       <div class="hz-music-panel" aria-label="Music自動生成">
         <div class="hz-music-head">
@@ -938,6 +1226,7 @@ function renderRunPanelMarkup() {
 function refreshRunPanel() {
   const host = $("run-panel-host");
   if (host) host.innerHTML = renderRunPanelMarkup();
+  bindGateRunControls();
   bindMusicControls();
   syncMusicBridge();
 }
@@ -1252,6 +1541,7 @@ function renderDepth(depthId, opts = {}) {
   renderControls(optionsEl);
   renderOptions(depth, optionsEl);
   renderCoreLoop(depth);
+  bindGateRunControls();
   bindMusicControls();
   syncMusicBridge();
   installMusicAutoStart();
