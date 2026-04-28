@@ -1,4 +1,4 @@
-// Hazama main.js v2.10
+// Hazama main.js v2.11
 // Minimal, robust loader + renderer for GitHub Pages / Codespaces.
 // v2.3 adds a lightweight deterministic game layer around depth pressure.
 // v2.5 animates the descent key visual and mandala goal gate.
@@ -7,8 +7,9 @@
 // v2.8 adds a local Gate Intelligence director for game objectives.
 // v2.9 sends sanitized Hazama profiles to Music via hash boot and postMessage.
 // v2.10 arms Music sync on Hazama start and opens it on the first user gesture.
+// v2.11 aligns Music bridge stages with the Music hazama-profile receiver arc.
 
-const APP_VERSION = "v2.10";
+const APP_VERSION = "v2.11";
 
 const STATE_KEY = "hazama_state_v2";
 const SEED_KEY = "hazama_seed";
@@ -403,12 +404,11 @@ function styleForMusicProfile(rank, state) {
 }
 
 function musicStageForDepth(rank) {
-  if (rank >= 27) return "terminal_gate";
-  if (rank >= 22) return "outer_ring";
-  if (rank >= 15) return "multi_observer";
-  if (rank >= 8) return "branching_depth";
-  if (rank > 0) return "submerge";
-  return "hub";
+  if (rank >= 27) return "exhale";
+  if (rank >= 18) return "root";
+  if (rank >= 10) return "ferment";
+  if (rank >= 4) return "sprout";
+  return "submerge";
 }
 
 function activeAudioProvider() {
@@ -563,7 +563,7 @@ function sanitizeMusicSource(source = {}) {
     appVersion: APP_VERSION,
     depthId: cleanShortText(source.depthId || currentDepthId, DEFAULT_START),
     depthTitle: cleanShortText(source.depthTitle || depths[currentDepthId]?.title || ""),
-    stage: cleanShortText(source.stage || musicStageForDepth(depthRank(currentDepthId)), "hub"),
+    stage: cleanShortText(source.stage || musicStageForDepth(depthRank(currentDepthId)), "submerge"),
     rank: Math.round(clampNumber(source.rank ?? depthRank(currentDepthId), 0, 28)),
     stability: Math.round(clampNumber(source.stability ?? getRunState().stability, 0, STABILITY_MAX)),
     resonance: Math.round(clampNumber(source.resonance ?? getRunState().resonance, 0, RESONANCE_MAX)),
@@ -647,8 +647,13 @@ function openMusicBridge(mode = "production") {
   return true;
 }
 
-function attemptMusicAutoStart() {
+function isMusicLaunchTarget(target) {
+  return Boolean(target?.closest?.("#music-open-provider, #music-open-local"));
+}
+
+function attemptMusicAutoStart(ev) {
   if (musicAutoStartDone) return;
+  if (isMusicLaunchTarget(ev?.target || document.activeElement)) return;
   musicAutoStartDone = true;
   const opened = openMusicBridge("production");
   setMusicBridgeStatus(opened ? "Music auto-linked / START.HZM" : "auto blocked / use SYNC.MUSIC");
@@ -745,6 +750,7 @@ function bindMusicControls() {
     localLink.addEventListener("click", (ev) => {
       ev.preventDefault();
       const opened = openMusicBridge("local");
+      musicAutoStartDone = musicAutoStartDone || opened;
       setMusicStatus(opened ? "Local Music linked / START.HZM" : "popup blocked");
     });
   }
