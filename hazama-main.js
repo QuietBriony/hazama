@@ -1,4 +1,4 @@
-// Hazama main.js v2.9
+// Hazama main.js v2.10
 // Minimal, robust loader + renderer for GitHub Pages / Codespaces.
 // v2.3 adds a lightweight deterministic game layer around depth pressure.
 // v2.5 animates the descent key visual and mandala goal gate.
@@ -6,8 +6,9 @@
 // v2.7 formalizes Music as the active audio provider, with future ports reserved.
 // v2.8 adds a local Gate Intelligence director for game objectives.
 // v2.9 sends sanitized Hazama profiles to Music via hash boot and postMessage.
+// v2.10 arms Music sync on Hazama start and opens it on the first user gesture.
 
-const APP_VERSION = "v2.9";
+const APP_VERSION = "v2.10";
 
 const STATE_KEY = "hazama_state_v2";
 const SEED_KEY = "hazama_seed";
@@ -60,6 +61,8 @@ let musicBridgeWindows = {
   local: null
 };
 let lastMusicPayload = null;
+let musicAutoStartInstalled = false;
+let musicAutoStartDone = false;
 
 function $(id) {
   return document.getElementById(id);
@@ -602,6 +605,11 @@ function makeMusicLaunchUrl(profileOrPayload, mode = "production") {
   return `${baseUrl}#hazama=${toBase64Url(JSON.stringify(payload))}`;
 }
 
+function setMusicBridgeStatus(text) {
+  const status = $("music-profile-status");
+  if (status) status.textContent = text;
+}
+
 function musicTargetOrigin(mode = "production") {
   const provider = activeAudioProvider();
   return mode === "local" ? provider.localOrigin : provider.origin;
@@ -637,6 +645,21 @@ function openMusicBridge(mode = "production") {
   musicBridgeWindows[mode] = musicWindow;
   window.setTimeout(() => postMusicPayload(mode, payload), 600);
   return true;
+}
+
+function attemptMusicAutoStart() {
+  if (musicAutoStartDone) return;
+  musicAutoStartDone = true;
+  const opened = openMusicBridge("production");
+  setMusicBridgeStatus(opened ? "Music auto-linked / START.HZM" : "auto blocked / use SYNC.MUSIC");
+}
+
+function installMusicAutoStart() {
+  if (musicAutoStartInstalled) return;
+  musicAutoStartInstalled = true;
+  setMusicBridgeStatus("auto armed / first tap opens Music");
+  window.addEventListener("pointerdown", attemptMusicAutoStart, { once: true, capture: true, passive: true });
+  window.addEventListener("keydown", attemptMusicAutoStart, { once: true, capture: true });
 }
 
 function compactMusicProfileSummary(profile) {
@@ -681,9 +704,8 @@ function downloadMusicProfile(payload) {
 }
 
 function bindMusicControls() {
-  const status = $("music-profile-status");
   const setMusicStatus = (text) => {
-    if (status) status.textContent = text;
+    setMusicBridgeStatus(text);
   };
 
   const copyBtn = $("music-copy-profile");
@@ -713,7 +735,8 @@ function bindMusicControls() {
     openLink.addEventListener("click", (ev) => {
       ev.preventDefault();
       const opened = openMusicBridge("production");
-      setMusicStatus(opened ? "Music linked" : "popup blocked");
+      musicAutoStartDone = musicAutoStartDone || opened;
+      setMusicStatus(opened ? "Music linked / START.HZM" : "popup blocked");
     });
   }
 
@@ -722,7 +745,7 @@ function bindMusicControls() {
     localLink.addEventListener("click", (ev) => {
       ev.preventDefault();
       const opened = openMusicBridge("local");
-      setMusicStatus(opened ? "Local Music linked" : "popup blocked");
+      setMusicStatus(opened ? "Local Music linked / START.HZM" : "popup blocked");
     });
   }
 }
@@ -900,7 +923,7 @@ function renderRunPanelMarkup() {
           <a id="music-open-provider" class="hz-mini-link" href="${escapeHtml(launchUrl)}" target="hazama-music">SYNC.MUSIC</a>
           <a id="music-open-local" class="hz-mini-link" href="${escapeHtml(localLaunchUrl)}" target="hazama-music-local">LOCAL</a>
         </div>
-        <div id="music-profile-status" class="hz-music-status">hash boot / postMessage ready</div>
+        <div id="music-profile-status" class="hz-music-status">auto armed / first tap opens Music</div>
       </div>
     </aside>
   `;
@@ -1225,6 +1248,7 @@ function renderDepth(depthId, opts = {}) {
   renderCoreLoop(depth);
   bindMusicControls();
   syncMusicBridge();
+  installMusicAutoStart();
 
   setStatus(`OK: ${targetDepthId}`);
 }

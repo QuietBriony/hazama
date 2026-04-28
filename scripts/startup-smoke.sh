@@ -28,13 +28,14 @@ root = Path('/tmp/hz_root.html').read_text(encoding='utf-8')
 js = Path('/tmp/hz_main.js').read_text(encoding='utf-8')
 depths = json.loads(Path('/tmp/hz_depths.json').read_text(encoding='utf-8'))
 
-assert 'hazama-main.js?v=2.9' in root, 'index.html が最新の script クエリを参照していません'
+assert 'hazama-main.js?v=2.10' in root, 'index.html が最新の script クエリを参照していません'
 assert 'assets/hazama-descent-key.png' in root, 'index.html が探索者キービジュアルを参照していません'
 assert 'assets/hazama-goal-mandala.png' in root, 'index.html が曼荼羅ゲートを参照していません'
-assert 'Hazama main.js v2.9' in js, 'hazama-main.js バージョンが期待値ではありません'
+assert 'Hazama main.js v2.10' in js, 'hazama-main.js バージョンが期待値ではありません'
 assert 'Gate Intelligence' in js, 'hazama-main.js にGIディレクターが見つかりません'
 assert 'createMusicPayload' in js, 'hazama-main.js にMusic sender payloadが見つかりません'
 assert 'postMessage' in js, 'hazama-main.js にMusic postMessage senderが見つかりません'
+assert 'installMusicAutoStart' in js, 'hazama-main.js にMusic自動起動待機が見つかりません'
 assert 'A_start' in depths, 'hazama-depths.json に A_start がありません'
 assert 'HUB_NIGHT' in depths, 'hazama-depths.json に HUB_NIGHT がありません'
 print('OK: startup smoke passed')
