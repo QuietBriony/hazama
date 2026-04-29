@@ -1,4 +1,4 @@
-// Hazama main.js v2.14
+// Hazama main.js v2.15
 // Minimal, robust loader + renderer for GitHub Pages / Codespaces.
 // v2.3 adds a lightweight deterministic game layer around depth pressure.
 // v2.5 animates the descent key visual and mandala goal gate.
@@ -11,8 +11,9 @@
 // v2.12 adds Gate Run actions, win/loss, and game-forward GI feedback.
 // v2.13 clarifies Ω as the goal, compresses Music into Audio Gate, and stages mandala focus.
 // v2.14 separates anchor/mandala visuals and auto-collapses synced Audio Gate.
+// v2.15 lets the mandala dissolve full-bleed behind story depths.
 
-const APP_VERSION = "v2.14";
+const APP_VERSION = "v2.15";
 
 const STATE_KEY = "hazama_state_v2";
 const SEED_KEY = "hazama_seed";

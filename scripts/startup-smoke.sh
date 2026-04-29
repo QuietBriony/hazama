@@ -16,6 +16,7 @@ for _ in {1..30}; do
 done
 
 curl -fsS "$ROOT_URL/hazama-main.js" >/tmp/hz_main.js
+curl -fsS "$ROOT_URL/hazama-style.css" >/tmp/hz_style.css
 curl -fsS "$ROOT_URL/hazama-index.html" >/tmp/hz_alt.html
 curl -fsS "$ROOT_URL/hazama-depths.json" >/tmp/hz_depths.json
 curl -fsS "$ROOT_URL/assets/hazama-descent-key.png" >/tmp/hz_descent.png
@@ -28,19 +29,21 @@ from pathlib import Path
 root = Path('/tmp/hz_root.html').read_text(encoding='utf-8')
 alt = Path('/tmp/hz_alt.html').read_text(encoding='utf-8')
 js = Path('/tmp/hz_main.js').read_text(encoding='utf-8')
+css = Path('/tmp/hz_style.css').read_text(encoding='utf-8')
 depths = json.loads(Path('/tmp/hz_depths.json').read_text(encoding='utf-8'))
 
 for html_name, html in [('index.html', root), ('hazama-index.html', alt)]:
     for asset in [
-        'hazama-style.css?v=2.14',
-        'hazama-seed.js?v=2.14',
-        'hazama-state.js?v=2.14',
-        'hazama-main.js?v=2.14',
+        'hazama-style.css?v=2.15',
+        'hazama-seed.js?v=2.15',
+        'hazama-state.js?v=2.15',
+        'hazama-main.js?v=2.15',
     ]:
         assert asset in html, f'{html_name} が最新の {asset} を参照していません'
 assert 'assets/hazama-descent-key.png' in root, 'index.html が探索者キービジュアルを参照していません'
 assert 'assets/hazama-goal-mandala.png' in root, 'index.html が曼荼羅ゲートを参照していません'
-assert 'Hazama main.js v2.14' in js, 'hazama-main.js バージョンが期待値ではありません'
+assert 'Hazama main.js v2.15' in js, 'hazama-main.js バージョンが期待値ではありません'
+assert 'position: fixed' in css and '100vh' in css and 'mask-image' in css, '全画面曼荼羅背景のCSSフックが見つかりません'
 assert 'Gate Intelligence' in js, 'hazama-main.js にGIディレクターが見つかりません'
 assert 'createMusicPayload' in js, 'hazama-main.js にMusic sender payloadが見つかりません'
 assert 'postMessage' in js, 'hazama-main.js にMusic postMessage senderが見つかりません'
