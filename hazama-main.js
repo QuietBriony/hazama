@@ -1,4 +1,4 @@
-// Hazama main.js v2.13
+// Hazama main.js v2.14
 // Minimal, robust loader + renderer for GitHub Pages / Codespaces.
 // v2.3 adds a lightweight deterministic game layer around depth pressure.
 // v2.5 animates the descent key visual and mandala goal gate.
@@ -10,8 +10,9 @@
 // v2.11 aligns Music bridge stages with the Music hazama-profile receiver arc.
 // v2.12 adds Gate Run actions, win/loss, and game-forward GI feedback.
 // v2.13 clarifies Ω as the goal, compresses Music into Audio Gate, and stages mandala focus.
+// v2.14 separates anchor/mandala visuals and auto-collapses synced Audio Gate.
 
-const APP_VERSION = "v2.13";
+const APP_VERSION = "v2.14";
 
 const STATE_KEY = "hazama_state_v2";
 const SEED_KEY = "hazama_seed";
@@ -740,10 +741,15 @@ function isLocalDevHost() {
 
 function setMusicBridgeStatus(text = "", phase = "") {
   if (phase) musicBridgePhase = phase;
+  const gate = document.querySelector(".hz-audio-gate");
   const status = $("audio-gate-status") || $("music-profile-status");
   const phaseEl = $("audio-gate-phase");
   const stageEl = $("audio-gate-stage");
   const detail = text ? ` / ${text}` : "";
+  if (gate) {
+    gate.dataset.audioPhase = musicBridgePhase;
+    gate.setAttribute("aria-hidden", musicBridgePhase === "synced" ? "true" : "false");
+  }
   if (phaseEl) phaseEl.textContent = musicBridgePhase;
   if (stageEl) stageEl.textContent = audioGateStage();
   if (status) status.textContent = `${musicBridgePhase} / ${audioGateStage()}${detail}`;
@@ -756,7 +762,11 @@ function musicTargetOrigin(mode = "production") {
 
 function postMusicPayload(mode = "production", payload = lastMusicPayload) {
   const target = musicBridgeWindows[mode];
-  if (!target || target.closed || !payload) return false;
+  if (!target || !payload) return false;
+  if (target.closed) {
+    musicBridgeWindows[mode] = null;
+    return false;
+  }
   try {
     target.postMessage(payload, musicTargetOrigin(mode));
     return true;
@@ -772,6 +782,8 @@ function syncMusicBridge(profile = buildMusicProfile()) {
   const localSent = postMusicPayload("local", lastMusicPayload);
   if ((productionSent || localSent) && musicBridgePhase !== "pending") {
     setMusicBridgeStatus("profile sent", "synced");
+  } else if (!(productionSent || localSent) && musicBridgePhase === "synced") {
+    setMusicBridgeStatus("tap START.HZM", "armed");
   }
   return { payload: lastMusicPayload, sent: productionSent || localSent };
 }
@@ -798,6 +810,11 @@ function attemptMusicAutoStart(ev) {
   if (musicAutoStartDone) return;
   if (isMusicLaunchTarget(ev?.target || document.activeElement)) return;
   musicAutoStartDone = true;
+  const synced = syncMusicBridge();
+  if (synced.sent) {
+    setMusicBridgeStatus("profile sent", "synced");
+    return;
+  }
   const opened = openMusicBridge("production");
   setMusicBridgeStatus(opened ? "START.HZM in Music" : "blocked / tap AUDIO.GATE", opened ? "pending" : "blocked");
 }
@@ -808,6 +825,11 @@ function installMusicAutoStart() {
   setMusicBridgeStatus("first tap opens Music", "armed");
   window.addEventListener("pointerdown", attemptMusicAutoStart, { once: true, capture: true, passive: true });
   window.addEventListener("keydown", attemptMusicAutoStart, { once: true, capture: true });
+  window.addEventListener("focus", () => {
+    if (musicBridgePhase !== "pending") return;
+    const synced = syncMusicBridge();
+    if (synced.sent) setMusicBridgeStatus("profile sent", "synced");
+  });
 }
 
 function compactMusicProfileSummary(profile) {
@@ -1325,7 +1347,7 @@ function renderAudioGateMarkup(profile, launchUrl, localLaunchUrl) {
     : "";
 
   return `
-    <div class="hz-audio-gate" aria-label="Audio Gate">
+    <div class="hz-audio-gate" data-audio-phase="${escapeHtml(musicBridgePhase)}" aria-label="Audio Gate" aria-hidden="${musicBridgePhase === "synced" ? "true" : "false"}">
       <div class="hz-audio-gate-row">
         <span class="hz-audio-gate-label">AUDIO.GATE</span>
         <span id="audio-gate-phase" class="hz-audio-gate-phase">${escapeHtml(musicBridgePhase)}</span>
