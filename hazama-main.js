@@ -1,4 +1,4 @@
-// Hazama main.js v2.18
+// Hazama main.js v2.19
 // Minimal, robust loader + renderer for GitHub Pages / Codespaces.
 // v2.3 adds a lightweight deterministic game layer around depth pressure.
 // v2.5 animates the descent key visual and mandala goal gate.
@@ -15,8 +15,9 @@
 // v2.16 makes choices read like clear actions and separates game hints from prose.
 // v2.17 clarifies game state, rest actions, and Music connection wording.
 // v2.18 hides Music as a background BGM companion with auto-follow resume.
+// v2.19 reflects Music companion feedback state in BGM UI and atmosphere attrs.
 
-const APP_VERSION = "v2.18";
+const APP_VERSION = "v2.19";
 
 const STATE_KEY = "hazama_state_v2";
 const SEED_KEY = "hazama_seed";
@@ -94,6 +95,13 @@ const MusicFeedbackState = {
   connected: false,
   lastAt: 0,
   playing: false,
+  auto: false,
+  autoFollow: false,
+  connectionState: "idle",
+  controlAction: "",
+  outputLevel: 0,
+  hazamaStage: "",
+  hazamaDepthId: "",
   chapter: "",
   chapterLabel: "",
   bpm: 0,
@@ -101,6 +109,8 @@ const MusicFeedbackState = {
   genre: {},
   gradient: {},
   families: {},
+  culture: "",
+  proposal: "",
   visual: "idle",
   eventKind: "",
   lostTimer: null
@@ -685,6 +695,15 @@ function cleanShortText(text, fallback = "") {
   return String(text ?? fallback).replace(/[<>]/g, "").slice(0, 120);
 }
 
+function cleanDataToken(text, fallback = "idle") {
+  const token = String(text ?? fallback)
+    .toLowerCase()
+    .replace(/[^a-z0-9_.-]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 32);
+  return token || fallback;
+}
+
 function sanitizeMusicUcm(ucm = {}) {
   ucm = ucm && typeof ucm === "object" ? ucm : {};
   const keys = ["energy", "wave", "mind", "creation", "void", "circle", "body", "resource", "observer"];
@@ -778,46 +797,78 @@ function makeMusicLaunchUrl(profileOrPayload, mode = "production") {
 
 function bgmStageLabel() {
   if (MusicFeedbackState.connected) {
-    return MusicFeedbackState.chapterLabel || MusicFeedbackState.chapter || "MUSIC";
+    return MusicFeedbackState.hazamaStage || MusicFeedbackState.chapterLabel || MusicFeedbackState.chapter || "MUSIC";
   }
   return lastMusicPayload?.profile?.source?.stage || buildMusicProfile(currentDepthId).source.stage;
 }
 
+function musicConnectionStateCode() {
+  const state = MusicFeedbackState;
+  if (!bgmFollowEnabled || state.connectionState === "stop" || state.connectionState === "stopped") return "MUSIC.STOP";
+  if (state.connectionState === "pause" || state.connectionState === "paused") return "MUSIC.PAUSE";
+  if (state.connected && (state.autoFollow || state.connectionState === "follow" || state.connectionState === "following" || state.connectionState === "sync" || state.connectionState === "synced")) return "MUSIC.FOLLOW";
+  if (state.connected) return "MUSIC.READY";
+  if (musicBridgePhase === "blocked" || musicBridgePhase === "IDLE") return "MUSIC.READY";
+  return "MUSIC.READY";
+}
+
+function musicArcLabel() {
+  const raw = MusicFeedbackState.chapter || MusicFeedbackState.chapterLabel || MusicFeedbackState.hazamaStage || bgmStageLabel();
+  const token = cleanDataToken(raw, "");
+  const map = {
+    acid: "ACD",
+    acd: "ACD",
+    broken: "BRK",
+    break: "BRK",
+    memory: "MEM",
+    ghost: "GST",
+    exhale: "EXH",
+    root: "ROT",
+    ferment: "FRM",
+    sprout: "SPT",
+    submerge: "SUB",
+    haze: "HAZ",
+    chrome: "CHR"
+  };
+  const code = map[token] || token.replace(/[^a-z0-9]/g, "").slice(0, 3).toUpperCase();
+  return code ? `ARC.${code}` : "";
+}
+
 function bgmPhaseLabel(phase = musicBridgePhase) {
-  if (!bgmFollowEnabled || phase === "off") return "音なし";
-  if (MusicFeedbackState.connected && MusicFeedbackState.playing) return "再生中";
-  if (MusicFeedbackState.connected) return "待機中";
-  if (phase === "blocked" || phase === "IDLE") return "再開";
-  if (phase === "pending") return "待機中";
-  if (phase === "armed") return "起動中";
-  if (phase === "synced" || phase === "LISTENING" || phase === "READY") return "待機中";
-  return "音なし";
+  if (!bgmFollowEnabled || phase === "off") return "MUSIC.STOP";
+  return musicConnectionStateCode();
 }
 
 function bgmStatusLine(text = "") {
-  const stage = bgmStageLabel();
+  const arc = musicArcLabel();
   const details = [];
-  if (!bgmFollowEnabled) return "BGM: 音なし";
+  if (!bgmFollowEnabled) return "BGM: MUSIC.STOP";
   if (MusicFeedbackState.connected && MusicFeedbackState.bpm) details.push(`BPM ${MusicFeedbackState.bpm}`);
-  if (MusicFeedbackState.connected && stage) details.push(stage);
+  if (MusicFeedbackState.connected && arc) details.push(arc);
+  if (MusicFeedbackState.connected && MusicFeedbackState.outputLevel > 0) details.push(`OUT ${Math.round(MusicFeedbackState.outputLevel * 100)}`);
   if (!MusicFeedbackState.connected && text) details.push(text);
-  if (!MusicFeedbackState.connected && !text) details.push(stage);
+  if (!MusicFeedbackState.connected && !text) details.push(bgmStageLabel());
   return `BGM: ${bgmPhaseLabel()}${details.length ? ` / ${details.join(" / ")}` : ""}`;
 }
 
 function bgmCompactDetail(text = "") {
-  if (!bgmFollowEnabled) return "停止中";
-  if (MusicFeedbackState.connected && MusicFeedbackState.playing) {
+  if (!bgmFollowEnabled) return "MUSIC.STOP";
+  if (MusicFeedbackState.connected && MusicFeedbackState.bpm) {
     return MusicFeedbackState.bpm ? `BPM ${MusicFeedbackState.bpm}` : "再生中";
   }
-  if (MusicFeedbackState.connected) return "START.HZM済み";
+  if (MusicFeedbackState.connected) return musicArcLabel() || "MUSIC.READY";
   if (musicBridgePhase === "pending") return "START.HZM";
-  if (musicBridgePhase === "blocked" || musicBridgePhase === "IDLE") return "再開";
+  if (musicBridgePhase === "blocked" || musicBridgePhase === "IDLE") return "MUSIC.READY";
   return text || bgmStageLabel();
 }
 
+function bgmArcDetail() {
+  if (!MusicFeedbackState.connected) return "";
+  return musicArcLabel();
+}
+
 function bgmShouldCollapse() {
-  return bgmFollowEnabled && MusicFeedbackState.connected && MusicFeedbackState.playing && !bgmExpanded;
+  return bgmFollowEnabled && MusicFeedbackState.connected && MusicFeedbackState.playing && musicConnectionStateCode() === "MUSIC.FOLLOW" && !bgmExpanded;
 }
 
 function isLocalDevHost() {
@@ -837,6 +888,42 @@ function sanitizeFeedbackMap(source, keys) {
   return Object.fromEntries(keys.map((key) => [key, Number(safeFeedbackNumber(map[key], 0, 1).toFixed(3))]));
 }
 
+function feedbackHazamaRuntime(runtime) {
+  return runtime?.hazama && typeof runtime.hazama === "object" ? runtime.hazama : {};
+}
+
+function normalizeMusicConnectionState(runtime) {
+  const hazama = feedbackHazamaRuntime(runtime);
+  const raw = cleanDataToken(hazama.connectionState || runtime?.connectionState || "", "");
+  const action = cleanDataToken(hazama.controlAction || runtime?.controlAction || "", "");
+  const autoFollow = runtime?.autoFollow === true || hazama.autoFollow === true;
+  if (["stop", "stopped"].includes(action) || ["stop", "stopped"].includes(raw)) return "stop";
+  if (["pause", "paused"].includes(action) || ["pause", "paused"].includes(raw)) return "pause";
+  if (["resume", "play", "playing", "follow", "following", "sync", "synced", "listening"].includes(raw)) return "follow";
+  if (autoFollow && runtime?.playing === true) return "follow";
+  if (runtime?.playing === true) return "ready";
+  if (["ready", "pending", "armed", "idle", "lost"].includes(raw)) return raw || "ready";
+  return raw || "ready";
+}
+
+function sanitizeMusicCulture(culture) {
+  if (!culture) return "";
+  if (typeof culture === "string") return cleanDataToken(culture, "");
+  if (typeof culture === "object") {
+    return cleanDataToken(culture.id || culture.name || culture.mode || culture.label || "", "");
+  }
+  return "";
+}
+
+function sanitizeMusicProposal(proposal) {
+  if (!proposal) return "";
+  if (typeof proposal === "string") return cleanShortText(proposal, "");
+  if (typeof proposal === "object") {
+    return cleanShortText(proposal.label || proposal.title || proposal.name || proposal.id || proposal.kind || "", "");
+  }
+  return "";
+}
+
 function musicFeedbackVisual(runtime) {
   const chapter = String(runtime?.albumArc?.chapter || "").toLowerCase();
   const acid = safeFeedbackNumber(runtime?.acid?.performance, 0, 1);
@@ -851,9 +938,9 @@ function musicFeedbackVisual(runtime) {
 }
 
 function musicFeedbackStatusText() {
-  const bpm = MusicFeedbackState.bpm ? `BPM ${MusicFeedbackState.bpm}` : "BPM --";
-  const chapter = MusicFeedbackState.chapterLabel || MusicFeedbackState.chapter || "";
-  return chapter ? `${bpm} / ${chapter}` : bpm;
+  const bpm = MusicFeedbackState.bpm ? `BPM ${MusicFeedbackState.bpm}` : "";
+  const arc = musicArcLabel();
+  return [musicConnectionStateCode(), bpm, arc].filter(Boolean).join(" / ");
 }
 
 function applyMusicFeedbackVisual() {
@@ -862,11 +949,23 @@ function applyMusicFeedbackVisual() {
   const state = MusicFeedbackState;
   const genre = state.genre || {};
   const gradient = state.gradient || {};
+  const stateToken = cleanDataToken(state.connectionState || (state.connected ? "ready" : "idle"), "idle");
+  const exposedState = ["stop", "stopped", "pause", "paused", "lost"].includes(stateToken)
+    ? stateToken
+    : state.connected ? stateToken : "idle";
+  const chapterToken = cleanDataToken(state.chapter || state.chapterLabel || state.hazamaStage || "", "");
+  const acidToken = state.acid > 0.42 ? "hot" : state.acid > 0.12 ? "warm" : "idle";
   root.dataset.hzMusicFeedback = state.connected ? "connected" : "idle";
-  root.dataset.hzMusicChapter = state.chapter ? state.chapter.toLowerCase() : "";
+  root.dataset.hzMusicChapter = chapterToken;
   root.dataset.hzMusicVisual = state.visual || "idle";
-  root.dataset.hzMusicAcid = state.acid > 0.42 ? "hot" : state.acid > 0.12 ? "warm" : "idle";
+  root.dataset.hzMusicAcid = acidToken;
+  root.dataset.musicState = exposedState;
+  root.dataset.musicAutofollow = state.autoFollow ? "on" : "off";
+  root.dataset.musicAcid = acidToken;
+  root.dataset.musicChapter = chapterToken;
+  root.dataset.musicCulture = state.culture || "none";
   root.style.setProperty("--hz-music-acid", state.acid.toFixed(3));
+  root.style.setProperty("--hz-music-output", state.outputLevel.toFixed(3));
   root.style.setProperty("--hz-music-ambient", safeFeedbackNumber(genre.ambient, 0, 1).toFixed(3));
   root.style.setProperty("--hz-music-micro", safeFeedbackNumber(gradient.micro, 0, 1).toFixed(3));
   root.style.setProperty("--hz-music-ghost", safeFeedbackNumber(gradient.ghost, 0, 1).toFixed(3));
@@ -883,9 +982,14 @@ function scheduleMusicFeedbackLostCheck() {
     }
     MusicFeedbackState.connected = false;
     MusicFeedbackState.playing = false;
+    MusicFeedbackState.auto = false;
+    MusicFeedbackState.autoFollow = false;
+    MusicFeedbackState.connectionState = "lost";
+    MusicFeedbackState.controlAction = "";
+    MusicFeedbackState.outputLevel = 0;
     MusicFeedbackState.visual = "idle";
     applyMusicFeedbackVisual();
-    if (musicBridgePhase === "LISTENING") setMusicBridgeStatus("BGM 再開", "IDLE");
+    if (bgmFollowEnabled) setMusicBridgeStatus("BGM 再開", "IDLE");
   }, 14000);
 }
 
@@ -894,10 +998,18 @@ function applyMusicRuntimeFeedback(payload) {
   if (payload.type !== "music-runtime-feedback" || payload.version !== 1 || payload.provider !== "music") return false;
   if (payload.target && payload.target !== "hazama") return false;
   const runtime = payload.runtime && typeof payload.runtime === "object" ? payload.runtime : {};
+  const hazama = feedbackHazamaRuntime(runtime);
 
   MusicFeedbackState.connected = true;
   MusicFeedbackState.lastAt = Date.now();
   MusicFeedbackState.playing = runtime.playing === true;
+  MusicFeedbackState.auto = runtime.auto === true;
+  MusicFeedbackState.autoFollow = runtime.autoFollow === true || hazama.autoFollow === true;
+  MusicFeedbackState.connectionState = normalizeMusicConnectionState(runtime);
+  MusicFeedbackState.controlAction = cleanShortText(hazama.controlAction || runtime.controlAction || "", "");
+  MusicFeedbackState.outputLevel = safeFeedbackNumber(runtime.outputLevel, 0, 1);
+  MusicFeedbackState.hazamaStage = cleanShortText(hazama.stage || "", "");
+  MusicFeedbackState.hazamaDepthId = cleanShortText(hazama.depthId || "", "");
   MusicFeedbackState.chapter = cleanShortText(runtime.albumArc?.chapter || "", "");
   MusicFeedbackState.chapterLabel = cleanShortText(runtime.albumArc?.label || MusicFeedbackState.chapter || "", "");
   MusicFeedbackState.bpm = Math.round(clampNumber(runtime.bpm, 0, 220));
@@ -905,11 +1017,13 @@ function applyMusicRuntimeFeedback(payload) {
   MusicFeedbackState.genre = sanitizeFeedbackMap(runtime.color?.genre, ["ambient", "idm", "techno", "pressure"]);
   MusicFeedbackState.gradient = sanitizeFeedbackMap(runtime.color?.gradient, ["haze", "memory", "micro", "ghost", "chrome", "organic"]);
   MusicFeedbackState.families = sanitizeFeedbackMap(runtime.color?.families, ["hazeBed", "chromeHymn", "memoryRefrain", "coldPulse", "ghostBody", "acidBiyon", "sub808", "reedBuzz"]);
+  MusicFeedbackState.culture = sanitizeMusicCulture(runtime.culture);
+  MusicFeedbackState.proposal = sanitizeMusicProposal(runtime.proposal);
   MusicFeedbackState.visual = musicFeedbackVisual(runtime);
   MusicFeedbackState.eventKind = cleanShortText(runtime.event?.kind || "", "");
 
   applyMusicFeedbackVisual();
-  setMusicBridgeStatus(musicFeedbackStatusText(), MusicFeedbackState.playing ? "LISTENING" : "READY");
+  setMusicBridgeStatus(musicFeedbackStatusText(), MusicFeedbackState.connectionState === "follow" ? "LISTENING" : "READY");
   scheduleMusicFeedbackLostCheck();
   return true;
 }
@@ -933,15 +1047,19 @@ function setMusicBridgeStatus(text = "", phase = "") {
   const status = $("bgm-status") || $("audio-gate-status") || $("music-profile-status");
   const phaseEl = $("bgm-phase") || $("audio-gate-phase");
   const detailEl = $("bgm-detail") || $("audio-gate-stage");
+  const arcEl = $("bgm-arc");
   const openLink = $("music-open-provider");
   if (companion) {
     companion.dataset.bgmPhase = musicBridgePhase;
     companion.dataset.bgmCollapsed = bgmShouldCollapse() ? "true" : "false";
     companion.dataset.bgmFollow = bgmFollowEnabled ? "on" : "off";
+    companion.dataset.musicState = cleanDataToken(MusicFeedbackState.connectionState || "idle", "idle");
+    companion.dataset.musicAutofollow = MusicFeedbackState.autoFollow ? "on" : "off";
     companion.setAttribute("aria-hidden", "false");
   }
   if (phaseEl) phaseEl.textContent = bgmPhaseLabel();
   if (detailEl) detailEl.textContent = bgmCompactDetail(text);
+  if (arcEl) arcEl.textContent = bgmArcDetail();
   if (status) status.textContent = bgmStatusLine(text);
   if (openLink) openLink.textContent = bgmFollowEnabled ? "MusicでSTART.HZM" : "BGM 再開";
 }
@@ -1118,6 +1236,11 @@ function resumeBgmCompanion(mode = "production") {
   bgmFollowEnabled = true;
   bgmExpanded = true;
   musicBridgePhase = musicBridgePhase === "off" ? "armed" : musicBridgePhase;
+  if (MusicFeedbackState.connectionState === "stop" || MusicFeedbackState.connectionState === "pause") {
+    MusicFeedbackState.connectionState = "ready";
+    MusicFeedbackState.controlAction = "resume";
+    applyMusicFeedbackVisual();
+  }
   postMusicControlAll("resume");
   if (hasOpenMusicWindow(mode)) {
     const synced = syncMusicBridge();
@@ -1135,6 +1258,10 @@ function stopBgmCompanion() {
   bgmFollowEnabled = false;
   bgmExpanded = false;
   musicAutoStartDone = true;
+  MusicFeedbackState.connectionState = "stop";
+  MusicFeedbackState.autoFollow = false;
+  MusicFeedbackState.controlAction = "stop";
+  applyMusicFeedbackVisual();
   postMusicControlAll("stop");
   setMusicBridgeStatus("止めています", "off");
 }
@@ -1635,12 +1762,13 @@ function renderBgmCompanionMarkup(profile, launchUrl, localLaunchUrl) {
   const openText = bgmFollowEnabled ? "MusicでSTART.HZM" : "BGM 再開";
 
   return `
-    <div class="hz-bgm-companion" data-bgm-phase="${escapeHtml(musicBridgePhase)}" data-bgm-collapsed="${bgmShouldCollapse() ? "true" : "false"}" data-bgm-follow="${bgmFollowEnabled ? "on" : "off"}" aria-label="BGM">
+    <div class="hz-bgm-companion" data-bgm-phase="${escapeHtml(musicBridgePhase)}" data-bgm-collapsed="${bgmShouldCollapse() ? "true" : "false"}" data-bgm-follow="${bgmFollowEnabled ? "on" : "off"}" data-music-state="${escapeHtml(cleanDataToken(MusicFeedbackState.connectionState || "idle", "idle"))}" data-music-autofollow="${MusicFeedbackState.autoFollow ? "on" : "off"}" aria-label="BGM">
       <div class="hz-bgm-row">
         <button id="bgm-toggle-provider" class="hz-bgm-chip" type="button" aria-label="BGMを起動または表示">
           <span class="hz-bgm-label">BGM</span>
           <span id="bgm-phase" class="hz-bgm-phase">${escapeHtml(bgmPhaseLabel())}</span>
           <span id="bgm-detail" class="hz-bgm-detail">${escapeHtml(bgmCompactDetail(profile.source.stage))}</span>
+          <span id="bgm-arc" class="hz-bgm-arc">${escapeHtml(bgmArcDetail())}</span>
         </button>
         ${stopButton}
       </div>

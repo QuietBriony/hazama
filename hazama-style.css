@@ -25,6 +25,7 @@ body {
   --hz-gate-glow: 0.28;
   --hz-threat: 0;
   --hz-music-acid: 0;
+  --hz-music-output: 0;
   --hz-music-ambient: 0;
   --hz-music-micro: 0;
   --hz-music-ghost: 0;
@@ -236,8 +237,27 @@ body {
 }
 
 :root[data-hz-music-feedback="connected"] .hz-visual::before {
-  opacity: calc(0.28 + var(--hz-music-ambient) * 0.16 + var(--hz-music-micro) * 0.16);
+  opacity: calc(0.28 + var(--hz-music-ambient) * 0.14 + var(--hz-music-micro) * 0.14 + var(--hz-music-output) * 0.12);
   animation-duration: calc(42s - var(--hz-music-micro) * 14s - var(--hz-music-acid) * 10s);
+}
+
+:root[data-music-state="follow"] .hz-visual::before {
+  opacity: calc(0.3 + var(--hz-music-output) * 0.22);
+}
+
+:root[data-music-state="pause"] .hz-visual,
+:root[data-music-state="stop"] .hz-visual,
+:root[data-music-state="lost"] .hz-visual {
+  filter: saturate(0.82) brightness(0.92);
+}
+
+:root[data-music-state="stop"] .hz-visual::before,
+:root[data-music-state="lost"] .hz-visual::before {
+  opacity: 0.16;
+}
+
+:root[data-music-autofollow="on"][data-music-state="follow"] .hz-gate-orb {
+  filter: drop-shadow(0 0 1.2rem rgba(125, 211, 252, calc(0.2 + var(--hz-music-output) * 0.3)));
 }
 
 :root[data-hz-music-visual="memory"] .hz-visual::before {
@@ -780,7 +800,8 @@ body {
 }
 
 .hz-bgm-phase,
-.hz-bgm-detail {
+.hz-bgm-detail,
+.hz-bgm-arc {
   color: #bae6fd;
   font-size: 0.66rem;
   font-weight: 750;
@@ -790,6 +811,13 @@ body {
 .hz-bgm-detail {
   color: #fde68a;
   max-width: 9rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.hz-bgm-arc {
+  color: #94a3b8;
+  max-width: 5rem;
   overflow: hidden;
   text-overflow: ellipsis;
 }
@@ -819,6 +847,19 @@ body {
   color: #e0f2fe;
 }
 
+.hz-bgm-companion[data-music-state="follow"] .hz-bgm-phase {
+  color: #86efac;
+}
+
+.hz-bgm-companion[data-music-state="pause"] .hz-bgm-phase {
+  color: #fde68a;
+}
+
+.hz-bgm-companion[data-music-state="stop"] .hz-bgm-phase,
+.hz-bgm-companion[data-music-state="lost"] .hz-bgm-phase {
+  color: #fca5a5;
+}
+
 .hz-bgm-companion[data-bgm-collapsed="true"] {
   opacity: 0.62;
 }
@@ -829,7 +870,8 @@ body {
   display: none;
 }
 
-.hz-bgm-companion[data-bgm-collapsed="true"] .hz-bgm-detail {
+.hz-bgm-companion[data-bgm-collapsed="true"] .hz-bgm-detail,
+.hz-bgm-companion[data-bgm-collapsed="true"] .hz-bgm-arc {
   max-width: 0;
   opacity: 0;
 }
