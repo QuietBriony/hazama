@@ -13,11 +13,11 @@
     ],
     "options": [
       {
-        "text": "HUBへ入る",
+        "text": "夜のハブへ入る",
         "next": "HUB_NIGHT"
       },
       {
-        "text": "足元の光を踏み抜く",
+        "text": "足元の光をたどって先へ進む",
         "next": "B"
       }
     ]
@@ -42,11 +42,11 @@
     "color": "#66bbff",
     "options": [
       {
-        "text": "設計線を追って進む",
+        "text": "壁に走る細い線をたどる",
         "next": "C"
       },
       {
-        "text": "HUBへ戻る",
+        "text": "夜のハブへ戻る",
         "next": "HUB_NIGHT"
       }
     ]
@@ -70,11 +70,11 @@
     "color": "#55aaff",
     "options": [
       {
-        "text": "分岐した視点を連れて進む",
+        "text": "いくつかの見え方を抱えたまま進む",
         "next": "D"
       },
       {
-        "text": "HUBへ戻る",
+        "text": "夜のハブへ戻る",
         "next": "HUB_NIGHT"
       }
     ]
@@ -98,11 +98,11 @@
     "color": "#4499ff",
     "options": [
       {
-        "text": "折れ曲がった時間へ入る",
+        "text": "時間のずれに足を踏み入れる",
         "next": "E"
       },
       {
-        "text": "HUBへ戻る",
+        "text": "夜のハブへ戻る",
         "next": "HUB_NIGHT"
       }
     ]
@@ -127,11 +127,11 @@
     "color": "#3388ff",
     "options": [
       {
-        "text": "内側の視線を起こす",
+        "text": "自分の内側に目を向ける",
         "next": "F"
       },
       {
-        "text": "HUBへ戻る",
+        "text": "夜のハブへ戻る",
         "next": "HUB_NIGHT"
       }
     ]
@@ -155,11 +155,11 @@
     "color": "#2277ff",
     "options": [
       {
-        "text": "沈黙の奥を突き抜ける",
+        "text": "静けさの奥へ進む",
         "next": "G"
       },
       {
-        "text": "HUBへ戻る",
+        "text": "夜のハブへ戻る",
         "next": "HUB_NIGHT"
       }
     ]
@@ -183,11 +183,11 @@
     "color": "#1166ff",
     "options": [
       {
-        "text": "継ぎ目を踏んで跳ぶ",
+        "text": "壁の継ぎ目を越える",
         "next": "H"
       },
       {
-        "text": "HUBへ戻る",
+        "text": "夜のハブへ戻る",
         "next": "HUB_NIGHT"
       }
     ]
@@ -211,11 +211,11 @@
     "color": "#0055ff",
     "options": [
       {
-        "text": "別位相へ体重を移す",
+        "text": "違う流れに身を移す",
         "next": "I"
       },
       {
-        "text": "HUBへ戻る",
+        "text": "夜のハブへ戻る",
         "next": "HUB_NIGHT"
       }
     ]
@@ -239,15 +239,15 @@
     "color": "#004cff",
     "options": [
       {
-        "text": "重なりを踏み越える",
+        "text": "重なった境界を越える",
         "next": "J"
       },
       {
-        "text": "境界線を一つに絞る",
+        "text": "ひとつの境界を選ぶ",
         "next": "K"
       },
       {
-        "text": "HUBへ戻る",
+        "text": "夜のハブへ戻る",
         "next": "HUB_NIGHT"
       }
     ]
@@ -271,15 +271,15 @@
     "color": "#0044ff",
     "options": [
       {
-        "text": "声に応える",
+        "text": "聞こえた声に返事をする",
         "next": "L"
       },
       {
-        "text": "距離を取る",
+        "text": "少し距離を置いて見る",
         "next": "K"
       },
       {
-        "text": "HUBへ戻る",
+        "text": "夜のハブへ戻る",
         "next": "HUB_NIGHT"
       }
     ]
@@ -302,15 +302,15 @@
     "color": "#003cf7",
     "options": [
       {
-        "text": "波紋の中心へ進む",
+        "text": "波紋の中心へ近づく",
         "next": "M"
       },
       {
-        "text": "波紋の外縁をなぞる",
+        "text": "波紋の外側を歩く",
         "next": "L"
       },
       {
-        "text": "HUBへ戻る",
+        "text": "夜のハブへ戻る",
         "next": "HUB_NIGHT"
       }
     ]
@@ -334,15 +334,15 @@
     "color": "#0034ef",
     "options": [
       {
-        "text": "一つを選び取る",
+        "text": "ひとつの道を選ぶ",
         "next": "N"
       },
       {
-        "text": "選ばずに眺め続ける",
+        "text": "選ばずにしばらく眺める",
         "next": "M"
       },
       {
-        "text": "HUBへ戻る",
+        "text": "夜のハブへ戻る",
         "next": "HUB_NIGHT"
       }
     ]
@@ -366,15 +366,15 @@
     "color": "#002ce7",
     "options": [
       {
-        "text": "交差点の中心へ進む",
+        "text": "視線が交わる場所へ進む",
         "next": "O"
       },
       {
-        "text": "視線をずらして歩く",
+        "text": "視線を少し外して歩く",
         "next": "N"
       },
       {
-        "text": "HUBへ戻る",
+        "text": "夜のハブへ戻る",
         "next": "HUB_NIGHT"
       }
     ]
@@ -398,15 +398,15 @@
     "color": "#0024df",
     "options": [
       {
-        "text": "一つの層にピントを合わせる",
+        "text": "ひとつの景色に焦点を合わせる",
         "next": "P"
       },
       {
-        "text": "重なったまま進む",
+        "text": "重なりをほどかず進む",
         "next": "O"
       },
       {
-        "text": "HUBへ戻る",
+        "text": "夜のハブへ戻る",
         "next": "HUB_NIGHT"
       }
     ]
@@ -430,15 +430,15 @@
     "color": "#001cd7",
     "options": [
       {
-        "text": "呼吸のリズムに同期する",
+        "text": "呼吸のリズムに合わせる",
         "next": "Q"
       },
       {
-        "text": "あえてリズムを外す",
+        "text": "あえてリズムを外して進む",
         "next": "P"
       },
       {
-        "text": "HUBへ戻る",
+        "text": "夜のハブへ戻る",
         "next": "HUB_NIGHT"
       }
     ]
@@ -461,15 +461,15 @@
     "color": "#0014cf",
     "options": [
       {
-        "text": "世界の視線を受け止める",
+        "text": "世界からの視線を受け止める",
         "next": "R"
       },
       {
-        "text": "視線をかわし続ける",
+        "text": "視線をかわしながら進む",
         "next": "Q"
       },
       {
-        "text": "HUBへ戻る",
+        "text": "夜のハブへ戻る",
         "next": "HUB_NIGHT"
       }
     ]
@@ -493,15 +493,15 @@
     "color": "#000cc7",
     "options": [
       {
-        "text": "ラベルを全て剥がす",
+        "text": "名前や意味をいったん外す",
         "next": "S"
       },
       {
-        "text": "いくつかのラベルだけ残す",
+        "text": "必要な名前だけ残す",
         "next": "R"
       },
       {
-        "text": "HUBへ戻る",
+        "text": "夜のハブへ戻る",
         "next": "HUB_NIGHT"
       }
     ]
@@ -524,15 +524,15 @@
     "color": "#0004bf",
     "options": [
       {
-        "text": "揺らぎに身を委ねる",
+        "text": "揺れに身を任せる",
         "next": "T"
       },
       {
-        "text": "リズムを抽出する",
+        "text": "揺れの中からリズムを探す",
         "next": "S"
       },
       {
-        "text": "HUBへ戻る",
+        "text": "夜のハブへ戻る",
         "next": "HUB_NIGHT"
       }
     ]
@@ -555,15 +555,15 @@
     "color": "#0000b7",
     "options": [
       {
-        "text": "ちらつきを追いかける",
+        "text": "一瞬見えた形を追う",
         "next": "U"
       },
       {
-        "text": "あえて視線を外す",
+        "text": "あえて目をそらす",
         "next": "T"
       },
       {
-        "text": "HUBへ戻る",
+        "text": "夜のハブへ戻る",
         "next": "HUB_NIGHT"
       }
     ]
@@ -586,15 +586,15 @@
     "color": "#0000af",
     "options": [
       {
-        "text": "アンサンブルの中心に入る",
+        "text": "重なったリズムの中心へ入る",
         "next": "V"
       },
       {
-        "text": "外側から聴き続ける",
+        "text": "外側から音を聴き続ける",
         "next": "U"
       },
       {
-        "text": "HUBへ戻る",
+        "text": "夜のハブへ戻る",
         "next": "HUB_NIGHT"
       }
     ]
@@ -617,15 +617,15 @@
     "color": "#0000a7",
     "options": [
       {
-        "text": "新しい意味配置を受け入れる",
+        "text": "新しい意味の置き方を受け入れる",
         "next": "V"
       },
       {
-        "text": "違和感を抱えたまま進む",
+        "text": "違和感を持ったまま進む",
         "next": "S"
       },
       {
-        "text": "HUBへ戻る",
+        "text": "夜のハブへ戻る",
         "next": "HUB_NIGHT"
       }
     ]
@@ -648,19 +648,19 @@
     "color": "#00009f",
     "options": [
       {
-        "text": "共鳴をさらに高める",
+        "text": "響きを強めて先へ進む",
         "next": "Z"
       },
       {
-        "text": "円環群へ逸脱する",
+        "text": "別の輪の道へそれる",
         "next": "W"
       },
       {
-        "text": "共鳴を抑えながら進む",
+        "text": "響きを抑えて扉に近づく",
         "next": "Ω"
       },
       {
-        "text": "HUBへ戻る",
+        "text": "夜のハブへ戻る",
         "next": "HUB_NIGHT"
       }
     ]
@@ -683,11 +683,11 @@
     "color": "#000097",
     "options": [
       {
-        "text": "別の円環へと飛び移る",
+        "text": "別の輪へ渡る",
         "next": "X"
       },
       {
-        "text": "HUBへ戻る",
+        "text": "夜のハブへ戻る",
         "next": "HUB_NIGHT"
       }
     ]
@@ -710,11 +710,11 @@
     "color": "#00008f",
     "options": [
       {
-        "text": "境界のない場に身を投げ出す",
+        "text": "境界のない場所へ踏み出す",
         "next": "Y"
       },
       {
-        "text": "HUBへ戻る",
+        "text": "夜のハブへ戻る",
         "next": "HUB_NIGHT"
       }
     ]
@@ -737,11 +737,11 @@
     "color": "#000087",
     "options": [
       {
-        "text": "重なりの中心へ進む",
+        "text": "すべてが重なる中心へ進む",
         "next": "Z"
       },
       {
-        "text": "HUBへ戻る",
+        "text": "夜のハブへ戻る",
         "next": "HUB_NIGHT"
       }
     ]
@@ -765,11 +765,11 @@
     "color": "#00007f",
     "options": [
       {
-        "text": "円環の中心へ飛び込む",
+        "text": "輪の中心へ入る",
         "next": "Ω"
       },
       {
-        "text": "HUBへ戻る",
+        "text": "夜のハブへ戻る",
         "next": "HUB_NIGHT"
       }
     ]
@@ -796,11 +796,11 @@
     "color": "#002255",
     "options": [
       {
-        "text": "再誕へ戻る",
+        "text": "新しい入口へ戻る",
         "next": "A_reborn"
       },
       {
-        "text": "HUBへ戻る",
+        "text": "夜のハブへ戻る",
         "next": "HUB_NIGHT"
       }
     ]
@@ -827,7 +827,7 @@
     "color": "#88ccff",
     "options": [
       {
-        "text": "HUBへ戻る",
+        "text": "夜のハブへ戻る",
         "next": "HUB_NIGHT"
       }
     ]
@@ -846,23 +846,23 @@
     ],
     "options": [
       {
-        "text": "巡礼：A_startから進む",
+        "text": "最初の入口から進む",
         "next": "B"
       },
       {
-        "text": "探索：深度Iへ",
+        "text": "途中の境界から入る",
         "next": "I"
       },
       {
-        "text": "探索：深度Ωへ",
+        "text": "Ωの扉を試す",
         "next": "Ω"
       },
       {
-        "text": "跳躍：深度Wへ",
+        "text": "深い輪の場所へ跳ぶ",
         "next": "W"
       },
       {
-        "text": "終了/リセット",
+        "text": "最初からやり直す",
         "next": "A_start"
       }
     ]

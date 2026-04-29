@@ -1,4 +1,4 @@
-// Hazama main.js v2.15
+// Hazama main.js v2.16
 // Minimal, robust loader + renderer for GitHub Pages / Codespaces.
 // v2.3 adds a lightweight deterministic game layer around depth pressure.
 // v2.5 animates the descent key visual and mandala goal gate.
@@ -12,8 +12,9 @@
 // v2.13 clarifies Ω as the goal, compresses Music into Audio Gate, and stages mandala focus.
 // v2.14 separates anchor/mandala visuals and auto-collapses synced Audio Gate.
 // v2.15 lets the mandala dissolve full-bleed behind story depths.
+// v2.16 makes choices read like clear actions and separates game hints from prose.
 
-const APP_VERSION = "v2.15";
+const APP_VERSION = "v2.16";
 
 const STATE_KEY = "hazama_state_v2";
 const SEED_KEY = "hazama_seed";
@@ -29,11 +30,11 @@ const GATE_RUN_TURN_LIMIT = 20;
 const MILESTONE_RANKS = [8, 14, 20, 27];
 const MOVE_TYPES = ["dive", "observe", "tune", "sync", "retreat"];
 const MOVE_TYPE_LABELS = {
-  dive: "潜る",
-  observe: "観測",
-  tune: "調律",
-  sync: "同期",
-  retreat: "退避"
+  dive: "深く進む",
+  observe: "慎重に進む",
+  tune: "整えて進む",
+  sync: "扉に合わせる",
+  retreat: "戻って整える"
 };
 const ACTIVE_AUDIO_PROVIDER = "music";
 const AUDIO_PROVIDERS = {
@@ -179,6 +180,13 @@ function signedNumber(value) {
   return n > 0 ? `+${n}` : String(n);
 }
 
+function stabilityMeta(value) {
+  const rounded = Math.round(Number(value) || 0);
+  if (rounded > 0) return `安定 +${rounded}`;
+  if (rounded < 0) return `安定 ${rounded}`;
+  return "安定 ±0";
+}
+
 function pick(list, n) {
   return list[Math.abs(n) % list.length];
 }
@@ -301,7 +309,7 @@ function transitionPreview(fromId, toId, moveKind = "choice", explicitType = "")
   const fromRank = depthRank(fromId);
   const toRank = depthRank(toId);
   const moveType = inferMoveType(fromId, toId, moveKind, explicitType);
-  const typeLabel = MOVE_TYPE_LABELS[moveType] || "観測";
+  const typeLabel = MOVE_TYPE_LABELS[moveType] || "慎重に進む";
 
   if (moveKind === "back") {
     return {
@@ -309,7 +317,7 @@ function transitionPreview(fromId, toId, moveKind = "choice", explicitType = "")
       stabilityDelta: 8,
       resonanceDelta: -1,
       gateDelta: -1,
-      label: `${typeLabel} / 安定 +8`,
+      label: `${typeLabel} / ${stabilityMeta(8)}`,
       title: "一段戻って安定を取り戻します。"
     };
   }
@@ -320,7 +328,7 @@ function transitionPreview(fromId, toId, moveKind = "choice", explicitType = "")
       stabilityDelta: 14,
       resonanceDelta: -2,
       gateDelta: -2,
-      label: `${typeLabel} / 安定 +14`,
+      label: `${typeLabel} / ${stabilityMeta(14)}`,
       title: "HUB/入口で境界圧を落とします。"
     };
   }
@@ -333,7 +341,7 @@ function transitionPreview(fromId, toId, moveKind = "choice", explicitType = "")
     const pressure = Math.max(1, 4 + climb * 2 + Math.floor(toRank / 7) + (span > 6 ? 5 : 0) - quietBonus);
     const typeTuning = {
       dive: { stability: -pressure, resonance: 2, gate: 8 + Math.ceil(climb / 2), note: "深く潜ってゲートを強く押します。" },
-      observe: { stability: -Math.ceil(pressure * 0.68), resonance: 1, gate: 4 + Math.ceil(climb / 3), note: "観測しながら安全に進みます。" },
+      observe: { stability: -Math.ceil(pressure * 0.68), resonance: 1, gate: 4 + Math.ceil(climb / 3), note: "周囲を見ながら安全に進みます。" },
       tune: { stability: -Math.ceil(pressure * 0.42) + 4, resonance: 2, gate: 4, note: "位相を整えながら進みます。" },
       sync: { stability: -Math.ceil(pressure * 0.5), resonance: -6, gate: 16 + Math.min(8, getRunState().marks * 2), note: "共鳴を束ねてゲートへ接続します。" }
     }[moveType] || { stability: -pressure, resonance: 1, gate: 4, note: "深度圧を受けながら進みます。" };
@@ -344,7 +352,7 @@ function transitionPreview(fromId, toId, moveKind = "choice", explicitType = "")
       stabilityDelta,
       resonanceDelta,
       gateDelta: typeTuning.gate,
-      label: `${typeLabel} / 安定 ${signedNumber(stabilityDelta)}`,
+      label: `${typeLabel} / ${stabilityMeta(stabilityDelta)}`,
       title: `深度圧: ${typeTuning.note} 共鳴 ${signedNumber(resonanceDelta)} / gate ${signedNumber(typeTuning.gate)}。`
     };
   }
@@ -355,7 +363,7 @@ function transitionPreview(fromId, toId, moveKind = "choice", explicitType = "")
       stabilityDelta: 6,
       resonanceDelta: 0,
       gateDelta: -1,
-      label: `${typeLabel} / 安定 +6`,
+      label: `${typeLabel} / ${stabilityMeta(6)}`,
       title: "浅い層へ戻り、安定を少し回復します。"
     };
   }
@@ -365,7 +373,7 @@ function transitionPreview(fromId, toId, moveKind = "choice", explicitType = "")
     stabilityDelta: moveType === "tune" ? 3 : -2,
     resonanceDelta: moveType === "sync" ? -4 : 1,
     gateDelta: moveType === "sync" ? 10 : moveType === "tune" ? 3 : 1,
-    label: `${typeLabel} / 安定 ${moveType === "tune" ? "+3" : "-2"}`,
+    label: `${typeLabel} / ${stabilityMeta(moveType === "tune" ? 3 : -2)}`,
     title: "同じ深度帯で位相を調整します。"
   };
 }
@@ -376,7 +384,7 @@ function gateForOption(fromId, toId, option = {}) {
     return {
       allowed: false,
       moveType: "sync",
-      label: `Ω LOCK / gate ${charge}%`,
+      label: `まだ入れない / 開度 ${charge}%`,
       title: "ΩはGATE OPEN後に入れます。Gate Runを100%まで進めてください。"
     };
   }
@@ -392,7 +400,7 @@ function gateForOption(fromId, toId, option = {}) {
     label: preview.label,
     title: allowed
       ? preview.title
-      : `${preview.title} 現在の安定は${state.stability}です。問いに返すか、HUBへ戻ると回復できます。`
+      : `${preview.title} 現在の安定は${state.stability}です。問いに返すか、夜のハブへ戻ると回復できます。`
   };
 }
 
@@ -482,14 +490,14 @@ function buildGateIntelligence(depthId = currentDepthId) {
     objective = "GATE OPEN。Ωへ入れる。ここからがこの周回の本筋の到達点。";
     route = "Ω -> A' / HUB";
   } else if (state.gateRunStatus === "lost") {
-    objective = "Gate Run崩落。HUBで姿勢を戻し、退避から再起動する。";
-    route = "退避 -> 再起動";
+    objective = "Gate Run崩落。夜のハブで姿勢を戻し、もう一度挑戦する。";
+    route = "夜のハブへ戻る -> 再挑戦";
   } else if (state.gateRunCharge >= 82) {
     objective = "ゲートは開きかけている。同期で仕上げるか、調律で安定を厚くする。";
     route = "同期 / 調律";
   } else if (state.stability < 26) {
-    objective = "安定が薄い。HUBへ戻るか、問いで調律して崩落を避ける。";
-    route = "返す / HUBへ戻る";
+    objective = "安定が薄い。夜のハブへ戻るか、問いで調律して崩落を避ける。";
+    route = "返す / 夜のハブへ戻る";
   } else if (giGateAlmostOpen(state, gateCharge)) {
     objective = "目的ゲートは近いが、Ωはまだ開いていない。Gate Runを100%まで押し切る。";
     route = "同期 / 調律 / Gate Run";
@@ -1091,7 +1099,7 @@ function applyRunTransition(fromId, toId, moveKind = "choice", explicitType = ""
     state.stability = 24;
     state.resonance = clampNumber(state.resonance - 6, 0, RESONANCE_MAX);
     state.gateRunCharge = clampNumber(Math.min(state.gateRunCharge, 72), 0, GATE_RUN_MAX_CHARGE);
-    notes.push("COLLAPSED: HUBへ退避");
+    notes.push("COLLAPSED: 夜のハブへ戻る");
   } else if (state.gateRunStatus === "running" && state.gateRunCharge >= GATE_RUN_MAX_CHARGE) {
     state.gateRunStatus = "won";
     state.gateRunOutcomeAt = Date.now();
@@ -1150,28 +1158,28 @@ function applyCoreReward(reward) {
 const GATE_RUN_ACTIONS = [
   {
     id: "dive",
-    title: "潜る",
-    meta: "深度圧を受けて、ゲート開度を強く進める。"
+    title: "さらに奥へ進む",
+    meta: "安定を削って、扉の開きを大きく進める。"
   },
   {
     id: "observe",
-    title: "観測",
-    meta: "危険を抑えながら、次の形を読む。"
+    title: "周囲をよく見る",
+    meta: "危険を抑えながら、次の進み方を読む。"
   },
   {
     id: "tune",
-    title: "調律",
-    meta: "安定と共鳴を整えて、崩落を遠ざける。"
+    title: "呼吸を整える",
+    meta: "安定と響きを戻して、崩落を遠ざける。"
   },
   {
     id: "sync",
-    title: "同期",
-    meta: "共鳴やしるしを使って、ゲートを一気に合わせる。"
+    title: "扉に合わせる",
+    meta: "響きやしるしを使って、扉の開きを一気に合わせる。"
   },
   {
     id: "retreat",
-    title: "退避",
-    meta: "HUBへ戻り、安定を回復して立て直す。"
+    title: "夜のハブへ戻る",
+    meta: "戻って安定を回復し、もう一度立て直す。"
   }
 ];
 
@@ -1197,8 +1205,8 @@ function gateRunActionPreview(actionId) {
     const charge = 10 + Math.floor(rank / 4) + bonus;
     return {
       ...common,
-      result: `gate +${charge} / 安定 -${cost}`,
-      title: "深く潜って、ゲートの輪郭を押し広げる。"
+      result: `開度 +${charge} / 安定 -${cost}`,
+      title: "安定を削って、扉の開きを大きく進める。"
     };
   }
 
@@ -1206,8 +1214,8 @@ function gateRunActionPreview(actionId) {
     const charge = 4 + bonus;
     return {
       ...common,
-      result: `gate +${charge} / 安定 +3`,
-      title: "観測線を増やし、無理なく開度を進める。"
+      result: `開度 +${charge} / 安定 +3`,
+      title: "周囲をよく見て、無理なく開度を進める。"
     };
   }
 
@@ -1215,8 +1223,8 @@ function gateRunActionPreview(actionId) {
     const charge = 7 + Math.floor(state.resonance / 24) + bonus;
     return {
       ...common,
-      result: `gate +${charge} / 安定 +7`,
-      title: "位相を整え、次の同期に耐える土台を作る。"
+      result: `開度 +${charge} / 安定 +7`,
+      title: "呼吸を整え、次の接続に耐える土台を作る。"
     };
   }
 
@@ -1226,18 +1234,18 @@ function gateRunActionPreview(actionId) {
     return {
       ...common,
       disabled: common.disabled,
-      result: enough ? `gate +${charge} / 共鳴 -12` : `gate +${charge} / 同期不足`,
-      title: enough ? "共鳴を束ねて、扉へ直接接続する。" : "共鳴かしるしが薄い。小さな同期だけ通る。"
+      result: enough ? `開度 +${charge} / 共鳴 -12` : `開度 +${charge} / 準備不足`,
+      title: enough ? "響きを束ねて、扉へ直接つなぐ。" : "響きかしるしが薄い。小さな接続だけ通る。"
     };
   }
 
   return {
     ...common,
     disabled: navigationLocked,
-    result: "安定 +18 / HUB",
+    result: "安定 +18 / ハブへ",
     title: state.gateRunStatus === "running"
-      ? "戻れるうちに戻り、走行を継続する。"
-      : "崩落/達成後の記録を閉じ、次の走行を起こす。"
+      ? "戻れるうちに戻り、もう一度立て直す。"
+      : "崩落/達成後の記録を閉じ、次の挑戦を起こす。"
   };
 }
 
@@ -1260,7 +1268,7 @@ function resolveGateRunOutcome(state, notes) {
     state.resonance = clampNumber(state.resonance - 8, 0, RESONANCE_MAX);
     state.gateRunCharge = clampNumber(Math.min(state.gateRunCharge, 72), 0, GATE_RUN_MAX_CHARGE);
     targetDepthId = depths[HUB_DEPTH] ? HUB_DEPTH : DEFAULT_START;
-    notes.push("崩落。HUBへ退避");
+    notes.push("崩落。夜のハブへ戻る");
   } else if (state.gateRunCharge >= GATE_RUN_MAX_CHARGE) {
     state.gateRunStatus = "won";
     state.gateRunCharge = GATE_RUN_MAX_CHARGE;
@@ -1273,7 +1281,7 @@ function resolveGateRunOutcome(state, notes) {
     state.resonance = clampNumber(state.resonance - 8, 0, RESONANCE_MAX);
     state.gateRunCharge = clampNumber(Math.min(state.gateRunCharge, 72), 0, GATE_RUN_MAX_CHARGE);
     targetDepthId = depths[HUB_DEPTH] ? HUB_DEPTH : DEFAULT_START;
-    notes.push("時間切れ。HUBへ退避");
+    notes.push("時間切れ。夜のハブへ戻る");
   }
 
   return targetDepthId;
@@ -1730,7 +1738,7 @@ function renderControls(optionsEl) {
   backBtn.disabled = historyStack.length === 0;
 
   const homeTarget = (currentDepthId !== HUB_DEPTH && depths[HUB_DEPTH]) ? HUB_DEPTH : DEFAULT_START;
-  addButton(controls, homeTarget === HUB_DEPTH ? "HUBへ戻る" : "最初へ戻る", () => {
+  addButton(controls, homeTarget === HUB_DEPTH ? "夜のハブへ戻る" : "最初へ戻る", () => {
     clearPause();
     renderDepth(homeTarget, { moveKind: "home" });
   });
@@ -1751,13 +1759,21 @@ function renderOptions(depth, optionsEl) {
   for (const o of opts) {
     const next = o?.next;
     const gate = next ? gateForOption(currentDepthId, next, o) : { allowed: true, label: "", title: "", moveType: "" };
-    const label = gate.label ? `${o?.text ?? "…"} / ${gate.label}` : (o?.text ?? "…");
-    const btn = addButton(optionsEl, label, () => {
+    const primaryLabel = String(o?.text ?? "…");
+    const btn = addButton(optionsEl, primaryLabel, () => {
       if (navigationLocked) return;
       if (!next || !gate.allowed) return;
       clearPause();
       renderDepth(next, { moveKind: "choice", moveType: gate.moveType });
     }, "hz-btn hz-depth-option");
+    btn.classList.add("hz-choice-button");
+    if (gate.label) {
+      btn.innerHTML = `
+        <span class="hz-choice-main">${escapeHtml(primaryLabel)}</span>
+        <span class="hz-choice-meta">${escapeHtml(gate.label)}</span>
+      `;
+      btn.setAttribute("aria-label", `${primaryLabel} / ${gate.label}`);
+    }
     btn.disabled = navigationLocked || !gate.allowed;
     btn.title = gate.title;
     if (!gate.allowed) btn.classList.add("hz-locked-option");

@@ -34,15 +34,15 @@ depths = json.loads(Path('/tmp/hz_depths.json').read_text(encoding='utf-8'))
 
 for html_name, html in [('index.html', root), ('hazama-index.html', alt)]:
     for asset in [
-        'hazama-style.css?v=2.15',
-        'hazama-seed.js?v=2.15',
-        'hazama-state.js?v=2.15',
-        'hazama-main.js?v=2.15',
+        'hazama-style.css?v=2.16',
+        'hazama-seed.js?v=2.16',
+        'hazama-state.js?v=2.16',
+        'hazama-main.js?v=2.16',
     ]:
         assert asset in html, f'{html_name} が最新の {asset} を参照していません'
 assert 'assets/hazama-descent-key.png' in root, 'index.html が探索者キービジュアルを参照していません'
 assert 'assets/hazama-goal-mandala.png' in root, 'index.html が曼荼羅ゲートを参照していません'
-assert 'Hazama main.js v2.15' in js, 'hazama-main.js バージョンが期待値ではありません'
+assert 'Hazama main.js v2.16' in js, 'hazama-main.js バージョンが期待値ではありません'
 assert 'position: fixed' in css and '100vh' in css and 'mask-image' in css, '全画面曼荼羅背景のCSSフックが見つかりません'
 assert 'Gate Intelligence' in js, 'hazama-main.js にGIディレクターが見つかりません'
 assert 'createMusicPayload' in js, 'hazama-main.js にMusic sender payloadが見つかりません'
@@ -54,6 +54,8 @@ assert 'applyGateRunAction' in js, 'hazama-main.js にGate Run行動が見つか
 assert 'AUDIO.GATE' in js and 'hz-audio-gate' in js, 'Audio Gate UI が見つかりません'
 assert 'data-audio-phase' in js and 'synced' in js, 'Audio Gate の同期後折り畳みが見つかりません'
 assert 'canEnterOmega' in js and 'Ω LOCK' in js, 'Ωロック条件が見つかりません'
+assert 'hz-choice-main' in js and 'hz-choice-meta' in js, '選択肢の主文/補足表示が見つかりません'
+assert '夜のハブへ戻る' in json.dumps(depths, ensure_ascii=False), '人間語の選択肢が見つかりません'
 assert 'A_start' in depths, 'hazama-depths.json に A_start がありません'
 assert 'HUB_NIGHT' in depths, 'hazama-depths.json に HUB_NIGHT がありません'
 print('OK: startup smoke passed')

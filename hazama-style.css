@@ -878,6 +878,31 @@ body {
   transition: background 0.12s ease, transform 0.05s ease, border-color 0.12s ease;
 }
 
+.hz-options button.hz-choice-button {
+  align-items: flex-start;
+  border-radius: 14px;
+  display: inline-flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  justify-content: center;
+  line-height: 1.35;
+  max-width: min(100%, 24rem);
+  min-height: 3.15rem;
+  padding: 0.6rem 0.9rem;
+  text-align: left;
+}
+
+.hz-choice-main {
+  color: #f8fafc;
+  font-size: 0.92rem;
+}
+
+.hz-choice-meta {
+  color: #93c5fd;
+  font-size: 0.72rem;
+  letter-spacing: 0;
+}
+
 .hz-btn:hover,
 .hz-options button:hover {
   background: #1f2937;
@@ -899,6 +924,11 @@ body {
 
 .hz-options button.hz-locked-option {
   border-color: #4b1d2f;
+  color: #fca5a5;
+}
+
+.hz-options button.hz-locked-option .hz-choice-main,
+.hz-options button.hz-locked-option .hz-choice-meta {
   color: #fca5a5;
 }
 
