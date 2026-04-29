@@ -732,73 +732,110 @@ body {
   color: #f8fafc;
 }
 
-.hz-audio-gate {
+.hz-bgm-companion {
   display: grid;
-  gap: 0.35rem;
-  padding-top: 0.6rem;
-  border-top: 1px solid #263142;
+  gap: 0.32rem;
+  padding-top: 0.45rem;
+  border-top: 1px solid rgba(38, 49, 66, 0.7);
 }
 
-.hz-audio-gate[data-audio-phase="synced"] {
-  opacity: 0.74;
-}
-
-.hz-audio-gate[data-audio-phase="LISTENING"] {
-  border-top-color: rgba(125, 211, 252, 0.36);
-}
-
-.hz-audio-gate[data-audio-phase="LISTENING"] .hz-audio-gate-phase {
-  border-color: rgba(125, 211, 252, 0.42);
-  color: #e0f2fe;
-}
-
-.hz-audio-gate[data-audio-phase="LISTENING"] .hz-audio-gate-stage {
-  border-color: rgba(251, 191, 36, 0.38);
-  color: #fef3c7;
-}
-
-.hz-audio-gate-row {
+.hz-bgm-row {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 0.45rem;
+  gap: 0.4rem;
 }
 
-.hz-audio-gate-label {
-  color: #e2e8f0;
-  font-size: 0.78rem;
-  font-weight: 800;
-}
-
-.hz-audio-gate-phase,
-.hz-audio-gate-stage {
-  border: 1px solid #263142;
+.hz-bgm-chip,
+.hz-bgm-stop {
+  appearance: none;
+  border: 1px solid rgba(51, 65, 85, 0.9);
   border-radius: 999px;
-  padding: 0.12rem 0.45rem;
-  color: #bae6fd;
-  background: rgba(14, 25, 42, 0.88);
-  font-size: 0.68rem;
-  font-weight: 700;
-}
-
-.hz-audio-gate-stage {
-  color: #fde68a;
-}
-
-.hz-audio-gate-link {
-  margin-left: auto;
+  background: rgba(9, 17, 29, 0.74);
   color: #cbd5e1;
-  font-size: 0.72rem;
-  text-decoration: none;
+  cursor: pointer;
+  font: inherit;
 }
 
-.hz-audio-gate-link:hover {
+.hz-bgm-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.38rem;
+  min-height: 1.72rem;
+  max-width: 100%;
+  padding: 0.25rem 0.58rem;
+}
+
+.hz-bgm-chip:hover,
+.hz-bgm-stop:hover,
+.hz-bgm-link:hover {
+  border-color: #64748b;
   color: #f8fafc;
 }
 
-.hz-audio-gate-status {
+.hz-bgm-label {
+  color: #e2e8f0;
+  font-size: 0.7rem;
+  font-weight: 850;
+}
+
+.hz-bgm-phase,
+.hz-bgm-detail {
+  color: #bae6fd;
+  font-size: 0.66rem;
+  font-weight: 750;
+  white-space: nowrap;
+}
+
+.hz-bgm-detail {
+  color: #fde68a;
+  max-width: 9rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.hz-bgm-stop {
+  min-height: 1.72rem;
+  padding: 0.2rem 0.55rem;
+  font-size: 0.66rem;
+}
+
+.hz-bgm-status,
+.hz-bgm-unlock {
   color: #64748b;
-  font-size: 0.68rem;
+  font-size: 0.66rem;
+}
+
+.hz-bgm-link {
+  color: #94a3b8;
+  text-decoration: none;
+}
+
+.hz-bgm-companion[data-bgm-phase="LISTENING"] {
+  border-top-color: rgba(125, 211, 252, 0.28);
+}
+
+.hz-bgm-companion[data-bgm-phase="LISTENING"] .hz-bgm-phase {
+  color: #e0f2fe;
+}
+
+.hz-bgm-companion[data-bgm-collapsed="true"] {
+  opacity: 0.62;
+}
+
+.hz-bgm-companion[data-bgm-collapsed="true"] .hz-bgm-status,
+.hz-bgm-companion[data-bgm-collapsed="true"] .hz-bgm-unlock,
+.hz-bgm-companion[data-bgm-collapsed="true"] .hz-bgm-stop {
+  display: none;
+}
+
+.hz-bgm-companion[data-bgm-collapsed="true"] .hz-bgm-detail {
+  max-width: 0;
+  opacity: 0;
+}
+
+.hz-bgm-companion[data-bgm-follow="off"] .hz-bgm-stop {
+  display: none;
 }
 
 .hz-audio-dev {
@@ -1048,14 +1085,15 @@ body {
   .hz-loop-input,
   .hz-controls,
   .hz-gate-run-head,
-  .hz-audio-gate-row,
+  .hz-bgm-row,
   .hz-footer-row {
     align-items: stretch;
     flex-direction: column;
   }
 
-  .hz-audio-gate-link {
-    margin-left: 0;
+  .hz-bgm-chip,
+  .hz-bgm-stop {
+    justify-content: center;
   }
 
   .hz-options button {
