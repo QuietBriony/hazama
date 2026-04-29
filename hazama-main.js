@@ -1,4 +1,4 @@
-// Hazama main.js v2.12
+// Hazama main.js v2.13
 // Minimal, robust loader + renderer for GitHub Pages / Codespaces.
 // v2.3 adds a lightweight deterministic game layer around depth pressure.
 // v2.5 animates the descent key visual and mandala goal gate.
@@ -9,20 +9,30 @@
 // v2.10 arms Music sync on Hazama start and opens it on the first user gesture.
 // v2.11 aligns Music bridge stages with the Music hazama-profile receiver arc.
 // v2.12 adds Gate Run actions, win/loss, and game-forward GI feedback.
+// v2.13 clarifies Ω as the goal, compresses Music into Audio Gate, and stages mandala focus.
 
-const APP_VERSION = "v2.12";
+const APP_VERSION = "v2.13";
 
 const STATE_KEY = "hazama_state_v2";
 const SEED_KEY = "hazama_seed";
 const RUN_KEY = "hazama_run_v1";
 const DEFAULT_START = "A_start";
 const HUB_DEPTH = "HUB_NIGHT";
+const OMEGA_DEPTH = "Ω";
 const CORE_MAX_INPUT = 80;
 const STABILITY_MAX = 100;
 const RESONANCE_MAX = 100;
 const GATE_RUN_MAX_CHARGE = 100;
 const GATE_RUN_TURN_LIMIT = 20;
 const MILESTONE_RANKS = [8, 14, 20, 27];
+const MOVE_TYPES = ["dive", "observe", "tune", "sync", "retreat"];
+const MOVE_TYPE_LABELS = {
+  dive: "潜る",
+  observe: "観測",
+  tune: "調律",
+  sync: "同期",
+  retreat: "退避"
+};
 const ACTIVE_AUDIO_PROVIDER = "music";
 const AUDIO_PROVIDERS = {
   music: {
@@ -67,6 +77,7 @@ let musicBridgeWindows = {
 let lastMusicPayload = null;
 let musicAutoStartInstalled = false;
 let musicAutoStartDone = false;
+let musicBridgePhase = "armed";
 
 function $(id) {
   return document.getElementById(id);
@@ -179,6 +190,7 @@ function createRunState() {
     gateRunCharge: 0,
     lastGateAction: "",
     lastGateResult: "",
+    lastMoveType: "observe",
     gateRunOutcomeAt: 0,
     lastDepthId: DEFAULT_START,
     lastChangedAt: Date.now()
@@ -201,6 +213,7 @@ function normalizeRunState(data) {
     gateRunCharge: clampNumber(src.gateRunCharge ?? base.gateRunCharge, 0, GATE_RUN_MAX_CHARGE),
     lastGateAction: typeof src.lastGateAction === "string" ? src.lastGateAction.slice(0, 40) : base.lastGateAction,
     lastGateResult: typeof src.lastGateResult === "string" ? src.lastGateResult.slice(0, 180) : base.lastGateResult,
+    lastMoveType: MOVE_TYPES.includes(src.lastMoveType) ? src.lastMoveType : base.lastMoveType,
     gateRunOutcomeAt: Number(src.gateRunOutcomeAt) || base.gateRunOutcomeAt,
     lastDepthId: typeof src.lastDepthId === "string" ? src.lastDepthId : base.lastDepthId,
     lastChangedAt: Number(src.lastChangedAt) || base.lastChangedAt
@@ -238,24 +251,54 @@ function countMilestonesCrossed(previousRank, nextRank) {
   return MILESTONE_RANKS.filter((rank) => previousRank < rank && nextRank >= rank).length;
 }
 
-function transitionPreview(fromId, toId, moveKind = "choice") {
+function canEnterOmega(state = getRunState()) {
+  return state.gateRunStatus === "won";
+}
+
+function normalizeMoveType(type) {
+  return MOVE_TYPES.includes(type) ? type : "";
+}
+
+function inferMoveType(fromId, toId, moveKind = "choice", explicitType = "") {
+  const direct = normalizeMoveType(explicitType);
+  if (direct) return direct;
+  if (toId === OMEGA_DEPTH) return "sync";
+  if (moveKind === "back" || moveKind === "home" || toId === HUB_DEPTH || toId === DEFAULT_START) return "retreat";
+  if (moveKind === "core") return "tune";
+
   const fromRank = depthRank(fromId);
   const toRank = depthRank(toId);
+  const climb = toRank - fromRank;
+  if (climb >= 5) return "dive";
+  if (climb > 0) return "observe";
+  if (climb < 0) return "retreat";
+  return "tune";
+}
+
+function transitionPreview(fromId, toId, moveKind = "choice", explicitType = "") {
+  const fromRank = depthRank(fromId);
+  const toRank = depthRank(toId);
+  const moveType = inferMoveType(fromId, toId, moveKind, explicitType);
+  const typeLabel = MOVE_TYPE_LABELS[moveType] || "観測";
 
   if (moveKind === "back") {
     return {
+      moveType,
       stabilityDelta: 8,
       resonanceDelta: -1,
-      label: "安定 +8",
+      gateDelta: -1,
+      label: `${typeLabel} / 安定 +8`,
       title: "一段戻って安定を取り戻します。"
     };
   }
 
   if (toId === HUB_DEPTH || toId === DEFAULT_START || moveKind === "home") {
     return {
+      moveType,
       stabilityDelta: 14,
       resonanceDelta: -2,
-      label: "安定 +14",
+      gateDelta: -2,
+      label: `${typeLabel} / 安定 +14`,
       title: "HUB/入口で境界圧を落とします。"
     };
   }
@@ -266,39 +309,64 @@ function transitionPreview(fromId, toId, moveKind = "choice") {
   if (climb > 0) {
     const quietBonus = moveKind === "core" ? 3 : 0;
     const pressure = Math.max(1, 4 + climb * 2 + Math.floor(toRank / 7) + (span > 6 ? 5 : 0) - quietBonus);
+    const typeTuning = {
+      dive: { stability: -pressure, resonance: 2, gate: 8 + Math.ceil(climb / 2), note: "深く潜ってゲートを強く押します。" },
+      observe: { stability: -Math.ceil(pressure * 0.68), resonance: 1, gate: 4 + Math.ceil(climb / 3), note: "観測しながら安全に進みます。" },
+      tune: { stability: -Math.ceil(pressure * 0.42) + 4, resonance: 2, gate: 4, note: "位相を整えながら進みます。" },
+      sync: { stability: -Math.ceil(pressure * 0.5), resonance: -6, gate: 16 + Math.min(8, getRunState().marks * 2), note: "共鳴を束ねてゲートへ接続します。" }
+    }[moveType] || { stability: -pressure, resonance: 1, gate: 4, note: "深度圧を受けながら進みます。" };
+    const stabilityDelta = clampNumber(typeTuning.stability, -72, 12);
+    const resonanceDelta = typeTuning.resonance + 1 + Math.min(4, Math.ceil(toRank / 8));
     return {
-      stabilityDelta: -pressure,
-      resonanceDelta: 1 + Math.min(4, Math.ceil(toRank / 8)),
-      label: `安定 -${pressure}`,
-      title: `深度圧: 安定を${pressure}消費し、共鳴が増えます。`
+      moveType,
+      stabilityDelta,
+      resonanceDelta,
+      gateDelta: typeTuning.gate,
+      label: `${typeLabel} / 安定 ${signedNumber(stabilityDelta)}`,
+      title: `深度圧: ${typeTuning.note} 共鳴 ${signedNumber(resonanceDelta)} / gate ${signedNumber(typeTuning.gate)}。`
     };
   }
 
   if (toRank < fromRank) {
     return {
+      moveType,
       stabilityDelta: 6,
       resonanceDelta: 0,
-      label: "安定 +6",
+      gateDelta: -1,
+      label: `${typeLabel} / 安定 +6`,
       title: "浅い層へ戻り、安定を少し回復します。"
     };
   }
 
   return {
-    stabilityDelta: -2,
-    resonanceDelta: 1,
-    label: "安定 -2",
-    title: "同じ深度帯を横移動します。"
+    moveType,
+    stabilityDelta: moveType === "tune" ? 3 : -2,
+    resonanceDelta: moveType === "sync" ? -4 : 1,
+    gateDelta: moveType === "sync" ? 10 : moveType === "tune" ? 3 : 1,
+    label: `${typeLabel} / 安定 ${moveType === "tune" ? "+3" : "-2"}`,
+    title: "同じ深度帯で位相を調整します。"
   };
 }
 
-function gateForOption(fromId, toId) {
-  const preview = transitionPreview(fromId, toId);
+function gateForOption(fromId, toId, option = {}) {
+  if (toId === OMEGA_DEPTH && !canEnterOmega()) {
+    const charge = Math.round(getRunState().gateRunCharge);
+    return {
+      allowed: false,
+      moveType: "sync",
+      label: `Ω LOCK / gate ${charge}%`,
+      title: "ΩはGATE OPEN後に入れます。Gate Runを100%まで進めてください。"
+    };
+  }
+
+  const preview = transitionPreview(fromId, toId, "choice", option.type);
   const cost = Math.max(0, -preview.stabilityDelta);
   const state = getRunState();
   const markBuffer = state.marks * 6;
   const allowed = cost === 0 || state.stability + markBuffer >= Math.min(72, cost);
   return {
     allowed,
+    moveType: preview.moveType,
     label: preview.label,
     title: allowed
       ? preview.title
@@ -313,6 +381,14 @@ function syncRunDepth(depthId) {
   saveRunState();
 }
 
+function visualModeForDepth(depthId, state = getRunState(), gi = buildGateIntelligence(depthId)) {
+  const rank = depthRank(depthId);
+  if (depthId === DEFAULT_START || depthId === HUB_DEPTH) return "anchor";
+  if (depthId === OMEGA_DEPTH || state.gateRunStatus === "won" || gi.gateCharge >= 86 || rank >= 24) return "gate";
+  if (MILESTONE_RANKS.includes(rank) || gi.gateCharge >= 62) return "threshold";
+  return "story";
+}
+
 function syncVisualMotion(depthId) {
   const root = document.documentElement;
   if (!root) return;
@@ -325,6 +401,7 @@ function syncVisualMotion(depthId) {
   const opacity = clampNumber(0.28 + rank / 62 + state.resonance / 260, 0.28, 0.76);
   const scale = clampNumber(1 + rank / 180 + state.resonance / 520 + gi.gateCharge / 900, 1, 1.26);
   const glow = clampNumber(0.18 + gi.gateCharge / 130, 0.18, 0.95);
+  const visualMode = visualModeForDepth(depthId, state, gi);
 
   root.style.setProperty("--hz-depth-shift", `${shift.toFixed(1)}px`);
   root.style.setProperty("--hz-gate-duration", `${duration.toFixed(1)}s`);
@@ -333,13 +410,18 @@ function syncVisualMotion(depthId) {
   root.style.setProperty("--hz-gate-charge", gi.gateCharge.toFixed(1));
   root.style.setProperty("--hz-gate-glow", glow.toFixed(2));
   root.style.setProperty("--hz-threat", gi.risk.toFixed(1));
+  root.dataset.hzVisual = visualMode;
 }
 
-function gatePhaseLabel(gateCharge) {
-  if (gateCharge >= 86) return "OPEN";
+function gatePhaseLabel(gateCharge, status = getRunState().gateRunStatus) {
+  if (status === "won") return "OPEN";
   if (gateCharge >= 62) return "ALIGN";
   if (gateCharge >= 34) return "CHARGE";
   return "SCAN";
+}
+
+function giGateAlmostOpen(state, gateCharge) {
+  return state.gateRunStatus === "running" && gateCharge >= 86;
 }
 
 function riskLabel(risk) {
@@ -369,14 +451,14 @@ function buildGateIntelligence(depthId = currentDepthId) {
     0,
     100
   );
-  const phase = gatePhaseLabel(gateCharge);
+  const phase = gatePhaseLabel(gateCharge, state.gateRunStatus);
 
   let objective = "問いに返して、ゲートの位相を充電する。";
   let route = "返す -> 沈黙 -> 次深度";
 
   if (state.gateRunStatus === "won") {
-    objective = "Gate Run達成。開いた扉の先へ進むか、A'へ戻って次の周回を刻む。";
-    route = "Ω / A' / 退避";
+    objective = "GATE OPEN。Ωへ入れる。ここからがこの周回の本筋の到達点。";
+    route = "Ω -> A' / HUB";
   } else if (state.gateRunStatus === "lost") {
     objective = "Gate Run崩落。HUBで姿勢を戻し、退避から再起動する。";
     route = "退避 -> 再起動";
@@ -386,15 +468,15 @@ function buildGateIntelligence(depthId = currentDepthId) {
   } else if (state.stability < 26) {
     objective = "安定が薄い。HUBへ戻るか、問いで調律して崩落を避ける。";
     route = "返す / HUBへ戻る";
-  } else if (phase === "OPEN") {
-    objective = "目的ゲートが開いている。Ωか円環ルートへ接近できる。";
-    route = "深度Z / Ω / Wルート";
+  } else if (giGateAlmostOpen(state, gateCharge)) {
+    objective = "目的ゲートは近いが、Ωはまだ開いていない。Gate Runを100%まで押し切る。";
+    route = "同期 / 調律 / Gate Run";
   } else if (rank >= 18 && state.marks === 0) {
     objective = "節目のしるしが足りない。深度を刻み、通行バッファを作る。";
     route = "安全な分岐 -> しるし獲得";
   } else if (rank === 0) {
-    objective = "ハブで進路を選ぶ。巡礼か、跳躍か、退避か。";
-    route = "巡礼 / 探索 / 跳躍";
+    objective = "Ω到達が本筋。まずGate Runを進め、GATE OPENまで位相を合わせる。";
+    route = "巡礼 / 探索 / Gate Run";
   } else if (risk > 70) {
     objective = "境界圧が高い。無理に進まず、呼吸と選択を細くする。";
     route = "返す -> 停止 -> 戻る";
@@ -458,6 +540,14 @@ function buildMusicProfile(depthId = currentDepthId) {
   const gate = clampNumber((rank >= 24 ? 0.18 : 0) + resonanceNorm * 0.42 + state.marks * 0.035, 0, 0.9);
   const seed = ensureSeed();
   const variance = (numericHash(`${seed}|${depthId}|music`) % 9) - 4;
+  const moveType = normalizeMoveType(state.lastMoveType) || "observe";
+  const typeAudio = {
+    dive: { density: 0.07, brightness: -0.02, silence: -0.04, bass: 0.08, harmonic: 0.02, gesture: "gate" },
+    observe: { density: -0.02, brightness: 0.02, silence: 0.03, bass: -0.02, harmonic: 0.01, gesture: "trace" },
+    tune: { density: -0.04, brightness: 0.04, silence: 0.04, bass: -0.03, harmonic: -0.02, gesture: "trace" },
+    sync: { density: 0.06, brightness: 0.08, silence: -0.05, bass: 0.05, harmonic: 0.05, gesture: "gate" },
+    retreat: { density: -0.06, brightness: -0.04, silence: 0.08, bass: -0.05, harmonic: -0.03, gesture: "none" }
+  }[moveType];
 
   const ucm = {
     energy: Math.round(clampNumber(18 + depthNorm * 54 + resonanceNorm * 22 - stabilityNorm * 8 + variance, 4, 96)),
@@ -473,11 +563,11 @@ function buildMusicProfile(depthId = currentDepthId) {
 
   const audio = {
     tempo: Math.round(clampNumber(48 + depthNorm * 72 + resonanceNorm * 24, 42, 148)),
-    density: Number(clampNumber(0.08 + depthNorm * 0.46 + resonanceNorm * 0.22, 0.05, 0.82).toFixed(3)),
-    brightness: Number(clampNumber(0.18 + resonanceNorm * 0.34 + gate * 0.24, 0.08, 0.9).toFixed(3)),
-    silenceRate: Number(clampNumber(0.42 - depthNorm * 0.22 + (1 - stabilityNorm) * 0.16, 0.06, 0.58).toFixed(3)),
-    bassWeight: Number(clampNumber(0.26 + pressure * 0.52, 0.12, 0.86).toFixed(3)),
-    harmonicDeviation: Number(clampNumber(0.08 + resonanceNorm * 0.26 + depthNorm * 0.12, 0.02, 0.48).toFixed(3)),
+    density: Number(clampNumber(0.08 + depthNorm * 0.46 + resonanceNorm * 0.22 + typeAudio.density, 0.05, 0.82).toFixed(3)),
+    brightness: Number(clampNumber(0.18 + resonanceNorm * 0.34 + gate * 0.24 + typeAudio.brightness, 0.08, 0.9).toFixed(3)),
+    silenceRate: Number(clampNumber(0.42 - depthNorm * 0.22 + (1 - stabilityNorm) * 0.16 + typeAudio.silence, 0.06, 0.58).toFixed(3)),
+    bassWeight: Number(clampNumber(0.26 + pressure * 0.52 + typeAudio.bass, 0.12, 0.86).toFixed(3)),
+    harmonicDeviation: Number(clampNumber(0.08 + resonanceNorm * 0.26 + depthNorm * 0.12 + typeAudio.harmonic, 0.02, 0.48).toFixed(3)),
     smoothing: Number(clampNumber(0.9 - pressure * 0.26, 0.52, 0.95).toFixed(3)),
     droneStability: Number(clampNumber(0.22 + stabilityNorm * 0.68, 0.12, 0.98).toFixed(3)),
     space: Number(clampNumber(0.16 + resonanceNorm * 0.44 + depthNorm * 0.24, 0.08, 0.92).toFixed(3))
@@ -520,10 +610,10 @@ function buildMusicProfile(depthId = currentDepthId) {
       densityBias: Number(clampNumber(depthNorm * 0.46 + state.marks * 0.05, 0, 0.9).toFixed(3)),
       glitch: rank >= 12 || resonanceNorm > 0.55 || state.marks >= 3,
       glitchRate: Number(clampNumber(0.02 + resonanceNorm * 0.16 + state.marks * 0.018, 0, 0.42).toFixed(3)),
-      gesture: state.marks >= 3 ? "gate" : state.marks > 0 ? "trace" : "none",
+      gesture: state.marks >= 3 ? "gate" : state.marks > 0 ? "trace" : typeAudio.gesture,
       jazzStabs: rank >= 10 && rank < 18,
       percussion: rank >= 18 || pressure > 0.62,
-      gatePulse: rank >= 24 || state.marks > 0
+      gatePulse: rank >= 24 || state.marks > 0 || moveType === "sync"
     }
   };
 }
@@ -640,9 +730,23 @@ function makeMusicLaunchUrl(profileOrPayload, mode = "production") {
   return `${baseUrl}#hazama=${toBase64Url(JSON.stringify(payload))}`;
 }
 
-function setMusicBridgeStatus(text) {
-  const status = $("music-profile-status");
-  if (status) status.textContent = text;
+function audioGateStage() {
+  return lastMusicPayload?.profile?.source?.stage || buildMusicProfile(currentDepthId).source.stage;
+}
+
+function isLocalDevHost() {
+  return ["127.0.0.1", "localhost", "::1", "[::1]"].includes(location.hostname);
+}
+
+function setMusicBridgeStatus(text = "", phase = "") {
+  if (phase) musicBridgePhase = phase;
+  const status = $("audio-gate-status") || $("music-profile-status");
+  const phaseEl = $("audio-gate-phase");
+  const stageEl = $("audio-gate-stage");
+  const detail = text ? ` / ${text}` : "";
+  if (phaseEl) phaseEl.textContent = musicBridgePhase;
+  if (stageEl) stageEl.textContent = audioGateStage();
+  if (status) status.textContent = `${musicBridgePhase} / ${audioGateStage()}${detail}`;
 }
 
 function musicTargetOrigin(mode = "production") {
@@ -666,6 +770,9 @@ function syncMusicBridge(profile = buildMusicProfile()) {
   lastMusicPayload = createMusicPayload(profile);
   const productionSent = postMusicPayload("production", lastMusicPayload);
   const localSent = postMusicPayload("local", lastMusicPayload);
+  if ((productionSent || localSent) && musicBridgePhase !== "pending") {
+    setMusicBridgeStatus("profile sent", "synced");
+  }
   return { payload: lastMusicPayload, sent: productionSent || localSent };
 }
 
@@ -678,12 +785,13 @@ function openMusicBridge(mode = "production") {
   const musicWindow = window.open(url, targetName);
   if (!musicWindow) return false;
   musicBridgeWindows[mode] = musicWindow;
+  setMusicBridgeStatus("START.HZM in Music", "pending");
   window.setTimeout(() => postMusicPayload(mode, payload), 600);
   return true;
 }
 
 function isMusicLaunchTarget(target) {
-  return Boolean(target?.closest?.("#music-open-provider, #music-open-local"));
+  return Boolean(target?.closest?.(".hz-audio-gate, #music-open-provider, #music-open-local"));
 }
 
 function attemptMusicAutoStart(ev) {
@@ -691,13 +799,13 @@ function attemptMusicAutoStart(ev) {
   if (isMusicLaunchTarget(ev?.target || document.activeElement)) return;
   musicAutoStartDone = true;
   const opened = openMusicBridge("production");
-  setMusicBridgeStatus(opened ? "Music auto-linked / START.HZM" : "auto blocked / use SYNC.MUSIC");
+  setMusicBridgeStatus(opened ? "START.HZM in Music" : "blocked / tap AUDIO.GATE", opened ? "pending" : "blocked");
 }
 
 function installMusicAutoStart() {
   if (musicAutoStartInstalled) return;
   musicAutoStartInstalled = true;
-  setMusicBridgeStatus("auto armed / first tap opens Music");
+  setMusicBridgeStatus("first tap opens Music", "armed");
   window.addEventListener("pointerdown", attemptMusicAutoStart, { once: true, capture: true, passive: true });
   window.addEventListener("keydown", attemptMusicAutoStart, { once: true, capture: true });
 }
@@ -744,8 +852,8 @@ function downloadMusicProfile(payload) {
 }
 
 function bindMusicControls() {
-  const setMusicStatus = (text) => {
-    setMusicBridgeStatus(text);
+  const setMusicStatus = (text, phase = "") => {
+    setMusicBridgeStatus(text, phase);
   };
 
   const copyBtn = $("music-copy-profile");
@@ -776,7 +884,7 @@ function bindMusicControls() {
       ev.preventDefault();
       const opened = openMusicBridge("production");
       musicAutoStartDone = musicAutoStartDone || opened;
-      setMusicStatus(opened ? "Music linked / START.HZM" : "popup blocked");
+      setMusicStatus(opened ? "START.HZM in Music" : "popup blocked", opened ? "pending" : "blocked");
     });
   }
 
@@ -786,12 +894,12 @@ function bindMusicControls() {
       ev.preventDefault();
       const opened = openMusicBridge("local");
       musicAutoStartDone = musicAutoStartDone || opened;
-      setMusicStatus(opened ? "Local Music linked / START.HZM" : "popup blocked");
+      setMusicStatus(opened ? "local START.HZM" : "popup blocked", opened ? "pending" : "blocked");
     });
   }
 }
 
-function applyRunTransition(fromId, toId, moveKind = "choice") {
+function applyRunTransition(fromId, toId, moveKind = "choice", explicitType = "") {
   const state = getRunState();
 
   if (!fromId || fromId === toId) {
@@ -800,10 +908,16 @@ function applyRunTransition(fromId, toId, moveKind = "choice") {
     return toId;
   }
 
-  const preview = transitionPreview(fromId, toId, moveKind);
+  if (toId === OMEGA_DEPTH && !canEnterOmega(state)) {
+    runLog = `Ω LOCK: Gate Runを${GATE_RUN_MAX_CHARGE}%まで開くと入れます。`;
+    return depths[HUB_DEPTH] ? HUB_DEPTH : fromId;
+  }
+
+  const preview = transitionPreview(fromId, toId, moveKind, explicitType);
   const nextRank = depthRank(toId);
   const previousBest = state.bestRank;
   const markGain = countMilestonesCrossed(previousBest, nextRank);
+  const gateDelta = Math.round(Number(preview.gateDelta) || 0);
   let targetId = toId;
 
   state.steps += 1;
@@ -811,18 +925,29 @@ function applyRunTransition(fromId, toId, moveKind = "choice") {
   state.resonance = clampNumber(state.resonance + preview.resonanceDelta, 0, RESONANCE_MAX);
   state.bestRank = Math.max(previousBest, nextRank);
   state.marks = clampNumber(state.marks + markGain, 0, 99);
+  state.gateRunCharge = clampNumber(state.gateRunCharge + gateDelta, 0, GATE_RUN_MAX_CHARGE);
+  state.lastMoveType = preview.moveType;
 
   const notes = [
+    `type ${MOVE_TYPE_LABELS[preview.moveType] || preview.moveType}`,
     `安定 ${signedNumber(preview.stabilityDelta)}`,
-    `共鳴 ${signedNumber(preview.resonanceDelta)}`
+    `共鳴 ${signedNumber(preview.resonanceDelta)}`,
+    `gate ${signedNumber(gateDelta)}`
   ];
   if (markGain > 0) notes.push(`しるし +${markGain}`);
 
   if (state.stability <= 0 && toId !== HUB_DEPTH && toId !== DEFAULT_START) {
     targetId = depths[HUB_DEPTH] ? HUB_DEPTH : DEFAULT_START;
+    state.gateRunStatus = "lost";
+    state.gateRunOutcomeAt = Date.now();
     state.stability = 24;
     state.resonance = clampNumber(state.resonance - 6, 0, RESONANCE_MAX);
-    notes.push("境界圧が限界に達し、HUBへ揺り戻し");
+    state.gateRunCharge = clampNumber(Math.min(state.gateRunCharge, 72), 0, GATE_RUN_MAX_CHARGE);
+    notes.push("COLLAPSED: HUBへ退避");
+  } else if (state.gateRunStatus === "running" && state.gateRunCharge >= GATE_RUN_MAX_CHARGE) {
+    state.gateRunStatus = "won";
+    state.gateRunOutcomeAt = Date.now();
+    notes.push("GATE OPEN");
   }
 
   state.lastDepthId = targetId;
@@ -980,18 +1105,27 @@ function resetGateRunState(state) {
 function resolveGateRunOutcome(state, notes) {
   let targetDepthId = null;
 
-  if (state.gateRunCharge >= GATE_RUN_MAX_CHARGE) {
-    state.gateRunStatus = "won";
-    state.gateRunCharge = GATE_RUN_MAX_CHARGE;
-    state.gateRunOutcomeAt = Date.now();
-    notes.push("GATE OPEN");
-  } else if (state.stability <= 0 || state.gateRunTurns >= GATE_RUN_TURN_LIMIT) {
+  if (state.stability <= 0) {
     state.gateRunStatus = "lost";
     state.gateRunOutcomeAt = Date.now();
     state.stability = Math.max(24, state.stability);
     state.resonance = clampNumber(state.resonance - 8, 0, RESONANCE_MAX);
+    state.gateRunCharge = clampNumber(Math.min(state.gateRunCharge, 72), 0, GATE_RUN_MAX_CHARGE);
     targetDepthId = depths[HUB_DEPTH] ? HUB_DEPTH : DEFAULT_START;
     notes.push("崩落。HUBへ退避");
+  } else if (state.gateRunCharge >= GATE_RUN_MAX_CHARGE) {
+    state.gateRunStatus = "won";
+    state.gateRunCharge = GATE_RUN_MAX_CHARGE;
+    state.gateRunOutcomeAt = Date.now();
+    notes.push("GATE OPEN");
+  } else if (state.gateRunTurns >= GATE_RUN_TURN_LIMIT) {
+    state.gateRunStatus = "lost";
+    state.gateRunOutcomeAt = Date.now();
+    state.stability = Math.max(24, state.stability);
+    state.resonance = clampNumber(state.resonance - 8, 0, RESONANCE_MAX);
+    state.gateRunCharge = clampNumber(Math.min(state.gateRunCharge, 72), 0, GATE_RUN_MAX_CHARGE);
+    targetDepthId = depths[HUB_DEPTH] ? HUB_DEPTH : DEFAULT_START;
+    notes.push("時間切れ。HUBへ退避");
   }
 
   return targetDepthId;
@@ -1058,6 +1192,7 @@ function applyGateRunAction(actionId) {
   state.marks = clampNumber(state.marks + marksDelta, 0, 99);
   state.gateRunCharge = clampNumber(state.gateRunCharge + chargeDelta, 0, GATE_RUN_MAX_CHARGE);
   state.lastGateAction = actionId;
+  state.lastMoveType = actionId;
   state.lastGateResult = notes.join(" / ");
 
   const outcomeTarget = resolveGateRunOutcome(state, notes);
@@ -1120,7 +1255,7 @@ function bindGateRunControls() {
         renderDepth(targetDepthId, { recordHistory: false, applyRun: false });
         return;
       }
-      refreshRunPanel();
+      renderDepth(currentDepthId, { recordHistory: false, applyRun: false });
       setStatus(`Gate Run: ${actionId}`);
     });
   }
@@ -1175,11 +1310,37 @@ function renderGateIntelligenceMarkup() {
   `;
 }
 
+function renderAudioGateMarkup(profile, launchUrl, localLaunchUrl) {
+  const devTools = isLocalDevHost()
+    ? `
+      <details class="hz-audio-dev">
+        <summary>dev</summary>
+        <div class="hz-audio-dev-actions">
+          <button id="music-copy-profile" class="hz-mini-btn" type="button">JSON</button>
+          <button id="music-download-profile" class="hz-mini-btn" type="button">Save</button>
+          <a id="music-open-local" class="hz-mini-link" href="${escapeHtml(localLaunchUrl)}" target="hazama-music-local">LOCAL</a>
+        </div>
+      </details>
+    `
+    : "";
+
+  return `
+    <div class="hz-audio-gate" aria-label="Audio Gate">
+      <div class="hz-audio-gate-row">
+        <span class="hz-audio-gate-label">AUDIO.GATE</span>
+        <span id="audio-gate-phase" class="hz-audio-gate-phase">${escapeHtml(musicBridgePhase)}</span>
+        <span id="audio-gate-stage" class="hz-audio-gate-stage">${escapeHtml(profile.source.stage)}</span>
+        <a id="music-open-provider" class="hz-audio-gate-link" href="${escapeHtml(launchUrl)}" target="hazama-music">START.HZM</a>
+      </div>
+      <div id="audio-gate-status" class="hz-audio-gate-status">${escapeHtml(`${musicBridgePhase} / ${profile.source.stage} / first tap opens Music`)}</div>
+      ${devTools}
+    </div>
+  `;
+}
+
 function renderRunPanelMarkup() {
   const state = getRunState();
   const profile = buildMusicProfile(currentDepthId);
-  const provider = activeAudioProvider();
-  const futureProviders = futureAudioProviders().map((item) => item.label).join(" / ");
   const launchUrl = makeMusicLaunchUrl(profile);
   const localLaunchUrl = makeMusicLaunchUrl(profile, "local");
   const log = runLog ? `<div class="hz-run-log">${escapeHtml(runLog)}</div>` : "";
@@ -1201,24 +1362,7 @@ function renderRunPanelMarkup() {
       ${log}
       ${renderGateRunPanelMarkup()}
       ${renderGateIntelligenceMarkup()}
-      <div class="hz-music-panel" aria-label="Music自動生成">
-        <div class="hz-music-head">
-          <span>Music自動生成</span>
-          <b>${escapeHtml(provider.label)}:${escapeHtml(profile.source.stage)}</b>
-        </div>
-        <div class="hz-provider-row">
-          <span>active <b>${escapeHtml(provider.repo)}</b></span>
-          <span>next ${escapeHtml(futureProviders)}</span>
-        </div>
-        <div class="hz-music-summary">${escapeHtml(compactMusicProfileSummary(profile))}</div>
-        <div class="hz-music-actions">
-          <button id="music-copy-profile" class="hz-mini-btn" type="button">Copy JSON</button>
-          <button id="music-download-profile" class="hz-mini-btn" type="button">Download</button>
-          <a id="music-open-provider" class="hz-mini-link" href="${escapeHtml(launchUrl)}" target="hazama-music">SYNC.MUSIC</a>
-          <a id="music-open-local" class="hz-mini-link" href="${escapeHtml(localLaunchUrl)}" target="hazama-music-local">LOCAL</a>
-        </div>
-        <div id="music-profile-status" class="hz-music-status">auto armed / first tap opens Music</div>
-      </div>
+      ${renderAudioGateMarkup(profile, launchUrl, localLaunchUrl)}
     </aside>
   `;
 }
@@ -1458,13 +1602,13 @@ function renderOptions(depth, optionsEl) {
 
   for (const o of opts) {
     const next = o?.next;
-    const gate = next ? gateForOption(currentDepthId, next) : { allowed: true, label: "", title: "" };
+    const gate = next ? gateForOption(currentDepthId, next, o) : { allowed: true, label: "", title: "", moveType: "" };
     const label = gate.label ? `${o?.text ?? "…"} / ${gate.label}` : (o?.text ?? "…");
     const btn = addButton(optionsEl, label, () => {
       if (navigationLocked) return;
       if (!next || !gate.allowed) return;
       clearPause();
-      renderDepth(next, { moveKind: "choice" });
+      renderDepth(next, { moveKind: "choice", moveType: gate.moveType });
     }, "hz-btn hz-depth-option");
     btn.disabled = navigationLocked || !gate.allowed;
     btn.title = gate.title;
@@ -1474,6 +1618,10 @@ function renderOptions(depth, optionsEl) {
 
 function renderDepth(depthId, opts = {}) {
   let targetDepthId = depthId;
+  if (targetDepthId === OMEGA_DEPTH && !canEnterOmega()) {
+    runLog = `Ω LOCK: Gate Runを${GATE_RUN_MAX_CHARGE}%まで開くと入れます。`;
+    targetDepthId = depths[HUB_DEPTH] ? HUB_DEPTH : DEFAULT_START;
+  }
   let depth = depths[targetDepthId];
   if (!depth) {
     setStatus(`未知の深度ID: ${targetDepthId}`);
@@ -1484,7 +1632,7 @@ function renderDepth(depthId, opts = {}) {
 
   clearPause();
   if (opts.applyRun !== false) {
-    targetDepthId = applyRunTransition(currentDepthId, targetDepthId, opts.moveKind || "choice");
+    targetDepthId = applyRunTransition(currentDepthId, targetDepthId, opts.moveKind || "choice", opts.moveType || "");
     depth = depths[targetDepthId] || depth;
   } else {
     syncRunDepth(targetDepthId);

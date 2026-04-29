@@ -55,6 +55,7 @@ body {
   border: 1px solid #263142;
   border-radius: 0.5rem;
   background: #070b13;
+  transition: aspect-ratio 260ms ease, max-height 260ms ease, opacity 260ms ease, border-color 260ms ease;
 }
 
 .hz-visual::before {
@@ -96,6 +97,7 @@ body {
   object-position: center 54%;
   filter: saturate(0.92) contrast(1.08);
   animation: hzSink 18s ease-in-out infinite alternate;
+  transition: opacity 260ms ease, filter 260ms ease, transform 260ms ease;
 }
 
 .hz-gate-orb {
@@ -113,6 +115,7 @@ body {
   mix-blend-mode: screen;
   transform: translate(-50%, -50%) scale(var(--hz-gate-scale));
   animation: hzGatePulse 6.5s ease-in-out infinite;
+  transition: width 260ms ease, opacity 260ms ease, filter 260ms ease;
 }
 
 .hz-gate-orb img {
@@ -122,6 +125,53 @@ body {
   border-radius: inherit;
   object-fit: cover;
   animation: hzGateSpin var(--hz-gate-duration) linear infinite;
+}
+
+:root[data-hz-visual="story"] .hz-visual {
+  aspect-ratio: 16 / 2.6;
+  max-height: 8rem;
+  opacity: 0.62;
+}
+
+:root[data-hz-visual="story"] .hz-visual-depth {
+  opacity: 0.34;
+  filter: saturate(0.72) contrast(0.9);
+}
+
+:root[data-hz-visual="story"] .hz-gate-orb {
+  width: min(22%, 10rem);
+  opacity: 0.12;
+}
+
+:root[data-hz-visual="threshold"] .hz-visual {
+  aspect-ratio: 16 / 4.8;
+  border-color: #3b4d68;
+}
+
+:root[data-hz-visual="threshold"] .hz-gate-orb {
+  width: min(48%, 24rem);
+  opacity: calc(var(--hz-gate-opacity) + 0.1);
+}
+
+:root[data-hz-visual="gate"] .hz-visual {
+  aspect-ratio: 16 / 6.6;
+  border-color: rgba(251, 191, 36, 0.42);
+}
+
+:root[data-hz-visual="gate"] .hz-gate-orb {
+  width: min(64%, 32rem);
+  opacity: calc(var(--hz-gate-opacity) + 0.22);
+}
+
+:root[data-hz-visual="gate"] .hz-story {
+  background: rgba(7, 11, 19, 0.72);
+  backdrop-filter: blur(7px);
+}
+
+:root[data-hz-visual="gate"] .hz-block,
+:root[data-hz-visual="gate"] .hz-run-panel,
+:root[data-hz-visual="gate"] .hz-core-loop {
+  background-color: rgba(9, 17, 29, 0.58);
 }
 
 @keyframes hzSink {
@@ -143,11 +193,11 @@ body {
 @keyframes hzGatePulse {
   0%,
   100% {
-    filter: drop-shadow(0 0 0.7rem rgba(251, 191, 36, 0.2));
+    filter: drop-shadow(0 0 0.7rem rgba(251, 191, 36, calc(var(--hz-gate-glow) * 0.55)));
   }
 
   50% {
-    filter: drop-shadow(0 0 1.8rem rgba(251, 191, 36, 0.44));
+    filter: drop-shadow(0 0 1.8rem rgba(251, 191, 36, var(--hz-gate-glow)));
   }
 }
 
@@ -557,56 +607,6 @@ body {
   background: linear-gradient(90deg, #22c55e, #f59e0b, #ef4444);
 }
 
-.hz-music-panel {
-  display: grid;
-  gap: 0.45rem;
-  padding-top: 0.65rem;
-  border-top: 1px solid #263142;
-}
-
-.hz-music-head,
-.hz-music-actions {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.hz-music-head {
-  justify-content: space-between;
-  color: #e2e8f0;
-  font-size: 0.8rem;
-  font-weight: 700;
-}
-
-.hz-music-head b {
-  color: #fde68a;
-  font-size: 0.72rem;
-  font-weight: 700;
-}
-
-.hz-provider-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.35rem 0.75rem;
-  color: #64748b;
-  font-size: 0.72rem;
-}
-
-.hz-provider-row b {
-  color: #cbd5e1;
-  font-weight: 700;
-}
-
-.hz-music-summary,
-.hz-music-status {
-  color: #94a3b8;
-  font-size: 0.75rem;
-}
-
-.hz-music-actions {
-  flex-wrap: wrap;
-}
-
 .hz-mini-btn,
 .hz-mini-link {
   appearance: none;
@@ -627,6 +627,74 @@ body {
 .hz-mini-link:hover {
   border-color: #64748b;
   color: #f8fafc;
+}
+
+.hz-audio-gate {
+  display: grid;
+  gap: 0.35rem;
+  padding-top: 0.6rem;
+  border-top: 1px solid #263142;
+}
+
+.hz-audio-gate-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.hz-audio-gate-label {
+  color: #e2e8f0;
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+.hz-audio-gate-phase,
+.hz-audio-gate-stage {
+  border: 1px solid #263142;
+  border-radius: 999px;
+  padding: 0.12rem 0.45rem;
+  color: #bae6fd;
+  background: rgba(14, 25, 42, 0.88);
+  font-size: 0.68rem;
+  font-weight: 700;
+}
+
+.hz-audio-gate-stage {
+  color: #fde68a;
+}
+
+.hz-audio-gate-link {
+  margin-left: auto;
+  color: #cbd5e1;
+  font-size: 0.72rem;
+  text-decoration: none;
+}
+
+.hz-audio-gate-link:hover {
+  color: #f8fafc;
+}
+
+.hz-audio-gate-status {
+  color: #64748b;
+  font-size: 0.68rem;
+}
+
+.hz-audio-dev {
+  color: #64748b;
+  font-size: 0.7rem;
+}
+
+.hz-audio-dev summary {
+  cursor: pointer;
+  width: max-content;
+}
+
+.hz-audio-dev-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-top: 0.45rem;
 }
 
 .hz-core-loop {
@@ -793,14 +861,32 @@ body {
     aspect-ratio: 5 / 4;
   }
 
+  :root[data-hz-visual="story"] .hz-visual {
+    aspect-ratio: 5 / 2;
+    max-height: 6rem;
+  }
+
+  :root[data-hz-visual="threshold"] .hz-visual {
+    aspect-ratio: 5 / 3;
+  }
+
+  :root[data-hz-visual="gate"] .hz-visual {
+    aspect-ratio: 5 / 4;
+  }
+
   .hz-options,
   .hz-core-form,
   .hz-loop-input,
   .hz-controls,
   .hz-gate-run-head,
+  .hz-audio-gate-row,
   .hz-footer-row {
     align-items: stretch;
     flex-direction: column;
+  }
+
+  .hz-audio-gate-link {
+    margin-left: 0;
   }
 
   .hz-options button {

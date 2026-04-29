@@ -16,6 +16,7 @@ for _ in {1..30}; do
 done
 
 curl -fsS "$ROOT_URL/hazama-main.js" >/tmp/hz_main.js
+curl -fsS "$ROOT_URL/hazama-index.html" >/tmp/hz_alt.html
 curl -fsS "$ROOT_URL/hazama-depths.json" >/tmp/hz_depths.json
 curl -fsS "$ROOT_URL/assets/hazama-descent-key.png" >/tmp/hz_descent.png
 curl -fsS "$ROOT_URL/assets/hazama-goal-mandala.png" >/tmp/hz_goal.png
@@ -25,13 +26,21 @@ import json
 from pathlib import Path
 
 root = Path('/tmp/hz_root.html').read_text(encoding='utf-8')
+alt = Path('/tmp/hz_alt.html').read_text(encoding='utf-8')
 js = Path('/tmp/hz_main.js').read_text(encoding='utf-8')
 depths = json.loads(Path('/tmp/hz_depths.json').read_text(encoding='utf-8'))
 
-assert 'hazama-main.js?v=2.12' in root, 'index.html が最新の script クエリを参照していません'
+for html_name, html in [('index.html', root), ('hazama-index.html', alt)]:
+    for asset in [
+        'hazama-style.css?v=2.13',
+        'hazama-seed.js?v=2.13',
+        'hazama-state.js?v=2.13',
+        'hazama-main.js?v=2.13',
+    ]:
+        assert asset in html, f'{html_name} が最新の {asset} を参照していません'
 assert 'assets/hazama-descent-key.png' in root, 'index.html が探索者キービジュアルを参照していません'
 assert 'assets/hazama-goal-mandala.png' in root, 'index.html が曼荼羅ゲートを参照していません'
-assert 'Hazama main.js v2.12' in js, 'hazama-main.js バージョンが期待値ではありません'
+assert 'Hazama main.js v2.13' in js, 'hazama-main.js バージョンが期待値ではありません'
 assert 'Gate Intelligence' in js, 'hazama-main.js にGIディレクターが見つかりません'
 assert 'createMusicPayload' in js, 'hazama-main.js にMusic sender payloadが見つかりません'
 assert 'postMessage' in js, 'hazama-main.js にMusic postMessage senderが見つかりません'
@@ -39,6 +48,8 @@ assert 'installMusicAutoStart' in js, 'hazama-main.js にMusic自動起動待機
 assert 'return "exhale"' in js and 'return "root"' in js and 'return "submerge"' in js, 'Music stage mapping が receiver arc に揃っていません'
 assert 'Gate Run' in js, 'hazama-main.js にGate Run表示が見つかりません'
 assert 'applyGateRunAction' in js, 'hazama-main.js にGate Run行動が見つかりません'
+assert 'AUDIO.GATE' in js and 'hz-audio-gate' in js, 'Audio Gate UI が見つかりません'
+assert 'canEnterOmega' in js and 'Ω LOCK' in js, 'Ωロック条件が見つかりません'
 assert 'A_start' in depths, 'hazama-depths.json に A_start がありません'
 assert 'HUB_NIGHT' in depths, 'hazama-depths.json に HUB_NIGHT がありません'
 print('OK: startup smoke passed')
