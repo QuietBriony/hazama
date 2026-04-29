@@ -79,6 +79,26 @@ let lastMusicPayload = null;
 let musicAutoStartInstalled = false;
 let musicAutoStartDone = false;
 let musicBridgePhase = "armed";
+const MUSIC_FEEDBACK_ALLOWED_ORIGINS = new Set([
+  "https://quietbriony.github.io",
+  "http://127.0.0.1:8095",
+  "http://localhost:8095"
+]);
+const MusicFeedbackState = {
+  connected: false,
+  lastAt: 0,
+  playing: false,
+  chapter: "",
+  chapterLabel: "",
+  bpm: 0,
+  acid: 0,
+  genre: {},
+  gradient: {},
+  families: {},
+  visual: "idle",
+  eventKind: "",
+  lostTimer: null
+};
 
 function $(id) {
   return document.getElementById(id);
@@ -732,6 +752,9 @@ function makeMusicLaunchUrl(profileOrPayload, mode = "production") {
 }
 
 function audioGateStage() {
+  if (MusicFeedbackState.connected) {
+    return MusicFeedbackState.chapterLabel || MusicFeedbackState.chapter || "MUSIC";
+  }
   return lastMusicPayload?.profile?.source?.stage || buildMusicProfile(currentDepthId).source.stage;
 }
 
@@ -739,7 +762,109 @@ function isLocalDevHost() {
   return ["127.0.0.1", "localhost", "::1", "[::1]"].includes(location.hostname);
 }
 
+function isAllowedMusicFeedbackOrigin(origin) {
+  return typeof origin === "string" && MUSIC_FEEDBACK_ALLOWED_ORIGINS.has(origin);
+}
+
+function safeFeedbackNumber(value, min = 0, max = 1) {
+  return clampNumber(Number(value), min, max);
+}
+
+function sanitizeFeedbackMap(source, keys) {
+  const map = source && typeof source === "object" ? source : {};
+  return Object.fromEntries(keys.map((key) => [key, Number(safeFeedbackNumber(map[key], 0, 1).toFixed(3))]));
+}
+
+function musicFeedbackVisual(runtime) {
+  const chapter = String(runtime?.albumArc?.chapter || "").toLowerCase();
+  const acid = safeFeedbackNumber(runtime?.acid?.performance, 0, 1);
+  const genre = runtime?.color?.genre || {};
+  const gradient = runtime?.color?.gradient || {};
+  if (chapter === "acid" || acid > 0.42) return "acid";
+  if (chapter === "broken" || safeFeedbackNumber(gradient.micro, 0, 1) > 0.58) return "broken";
+  if (chapter === "ghost" || safeFeedbackNumber(genre.pressure, 0, 1) > 0.48) return "ghost";
+  if (chapter === "memory" || safeFeedbackNumber(gradient.memory, 0, 1) > 0.54) return "memory";
+  if (chapter === "exhale" || safeFeedbackNumber(gradient.chrome, 0, 1) > 0.58) return "exhale";
+  return "haze";
+}
+
+function musicFeedbackStatusText() {
+  const bpm = MusicFeedbackState.bpm ? `BPM ${MusicFeedbackState.bpm}` : "BPM --";
+  const acid = MusicFeedbackState.acid > 0.42 ? "ACID" : MusicFeedbackState.acid > 0.12 ? "acid-warm" : "soft";
+  return `${bpm} / ${acid}`;
+}
+
+function applyMusicFeedbackVisual() {
+  const root = document.documentElement;
+  if (!root) return;
+  const state = MusicFeedbackState;
+  const genre = state.genre || {};
+  const gradient = state.gradient || {};
+  root.dataset.hzMusicFeedback = state.connected ? "connected" : "idle";
+  root.dataset.hzMusicChapter = state.chapter ? state.chapter.toLowerCase() : "";
+  root.dataset.hzMusicVisual = state.visual || "idle";
+  root.dataset.hzMusicAcid = state.acid > 0.42 ? "hot" : state.acid > 0.12 ? "warm" : "idle";
+  root.style.setProperty("--hz-music-acid", state.acid.toFixed(3));
+  root.style.setProperty("--hz-music-ambient", safeFeedbackNumber(genre.ambient, 0, 1).toFixed(3));
+  root.style.setProperty("--hz-music-micro", safeFeedbackNumber(gradient.micro, 0, 1).toFixed(3));
+  root.style.setProperty("--hz-music-ghost", safeFeedbackNumber(gradient.ghost, 0, 1).toFixed(3));
+  root.style.setProperty("--hz-music-chrome", safeFeedbackNumber(gradient.chrome, 0, 1).toFixed(3));
+}
+
+function scheduleMusicFeedbackLostCheck() {
+  if (MusicFeedbackState.lostTimer) window.clearTimeout(MusicFeedbackState.lostTimer);
+  MusicFeedbackState.lostTimer = window.setTimeout(() => {
+    if (!MusicFeedbackState.connected) return;
+    if (Date.now() - MusicFeedbackState.lastAt < 13000) {
+      scheduleMusicFeedbackLostCheck();
+      return;
+    }
+    MusicFeedbackState.connected = false;
+    MusicFeedbackState.playing = false;
+    MusicFeedbackState.visual = "idle";
+    applyMusicFeedbackVisual();
+    if (musicBridgePhase === "LISTENING") setMusicBridgeStatus("feedback idle", "IDLE");
+  }, 14000);
+}
+
+function applyMusicRuntimeFeedback(payload) {
+  if (!payload || typeof payload !== "object") return false;
+  if (payload.type !== "music-runtime-feedback" || payload.version !== 1 || payload.provider !== "music") return false;
+  if (payload.target && payload.target !== "hazama") return false;
+  const runtime = payload.runtime && typeof payload.runtime === "object" ? payload.runtime : {};
+
+  MusicFeedbackState.connected = true;
+  MusicFeedbackState.lastAt = Date.now();
+  MusicFeedbackState.playing = runtime.playing === true;
+  MusicFeedbackState.chapter = cleanShortText(runtime.albumArc?.chapter || "", "");
+  MusicFeedbackState.chapterLabel = cleanShortText(runtime.albumArc?.label || MusicFeedbackState.chapter || "", "");
+  MusicFeedbackState.bpm = Math.round(clampNumber(runtime.bpm, 0, 220));
+  MusicFeedbackState.acid = safeFeedbackNumber(runtime.acid?.performance, 0, 1);
+  MusicFeedbackState.genre = sanitizeFeedbackMap(runtime.color?.genre, ["ambient", "idm", "techno", "pressure"]);
+  MusicFeedbackState.gradient = sanitizeFeedbackMap(runtime.color?.gradient, ["haze", "memory", "micro", "ghost", "chrome", "organic"]);
+  MusicFeedbackState.families = sanitizeFeedbackMap(runtime.color?.families, ["hazeBed", "chromeHymn", "memoryRefrain", "coldPulse", "ghostBody", "acidBiyon", "sub808", "reedBuzz"]);
+  MusicFeedbackState.visual = musicFeedbackVisual(runtime);
+  MusicFeedbackState.eventKind = cleanShortText(runtime.event?.kind || "", "");
+
+  applyMusicFeedbackVisual();
+  setMusicBridgeStatus(musicFeedbackStatusText(), MusicFeedbackState.playing ? "LISTENING" : "READY");
+  scheduleMusicFeedbackLostCheck();
+  return true;
+}
+
+function handleMusicRuntimeFeedbackMessage(event) {
+  if (!isAllowedMusicFeedbackOrigin(event.origin)) return;
+  const data = event && event.data;
+  if (!data || typeof data !== "object" || data.type !== "music-runtime-feedback") return;
+  applyMusicRuntimeFeedback(data);
+}
+
+function setupMusicFeedbackReceiver() {
+  window.addEventListener("message", handleMusicRuntimeFeedbackMessage);
+}
+
 function setMusicBridgeStatus(text = "", phase = "") {
+  if (MusicFeedbackState.connected && phase === "synced") phase = "LISTENING";
   if (phase) musicBridgePhase = phase;
   const gate = document.querySelector(".hz-audio-gate");
   const status = $("audio-gate-status") || $("music-profile-status");
@@ -748,7 +873,7 @@ function setMusicBridgeStatus(text = "", phase = "") {
   const detail = text ? ` / ${text}` : "";
   if (gate) {
     gate.dataset.audioPhase = musicBridgePhase;
-    gate.setAttribute("aria-hidden", musicBridgePhase === "synced" ? "true" : "false");
+    gate.setAttribute("aria-hidden", musicBridgePhase === "synced" && !MusicFeedbackState.connected ? "true" : "false");
   }
   if (phaseEl) phaseEl.textContent = musicBridgePhase;
   if (stageEl) stageEl.textContent = audioGateStage();
@@ -1773,6 +1898,8 @@ window.addEventListener("unhandledrejection", (ev) => {
 document.addEventListener("DOMContentLoaded", () => {
   const v = $("app-version");
   if (v) v.textContent = APP_VERSION;
+  setupMusicFeedbackReceiver();
+  applyMusicFeedbackVisual();
 
   const resetBtn = $("reset-progress");
   if (resetBtn) {

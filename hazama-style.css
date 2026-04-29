@@ -22,6 +22,11 @@ body {
   --hz-gate-charge: 0;
   --hz-gate-glow: 0.28;
   --hz-threat: 0;
+  --hz-music-acid: 0;
+  --hz-music-ambient: 0;
+  --hz-music-micro: 0;
+  --hz-music-ghost: 0;
+  --hz-music-chrome: 0;
 }
 
 #app {
@@ -180,6 +185,42 @@ body {
 
 :root[data-hz-visual="gate"] .hz-gate-orb img {
   width: min(70%, 36rem);
+}
+
+:root[data-hz-music-feedback="connected"] .hz-visual {
+  border-color: rgba(125, 211, 252, calc(0.24 + var(--hz-music-chrome) * 0.24 + var(--hz-music-acid) * 0.18));
+}
+
+:root[data-hz-music-feedback="connected"] .hz-visual::before {
+  opacity: calc(0.28 + var(--hz-music-ambient) * 0.16 + var(--hz-music-micro) * 0.16);
+  animation-duration: calc(42s - var(--hz-music-micro) * 14s - var(--hz-music-acid) * 10s);
+}
+
+:root[data-hz-music-visual="memory"] .hz-visual::before {
+  background-size: 88px 104px, 152px 120px;
+}
+
+:root[data-hz-music-visual="broken"] .hz-visual::before {
+  background-size: 54px 70px, 108px 76px;
+}
+
+:root[data-hz-music-visual="ghost"] .hz-visual::after {
+  background:
+    linear-gradient(180deg, rgba(7, 11, 19, 0.1), rgba(7, 11, 19, 0.48)),
+    radial-gradient(circle at 50% 50%, rgba(14, 165, 233, calc(0.08 + var(--hz-music-ghost) * 0.16)), transparent 22%),
+    radial-gradient(circle at 50% 78%, rgba(15, 23, 42, 0.48), transparent 24%);
+}
+
+:root[data-hz-music-visual="acid"] .hz-gate-orb {
+  filter: drop-shadow(0 0 1.3rem rgba(34, 211, 238, calc(0.22 + var(--hz-music-acid) * 0.42)));
+}
+
+:root[data-hz-music-visual="acid"] .hz-gate-orb img {
+  animation-duration: calc(var(--hz-gate-duration) * 0.58);
+}
+
+:root[data-hz-music-visual="exhale"] .hz-visual {
+  border-color: rgba(186, 230, 253, calc(0.22 + var(--hz-music-chrome) * 0.32));
 }
 
 @keyframes hzSink {
@@ -646,6 +687,20 @@ body {
 
 .hz-audio-gate[data-audio-phase="synced"] {
   display: none;
+}
+
+.hz-audio-gate[data-audio-phase="LISTENING"] {
+  border-top-color: rgba(125, 211, 252, 0.36);
+}
+
+.hz-audio-gate[data-audio-phase="LISTENING"] .hz-audio-gate-phase {
+  border-color: rgba(125, 211, 252, 0.42);
+  color: #e0f2fe;
+}
+
+.hz-audio-gate[data-audio-phase="LISTENING"] .hz-audio-gate-stage {
+  border-color: rgba(251, 191, 36, 0.38);
+  color: #fef3c7;
 }
 
 .hz-audio-gate-row {
