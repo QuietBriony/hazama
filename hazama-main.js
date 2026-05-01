@@ -513,7 +513,7 @@ function renderFirstPlayableGuideMarkup() {
     <div class="hz-first-playable" aria-label="First playable loop">
       <div class="hz-first-playable-head">
         <span>初回ループ</span>
-        <b>${escapeHtml(guide.active)}</b>
+        <b>一周の道筋</b>
       </div>
       <div class="hz-loop-steps">${chips}</div>
       <div class="hz-loop-next"><span>次</span><b>${escapeHtml(guide.next)}</b></div>
@@ -870,6 +870,14 @@ function musicConnectionStateCode() {
   return "MUSIC.READY";
 }
 
+function bgmStateLabel() {
+  const code = musicConnectionStateCode();
+  if (code === "MUSIC.STOP") return "STOP";
+  if (code === "MUSIC.PAUSE") return "STOP";
+  if (code === "MUSIC.FOLLOW") return "FOLLOW中";
+  return "START待ち";
+}
+
 function musicArcLabel() {
   const raw = MusicFeedbackState.chapter || MusicFeedbackState.chapterLabel || MusicFeedbackState.hazamaStage || bgmStageLabel();
   const token = cleanDataToken(raw, "");
@@ -893,8 +901,8 @@ function musicArcLabel() {
 }
 
 function bgmPhaseLabel(phase = musicBridgePhase) {
-  if (!bgmFollowEnabled || phase === "off") return "MUSIC.STOP";
-  return musicConnectionStateCode();
+  if (!bgmFollowEnabled || phase === "off") return "STOP";
+  return bgmStateLabel();
 }
 
 function bgmStatusLine(text = "") {
@@ -910,13 +918,12 @@ function bgmStatusLine(text = "") {
 }
 
 function bgmCompactDetail(text = "") {
-  if (!bgmFollowEnabled) return "MUSIC.STOP";
+  if (!bgmFollowEnabled) return "停止中";
   if (MusicFeedbackState.connected && MusicFeedbackState.bpm) {
     return MusicFeedbackState.bpm ? `BPM ${MusicFeedbackState.bpm}` : "再生中";
   }
-  if (MusicFeedbackState.connected) return musicArcLabel() || "MUSIC.READY";
-  if (musicBridgePhase === "pending") return "START.HZM";
-  if (musicBridgePhase === "blocked" || musicBridgePhase === "IDLE") return "MUSIC.READY";
+  if (MusicFeedbackState.connected) return musicArcLabel() || "接続済み";
+  if (musicBridgePhase === "pending") return "Musicを開いてSTART";
   return text || bgmStageLabel();
 }
 
@@ -1717,6 +1724,22 @@ function renderGateRunPanelMarkup() {
   const status = statusClass
     ? `<span class="${statusClass}">${escapeHtml(gateRunStatusLabel(state))}</span>`
     : `<span>${escapeHtml(gateRunStatusLabel(state))}</span>`;
+  const statusLine = `${status} / 行動 ${state.gateRunTurns} / 扉 ${Math.round(state.gateRunCharge)}% / Ω解放 100%`;
+  const introOnly = currentDepthId === DEFAULT_START && state.gateRunStatus === "running";
+  if (introOnly) {
+    return `
+      <section class="hz-gate-run-panel hz-gate-run-panel--intro" aria-label="Gate Run">
+        <div class="hz-gate-run-head">
+          <span>Gate Run</span>
+          <span class="hz-gate-run-status">${statusLine}</span>
+        </div>
+        <div class="hz-gate-run-intro">
+          <span class="hz-gate-run-start-pill">HUBで操作開始</span>
+          <p>入口では夜のハブへ入るのが主導線です。扉を開く判断ゲームはHUB以降で前に出ます。</p>
+        </div>
+      </section>
+    `;
+  }
   const actionButtons = GATE_RUN_ACTIONS.map((action) => {
     const preview = gateRunActionPreview(action.id);
     return `
@@ -1733,7 +1756,7 @@ function renderGateRunPanelMarkup() {
     <section class="hz-gate-run-panel" aria-label="Gate Run">
       <div class="hz-gate-run-head">
         <span>Gate Run</span>
-        <span class="hz-gate-run-status">${status} / 行動 ${state.gateRunTurns} / 扉 ${Math.round(state.gateRunCharge)}% / Ω解放 100%</span>
+        <span class="hz-gate-run-status">${statusLine}</span>
       </div>
       ${renderGateRunTrack(state)}
       <div class="hz-gate-run-actions">
