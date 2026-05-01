@@ -30,6 +30,8 @@ const STABILITY_MAX = 100;
 const RESONANCE_MAX = 100;
 const GATE_RUN_MAX_CHARGE = 100;
 const GATE_RUN_TURN_LIMIT = 20;
+const GATE_SYNC_READY_RESONANCE = 12;
+const GATE_SYNC_READY_CHARGE = 72;
 const MILESTONE_RANKS = [8, 14, 20, 27];
 const MOVE_TYPES = ["dive", "observe", "tune", "sync", "retreat"];
 const MOVE_TYPE_LABELS = {
@@ -299,6 +301,10 @@ function canEnterOmega(state = getRunState()) {
   return state.gateRunStatus === "won";
 }
 
+function canSyncGate(state = getRunState()) {
+  return state.resonance >= GATE_SYNC_READY_RESONANCE || state.marks > 0 || state.gateRunCharge >= GATE_SYNC_READY_CHARGE;
+}
+
 function normalizeMoveType(type) {
   return MOVE_TYPES.includes(type) ? type : "";
 }
@@ -558,7 +564,13 @@ function buildGateIntelligence(depthId = currentDepthId) {
   let objective = "ひと息置いて落ち着きを戻すか、選択肢から先へ進む。";
   let route = "ひと息置く / どう進む？";
 
-  if (state.gateRunStatus === "won") {
+  if (depthId === "A_reborn") {
+    objective = "一周完了。Ωを通過した入口から、夜のハブへ戻って次の周回を選べる。";
+    route = "夜のハブへ戻る / 次の周回";
+  } else if (depthId === OMEGA_DEPTH) {
+    objective = "Ωに到達した。ここがこの周回の本筋の到達点。新しい入口へ戻る。";
+    route = "新しい入口 -> A_reborn";
+  } else if (state.gateRunStatus === "won") {
     objective = "扉が開いた。Ωへ入れる。ここからがこの周回の本筋の到達点。";
     route = "Ω -> 新しい入口 / 夜のハブ";
   } else if (state.gateRunStatus === "lost") {
@@ -1567,7 +1579,7 @@ function gateRunActionPreview(actionId) {
   }
 
   if (actionId === "tune") {
-    const charge = 7 + Math.floor(state.resonance / 24) + bonus;
+    const charge = 9 + Math.floor(state.resonance / 24) + bonus;
     return {
       ...common,
       result: `扉の開き +${charge} / 落ち着き +7`,
@@ -1576,12 +1588,12 @@ function gateRunActionPreview(actionId) {
   }
 
   if (actionId === "sync") {
-    const enough = state.resonance >= 16 || state.marks > 0 || state.gateRunCharge >= 82;
-    const charge = enough ? 18 + Math.min(10, state.marks * 3) + bonus : 4 + bonus;
+    const enough = canSyncGate(state);
+    const charge = enough ? 28 + Math.min(10, state.marks * 3) + bonus : 6 + bonus;
     return {
       ...common,
       disabled: common.disabled,
-      result: enough ? `扉の開き +${charge} / 響き -12` : `扉の開き +${charge} / 準備不足`,
+      result: enough ? `扉の開き +${charge} / 響き -10 / 準備OK` : `扉の開き +${charge} / 準備不足`,
       title: enough ? "響きを束ねて、扉へ直接つなぐ。" : "響きかしるしが薄い。小さな接続だけ通る。"
     };
   }
@@ -1589,10 +1601,12 @@ function gateRunActionPreview(actionId) {
   return {
     ...common,
     disabled: navigationLocked,
-    result: "落ち着き +18 / ハブへ",
-    title: state.gateRunStatus === "running"
-      ? "戻れるうちに戻り、もう一度立て直す。"
-      : "崩落/達成後の記録を閉じ、次の挑戦を起こす。"
+    result: state.gateRunStatus === "won" ? "HUBへ / Ω解放を保持" : "落ち着き +18 / ハブへ",
+    title: state.gateRunStatus === "won"
+      ? "扉は開いたまま、夜のハブへ戻ります。Ωへ入れます。"
+      : state.gateRunStatus === "running"
+        ? "戻れるうちに戻り、もう一度立て直す。"
+        : "崩落後の記録を閉じ、次の挑戦を起こす。"
   };
 }
 
@@ -1616,12 +1630,12 @@ function resolveGateRunOutcome(state, notes) {
     state.gateRunCharge = clampNumber(Math.min(state.gateRunCharge, 72), 0, GATE_RUN_MAX_CHARGE);
     targetDepthId = depths[HUB_DEPTH] ? HUB_DEPTH : DEFAULT_START;
     notes.push("立て直し中。夜のハブへ戻った");
-  } else if (state.gateRunCharge >= GATE_RUN_MAX_CHARGE) {
+  } else if (state.gateRunStatus !== "won" && state.gateRunCharge >= GATE_RUN_MAX_CHARGE) {
     state.gateRunStatus = "won";
     state.gateRunCharge = GATE_RUN_MAX_CHARGE;
     state.gateRunOutcomeAt = Date.now();
     notes.push("扉が開いた");
-  } else if (state.gateRunTurns >= GATE_RUN_TURN_LIMIT) {
+  } else if (state.gateRunStatus === "running" && state.gateRunTurns >= GATE_RUN_TURN_LIMIT) {
     state.gateRunStatus = "lost";
     state.gateRunOutcomeAt = Date.now();
     state.stability = Math.max(24, state.stability);
@@ -1659,10 +1673,12 @@ function applyGateRunAction(actionId) {
   let targetDepthId = null;
 
   if (actionId === "retreat") {
-    if (state.gateRunStatus !== "running") resetGateRunState(state);
-    stabilityDelta = 18;
-    resonanceDelta = -6;
-    chargeDelta = -4;
+    const keepOmegaUnlocked = state.gateRunStatus === "won";
+    if (state.gateRunStatus === "lost") resetGateRunState(state);
+    stabilityDelta = keepOmegaUnlocked ? 8 : 18;
+    resonanceDelta = keepOmegaUnlocked ? -2 : -6;
+    chargeDelta = keepOmegaUnlocked ? 0 : -4;
+    if (keepOmegaUnlocked) notes.push("Ω解放を保持");
     targetDepthId = currentDepthId !== HUB_DEPTH && depths[HUB_DEPTH] ? HUB_DEPTH : null;
   } else if (actionId === "dive") {
     stabilityDelta = -(8 + Math.ceil(risk / 18));
@@ -1674,18 +1690,18 @@ function applyGateRunAction(actionId) {
     chargeDelta = 4 + bonus;
   } else if (actionId === "tune") {
     stabilityDelta = 7;
-    resonanceDelta = 5;
-    chargeDelta = 7 + Math.floor(state.resonance / 24) + bonus;
+    resonanceDelta = 6;
+    chargeDelta = 9 + Math.floor(state.resonance / 24) + bonus;
   } else if (actionId === "sync") {
-    const enough = state.resonance >= 16 || state.marks > 0 || state.gateRunCharge >= 82;
+    const enough = canSyncGate(state);
     if (enough) {
-      resonanceDelta = -12;
+      resonanceDelta = -10;
       marksDelta = state.marks > 0 ? -1 : 0;
-      chargeDelta = 18 + Math.min(10, state.marks * 3) + bonus;
+      chargeDelta = 28 + Math.min(10, state.marks * 3) + bonus;
     } else {
-      stabilityDelta = -3;
+      stabilityDelta = -2;
       resonanceDelta = 1;
-      chargeDelta = 4 + bonus;
+      chargeDelta = 6 + bonus;
     }
   }
 
@@ -1724,7 +1740,10 @@ function renderGateRunPanelMarkup() {
   const status = statusClass
     ? `<span class="${statusClass}">${escapeHtml(gateRunStatusLabel(state))}</span>`
     : `<span>${escapeHtml(gateRunStatusLabel(state))}</span>`;
-  const statusLine = `${status} / 行動 ${state.gateRunTurns} / 扉 ${Math.round(state.gateRunCharge)}% / Ω解放 100%`;
+  const turnMeta = state.gateRunStatus === "running"
+    ? `残り ${Math.max(0, GATE_RUN_TURN_LIMIT - state.gateRunTurns)}`
+    : state.gateRunStatus === "won" ? "Ω解放中" : "再挑戦可";
+  const statusLine = `${status} / 行動 ${state.gateRunTurns} / ${turnMeta} / 扉 ${Math.round(state.gateRunCharge)}% / Ω解放 100%`;
   const introOnly = currentDepthId === DEFAULT_START && state.gateRunStatus === "running";
   if (introOnly) {
     return `
@@ -1740,17 +1759,31 @@ function renderGateRunPanelMarkup() {
       </section>
     `;
   }
-  const actionButtons = GATE_RUN_ACTIONS.map((action) => {
-    const preview = gateRunActionPreview(action.id);
-    return `
-      <button class="hz-gate-action" type="button" data-gate-action="${escapeHtml(action.id)}" title="${escapeHtml(preview.title)}"${preview.disabled ? " disabled" : ""}>
-        <span class="hz-gate-action-role">${escapeHtml(action.role)}</span>
-        <span class="hz-gate-action-title">${escapeHtml(action.title)}</span>
-        <span class="hz-gate-action-meta">${escapeHtml(action.meta)}</span>
-        <span class="hz-gate-action-result">${escapeHtml(preview.result)}</span>
-      </button>
-    `;
-  }).join("");
+  const showGateActions = !(state.gateRunStatus === "won" && (currentDepthId === OMEGA_DEPTH || currentDepthId === "A_reborn"));
+  const actionButtons = showGateActions
+    ? GATE_RUN_ACTIONS.map((action) => {
+        const preview = gateRunActionPreview(action.id);
+        return `
+          <button class="hz-gate-action" type="button" data-gate-action="${escapeHtml(action.id)}" title="${escapeHtml(preview.title)}"${preview.disabled ? " disabled" : ""}>
+            <span class="hz-gate-action-role">${escapeHtml(action.role)}</span>
+            <span class="hz-gate-action-title">${escapeHtml(action.title)}</span>
+            <span class="hz-gate-action-meta">${escapeHtml(action.meta)}</span>
+            <span class="hz-gate-action-result">${escapeHtml(preview.result)}</span>
+          </button>
+        `;
+      }).join("")
+    : "";
+  const loopComplete = state.gateRunStatus === "won" && currentDepthId === "A_reborn"
+    ? `<div class="hz-gate-complete">一周完了。夜のハブから次の周回へ戻れます。</div>`
+    : "";
+  const omegaUnlock = state.gateRunStatus === "won" && currentDepthId !== OMEGA_DEPTH && currentDepthId !== "A_reborn"
+    ? `
+      <div class="hz-gate-unlock">
+        <button class="hz-gate-omega" type="button" data-gate-omega="true">Ωへ入る</button>
+        <span>扉は開いています。ここから一周の到達点へ進めます。</span>
+      </div>
+    `
+    : "";
 
   return `
     <section class="hz-gate-run-panel" aria-label="Gate Run">
@@ -1759,7 +1792,9 @@ function renderGateRunPanelMarkup() {
         <span class="hz-gate-run-status">${statusLine}</span>
       </div>
       ${renderGateRunTrack(state)}
-      <div class="hz-gate-run-actions">
+      ${loopComplete}
+      ${omegaUnlock}
+      <div class="hz-gate-run-actions"${showGateActions ? "" : " hidden"}>
         ${actionButtons}
       </div>
     </section>
@@ -1767,6 +1802,16 @@ function renderGateRunPanelMarkup() {
 }
 
 function bindGateRunControls() {
+  const omegaBtn = document.querySelector("[data-gate-omega]");
+  if (omegaBtn) {
+    omegaBtn.addEventListener("click", () => {
+      if (!canEnterOmega()) return;
+      clearPause();
+      renderDepth(OMEGA_DEPTH, { moveKind: "choice", moveType: "sync" });
+      setStatus("Ωへ");
+    });
+  }
+
   for (const btn of document.querySelectorAll("[data-gate-action]")) {
     btn.addEventListener("click", () => {
       const actionId = btn.getAttribute("data-gate-action");
