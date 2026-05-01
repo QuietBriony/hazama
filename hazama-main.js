@@ -464,6 +464,64 @@ function gatePhaseLabel(gateCharge, status = getRunState().gateRunStatus) {
   return "様子を見る";
 }
 
+function buildFirstPlayableGuide(depthId = currentDepthId, state = getRunState()) {
+  const gateCharge = Math.round(clampNumber(state.gateRunCharge, 0, GATE_RUN_MAX_CHARGE));
+  let active = "Gate Run";
+  let next = `扉を${GATE_RUN_MAX_CHARGE}%まで開く`;
+  let detail = `扉 ${gateCharge}% / Breath Gateで立て直しながら進む。`;
+
+  if (depthId === DEFAULT_START) {
+    active = "A_start";
+    next = "夜のハブへ入る";
+    detail = "入口からHUBへ進み、扉を開く準備を始める。";
+  } else if (depthId === HUB_DEPTH && state.gateRunStatus !== "won") {
+    active = "HUB";
+    next = "Gate Runを進める";
+    detail = `扉 ${gateCharge}% / Ωは扉100%で解放。`;
+  } else if (depthId === OMEGA_DEPTH) {
+    active = "Ω";
+    next = "新しい入口へ戻る";
+    detail = "一周の到達点。ここからA_rebornへつなぐ。";
+  } else if (depthId === "A_reborn") {
+    active = "A_reborn";
+    next = "夜のハブへ戻る";
+    detail = "一周完了。次の挑戦はHUBから始める。";
+  } else if (state.gateRunStatus === "won") {
+    active = "Ω unlock";
+    next = "Ωの扉を試す";
+    detail = "扉100%。Ωへ入れる。";
+  } else if (state.gateRunStatus === "lost" || state.stability < 34) {
+    active = "Breath Gate";
+    next = "ひと息置く";
+    detail = `落ち着き ${Math.round(state.stability)} / 回復してから扉へ戻る。`;
+  } else if (gateCharge >= 82) {
+    active = "Gate Run";
+    next = "扉に合わせる";
+    detail = `扉 ${gateCharge}% / あと少しでΩ解放。`;
+  }
+
+  const stages = ["A_start", "HUB", "Gate Run", "Breath Gate", "Ω unlock", "Ω", "A_reborn"];
+  return { active, next, detail, stages };
+}
+
+function renderFirstPlayableGuideMarkup() {
+  const guide = buildFirstPlayableGuide();
+  const chips = guide.stages.map((stage) => `
+    <span class="hz-loop-step${stage === guide.active ? " is-active" : ""}">${escapeHtml(stage)}</span>
+  `).join("");
+  return `
+    <div class="hz-first-playable" aria-label="First playable loop">
+      <div class="hz-first-playable-head">
+        <span>初回ループ</span>
+        <b>${escapeHtml(guide.active)}</b>
+      </div>
+      <div class="hz-loop-steps">${chips}</div>
+      <div class="hz-loop-next"><span>次</span><b>${escapeHtml(guide.next)}</b></div>
+      <div class="hz-loop-detail">${escapeHtml(guide.detail)}</div>
+    </div>
+  `;
+}
+
 function giGateAlmostOpen(state, gateCharge) {
   return state.gateRunStatus === "running" && gateCharge >= 86;
 }
@@ -1435,26 +1493,31 @@ function applyCoreReward(reward) {
 const GATE_RUN_ACTIONS = [
   {
     id: "dive",
+    role: "攻める",
     title: "さらに奥へ進む",
     meta: "落ち着きを削って、扉の開きを大きく進める。"
   },
   {
     id: "observe",
+    role: "見る",
     title: "周囲をよく見る",
     meta: "危険を抑えながら、次の進み方を読む。"
   },
   {
     id: "tune",
+    role: "整える",
     title: "呼吸を整える",
     meta: "落ち着きと響きを戻して、崩落を遠ざける。"
   },
   {
     id: "sync",
+    role: "合わせる",
     title: "扉に合わせる",
     meta: "響きやしるしを使って、扉の開きを一気に合わせる。"
   },
   {
     id: "retreat",
+    role: "戻る",
     title: "夜のハブへ戻る",
     meta: "戻って落ち着きを回復し、もう一度立て直す。"
   }
@@ -1658,6 +1721,7 @@ function renderGateRunPanelMarkup() {
     const preview = gateRunActionPreview(action.id);
     return `
       <button class="hz-gate-action" type="button" data-gate-action="${escapeHtml(action.id)}" title="${escapeHtml(preview.title)}"${preview.disabled ? " disabled" : ""}>
+        <span class="hz-gate-action-role">${escapeHtml(action.role)}</span>
         <span class="hz-gate-action-title">${escapeHtml(action.title)}</span>
         <span class="hz-gate-action-meta">${escapeHtml(action.meta)}</span>
         <span class="hz-gate-action-result">${escapeHtml(preview.result)}</span>
@@ -1669,7 +1733,7 @@ function renderGateRunPanelMarkup() {
     <section class="hz-gate-run-panel" aria-label="Gate Run">
       <div class="hz-gate-run-head">
         <span>Gate Run</span>
-        <span class="hz-gate-run-status">${status} / 行動 ${state.gateRunTurns} / 扉 ${Math.round(state.gateRunCharge)}%</span>
+        <span class="hz-gate-run-status">${status} / 行動 ${state.gateRunTurns} / 扉 ${Math.round(state.gateRunCharge)}% / Ω解放 100%</span>
       </div>
       ${renderGateRunTrack(state)}
       <div class="hz-gate-run-actions">
@@ -1732,6 +1796,7 @@ function renderGateIntelligenceMarkup() {
         <span>Gate Intelligence</span>
         <b>${escapeHtml(gi.code)} / ${escapeHtml(gi.phase)}</b>
       </div>
+      ${renderFirstPlayableGuideMarkup()}
       <div class="hz-gi-objective">${escapeHtml(gi.objective)}</div>
       <div class="hz-gi-route">${escapeHtml(gi.route)}</div>
       <div class="hz-gi-meters">
@@ -2060,11 +2125,15 @@ function renderOptions(depth, optionsEl) {
     }, "hz-btn hz-depth-option");
     btn.classList.add("hz-choice-button");
     if (gate.label) {
+      const lockHint = !gate.allowed && next === OMEGA_DEPTH
+        ? `<span class="hz-choice-lock">扉100%で解放</span>`
+        : "";
       btn.innerHTML = `
         <span class="hz-choice-main">${escapeHtml(primaryLabel)}</span>
         <span class="hz-choice-meta">${escapeHtml(gate.label)}</span>
+        ${lockHint}
       `;
-      btn.setAttribute("aria-label", `${primaryLabel} / ${gate.label}`);
+      btn.setAttribute("aria-label", `${primaryLabel} / ${gate.label}${lockHint ? " / 扉100%で解放" : ""}`);
     }
     btn.disabled = navigationLocked || !gate.allowed;
     btn.title = gate.title;
@@ -2129,9 +2198,9 @@ function renderDepth(depthId, opts = {}) {
       ${paragraphs.map((p) => `<p>${escapeHtml(p)}</p>`).join("")}
     </div>
     <div class="hz-block hz-core-loop">
-      <div class="hz-depth-theme">ひと息置く</div>
+      <div class="hz-depth-theme">Breath Gate / ひと息置く</div>
       <p>${escapeHtml(question)}</p>
-      <p class="hz-core-help">進行に必須ではありません。短く返すと、落ち着きと響きが戻ります。</p>
+      <p class="hz-core-help">任意の立て直し行動です。短く返すと、落ち着きと響きが戻ります。</p>
       <form id="core-form" class="hz-core-form">
         <input id="core-input" type="text" maxlength="${CORE_MAX_INPUT}" autocomplete="off" placeholder="短く一言だけ" />
         <button class="hz-btn" type="submit">ひと息置く</button>

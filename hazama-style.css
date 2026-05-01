@@ -606,6 +606,21 @@ body {
   display: block;
 }
 
+.hz-gate-action-role {
+  display: inline-flex;
+  align-items: center;
+  min-height: 1.25rem;
+  margin-bottom: 0.35rem;
+  border: 1px solid rgba(56, 189, 248, 0.22);
+  border-radius: 999px;
+  background: rgba(8, 47, 73, 0.28);
+  color: #bae6fd;
+  padding: 0.08rem 0.45rem;
+  font-size: 0.68rem;
+  font-weight: 800;
+  line-height: 1.2;
+}
+
 .hz-gate-action-title {
   color: #f8fafc;
   font-size: 0.84rem;
@@ -679,6 +694,79 @@ body {
 .hz-gi-head b {
   color: #67e8f9;
   font-size: 0.72rem;
+}
+
+.hz-first-playable {
+  display: grid;
+  gap: 0.45rem;
+  padding: 0.55rem 0.65rem;
+  border-left: 3px solid rgba(56, 189, 248, 0.68);
+  background: linear-gradient(90deg, rgba(14, 116, 144, 0.15), rgba(15, 23, 42, 0));
+}
+
+.hz-first-playable-head,
+.hz-loop-next {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.65rem;
+}
+
+.hz-first-playable-head {
+  color: #cbd5e1;
+  font-size: 0.74rem;
+  font-weight: 800;
+}
+
+.hz-first-playable-head b {
+  color: #fde68a;
+  font-size: 0.75rem;
+}
+
+.hz-loop-steps {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.28rem;
+}
+
+.hz-loop-step {
+  display: inline-flex;
+  align-items: center;
+  min-height: 1.35rem;
+  border: 1px solid rgba(148, 163, 184, 0.22);
+  border-radius: 999px;
+  color: #94a3b8;
+  padding: 0.08rem 0.4rem;
+  font-size: 0.68rem;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.hz-loop-step.is-active {
+  border-color: rgba(251, 191, 36, 0.58);
+  background: rgba(113, 63, 18, 0.24);
+  color: #fde68a;
+}
+
+.hz-loop-next {
+  color: #94a3b8;
+  font-size: 0.75rem;
+}
+
+.hz-loop-next span {
+  color: #67e8f9;
+  font-weight: 800;
+}
+
+.hz-loop-next b {
+  color: #f8fafc;
+  font-size: 0.82rem;
+}
+
+.hz-loop-detail {
+  color: #bac7d8;
+  font-size: 0.75rem;
+  line-height: 1.45;
 }
 
 .hz-gi-objective {
@@ -1030,6 +1118,18 @@ body {
   color: #fca5a5;
 }
 
+.hz-choice-lock {
+  align-self: flex-start;
+  border: 1px solid rgba(248, 113, 113, 0.34);
+  border-radius: 999px;
+  background: rgba(127, 29, 29, 0.28);
+  color: #fecaca;
+  font-size: 0.72rem;
+  font-weight: 800;
+  line-height: 1.2;
+  padding: 0.12rem 0.5rem;
+}
+
 .hz-controls,
 .hz-session-controls {
   display: flex;
@@ -1126,6 +1226,8 @@ body {
   .hz-core-form,
   .hz-loop-input,
   .hz-controls,
+  .hz-first-playable-head,
+  .hz-loop-next,
   .hz-gate-run-head,
   .hz-bgm-row,
   .hz-footer-row {
