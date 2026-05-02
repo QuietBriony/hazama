@@ -1,4 +1,4 @@
-// Hazama main.js v2.19
+// Hazama main.js v2.20
 // Minimal, robust loader + renderer for GitHub Pages / Codespaces.
 // v2.3 adds a lightweight deterministic game layer around depth pressure.
 // v2.5 animates the descent key visual and mandala goal gate.
@@ -16,8 +16,9 @@
 // v2.17 clarifies game state, rest actions, and Music connection wording.
 // v2.18 hides Music as a background BGM companion with auto-follow resume.
 // v2.19 reflects Music companion feedback state in BGM UI and atmosphere attrs.
+// v2.20 finishes the first playable loop with tighter Gate Run signposting.
 
-const APP_VERSION = "v2.19";
+const APP_VERSION = "v2.20";
 
 const STATE_KEY = "hazama_state_v2";
 const SEED_KEY = "hazama_seed";
@@ -29,9 +30,9 @@ const CORE_MAX_INPUT = 80;
 const STABILITY_MAX = 100;
 const RESONANCE_MAX = 100;
 const GATE_RUN_MAX_CHARGE = 100;
-const GATE_RUN_TURN_LIMIT = 20;
+const GATE_RUN_TURN_LIMIT = 14;
 const GATE_SYNC_READY_RESONANCE = 12;
-const GATE_SYNC_READY_CHARGE = 72;
+const GATE_SYNC_READY_CHARGE = 60;
 const MILESTONE_RANKS = [8, 14, 20, 27];
 const MOVE_TYPES = ["dive", "observe", "tune", "sync", "retreat"];
 const MOVE_TYPE_LABELS = {
@@ -474,16 +475,16 @@ function buildFirstPlayableGuide(depthId = currentDepthId, state = getRunState()
   const gateCharge = Math.round(clampNumber(state.gateRunCharge, 0, GATE_RUN_MAX_CHARGE));
   let active = "Gate Run";
   let next = `扉を${GATE_RUN_MAX_CHARGE}%まで開く`;
-  let detail = `扉 ${gateCharge}% / Breath Gateで立て直しながら進む。`;
+  let detail = `扉 ${gateCharge}% / 攻める・整える・合わせるを選ぶ。`;
 
   if (depthId === DEFAULT_START) {
     active = "A_start";
     next = "夜のハブへ入る";
-    detail = "入口からHUBへ進み、扉を開く準備を始める。";
+    detail = "まずHUBへ。Gate RunはHUBから操作できる。";
   } else if (depthId === HUB_DEPTH && state.gateRunStatus !== "won") {
     active = "HUB";
-    next = "Gate Runを進める";
-    detail = `扉 ${gateCharge}% / Ωは扉100%で解放。`;
+    next = "Gate Runで扉100%";
+    detail = `扉 ${gateCharge}% / Breath Gateは任意の立て直し。`;
   } else if (depthId === OMEGA_DEPTH) {
     active = "Ω";
     next = "新しい入口へ戻る";
@@ -494,8 +495,8 @@ function buildFirstPlayableGuide(depthId = currentDepthId, state = getRunState()
     detail = "一周完了。次の挑戦はHUBから始める。";
   } else if (state.gateRunStatus === "won") {
     active = "Ω unlock";
-    next = "Ωの扉を試す";
-    detail = "扉100%。Ωへ入れる。";
+    next = "Ωへ入る";
+    detail = "扉100%。一周の到達点へ進める。";
   } else if (state.gateRunStatus === "lost" || state.stability < 34) {
     active = "Breath Gate";
     next = "ひと息置く";
@@ -519,7 +520,7 @@ function renderFirstPlayableGuideMarkup() {
     <div class="hz-first-playable" aria-label="First playable loop">
       <div class="hz-first-playable-head">
         <span>初回ループ</span>
-        <b>一周の道筋</b>
+        <b>5〜8分で一周</b>
       </div>
       <div class="hz-loop-steps">${chips}</div>
       <div class="hz-loop-next"><span>次</span><b>${escapeHtml(guide.next)}</b></div>
@@ -1258,7 +1259,7 @@ function attemptMusicAutoStart(ev) {
 function installMusicAutoStart() {
   if (musicAutoStartInstalled) return;
   musicAutoStartInstalled = true;
-  setMusicBridgeStatus("初回操作でBGMを起動します", "armed");
+  setMusicBridgeStatus("初回操作後にMusicでSTART", "armed");
   window.addEventListener("pointerdown", attemptMusicAutoStart, { once: true, capture: true, passive: true });
   window.addEventListener("keydown", attemptMusicAutoStart, { once: true, capture: true });
   window.addEventListener("focus", () => {
@@ -1550,6 +1551,21 @@ function gateRunStatusLabel(state = getRunState()) {
   return "進行中";
 }
 
+function gateRunReadinessLabel(state = getRunState()) {
+  if (state.gateRunStatus === "won") return "Ω解放中";
+  if (state.gateRunStatus === "lost") return "戻るで再挑戦";
+  if (canSyncGate(state)) return "準備OK";
+  return `準備中: 響き${GATE_SYNC_READY_RESONANCE} / 扉${GATE_SYNC_READY_CHARGE}%`;
+}
+
+function gateRunMissionText(state = getRunState()) {
+  if (state.gateRunStatus === "won") return "Ωへ入ると一周の到達点です。";
+  if (state.gateRunStatus === "lost") return "夜のハブへ戻って、落ち着きを戻してから再挑戦できます。";
+  if (state.stability < 34) return "落ち着きが薄いので、整えるかBreath Gateで立て直せます。";
+  if (canSyncGate(state)) return "準備OK。扉に合わせると大きく進みます。";
+  return "攻めるで進め、整えるで準備し、合わせるで扉を開きます。";
+}
+
 function gateRunActionPreview(actionId) {
   const state = getRunState();
   const rank = depthRank(currentDepthId);
@@ -1560,36 +1576,36 @@ function gateRunActionPreview(actionId) {
   const common = { disabled: navigationLocked || closed, result: "", title: "" };
 
   if (actionId === "dive") {
-    const cost = 8 + Math.ceil(risk / 18);
-    const charge = 10 + Math.floor(rank / 4) + bonus;
+    const cost = 9 + Math.ceil(risk / 18);
+    const charge = 14 + Math.floor(rank / 5) + bonus;
     return {
       ...common,
-      result: `扉の開き +${charge} / 落ち着き -${cost}`,
+      result: `扉の開き +${charge} / 響き +5 / 落ち着き -${cost}`,
       title: "落ち着きを削って、扉の開きを大きく進める。"
     };
   }
 
   if (actionId === "observe") {
-    const charge = 4 + bonus;
+    const charge = 6 + bonus;
     return {
       ...common,
-      result: `扉の開き +${charge} / 落ち着き +3`,
+      result: `扉の開き +${charge} / 響き +3 / 落ち着き +4`,
       title: "周囲をよく見て、無理なく扉の開きを進める。"
     };
   }
 
   if (actionId === "tune") {
-    const charge = 9 + Math.floor(state.resonance / 24) + bonus;
+    const charge = 12 + Math.floor(state.resonance / 20) + bonus;
     return {
       ...common,
-      result: `扉の開き +${charge} / 落ち着き +7`,
+      result: `扉の開き +${charge} / 響き +8 / 落ち着き +9`,
       title: "呼吸を整え、次の接続に耐える土台を作る。"
     };
   }
 
   if (actionId === "sync") {
     const enough = canSyncGate(state);
-    const charge = enough ? 28 + Math.min(10, state.marks * 3) + bonus : 6 + bonus;
+    const charge = enough ? 42 + Math.min(10, state.marks * 3) + bonus : 7 + bonus;
     return {
       ...common,
       disabled: common.disabled,
@@ -1671,41 +1687,45 @@ function applyGateRunAction(actionId) {
   let resonanceDelta = 0;
   let marksDelta = 0;
   let targetDepthId = null;
+  const countsAsGateTurn = actionId !== "retreat";
 
   if (actionId === "retreat") {
     const keepOmegaUnlocked = state.gateRunStatus === "won";
-    if (state.gateRunStatus === "lost") resetGateRunState(state);
+    if (state.gateRunStatus === "lost") {
+      resetGateRunState(state);
+      notes.push("再挑戦を開始");
+    }
     stabilityDelta = keepOmegaUnlocked ? 8 : 18;
     resonanceDelta = keepOmegaUnlocked ? -2 : -6;
     chargeDelta = keepOmegaUnlocked ? 0 : -4;
     if (keepOmegaUnlocked) notes.push("Ω解放を保持");
     targetDepthId = currentDepthId !== HUB_DEPTH && depths[HUB_DEPTH] ? HUB_DEPTH : null;
   } else if (actionId === "dive") {
-    stabilityDelta = -(8 + Math.ceil(risk / 18));
-    resonanceDelta = 4 + Math.min(4, Math.ceil(rank / 9));
-    chargeDelta = 10 + Math.floor(rank / 4) + bonus;
+    stabilityDelta = -(9 + Math.ceil(risk / 18));
+    resonanceDelta = 5 + Math.min(4, Math.ceil(rank / 9));
+    chargeDelta = 14 + Math.floor(rank / 5) + bonus;
   } else if (actionId === "observe") {
-    stabilityDelta = 3;
-    resonanceDelta = 2;
-    chargeDelta = 4 + bonus;
+    stabilityDelta = 4;
+    resonanceDelta = 3;
+    chargeDelta = 6 + bonus;
   } else if (actionId === "tune") {
-    stabilityDelta = 7;
-    resonanceDelta = 6;
-    chargeDelta = 9 + Math.floor(state.resonance / 24) + bonus;
+    stabilityDelta = 9;
+    resonanceDelta = 8;
+    chargeDelta = 12 + Math.floor(state.resonance / 20) + bonus;
   } else if (actionId === "sync") {
     const enough = canSyncGate(state);
     if (enough) {
       resonanceDelta = -10;
       marksDelta = state.marks > 0 ? -1 : 0;
-      chargeDelta = 28 + Math.min(10, state.marks * 3) + bonus;
+      chargeDelta = 42 + Math.min(10, state.marks * 3) + bonus;
     } else {
       stabilityDelta = -2;
       resonanceDelta = 1;
-      chargeDelta = 6 + bonus;
+      chargeDelta = 7 + bonus;
     }
   }
 
-  state.gateRunTurns += 1;
+  if (countsAsGateTurn) state.gateRunTurns += 1;
   state.stability = clampNumber(state.stability + stabilityDelta, 0, STABILITY_MAX);
   state.resonance = clampNumber(state.resonance + resonanceDelta, 0, RESONANCE_MAX);
   state.marks = clampNumber(state.marks + marksDelta, 0, 99);
@@ -1730,6 +1750,8 @@ function renderGateRunTrack(state) {
     <div class="hz-gate-run-track" aria-label="Gate Run charge">
       <span class="hz-gate-run-fill" style="width: ${pct}%"></span>
       <span class="hz-gate-run-marker" style="left: ${marker}%"></span>
+      <span class="hz-gate-track-label hz-gate-track-label--start">0</span>
+      <span class="hz-gate-track-label hz-gate-track-label--end">Ω 100</span>
     </div>
   `;
 }
@@ -1743,7 +1765,15 @@ function renderGateRunPanelMarkup() {
   const turnMeta = state.gateRunStatus === "running"
     ? `残り ${Math.max(0, GATE_RUN_TURN_LIMIT - state.gateRunTurns)}`
     : state.gateRunStatus === "won" ? "Ω解放中" : "再挑戦可";
-  const statusLine = `${status} / 行動 ${state.gateRunTurns} / ${turnMeta} / 扉 ${Math.round(state.gateRunCharge)}% / Ω解放 100%`;
+  const statusLine = `
+    ${status}
+    <span>行動 ${state.gateRunTurns}</span>
+    <span>${escapeHtml(turnMeta)}</span>
+    <span>扉 ${Math.round(state.gateRunCharge)}%</span>
+    <span>Ω解放 100%</span>
+  `;
+  const mission = gateRunMissionText(state);
+  const readiness = gateRunReadinessLabel(state);
   const introOnly = currentDepthId === DEFAULT_START && state.gateRunStatus === "running";
   if (introOnly) {
     return `
@@ -1754,17 +1784,18 @@ function renderGateRunPanelMarkup() {
         </div>
         <div class="hz-gate-run-intro">
           <span class="hz-gate-run-start-pill">HUBで操作開始</span>
-          <p>入口では夜のハブへ入るのが主導線です。扉を開く判断ゲームはHUB以降で前に出ます。</p>
+          <p>入口では夜のハブへ入るのが主導線です。HUBから扉100%を目指します。</p>
         </div>
       </section>
     `;
   }
-  const showGateActions = !(state.gateRunStatus === "won" && (currentDepthId === OMEGA_DEPTH || currentDepthId === "A_reborn"));
+  const showGateActions = state.gateRunStatus !== "won"
+    && !(currentDepthId === OMEGA_DEPTH || currentDepthId === "A_reborn");
   const actionButtons = showGateActions
     ? GATE_RUN_ACTIONS.map((action) => {
         const preview = gateRunActionPreview(action.id);
         return `
-          <button class="hz-gate-action" type="button" data-gate-action="${escapeHtml(action.id)}" title="${escapeHtml(preview.title)}"${preview.disabled ? " disabled" : ""}>
+          <button class="hz-gate-action hz-gate-action--${escapeHtml(action.id)}" type="button" data-gate-action="${escapeHtml(action.id)}" title="${escapeHtml(preview.title)}"${preview.disabled ? " disabled" : ""}>
             <span class="hz-gate-action-role">${escapeHtml(action.role)}</span>
             <span class="hz-gate-action-title">${escapeHtml(action.title)}</span>
             <span class="hz-gate-action-meta">${escapeHtml(action.meta)}</span>
@@ -1780,6 +1811,7 @@ function renderGateRunPanelMarkup() {
     ? `
       <div class="hz-gate-unlock">
         <button class="hz-gate-omega" type="button" data-gate-omega="true">Ωへ入る</button>
+        <button class="hz-gate-secondary" type="button" data-gate-action="retreat">HUBへ戻る</button>
         <span>扉は開いています。ここから一周の到達点へ進めます。</span>
       </div>
     `
@@ -1791,6 +1823,12 @@ function renderGateRunPanelMarkup() {
         <span>Gate Run</span>
         <span class="hz-gate-run-status">${statusLine}</span>
       </div>
+      <div class="hz-gate-run-mission">
+        <span><b>目標</b> 扉100%でΩ</span>
+        <span><b>基本</b> 攻める / 整える / 合わせる</span>
+        <span><b>準備</b> ${escapeHtml(readiness)}</span>
+      </div>
+      <div class="hz-gate-run-hint">${escapeHtml(mission)}</div>
       ${renderGateRunTrack(state)}
       ${loopComplete}
       ${omegaUnlock}
@@ -1895,7 +1933,7 @@ function renderBgmCompanionMarkup(profile, launchUrl, localLaunchUrl) {
   const openText = bgmFollowEnabled ? "MusicでSTART.HZM" : "BGM 再開";
 
   return `
-    <div class="hz-bgm-companion" data-bgm-phase="${escapeHtml(musicBridgePhase)}" data-bgm-collapsed="${bgmShouldCollapse() ? "true" : "false"}" data-bgm-follow="${bgmFollowEnabled ? "on" : "off"}" data-music-state="${escapeHtml(cleanDataToken(MusicFeedbackState.connectionState || "idle", "idle"))}" data-music-autofollow="${MusicFeedbackState.autoFollow ? "on" : "off"}" aria-label="BGM">
+    <div class="hz-bgm-companion" data-bgm-phase="${escapeHtml(musicBridgePhase)}" data-bgm-collapsed="${bgmShouldCollapse() ? "true" : "false"}" data-bgm-follow="${bgmFollowEnabled ? "on" : "off"}" data-music-state="${escapeHtml(cleanDataToken(MusicFeedbackState.connectionState || "idle", "idle"))}" data-music-autofollow="${MusicFeedbackState.autoFollow ? "on" : "off"}" aria-label="BGM" title="ブラウザの自動再生制限は迂回せず、操作後にMusicへ同期します。">
       <div class="hz-bgm-row">
         <button id="bgm-toggle-provider" class="hz-bgm-chip" type="button" aria-label="BGMを起動または表示">
           <span class="hz-bgm-label">BGM</span>
@@ -1905,7 +1943,7 @@ function renderBgmCompanionMarkup(profile, launchUrl, localLaunchUrl) {
         </button>
         ${stopButton}
       </div>
-      <div id="bgm-status" class="hz-bgm-status">${escapeHtml(bgmStatusLine("初回操作で音を入れます"))}</div>
+      <div id="bgm-status" class="hz-bgm-status">${escapeHtml(bgmStatusLine("初回操作後にMusicでSTART"))}</div>
       <div class="hz-bgm-unlock">
         <a id="music-open-provider" class="hz-bgm-link" href="${escapeHtml(launchUrl)}" target="hazama-music">${escapeHtml(openText)}</a>
       </div>
@@ -2137,6 +2175,12 @@ function addButton(parent, label, onClick, className = "hz-btn") {
 function renderControls(optionsEl) {
   const controls = document.createElement("div");
   controls.className = "hz-controls";
+  controls.setAttribute("aria-label", "セッション操作");
+
+  const heading = document.createElement("div");
+  heading.className = "hz-controls-heading";
+  heading.textContent = "セッション";
+  controls.appendChild(heading);
 
   addButton(controls, "停止", () => {
     clearPause();
@@ -2280,8 +2324,8 @@ function renderDepth(depthId, opts = {}) {
   `;
 
   optionsEl.innerHTML = "";
-  renderControls(optionsEl);
   renderOptions(depth, optionsEl);
+  renderControls(optionsEl);
   renderCoreLoop(depth);
   bindGateRunControls();
   bindMusicControls();
