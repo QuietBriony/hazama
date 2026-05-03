@@ -1,4 +1,4 @@
-// Hazama main.js v2.20
+// Hazama main.js v2.21
 // Minimal, robust loader + renderer for GitHub Pages / Codespaces.
 // v2.3 adds a lightweight deterministic game layer around depth pressure.
 // v2.5 animates the descent key visual and mandala goal gate.
@@ -17,8 +17,9 @@
 // v2.18 hides Music as a background BGM companion with auto-follow resume.
 // v2.19 reflects Music companion feedback state in BGM UI and atmosphere attrs.
 // v2.20 finishes the first playable loop with tighter Gate Run signposting.
+// v2.21 tightens Gate Run balance and limits repeated Breath Gate recovery.
 
-const APP_VERSION = "v2.20";
+const APP_VERSION = "v2.21";
 
 const STATE_KEY = "hazama_state_v2";
 const SEED_KEY = "hazama_seed";
@@ -31,8 +32,15 @@ const STABILITY_MAX = 100;
 const RESONANCE_MAX = 100;
 const GATE_RUN_MAX_CHARGE = 100;
 const GATE_RUN_TURN_LIMIT = 14;
-const GATE_SYNC_READY_RESONANCE = 12;
-const GATE_SYNC_READY_CHARGE = 60;
+const GATE_SYNC_READY_RESONANCE = 18;
+const GATE_SYNC_READY_CHARGE = 45;
+const GATE_SYNC_MARK_CHARGE = 35;
+const DEPTH_GATE_STABILITY_RANK = 8;
+const DEPTH_GATE_STABILITY_REQUIRED = 42;
+const DEPTH_GATE_RESONANCE_RANK = 14;
+const DEPTH_GATE_RESONANCE_REQUIRED = 8;
+const BREATH_HUB_STABILITY_CAP = 94;
+const BREATH_FIELD_STABILITY_CAP = 86;
 const MILESTONE_RANKS = [8, 14, 20, 27];
 const MOVE_TYPES = ["dive", "observe", "tune", "sync", "retreat"];
 const MOVE_TYPE_LABELS = {
@@ -235,6 +243,9 @@ function createRunState() {
     gateRunStatus: "running",
     gateRunTurns: 0,
     gateRunCharge: 0,
+    breathStreak: 0,
+    lastBreathDepthId: "",
+    lastBreathStep: 0,
     lastGateAction: "",
     lastGateResult: "",
     lastMoveType: "observe",
@@ -258,6 +269,9 @@ function normalizeRunState(data) {
     gateRunStatus: ["running", "won", "lost"].includes(src.gateRunStatus) ? src.gateRunStatus : base.gateRunStatus,
     gateRunTurns: Math.max(0, Number(src.gateRunTurns) || 0),
     gateRunCharge: clampNumber(src.gateRunCharge ?? base.gateRunCharge, 0, GATE_RUN_MAX_CHARGE),
+    breathStreak: Math.max(0, Number(src.breathStreak) || 0),
+    lastBreathDepthId: typeof src.lastBreathDepthId === "string" ? src.lastBreathDepthId.slice(0, 80) : base.lastBreathDepthId,
+    lastBreathStep: Math.max(0, Number(src.lastBreathStep) || 0),
     lastGateAction: typeof src.lastGateAction === "string" ? src.lastGateAction.slice(0, 40) : base.lastGateAction,
     lastGateResult: typeof src.lastGateResult === "string" ? src.lastGateResult.slice(0, 180) : base.lastGateResult,
     lastMoveType: MOVE_TYPES.includes(src.lastMoveType) ? src.lastMoveType : base.lastMoveType,
@@ -303,7 +317,19 @@ function canEnterOmega(state = getRunState()) {
 }
 
 function canSyncGate(state = getRunState()) {
-  return state.resonance >= GATE_SYNC_READY_RESONANCE || state.marks > 0 || state.gateRunCharge >= GATE_SYNC_READY_CHARGE;
+  return (
+    state.resonance >= GATE_SYNC_READY_RESONANCE &&
+    state.gateRunCharge >= GATE_SYNC_READY_CHARGE
+  ) || (
+    state.marks > 0 &&
+    state.gateRunCharge >= GATE_SYNC_MARK_CHARGE
+  );
+}
+
+function resetBreathStreak(state = getRunState()) {
+  state.breathStreak = 0;
+  state.lastBreathDepthId = "";
+  state.lastBreathStep = 0;
 }
 
 function normalizeMoveType(type) {
@@ -400,8 +426,9 @@ function transitionPreview(fromId, toId, moveKind = "choice", explicitType = "")
 }
 
 function gateForOption(fromId, toId, option = {}) {
+  const state = getRunState();
   if (toId === OMEGA_DEPTH && !canEnterOmega()) {
-    const charge = Math.round(getRunState().gateRunCharge);
+    const charge = Math.round(state.gateRunCharge);
     return {
       allowed: false,
       moveType: "sync",
@@ -410,9 +437,27 @@ function gateForOption(fromId, toId, option = {}) {
     };
   }
 
+  const targetRank = depthRank(toId);
+  if (targetRank >= DEPTH_GATE_STABILITY_RANK && state.bestRank < DEPTH_GATE_STABILITY_RANK && state.stability < DEPTH_GATE_STABILITY_REQUIRED) {
+    return {
+      allowed: false,
+      moveType: "tune",
+      label: `H境界: 落ち着き${DEPTH_GATE_STABILITY_REQUIRED}必要`,
+      title: "H境界は崩落耐性が必要です。Breath GateかHUBで落ち着きを戻してください。"
+    };
+  }
+
+  if (targetRank >= DEPTH_GATE_RESONANCE_RANK && state.bestRank < DEPTH_GATE_RESONANCE_RANK && state.resonance < DEPTH_GATE_RESONANCE_REQUIRED && state.marks <= 0) {
+    return {
+      allowed: false,
+      moveType: "sync",
+      label: `N境界: 響き${DEPTH_GATE_RESONANCE_REQUIRED}必要`,
+      title: "N境界は合わせる資源が必要です。整えるかHUBへ戻ってから進んでください。"
+    };
+  }
+
   const preview = transitionPreview(fromId, toId, "choice", option.type);
   const cost = Math.max(0, -preview.stabilityDelta);
-  const state = getRunState();
   const markBuffer = state.marks * 6;
   const allowed = cost === 0 || state.stability + markBuffer >= Math.min(72, cost);
   return {
@@ -484,7 +529,7 @@ function buildFirstPlayableGuide(depthId = currentDepthId, state = getRunState()
   } else if (depthId === HUB_DEPTH && state.gateRunStatus !== "won") {
     active = "HUB";
     next = "Gate Runで扉100%";
-    detail = `扉 ${gateCharge}% / Breath Gateは任意の立て直し。`;
+    detail = `扉 ${gateCharge}% / Breath Gateは限定立て直し。`;
   } else if (depthId === OMEGA_DEPTH) {
     active = "Ω";
     next = "新しい入口へ戻る";
@@ -563,7 +608,7 @@ function buildGateIntelligence(depthId = currentDepthId) {
   const phase = gatePhaseLabel(gateCharge, state.gateRunStatus);
 
   let objective = "ひと息置いて落ち着きを戻すか、選択肢から先へ進む。";
-  let route = "ひと息置く / どう進む？";
+  let route = "ひと息置く / 道を選ぶ";
 
   if (depthId === "A_reborn") {
     objective = "一周完了。Ωを通過した入口から、夜のハブへ戻って次の周回を選べる。";
@@ -1438,6 +1483,7 @@ function applyRunTransition(fromId, toId, moveKind = "choice", explicitType = ""
   state.marks = clampNumber(state.marks + markGain, 0, 99);
   state.gateRunCharge = clampNumber(state.gateRunCharge + gateDelta, 0, GATE_RUN_MAX_CHARGE);
   state.lastMoveType = preview.moveType;
+  resetBreathStreak(state);
 
   const notes = [
     `${MOVE_TYPE_LABELS[preview.moveType] || preview.moveType}`,
@@ -1481,15 +1527,43 @@ function calculateCoreReward(text, seed, depthId) {
   };
 }
 
-function applyCoreReward(reward) {
+function breathDiminishForStreak(streak) {
+  if (streak <= 1) return { multiplier: 1, resonanceCap: 2, gateDelta: 0, turnCost: 0 };
+  if (streak === 2) return { multiplier: 0.65, resonanceCap: 1, gateDelta: -2, turnCost: 0 };
+  if (streak === 3) return { multiplier: 0.35, resonanceCap: 0, gateDelta: -4, turnCost: 1 };
+  return { multiplier: 0.2, resonanceCap: 0, gateDelta: -6, turnCost: 1 };
+}
+
+function breathStabilityCap(depthId) {
+  return depthId === HUB_DEPTH || depthId === DEFAULT_START
+    ? BREATH_HUB_STABILITY_CAP
+    : BREATH_FIELD_STABILITY_CAP;
+}
+
+function applyCoreReward(reward, depthId = currentDepthId) {
   const state = getRunState();
-  const rawResonance = state.resonance + reward.resonanceGain;
-  let markGain = reward.markGain;
+  const sameBreathDepth = state.lastBreathDepthId === depthId;
+  const nextStreak = sameBreathDepth ? state.breathStreak + 1 : 1;
+  const diminish = breathDiminishForStreak(nextStreak);
+  const stabilityGain = Math.max(1, Math.round(reward.stabilityGain * diminish.multiplier));
+  const resonanceGain = Math.max(0, Math.min(diminish.resonanceCap, reward.resonanceGain));
+  const cap = breathStabilityCap(depthId);
+  const rawResonance = state.resonance + resonanceGain;
+  let markGain = nextStreak === 1 ? reward.markGain : 0;
 
   state.entries += 1;
-  state.stability = clampNumber(state.stability + reward.stabilityGain, 0, STABILITY_MAX);
+  state.breathStreak = nextStreak;
+  state.lastBreathDepthId = depthId;
+  state.lastBreathStep = state.steps + state.entries;
+  state.stability = clampNumber(
+    state.stability >= cap ? state.stability : Math.min(cap, state.stability + stabilityGain),
+    0,
+    STABILITY_MAX
+  );
+  state.gateRunCharge = clampNumber(state.gateRunCharge + diminish.gateDelta, 0, GATE_RUN_MAX_CHARGE);
+  if (state.gateRunStatus === "running") state.gateRunTurns += diminish.turnCost;
 
-  if (rawResonance >= RESONANCE_MAX) {
+  if (resonanceGain > 0 && rawResonance >= RESONANCE_MAX) {
     state.resonance = 64 + (rawResonance % 9);
     markGain += 1;
   } else {
@@ -1497,13 +1571,18 @@ function applyCoreReward(reward) {
   }
 
   state.marks = clampNumber(state.marks + markGain, 0, 99);
-  saveRunState();
 
   const notes = [
-    `ひと息: 落ち着き +${reward.stabilityGain}`,
-    `響き +${reward.resonanceGain}`
+    `ひと息 ${nextStreak}回目: 落ち着き +${stabilityGain}`,
+    `響き +${resonanceGain}`
   ];
+  if (diminish.gateDelta < 0) notes.push(`扉の開き ${diminish.gateDelta}`);
+  if (diminish.turnCost > 0) notes.push(`行動 +${diminish.turnCost}`);
   if (markGain > 0) notes.push(`しるし +${markGain}`);
+
+  resolveGateRunOutcome(state, notes);
+  saveRunState();
+
   runLog = `${notes.join(" / ")}。`;
   syncVisualMotion(currentDepthId);
   refreshRunPanel();
@@ -1527,19 +1606,19 @@ const GATE_RUN_ACTIONS = [
     id: "tune",
     role: "整える",
     title: "呼吸を整える",
-    meta: "落ち着きと響きを戻して、崩落を遠ざける。"
+    meta: "落ち着きと響きを戻す。扉の開きは少しだけ。"
   },
   {
     id: "sync",
     role: "合わせる",
     title: "扉に合わせる",
-    meta: "響きやしるしを使って、扉の開きを一気に合わせる。"
+    meta: "準備が整った時だけ、響きを消費して扉へ合わせる。"
   },
   {
     id: "retreat",
     role: "戻る",
     title: "夜のハブへ戻る",
-    meta: "戻って落ち着きを回復し、もう一度立て直す。"
+    meta: "HUBで立て直す。扉の開きは少し戻る。"
   }
 ];
 
@@ -1555,14 +1634,14 @@ function gateRunReadinessLabel(state = getRunState()) {
   if (state.gateRunStatus === "won") return "Ω解放中";
   if (state.gateRunStatus === "lost") return "戻るで再挑戦";
   if (canSyncGate(state)) return "準備OK";
-  return `準備中: 響き${GATE_SYNC_READY_RESONANCE} / 扉${GATE_SYNC_READY_CHARGE}%`;
+  return `準備中: 響き${GATE_SYNC_READY_RESONANCE}+扉${GATE_SYNC_READY_CHARGE}%`;
 }
 
 function gateRunMissionText(state = getRunState()) {
   if (state.gateRunStatus === "won") return "Ωへ入ると一周の到達点です。";
   if (state.gateRunStatus === "lost") return "夜のハブへ戻って、落ち着きを戻してから再挑戦できます。";
-  if (state.stability < 34) return "落ち着きが薄いので、整えるかBreath Gateで立て直せます。";
-  if (canSyncGate(state)) return "準備OK。扉に合わせると大きく進みます。";
+  if (state.stability < 34) return "落ち着きが薄いので、HUBか限定回復で立て直せます。";
+  if (canSyncGate(state)) return "準備OK。響きを消費して扉に合わせます。";
   return "攻めるで進め、整えるで準備し、合わせるで扉を開きます。";
 }
 
@@ -1576,48 +1655,48 @@ function gateRunActionPreview(actionId) {
   const common = { disabled: navigationLocked || closed, result: "", title: "" };
 
   if (actionId === "dive") {
-    const cost = 9 + Math.ceil(risk / 18);
+    const cost = 15 + Math.ceil(risk / 18);
     const charge = 14 + Math.floor(rank / 5) + bonus;
     return {
       ...common,
-      result: `扉の開き +${charge} / 響き +5 / 落ち着き -${cost}`,
+      result: `扉の開き +${charge} / 響き +3 / 落ち着き -${cost}`,
       title: "落ち着きを削って、扉の開きを大きく進める。"
     };
   }
 
   if (actionId === "observe") {
-    const charge = 6 + bonus;
+    const charge = 4 + (bonus % 3);
     return {
       ...common,
-      result: `扉の開き +${charge} / 響き +3 / 落ち着き +4`,
+      result: `扉の開き +${charge} / 響き +1 / 落ち着き +3`,
       title: "周囲をよく見て、無理なく扉の開きを進める。"
     };
   }
 
   if (actionId === "tune") {
-    const charge = 12 + Math.floor(state.resonance / 20) + bonus;
+    const charge = 2 + (bonus % 3);
     return {
       ...common,
-      result: `扉の開き +${charge} / 響き +8 / 落ち着き +9`,
+      result: `扉の開き +${charge} / 響き +5 / 落ち着き +6`,
       title: "呼吸を整え、次の接続に耐える土台を作る。"
     };
   }
 
   if (actionId === "sync") {
     const enough = canSyncGate(state);
-    const charge = enough ? 42 + Math.min(10, state.marks * 3) + bonus : 7 + bonus;
+    const charge = enough ? 18 + Math.min(3, state.marks * 2) + (bonus % 4) : 2 + (bonus % 3);
     return {
       ...common,
       disabled: common.disabled,
-      result: enough ? `扉の開き +${charge} / 響き -10 / 準備OK` : `扉の開き +${charge} / 準備不足`,
-      title: enough ? "響きを束ねて、扉へ直接つなぐ。" : "響きかしるしが薄い。小さな接続だけ通る。"
+      result: enough ? `扉の開き +${charge} / 響き -16 / 準備OK` : `扉の開き +${charge} / 響き -2 / 落ち着き -4`,
+      title: enough ? "響きを束ねて、扉へ直接つなぐ。" : "響きか扉の開きが薄い。小さな接続だけ通る。"
     };
   }
 
   return {
     ...common,
     disabled: navigationLocked,
-    result: state.gateRunStatus === "won" ? "HUBへ / Ω解放を保持" : "落ち着き +18 / ハブへ",
+    result: state.gateRunStatus === "won" ? "HUBへ / Ω解放を保持" : "落ち着き +22 / 響き -4 / 扉の開き -8",
     title: state.gateRunStatus === "won"
       ? "扉は開いたまま、夜のハブへ戻ります。Ωへ入れます。"
       : state.gateRunStatus === "running"
@@ -1695,33 +1774,33 @@ function applyGateRunAction(actionId) {
       resetGateRunState(state);
       notes.push("再挑戦を開始");
     }
-    stabilityDelta = keepOmegaUnlocked ? 8 : 18;
-    resonanceDelta = keepOmegaUnlocked ? -2 : -6;
-    chargeDelta = keepOmegaUnlocked ? 0 : -4;
+    stabilityDelta = keepOmegaUnlocked ? 8 : 22;
+    resonanceDelta = keepOmegaUnlocked ? -2 : -4;
+    chargeDelta = keepOmegaUnlocked ? 0 : -8;
     if (keepOmegaUnlocked) notes.push("Ω解放を保持");
     targetDepthId = currentDepthId !== HUB_DEPTH && depths[HUB_DEPTH] ? HUB_DEPTH : null;
   } else if (actionId === "dive") {
-    stabilityDelta = -(9 + Math.ceil(risk / 18));
-    resonanceDelta = 5 + Math.min(4, Math.ceil(rank / 9));
+    stabilityDelta = -(15 + Math.ceil(risk / 18));
+    resonanceDelta = 3;
     chargeDelta = 14 + Math.floor(rank / 5) + bonus;
   } else if (actionId === "observe") {
-    stabilityDelta = 4;
-    resonanceDelta = 3;
-    chargeDelta = 6 + bonus;
+    stabilityDelta = 3;
+    resonanceDelta = 1;
+    chargeDelta = 4 + (bonus % 3);
   } else if (actionId === "tune") {
-    stabilityDelta = 9;
-    resonanceDelta = 8;
-    chargeDelta = 12 + Math.floor(state.resonance / 20) + bonus;
+    stabilityDelta = 6;
+    resonanceDelta = 5;
+    chargeDelta = 2 + (bonus % 3);
   } else if (actionId === "sync") {
     const enough = canSyncGate(state);
     if (enough) {
-      resonanceDelta = -10;
+      resonanceDelta = -16;
       marksDelta = state.marks > 0 ? -1 : 0;
-      chargeDelta = 42 + Math.min(10, state.marks * 3) + bonus;
+      chargeDelta = 18 + Math.min(3, state.marks * 2) + (bonus % 4);
     } else {
-      stabilityDelta = -2;
-      resonanceDelta = 1;
-      chargeDelta = 7 + bonus;
+      stabilityDelta = -4;
+      resonanceDelta = -2;
+      chargeDelta = 2 + (bonus % 3);
     }
   }
 
@@ -1733,6 +1812,7 @@ function applyGateRunAction(actionId) {
   state.lastGateAction = actionId;
   state.lastMoveType = actionId;
   state.lastGateResult = notes.join(" / ");
+  resetBreathStreak(state);
 
   const outcomeTarget = resolveGateRunOutcome(state, notes);
   if (outcomeTarget) targetDepthId = outcomeTarget;
@@ -1779,7 +1859,7 @@ function renderGateRunPanelMarkup() {
     return `
       <section class="hz-gate-run-panel hz-gate-run-panel--intro" aria-label="Gate Run">
         <div class="hz-gate-run-head">
-          <span>Gate Run</span>
+          <span>Gate Run / 扉操作</span>
           <span class="hz-gate-run-status">${statusLine}</span>
         </div>
         <div class="hz-gate-run-intro">
@@ -1820,7 +1900,7 @@ function renderGateRunPanelMarkup() {
   return `
     <section class="hz-gate-run-panel" aria-label="Gate Run">
       <div class="hz-gate-run-head">
-        <span>Gate Run</span>
+        <span>Gate Run / 扉操作</span>
         <span class="hz-gate-run-status">${statusLine}</span>
       </div>
       <div class="hz-gate-run-mission">
@@ -1952,6 +2032,18 @@ function renderBgmCompanionMarkup(profile, launchUrl, localLaunchUrl) {
   `;
 }
 
+function renderResourceRolesMarkup() {
+  return `
+    <div class="hz-resource-roles" aria-label="Resource roles">
+      <span><b>落ち着き</b> 崩落耐性</span>
+      <span><b>響き</b> 合わせる資源</span>
+      <span><b>扉の開き</b> Ω解放</span>
+      <span><b>HUB</b> 安全な退避</span>
+      <span><b>Breath Gate</b> 限定回復</span>
+    </div>
+  `;
+}
+
 function renderRunPanelMarkup() {
   const state = getRunState();
   const profile = buildMusicProfile(currentDepthId);
@@ -1973,6 +2065,7 @@ function renderRunPanelMarkup() {
         <span>最深 <b>${escapeHtml(depthRankLabel(state.bestRank))}</b></span>
         <span>返答 <b>${state.entries}</b></span>
       </div>
+      ${renderResourceRolesMarkup()}
       ${log}
       ${renderGateRunPanelMarkup()}
       ${renderGateIntelligenceMarkup()}
@@ -2143,7 +2236,7 @@ function renderCoreLoop(depth) {
 
     pauseTimer = window.setTimeout(() => {
       pauseTimer = null;
-      const rewardMessage = applyCoreReward(reward);
+      const rewardMessage = applyCoreReward(reward, currentDepthId);
       pendingNextDepthId = getPrimaryNext(depth);
       setNavigationLocked(false);
       response.textContent = `${shifted}\n${rewardMessage}`;
@@ -2222,7 +2315,7 @@ function renderOptions(depth, optionsEl) {
 
   const heading = document.createElement("div");
   heading.className = "hz-options-heading";
-  heading.textContent = "どう進む？";
+  heading.textContent = "道を選ぶ";
   optionsEl.appendChild(heading);
 
   for (const o of opts) {
@@ -2312,7 +2405,7 @@ function renderDepth(depthId, opts = {}) {
     <div class="hz-block hz-core-loop">
       <div class="hz-depth-theme">Breath Gate / ひと息置く</div>
       <p>${escapeHtml(question)}</p>
-      <p class="hz-core-help">任意の立て直し行動です。短く返すと、落ち着きと響きが戻ります。</p>
+      <p class="hz-core-help">限定回復です。連続使用は効きが落ち、扉の開きが少し戻ります。</p>
       <form id="core-form" class="hz-core-form">
         <input id="core-input" type="text" maxlength="${CORE_MAX_INPUT}" autocomplete="off" placeholder="短く一言だけ" />
         <button class="hz-btn" type="submit">ひと息置く</button>
