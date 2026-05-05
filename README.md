@@ -134,6 +134,8 @@ node scripts/first-playable-smoke.mjs
 
 `first-playable-smoke` は `A_start -> HUB_NIGHT -> Gate Run won -> Ω -> A_reborn -> HUB_NIGHT` の骨格と、共有モデルでΩ解放できることを確認します。
 
+手動プレイテストの切り口は `docs/hazama-playtest-slices-v0.md` に整理しています。
+
 通過条件:
 
 - `index.html` が `hazama-gate-run.js?v=2.22` と `hazama-main.js?v=2.22` を参照している
