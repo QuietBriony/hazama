@@ -27,6 +27,13 @@
 - HUB return should be a good move when `落ち着き` is low, even though it costs some gate progress.
 - A reasonable mixed strategy should open Ω in about 8-12 meaningful actions.
 
+## v2.22 model boundary
+
+- Gate Run and Breath Gate numeric mechanics live in `hazama-gate-run.js`.
+- Browser UI code supplies context such as current depth, rank, risk, seed, and HUB availability.
+- `scripts/balance-smoke.mjs` imports the same model instead of duplicating the balance rules.
+- UI labels, Music bridge, localStorage, and raw input handling remain outside the shared model.
+
 ## Acceptance tests
 
 - `breath-spam` does not unlock Ω.
