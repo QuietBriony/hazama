@@ -707,14 +707,90 @@ body {
 }
 
 .hz-gate-complete {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.65rem;
   border: 1px solid rgba(250, 204, 21, 0.34);
   border-radius: 0.5rem;
-  background: rgba(113, 63, 18, 0.22);
+  background:
+    radial-gradient(circle at 18% 50%, rgba(250, 204, 21, 0.16), transparent 34%),
+    rgba(113, 63, 18, 0.22);
   color: #fde68a;
   padding: 0.6rem 0.65rem;
   font-size: 0.8rem;
   font-weight: 800;
   line-height: 1.35;
+}
+
+.hz-gate-complete-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 1.5rem;
+  border: 1px solid rgba(250, 204, 21, 0.48);
+  border-radius: 999px;
+  background: rgba(250, 204, 21, 0.14);
+  color: #fef3c7;
+  padding: 0.12rem 0.5rem;
+  font-size: 0.72rem;
+  font-weight: 900;
+  white-space: nowrap;
+}
+
+.hz-gate-complete-copy {
+  min-width: 0;
+}
+
+.hz-gate-complete-copy b,
+.hz-gate-complete-copy span {
+  display: block;
+}
+
+.hz-gate-complete-copy b {
+  color: #fef9c3;
+  font-size: 0.82rem;
+}
+
+.hz-gate-complete-copy span {
+  color: #fde68a;
+  font-size: 0.76rem;
+  font-weight: 700;
+}
+
+.hz-gate-complete-cta {
+  appearance: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  border: 1px solid rgba(187, 247, 208, 0.42);
+  border-radius: 999px;
+  background: rgba(20, 83, 45, 0.28);
+  color: #bbf7d0;
+  padding: 0.42rem 0.68rem;
+  font-size: 0.76rem;
+  font-weight: 900;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.hz-gate-complete-cta b {
+  display: inline-flex;
+  align-items: center;
+  min-height: 1.1rem;
+  border: 1px solid rgba(34, 197, 94, 0.42);
+  border-radius: 999px;
+  background: rgba(20, 83, 45, 0.22);
+  color: #dcfce7;
+  padding: 0.04rem 0.32rem;
+  font-size: 0.64rem;
+  line-height: 1.1;
+}
+
+.hz-gate-complete-cta:hover {
+  border-color: rgba(187, 247, 208, 0.64);
+  color: #f0fdf4;
 }
 
 .hz-gate-omega {
@@ -1604,8 +1680,19 @@ body {
   }
 
   .hz-gate-omega,
-  .hz-gate-secondary {
+  .hz-gate-secondary,
+  .hz-gate-complete-cta {
     width: 100%;
+  }
+
+  .hz-gate-complete {
+    grid-template-columns: 1fr;
+    align-items: stretch;
+  }
+
+  .hz-gate-complete-badge,
+  .hz-gate-complete-cta {
+    justify-self: stretch;
   }
 
   .hz-options button {
