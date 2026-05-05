@@ -1,4 +1,4 @@
-// Hazama main.js v2.24
+// Hazama main.js v2.25
 // Minimal, robust loader + renderer for GitHub Pages / Codespaces.
 // v2.3 adds a lightweight deterministic game layer around depth pressure.
 // v2.5 animates the descent key visual and mandala goal gate.
@@ -21,8 +21,9 @@
 // v2.22 shares Gate Run/Breath Gate mechanics with the balance smoke model.
 // v2.23 follows Breath Gate collapse/timeout targets back to HUB in the browser.
 // v2.24 makes sync readiness visible before players spend resonance on 合わせる.
+// v2.25 makes retreat readiness visible before players lose a recoverable run.
 
-const APP_VERSION = "v2.24";
+const APP_VERSION = "v2.25";
 const GateRunModel = globalThis.HazamaGateRun || {};
 const GATE_CONSTANTS = GateRunModel.constants || {};
 
@@ -1695,6 +1696,49 @@ function gateRunReadinessLabel(state = getRunState()) {
   return gateRunSyncReadiness(state).label;
 }
 
+function gateRunRetreatAdvice(state = getRunState()) {
+  const stability = Math.round(state.stability);
+  const charge = Math.round(state.gateRunCharge);
+  if (state.gateRunStatus === "won") {
+    return {
+      level: "keep",
+      badge: "Ω保持",
+      label: "Ω保持: 戻っても扉は開いたまま",
+      next: "HUBへ戻れる"
+    };
+  }
+  if (state.gateRunStatus === "lost") {
+    return {
+      level: "retry",
+      badge: "再挑戦",
+      label: "再挑戦: 戻るで崩落を閉じる",
+      next: "戻るで再挑戦"
+    };
+  }
+  if (stability < 38) {
+    return {
+      level: "recommended",
+      badge: "退避推奨",
+      label: `退避推奨: 落ち着き ${stability}`,
+      next: "戻るかBreath Gate"
+    };
+  }
+  if (charge >= 82 && stability >= 38) {
+    return {
+      level: "hold",
+      badge: "押し切れる",
+      label: `退避任意: 扉 ${charge}%`,
+      next: "合わせる準備を確認"
+    };
+  }
+  return {
+    level: "optional",
+    badge: "退避任意",
+    label: `退避任意: 落ち着き ${stability}`,
+    next: "低くなったら戻る"
+  };
+}
+
 function gateRunSyncReadiness(state = getRunState()) {
   const resonance = Math.round(state.resonance);
   const charge = Math.round(state.gateRunCharge);
@@ -1724,7 +1768,8 @@ function gateRunSyncReadiness(state = getRunState()) {
 function gateRunMissionText(state = getRunState()) {
   if (state.gateRunStatus === "won") return "Ωへ入ると一周の到達点です。";
   if (state.gateRunStatus === "lost") return "夜のハブへ戻って、落ち着きを戻してから再挑戦できます。";
-  if (state.stability < 34) return "落ち着きが薄いので、HUBか限定回復で立て直せます。";
+  const retreat = gateRunRetreatAdvice(state);
+  if (retreat.level === "recommended") return "落ち着きが薄いので、戻るか限定回復で立て直せます。";
   const readiness = gateRunSyncReadiness(state);
   if (readiness.ready) return "準備OK。響きを消費して扉に合わせます。";
   return `${readiness.next}。合わせるは準備後の仕上げです。`;
@@ -1783,11 +1828,17 @@ function gateRunActionPreview(actionId) {
   return {
     ...common,
     disabled: navigationLocked,
-    result: modelPreview?.keepOmegaUnlocked || state.gateRunStatus === "won" ? "HUBへ / Ω解放を保持" : "落ち着き +22 / 響き -4 / 扉の開き -8",
+    result: modelPreview?.keepOmegaUnlocked || state.gateRunStatus === "won"
+      ? "HUBへ / Ω解放を保持"
+      : state.gateRunStatus === "lost"
+        ? "再挑戦開始 / 落ち着き +22"
+        : state.stability < 38
+          ? "退避推奨 / 落ち着き +22 / 扉の開き -8"
+          : "退避任意 / 落ち着き +22 / 扉の開き -8",
     title: state.gateRunStatus === "won"
       ? "扉は開いたまま、夜のハブへ戻ります。Ωへ入れます。"
       : state.gateRunStatus === "running"
-        ? "戻れるうちに戻り、もう一度立て直す。"
+        ? "落ち着きが薄い時は、戻って立て直すと崩落を避けやすくなります。"
         : "崩落後の記録を閉じ、次の挑戦を起こす。"
   };
 }
@@ -1943,6 +1994,7 @@ function renderGateRunTrack(state) {
 function renderGateRunPanelMarkup() {
   const state = getRunState();
   const syncReadiness = gateRunSyncReadiness(state);
+  const retreatAdvice = gateRunRetreatAdvice(state);
   const statusClass = state.gateRunStatus === "won" ? "hz-gate-win" : state.gateRunStatus === "lost" ? "hz-gate-loss" : "";
   const status = statusClass
     ? `<span class="${statusClass}">${escapeHtml(gateRunStatusLabel(state))}</span>`
@@ -1985,10 +2037,17 @@ function renderGateRunPanelMarkup() {
         const syncBadge = action.id === "sync"
           ? `<span class="hz-gate-action-state">${escapeHtml(syncReadiness.badge)}</span>`
           : "";
+        const retreatClass = action.id === "retreat"
+          ? ` hz-gate-action--retreat-${escapeHtml(retreatAdvice.level)}`
+          : "";
+        const retreatBadge = action.id === "retreat"
+          ? `<span class="hz-gate-action-state hz-gate-action-state--retreat">${escapeHtml(retreatAdvice.badge)}</span>`
+          : "";
         return `
-          <button class="hz-gate-action hz-gate-action--${escapeHtml(action.id)}${syncClass}" type="button" data-gate-action="${escapeHtml(action.id)}" title="${escapeHtml(preview.title)}"${preview.disabled ? " disabled" : ""}>
+          <button class="hz-gate-action hz-gate-action--${escapeHtml(action.id)}${syncClass}${retreatClass}" type="button" data-gate-action="${escapeHtml(action.id)}" title="${escapeHtml(preview.title)}"${preview.disabled ? " disabled" : ""}>
             <span class="hz-gate-action-role">${escapeHtml(action.role)}</span>
             ${syncBadge}
+            ${retreatBadge}
             <span class="hz-gate-action-title">${escapeHtml(action.title)}</span>
             <span class="hz-gate-action-meta">${escapeHtml(action.meta)}</span>
             <span class="hz-gate-action-result">${escapeHtml(preview.result)}</span>
@@ -2003,7 +2062,10 @@ function renderGateRunPanelMarkup() {
     ? `
       <div class="hz-gate-unlock">
         <button class="hz-gate-omega" type="button" data-gate-omega="true">Ωへ入る</button>
-        <button class="hz-gate-secondary" type="button" data-gate-action="retreat">HUBへ戻る</button>
+        <button class="hz-gate-secondary" type="button" data-gate-action="retreat">
+          <span class="hz-gate-secondary-main">HUBへ戻る</span>
+          <span class="hz-gate-secondary-badge">${escapeHtml(retreatAdvice.badge)}</span>
+        </button>
         <span>扉は開いています。ここから一周の到達点へ進めます。</span>
       </div>
     `
@@ -2019,6 +2081,7 @@ function renderGateRunPanelMarkup() {
         <span><b>目標</b> 扉100%でΩ</span>
         <span><b>基本</b> 攻める / 整える / 合わせる</span>
         <span><b>準備</b> ${escapeHtml(readiness)}</span>
+        <span><b>退避</b> ${escapeHtml(retreatAdvice.label)}</span>
       </div>
       <div class="hz-gate-run-hint">${escapeHtml(mission)}</div>
       ${renderGateRunTrack(state)}
