@@ -1,36 +1,15 @@
 #!/usr/bin/env node
 
-const STABILITY_MAX = 100;
-const RESONANCE_MAX = 100;
-const GATE_RUN_MAX_CHARGE = 100;
-const GATE_RUN_TURN_LIMIT = 14;
-const GATE_SYNC_READY_RESONANCE = 18;
-const GATE_SYNC_READY_CHARGE = 45;
-const GATE_SYNC_MARK_CHARGE = 35;
-const BREATH_HUB_STABILITY_CAP = 94;
+import { createRequire } from "node:module";
 
-function clampNumber(value, min, max) {
-  const n = Number(value);
-  if (!Number.isFinite(n)) return min;
-  return Math.min(max, Math.max(min, n));
-}
+const require = createRequire(import.meta.url);
+const GateRun = require("../hazama-gate-run.js");
 
-function hashText(input) {
-  let h = 2166136261;
-  const text = String(input || "");
-  for (let i = 0; i < text.length; i += 1) {
-    h ^= text.charCodeAt(i);
-    h = Math.imul(h, 16777619);
-  }
-  return (h >>> 0).toString(16).padStart(8, "0");
-}
-
-function numericHash(input) {
-  return parseInt(hashText(input).slice(0, 8), 16) || 0;
-}
-
-function createState() {
+function createState(overrides = {}) {
   return {
+    depthId: "HUB_NIGHT",
+    rank: 0,
+    risk: 1,
     stability: 76,
     resonance: 0,
     marks: 0,
@@ -38,120 +17,61 @@ function createState() {
     gateRunTurns: 0,
     gateRunCharge: 0,
     breathStreak: 0,
+    lastBreathDepthId: "",
+    lastBreathStep: 0,
+    lastGateAction: "",
+    lastGateResult: "",
+    lastMoveType: "observe",
+    gateRunOutcomeAt: 0,
     collapsed: false,
     hardDeadEnd: false,
-    actions: []
+    actions: [],
+    ...overrides
   };
 }
 
-function canSyncGate(state) {
-  return (
-    state.resonance >= GATE_SYNC_READY_RESONANCE &&
-    state.gateRunCharge >= GATE_SYNC_READY_CHARGE
-  ) || (
-    state.marks > 0 &&
-    state.gateRunCharge >= GATE_SYNC_MARK_CHARGE
-  );
-}
-
-function breathDiminishForStreak(streak) {
-  if (streak <= 1) return { multiplier: 1, resonanceCap: 2, gateDelta: 0, turnCost: 0 };
-  if (streak === 2) return { multiplier: 0.65, resonanceCap: 1, gateDelta: -2, turnCost: 0 };
-  if (streak === 3) return { multiplier: 0.35, resonanceCap: 0, gateDelta: -4, turnCost: 1 };
-  return { multiplier: 0.2, resonanceCap: 0, gateDelta: -6, turnCost: 1 };
-}
-
-function bonusFor(state, actionId) {
-  return numericHash(`balance-v0|HUB_NIGHT|${state.gateRunTurns}|${actionId}`) % 4;
-}
-
-function resolveOutcome(state) {
-  if (state.stability <= 0) {
-    state.gateRunStatus = "lost";
-    state.collapsed = true;
-    state.stability = 24;
-    state.resonance = clampNumber(state.resonance - 8, 0, RESONANCE_MAX);
-    state.gateRunCharge = clampNumber(Math.min(state.gateRunCharge, 72), 0, GATE_RUN_MAX_CHARGE);
-  } else if (state.gateRunStatus !== "won" && state.gateRunCharge >= GATE_RUN_MAX_CHARGE) {
-    state.gateRunStatus = "won";
-    state.gateRunCharge = GATE_RUN_MAX_CHARGE;
-  } else if (state.gateRunStatus === "running" && state.gateRunTurns >= GATE_RUN_TURN_LIMIT) {
-    state.gateRunStatus = "lost";
-    state.collapsed = true;
-    state.stability = Math.max(24, state.stability);
-    state.resonance = clampNumber(state.resonance - 8, 0, RESONANCE_MAX);
-    state.gateRunCharge = clampNumber(Math.min(state.gateRunCharge, 72), 0, GATE_RUN_MAX_CHARGE);
-  }
+function modelContext(state) {
+  return {
+    seed: "balance-v0",
+    depthId: state.depthId || "HUB_NIGHT",
+    currentDepthId: state.depthId || "HUB_NIGHT",
+    hubDepthId: "HUB_NIGHT",
+    startDepthId: "A_start",
+    hasHub: true,
+    rank: state.rank ?? 0,
+    risk: state.risk ?? 1,
+    now: 1700000000000 + state.actions.length
+  };
 }
 
 function applyGateAction(state, actionId) {
-  if (state.gateRunStatus !== "running" && actionId !== "retreat") return;
-
-  const bonus = bonusFor(state, actionId);
-  let stabilityDelta = 0;
-  let resonanceDelta = 0;
-  let chargeDelta = 0;
-  let marksDelta = 0;
-  const countsAsTurn = actionId !== "retreat";
-
-  if (actionId === "retreat") {
-    if (state.gateRunStatus === "lost") {
-      state.gateRunStatus = "running";
-      state.gateRunTurns = 0;
-      state.gateRunCharge = 0;
-    }
-    stabilityDelta = 22;
-    resonanceDelta = -4;
-    chargeDelta = -8;
-  } else if (actionId === "dive") {
-    stabilityDelta = -16;
-    resonanceDelta = 3;
-    chargeDelta = 14 + bonus;
-  } else if (actionId === "observe") {
-    stabilityDelta = 3;
-    resonanceDelta = 1;
-    chargeDelta = 4 + (bonus % 3);
-  } else if (actionId === "tune") {
-    stabilityDelta = 6;
-    resonanceDelta = 5;
-    chargeDelta = 2 + (bonus % 3);
-  } else if (actionId === "sync") {
-    if (canSyncGate(state)) {
-      resonanceDelta = -16;
-      marksDelta = state.marks > 0 ? -1 : 0;
-      chargeDelta = 18 + Math.min(3, state.marks * 2) + (bonus % 4);
-    } else {
-      stabilityDelta = -4;
-      resonanceDelta = -2;
-      chargeDelta = 2 + (bonus % 3);
-    }
+  const result = GateRun.applyGateAction(state, modelContext(state), actionId);
+  Object.assign(state, result.state);
+  if (result.targetDepthId) {
+    state.depthId = result.targetDepthId;
+    state.rank = result.targetDepthId === "HUB_NIGHT" ? 0 : state.rank;
+    state.risk = result.targetDepthId === "HUB_NIGHT" ? 1 : state.risk;
   }
-
-  if (countsAsTurn) state.gateRunTurns += 1;
-  state.stability = clampNumber(state.stability + stabilityDelta, 0, STABILITY_MAX);
-  state.resonance = clampNumber(state.resonance + resonanceDelta, 0, RESONANCE_MAX);
-  state.marks = clampNumber(state.marks + marksDelta, 0, 99);
-  state.gateRunCharge = clampNumber(state.gateRunCharge + chargeDelta, 0, GATE_RUN_MAX_CHARGE);
-  state.breathStreak = 0;
-  state.actions.push(actionId);
-  resolveOutcome(state);
+  if (result.changed) state.actions.push(actionId);
+  if (result.events.lost) state.collapsed = true;
+  return result;
 }
 
 function applyBreath(state) {
-  const nextStreak = state.breathStreak + 1;
-  const diminish = breathDiminishForStreak(nextStreak);
-  const stabilityGain = Math.max(1, Math.round(10 * diminish.multiplier));
-  const resonanceGain = Math.max(0, Math.min(diminish.resonanceCap, 2));
-
-  state.breathStreak = nextStreak;
-  state.stability = state.stability >= BREATH_HUB_STABILITY_CAP
-    ? state.stability
-    : Math.min(BREATH_HUB_STABILITY_CAP, state.stability + stabilityGain);
-  state.resonance = clampNumber(state.resonance + resonanceGain, 0, RESONANCE_MAX);
-  state.gateRunCharge = clampNumber(state.gateRunCharge + diminish.gateDelta, 0, GATE_RUN_MAX_CHARGE);
-  if (state.gateRunStatus === "running") state.gateRunTurns += diminish.turnCost;
+  const result = GateRun.applyBreathReward(state, {
+    stabilityGain: 10,
+    resonanceGain: 2,
+    markGain: 0
+  }, modelContext(state));
+  Object.assign(state, result.state);
+  if (result.targetDepthId) {
+    state.depthId = result.targetDepthId;
+    state.rank = result.targetDepthId === "HUB_NIGHT" ? 0 : state.rank;
+    state.risk = result.targetDepthId === "HUB_NIGHT" ? 1 : state.risk;
+  }
   state.actions.push("breath");
-  resolveOutcome(state);
+  if (result.events.lost) state.collapsed = true;
+  return result;
 }
 
 const policies = {
@@ -169,9 +89,24 @@ const policies = {
   "sync-rush"() {
     return "sync";
   },
+  "late-sync"(state) {
+    if (state.gateRunStatus === "lost") return "retreat";
+    if (state.gateRunCharge < 70 && state.stability > 38) return "dive";
+    if (!GateRun.canSyncGate(state)) return "tune";
+    return "sync";
+  },
+  "retreat-retry"(state) {
+    if (state.gateRunStatus === "lost") return "retreat";
+    if (state.collapsed) {
+      if (GateRun.canSyncGate(state)) return "sync";
+      if (state.stability < 40) return "tune";
+      return state.gateRunCharge < 82 ? "dive" : "tune";
+    }
+    return "dive";
+  },
   balanced(state) {
     if (state.gateRunStatus === "lost") return "retreat";
-    if (canSyncGate(state)) return "sync";
+    if (GateRun.canSyncGate(state)) return "sync";
     if (state.stability <= 24) return "tune";
     if (state.gateRunCharge >= 78 && state.stability > 36) return "dive";
     if (state.gateRunCharge < 45 && state.stability > 36) return "dive";
@@ -191,6 +126,7 @@ function simulate(policyName, limit = 18) {
   }
   return {
     policy: policyName,
+    depth: state.depthId,
     unlocked: state.gateRunStatus === "won",
     collapsed: state.collapsed,
     hardDeadEnd: state.hardDeadEnd,
@@ -214,13 +150,50 @@ const breathSpam = results.find((r) => r.policy === "breath-spam");
 const syncRush = results.find((r) => r.policy === "sync-rush");
 const balanced = results.find((r) => r.policy === "balanced");
 const aggressive = results.find((r) => r.policy === "aggressive");
+const lateSync = results.find((r) => r.policy === "late-sync");
+const retreatRetry = results.find((r) => r.policy === "retreat-retry");
 
 if (breathSpam?.unlocked) failures.push("breath-spam unlocked Ω");
 if (syncRush?.unlocked && syncRush.actions < 8) failures.push("sync-rush unlocked Ω in fewer than 8 actions");
 if (!balanced?.unlocked || balanced.actions < 8 || balanced.actions > 12) {
   failures.push("balanced did not unlock Ω in 8-12 meaningful actions");
 }
+if (!lateSync?.unlocked || lateSync.actions < 8) failures.push("late-sync did not require a real setup window");
+if (!retreatRetry?.collapsed || retreatRetry.depth !== "HUB_NIGHT") failures.push("retreat-retry did not demonstrate soft recovery through HUB");
 if (aggressive?.collapsed && aggressive.hardDeadEnd) failures.push("aggressive collapse became a hard dead end");
+
+const fieldBreath = createState({
+  depthId: "P",
+  rank: 16,
+  risk: 45,
+  stability: 80,
+  resonance: 12,
+  gateRunCharge: 50
+});
+applyBreath(fieldBreath);
+applyBreath(fieldBreath);
+applyBreath(fieldBreath);
+applyBreath(fieldBreath);
+if (fieldBreath.stability > GateRun.constants.BREATH_FIELD_STABILITY_CAP) {
+  failures.push("field Breath Gate exceeded field stability cap");
+}
+if (fieldBreath.gateRunCharge >= 50) failures.push("repeated field Breath Gate did not push gate charge backward");
+
+const wonRetreat = createState({
+  gateRunStatus: "won",
+  gateRunCharge: 100,
+  resonance: 24,
+  depthId: "Z",
+  rank: 26,
+  risk: 42
+});
+const wonRetreatResult = applyGateAction(wonRetreat, "retreat");
+if (wonRetreat.gateRunStatus !== "won" || wonRetreat.gateRunCharge !== 100 || wonRetreatResult.targetDepthId !== "HUB_NIGHT") {
+  failures.push("won retreat did not preserve Ω unlock while returning to HUB");
+}
+
+const lockedAfterWon = applyGateAction(wonRetreat, "sync");
+if (lockedAfterWon.changed) failures.push("post-win sync mutated a closed Gate Run");
 
 if (failures.length) {
   console.error(`Balance smoke failed:\n- ${failures.join("\n- ")}`);

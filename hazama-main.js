@@ -1,4 +1,4 @@
-// Hazama main.js v2.21
+// Hazama main.js v2.22
 // Minimal, robust loader + renderer for GitHub Pages / Codespaces.
 // v2.3 adds a lightweight deterministic game layer around depth pressure.
 // v2.5 animates the descent key visual and mandala goal gate.
@@ -18,8 +18,11 @@
 // v2.19 reflects Music companion feedback state in BGM UI and atmosphere attrs.
 // v2.20 finishes the first playable loop with tighter Gate Run signposting.
 // v2.21 tightens Gate Run balance and limits repeated Breath Gate recovery.
+// v2.22 shares Gate Run/Breath Gate mechanics with the balance smoke model.
 
-const APP_VERSION = "v2.21";
+const APP_VERSION = "v2.22";
+const GateRunModel = globalThis.HazamaGateRun || {};
+const GATE_CONSTANTS = GateRunModel.constants || {};
 
 const STATE_KEY = "hazama_state_v2";
 const SEED_KEY = "hazama_seed";
@@ -28,19 +31,19 @@ const DEFAULT_START = "A_start";
 const HUB_DEPTH = "HUB_NIGHT";
 const OMEGA_DEPTH = "Ω";
 const CORE_MAX_INPUT = 80;
-const STABILITY_MAX = 100;
-const RESONANCE_MAX = 100;
-const GATE_RUN_MAX_CHARGE = 100;
-const GATE_RUN_TURN_LIMIT = 14;
-const GATE_SYNC_READY_RESONANCE = 18;
-const GATE_SYNC_READY_CHARGE = 45;
-const GATE_SYNC_MARK_CHARGE = 35;
+const STABILITY_MAX = GATE_CONSTANTS.STABILITY_MAX || 100;
+const RESONANCE_MAX = GATE_CONSTANTS.RESONANCE_MAX || 100;
+const GATE_RUN_MAX_CHARGE = GATE_CONSTANTS.GATE_RUN_MAX_CHARGE || 100;
+const GATE_RUN_TURN_LIMIT = GATE_CONSTANTS.GATE_RUN_TURN_LIMIT || 14;
+const GATE_SYNC_READY_RESONANCE = GATE_CONSTANTS.GATE_SYNC_READY_RESONANCE || 18;
+const GATE_SYNC_READY_CHARGE = GATE_CONSTANTS.GATE_SYNC_READY_CHARGE || 45;
+const GATE_SYNC_MARK_CHARGE = GATE_CONSTANTS.GATE_SYNC_MARK_CHARGE || 35;
 const DEPTH_GATE_STABILITY_RANK = 8;
 const DEPTH_GATE_STABILITY_REQUIRED = 42;
 const DEPTH_GATE_RESONANCE_RANK = 14;
 const DEPTH_GATE_RESONANCE_REQUIRED = 8;
-const BREATH_HUB_STABILITY_CAP = 94;
-const BREATH_FIELD_STABILITY_CAP = 86;
+const BREATH_HUB_STABILITY_CAP = GATE_CONSTANTS.BREATH_HUB_STABILITY_CAP || 94;
+const BREATH_FIELD_STABILITY_CAP = GATE_CONSTANTS.BREATH_FIELD_STABILITY_CAP || 86;
 const MILESTONE_RANKS = [8, 14, 20, 27];
 const MOVE_TYPES = ["dive", "observe", "tune", "sync", "retreat"];
 const MOVE_TYPE_LABELS = {
@@ -317,6 +320,7 @@ function canEnterOmega(state = getRunState()) {
 }
 
 function canSyncGate(state = getRunState()) {
+  if (GateRunModel.canSyncGate) return GateRunModel.canSyncGate(state);
   return (
     state.resonance >= GATE_SYNC_READY_RESONANCE &&
     state.gateRunCharge >= GATE_SYNC_READY_CHARGE
@@ -324,6 +328,23 @@ function canSyncGate(state = getRunState()) {
     state.marks > 0 &&
     state.gateRunCharge >= GATE_SYNC_MARK_CHARGE
   );
+}
+
+function gateRunModelContext(depthId = currentDepthId, extra = {}) {
+  const gi = buildGateIntelligence(depthId);
+  return {
+    seed: ensureSeed(),
+    depthId,
+    currentDepthId: depthId,
+    rank: depthRank(depthId),
+    risk: gi.risk,
+    hubDepthId: HUB_DEPTH,
+    startDepthId: DEFAULT_START,
+    hasHub: Boolean(depths[HUB_DEPTH]),
+    navigationLocked,
+    now: Date.now(),
+    ...extra
+  };
 }
 
 function resetBreathStreak(state = getRunState()) {
@@ -1528,6 +1549,7 @@ function calculateCoreReward(text, seed, depthId) {
 }
 
 function breathDiminishForStreak(streak) {
+  if (GateRunModel.breathDiminishForStreak) return GateRunModel.breathDiminishForStreak(streak);
   if (streak <= 1) return { multiplier: 1, resonanceCap: 2, gateDelta: 0, turnCost: 0 };
   if (streak === 2) return { multiplier: 0.65, resonanceCap: 1, gateDelta: -2, turnCost: 0 };
   if (streak === 3) return { multiplier: 0.35, resonanceCap: 0, gateDelta: -4, turnCost: 1 };
@@ -1535,6 +1557,10 @@ function breathDiminishForStreak(streak) {
 }
 
 function breathStabilityCap(depthId) {
+  if (GateRunModel.breathStabilityCap) return GateRunModel.breathStabilityCap(depthId, {
+    hubDepthId: HUB_DEPTH,
+    startDepthId: DEFAULT_START
+  });
   return depthId === HUB_DEPTH || depthId === DEFAULT_START
     ? BREATH_HUB_STABILITY_CAP
     : BREATH_FIELD_STABILITY_CAP;
@@ -1542,45 +1568,71 @@ function breathStabilityCap(depthId) {
 
 function applyCoreReward(reward, depthId = currentDepthId) {
   const state = getRunState();
-  const sameBreathDepth = state.lastBreathDepthId === depthId;
-  const nextStreak = sameBreathDepth ? state.breathStreak + 1 : 1;
-  const diminish = breathDiminishForStreak(nextStreak);
-  const stabilityGain = Math.max(1, Math.round(reward.stabilityGain * diminish.multiplier));
-  const resonanceGain = Math.max(0, Math.min(diminish.resonanceCap, reward.resonanceGain));
-  const cap = breathStabilityCap(depthId);
-  const rawResonance = state.resonance + resonanceGain;
-  let markGain = nextStreak === 1 ? reward.markGain : 0;
+  const applied = GateRunModel.applyBreathReward
+    ? GateRunModel.applyBreathReward(state, reward, gateRunModelContext(depthId, { depthId }))
+    : null;
+  let breath;
 
-  state.entries += 1;
-  state.breathStreak = nextStreak;
-  state.lastBreathDepthId = depthId;
-  state.lastBreathStep = state.steps + state.entries;
-  state.stability = clampNumber(
-    state.stability >= cap ? state.stability : Math.min(cap, state.stability + stabilityGain),
-    0,
-    STABILITY_MAX
-  );
-  state.gateRunCharge = clampNumber(state.gateRunCharge + diminish.gateDelta, 0, GATE_RUN_MAX_CHARGE);
-  if (state.gateRunStatus === "running") state.gateRunTurns += diminish.turnCost;
-
-  if (resonanceGain > 0 && rawResonance >= RESONANCE_MAX) {
-    state.resonance = 64 + (rawResonance % 9);
-    markGain += 1;
+  if (applied) {
+    Object.assign(state, applied.state);
+    breath = applied.breath;
   } else {
-    state.resonance = clampNumber(rawResonance, 0, RESONANCE_MAX);
+    const sameBreathDepth = state.lastBreathDepthId === depthId;
+    const nextStreak = sameBreathDepth ? state.breathStreak + 1 : 1;
+    const diminish = breathDiminishForStreak(nextStreak);
+    const stabilityGain = Math.max(1, Math.round(reward.stabilityGain * diminish.multiplier));
+    const resonanceGain = Math.max(0, Math.min(diminish.resonanceCap, reward.resonanceGain));
+    const cap = breathStabilityCap(depthId);
+    const rawResonance = state.resonance + resonanceGain;
+    let markGain = nextStreak === 1 ? reward.markGain : 0;
+
+    state.entries += 1;
+    state.breathStreak = nextStreak;
+    state.lastBreathDepthId = depthId;
+    state.lastBreathStep = state.steps + state.entries;
+    state.stability = clampNumber(
+      state.stability >= cap ? state.stability : Math.min(cap, state.stability + stabilityGain),
+      0,
+      STABILITY_MAX
+    );
+    state.gateRunCharge = clampNumber(state.gateRunCharge + diminish.gateDelta, 0, GATE_RUN_MAX_CHARGE);
+    if (state.gateRunStatus === "running") state.gateRunTurns += diminish.turnCost;
+
+    if (resonanceGain > 0 && rawResonance >= RESONANCE_MAX) {
+      state.resonance = 64 + (rawResonance % 9);
+      markGain += 1;
+    } else {
+      state.resonance = clampNumber(rawResonance, 0, RESONANCE_MAX);
+    }
+
+    state.marks = clampNumber(state.marks + markGain, 0, 99);
+    breath = {
+      nextStreak,
+      stabilityGain,
+      resonanceGain,
+      markGain,
+      gateDelta: diminish.gateDelta,
+      turnCost: diminish.turnCost
+    };
   }
 
-  state.marks = clampNumber(state.marks + markGain, 0, 99);
-
   const notes = [
-    `ひと息 ${nextStreak}回目: 落ち着き +${stabilityGain}`,
-    `響き +${resonanceGain}`
+    `ひと息 ${breath.nextStreak}回目: 落ち着き +${breath.stabilityGain}`,
+    `響き +${breath.resonanceGain}`
   ];
-  if (diminish.gateDelta < 0) notes.push(`扉の開き ${diminish.gateDelta}`);
-  if (diminish.turnCost > 0) notes.push(`行動 +${diminish.turnCost}`);
-  if (markGain > 0) notes.push(`しるし +${markGain}`);
+  if (breath.gateDelta < 0) notes.push(`扉の開き ${breath.gateDelta}`);
+  if (breath.turnCost > 0) notes.push(`行動 +${breath.turnCost}`);
+  if (breath.markGain > 0) notes.push(`しるし +${breath.markGain}`);
 
-  resolveGateRunOutcome(state, notes);
+  if (applied?.events?.won) {
+    notes.push("扉が開いた");
+  } else if (applied?.events?.timeout) {
+    notes.push("時間切れ。夜のハブへ戻った");
+  } else if (applied?.events?.lost) {
+    notes.push("立て直し中。夜のハブへ戻った");
+  } else if (!applied) {
+    resolveGateRunOutcome(state, notes);
+  }
   saveRunState();
 
   runLog = `${notes.join(" / ")}。`;
@@ -1647,16 +1699,17 @@ function gateRunMissionText(state = getRunState()) {
 
 function gateRunActionPreview(actionId) {
   const state = getRunState();
-  const rank = depthRank(currentDepthId);
-  const gi = buildGateIntelligence(currentDepthId);
-  const risk = gi.risk;
-  const bonus = numericHash(`${ensureSeed()}|${currentDepthId}|${state.gateRunTurns}|${actionId}`) % 4;
-  const closed = state.gateRunStatus !== "running" && actionId !== "retreat";
-  const common = { disabled: navigationLocked || closed, result: "", title: "" };
+  const context = gateRunModelContext(currentDepthId);
+  const modelPreview = GateRunModel.previewGateAction
+    ? GateRunModel.previewGateAction(state, context, actionId)
+    : null;
+  const bonus = modelPreview?.bonus ?? numericHash(`${ensureSeed()}|${currentDepthId}|${state.gateRunTurns}|${actionId}`) % 4;
+  const closed = modelPreview?.closed ?? (state.gateRunStatus !== "running" && actionId !== "retreat");
+  const common = { disabled: modelPreview?.disabled ?? (navigationLocked || closed), result: "", title: "" };
 
   if (actionId === "dive") {
-    const cost = 15 + Math.ceil(risk / 18);
-    const charge = 14 + Math.floor(rank / 5) + bonus;
+    const cost = Math.abs(modelPreview?.stabilityDelta ?? 15);
+    const charge = modelPreview?.chargeDelta ?? 14 + bonus;
     return {
       ...common,
       result: `扉の開き +${charge} / 響き +3 / 落ち着き -${cost}`,
@@ -1665,7 +1718,7 @@ function gateRunActionPreview(actionId) {
   }
 
   if (actionId === "observe") {
-    const charge = 4 + (bonus % 3);
+    const charge = modelPreview?.chargeDelta ?? 4 + (bonus % 3);
     return {
       ...common,
       result: `扉の開き +${charge} / 響き +1 / 落ち着き +3`,
@@ -1674,7 +1727,7 @@ function gateRunActionPreview(actionId) {
   }
 
   if (actionId === "tune") {
-    const charge = 2 + (bonus % 3);
+    const charge = modelPreview?.chargeDelta ?? 2 + (bonus % 3);
     return {
       ...common,
       result: `扉の開き +${charge} / 響き +5 / 落ち着き +6`,
@@ -1683,8 +1736,8 @@ function gateRunActionPreview(actionId) {
   }
 
   if (actionId === "sync") {
-    const enough = canSyncGate(state);
-    const charge = enough ? 18 + Math.min(3, state.marks * 2) + (bonus % 4) : 2 + (bonus % 3);
+    const enough = modelPreview?.ready ?? canSyncGate(state);
+    const charge = modelPreview?.chargeDelta ?? (enough ? 18 + Math.min(3, state.marks * 2) + (bonus % 4) : 2 + (bonus % 3));
     return {
       ...common,
       disabled: common.disabled,
@@ -1696,7 +1749,7 @@ function gateRunActionPreview(actionId) {
   return {
     ...common,
     disabled: navigationLocked,
-    result: state.gateRunStatus === "won" ? "HUBへ / Ω解放を保持" : "落ち着き +22 / 響き -4 / 扉の開き -8",
+    result: modelPreview?.keepOmegaUnlocked || state.gateRunStatus === "won" ? "HUBへ / Ω解放を保持" : "落ち着き +22 / 響き -4 / 扉の開き -8",
     title: state.gateRunStatus === "won"
       ? "扉は開いたまま、夜のハブへ戻ります。Ωへ入れます。"
       : state.gateRunStatus === "running"
@@ -1757,65 +1810,82 @@ function applyGateRunAction(actionId) {
     return null;
   }
 
-  const rank = depthRank(currentDepthId);
-  const risk = buildGateIntelligence(currentDepthId).risk;
-  const bonus = numericHash(`${ensureSeed()}|${currentDepthId}|${state.gateRunTurns}|${actionId}`) % 4;
   const notes = [`${action.title}: ${preview.result}`];
-  let chargeDelta = 0;
-  let stabilityDelta = 0;
-  let resonanceDelta = 0;
-  let marksDelta = 0;
   let targetDepthId = null;
-  const countsAsGateTurn = actionId !== "retreat";
 
-  if (actionId === "retreat") {
-    const keepOmegaUnlocked = state.gateRunStatus === "won";
-    if (state.gateRunStatus === "lost") {
-      resetGateRunState(state);
-      notes.push("再挑戦を開始");
+  if (GateRunModel.applyGateAction) {
+    const applied = GateRunModel.applyGateAction(state, gateRunModelContext(currentDepthId), actionId);
+    Object.assign(state, applied.state);
+    targetDepthId = applied.targetDepthId;
+    if (applied.events.resetLost) notes.push("再挑戦を開始");
+    if (applied.events.keepOmegaUnlocked) notes.push("Ω解放を保持");
+    if (applied.events.won) {
+      notes.push("扉が開いた");
+    } else if (applied.events.timeout) {
+      notes.push("時間切れ。夜のハブへ戻った");
+    } else if (applied.events.lost) {
+      notes.push("立て直し中。夜のハブへ戻った");
     }
-    stabilityDelta = keepOmegaUnlocked ? 8 : 22;
-    resonanceDelta = keepOmegaUnlocked ? -2 : -4;
-    chargeDelta = keepOmegaUnlocked ? 0 : -8;
-    if (keepOmegaUnlocked) notes.push("Ω解放を保持");
-    targetDepthId = currentDepthId !== HUB_DEPTH && depths[HUB_DEPTH] ? HUB_DEPTH : null;
-  } else if (actionId === "dive") {
-    stabilityDelta = -(15 + Math.ceil(risk / 18));
-    resonanceDelta = 3;
-    chargeDelta = 14 + Math.floor(rank / 5) + bonus;
-  } else if (actionId === "observe") {
-    stabilityDelta = 3;
-    resonanceDelta = 1;
-    chargeDelta = 4 + (bonus % 3);
-  } else if (actionId === "tune") {
-    stabilityDelta = 6;
-    resonanceDelta = 5;
-    chargeDelta = 2 + (bonus % 3);
-  } else if (actionId === "sync") {
-    const enough = canSyncGate(state);
-    if (enough) {
-      resonanceDelta = -16;
-      marksDelta = state.marks > 0 ? -1 : 0;
-      chargeDelta = 18 + Math.min(3, state.marks * 2) + (bonus % 4);
-    } else {
-      stabilityDelta = -4;
-      resonanceDelta = -2;
+    state.lastGateResult = notes.join(" / ");
+  } else {
+    const rank = depthRank(currentDepthId);
+    const risk = buildGateIntelligence(currentDepthId).risk;
+    const bonus = numericHash(`${ensureSeed()}|${currentDepthId}|${state.gateRunTurns}|${actionId}`) % 4;
+    let chargeDelta = 0;
+    let stabilityDelta = 0;
+    let resonanceDelta = 0;
+    let marksDelta = 0;
+    const countsAsGateTurn = actionId !== "retreat";
+
+    if (actionId === "retreat") {
+      const keepOmegaUnlocked = state.gateRunStatus === "won";
+      if (state.gateRunStatus === "lost") {
+        resetGateRunState(state);
+        notes.push("再挑戦を開始");
+      }
+      stabilityDelta = keepOmegaUnlocked ? 8 : 22;
+      resonanceDelta = keepOmegaUnlocked ? -2 : -4;
+      chargeDelta = keepOmegaUnlocked ? 0 : -8;
+      if (keepOmegaUnlocked) notes.push("Ω解放を保持");
+      targetDepthId = currentDepthId !== HUB_DEPTH && depths[HUB_DEPTH] ? HUB_DEPTH : null;
+    } else if (actionId === "dive") {
+      stabilityDelta = -(15 + Math.ceil(risk / 18));
+      resonanceDelta = 3;
+      chargeDelta = 14 + Math.floor(rank / 5) + bonus;
+    } else if (actionId === "observe") {
+      stabilityDelta = 3;
+      resonanceDelta = 1;
+      chargeDelta = 4 + (bonus % 3);
+    } else if (actionId === "tune") {
+      stabilityDelta = 6;
+      resonanceDelta = 5;
       chargeDelta = 2 + (bonus % 3);
+    } else if (actionId === "sync") {
+      const enough = canSyncGate(state);
+      if (enough) {
+        resonanceDelta = -16;
+        marksDelta = state.marks > 0 ? -1 : 0;
+        chargeDelta = 18 + Math.min(3, state.marks * 2) + (bonus % 4);
+      } else {
+        stabilityDelta = -4;
+        resonanceDelta = -2;
+        chargeDelta = 2 + (bonus % 3);
+      }
     }
+
+    if (countsAsGateTurn) state.gateRunTurns += 1;
+    state.stability = clampNumber(state.stability + stabilityDelta, 0, STABILITY_MAX);
+    state.resonance = clampNumber(state.resonance + resonanceDelta, 0, RESONANCE_MAX);
+    state.marks = clampNumber(state.marks + marksDelta, 0, 99);
+    state.gateRunCharge = clampNumber(state.gateRunCharge + chargeDelta, 0, GATE_RUN_MAX_CHARGE);
+    state.lastGateAction = actionId;
+    state.lastMoveType = actionId;
+    state.lastGateResult = notes.join(" / ");
+    resetBreathStreak(state);
+
+    const outcomeTarget = resolveGateRunOutcome(state, notes);
+    if (outcomeTarget) targetDepthId = outcomeTarget;
   }
-
-  if (countsAsGateTurn) state.gateRunTurns += 1;
-  state.stability = clampNumber(state.stability + stabilityDelta, 0, STABILITY_MAX);
-  state.resonance = clampNumber(state.resonance + resonanceDelta, 0, RESONANCE_MAX);
-  state.marks = clampNumber(state.marks + marksDelta, 0, 99);
-  state.gateRunCharge = clampNumber(state.gateRunCharge + chargeDelta, 0, GATE_RUN_MAX_CHARGE);
-  state.lastGateAction = actionId;
-  state.lastMoveType = actionId;
-  state.lastGateResult = notes.join(" / ");
-  resetBreathStreak(state);
-
-  const outcomeTarget = resolveGateRunOutcome(state, notes);
-  if (outcomeTarget) targetDepthId = outcomeTarget;
 
   saveRunState();
   runLog = notes.join(" / ");
