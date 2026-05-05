@@ -1,4 +1,4 @@
-// Hazama main.js v2.22
+// Hazama main.js v2.23
 // Minimal, robust loader + renderer for GitHub Pages / Codespaces.
 // v2.3 adds a lightweight deterministic game layer around depth pressure.
 // v2.5 animates the descent key visual and mandala goal gate.
@@ -19,8 +19,9 @@
 // v2.20 finishes the first playable loop with tighter Gate Run signposting.
 // v2.21 tightens Gate Run balance and limits repeated Breath Gate recovery.
 // v2.22 shares Gate Run/Breath Gate mechanics with the balance smoke model.
+// v2.23 follows Breath Gate collapse/timeout targets back to HUB in the browser.
 
-const APP_VERSION = "v2.22";
+const APP_VERSION = "v2.23";
 const GateRunModel = globalThis.HazamaGateRun || {};
 const GATE_CONSTANTS = GateRunModel.constants || {};
 
@@ -1572,10 +1573,12 @@ function applyCoreReward(reward, depthId = currentDepthId) {
     ? GateRunModel.applyBreathReward(state, reward, gateRunModelContext(depthId, { depthId }))
     : null;
   let breath;
+  let targetDepthId = null;
 
   if (applied) {
     Object.assign(state, applied.state);
     breath = applied.breath;
+    targetDepthId = applied.targetDepthId;
   } else {
     const sameBreathDepth = state.lastBreathDepthId === depthId;
     const nextStreak = sameBreathDepth ? state.breathStreak + 1 : 1;
@@ -1631,14 +1634,17 @@ function applyCoreReward(reward, depthId = currentDepthId) {
   } else if (applied?.events?.lost) {
     notes.push("立て直し中。夜のハブへ戻った");
   } else if (!applied) {
-    resolveGateRunOutcome(state, notes);
+    targetDepthId = resolveGateRunOutcome(state, notes);
   }
   saveRunState();
 
   runLog = `${notes.join(" / ")}。`;
   syncVisualMotion(currentDepthId);
   refreshRunPanel();
-  return runLog;
+  return {
+    message: runLog,
+    targetDepthId
+  };
 }
 
 const GATE_RUN_ACTIONS = [
@@ -2306,10 +2312,17 @@ function renderCoreLoop(depth) {
 
     pauseTimer = window.setTimeout(() => {
       pauseTimer = null;
-      const rewardMessage = applyCoreReward(reward, currentDepthId);
-      pendingNextDepthId = getPrimaryNext(depth);
+      const rewardResult = applyCoreReward(reward, currentDepthId);
+      const rewardMessage = rewardResult?.message || String(rewardResult || "");
+      const rewardTargetDepthId = rewardResult?.targetDepthId;
+      pendingNextDepthId = rewardTargetDepthId ? "" : getPrimaryNext(depth);
       setNavigationLocked(false);
       response.textContent = `${shifted}\n${rewardMessage}`;
+      if (rewardTargetDepthId && depths[rewardTargetDepthId] && rewardTargetDepthId !== currentDepthId) {
+        pendingNextDepthId = "";
+        renderDepth(rewardTargetDepthId, { recordHistory: false, applyRun: false });
+        return;
+      }
       pause.textContent = pendingNextDepthId
         ? "整いました。このまま先へ進むか、別の道を選べます。"
         : "ここで止まれます。必要なら最初へ戻れます。";
