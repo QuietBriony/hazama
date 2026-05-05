@@ -104,6 +104,17 @@ Pass signal:
 - `bash scripts/startup-smoke.sh 8765`
   - Covers static serving, asset presence, versioned script loading, model/script presence, and key UI strings.
 
+## Latest Browser Smoke Notes
+
+Checked on a narrow mobile viewport with local static serving:
+
+- `合わせる準備前` appears in the Gate Run mission and sync action before the resonance/gate threshold is ready.
+- `合わせる準備OK` appears in the Gate Run mission and sync action once resonance and gate charge meet the threshold.
+- Key Gate Run controls, mission chips, locked Ω choices, and completion text did not horizontally overflow at mobile width.
+- Repeated field Breath Gate timeout returned through `HUB_NIGHT`, marked Gate Run as lost, showed the timeout message, and did not store raw input text.
+- Locked Ω at `HUB_NIGHT` showed `まだ入れない / 扉の開き 48%` and `扉100%で解放`.
+- `A_reborn` showed `一周完了。夜のハブから次の周回へ戻れます。`
+
 ## Next Manual Pass
 
 Run a local server and play one loop on desktop and a narrow mobile viewport.
@@ -115,5 +126,6 @@ Record:
 - whether `合わせる` was used too early
 - whether retreat felt useful
 - whether `A_reborn` felt like completion
+- whether the new `合わせる準備前/準備OK` labels reduce early sync confusion
 
 Only tune numbers after this pass finds a specific confusing or broken moment.
