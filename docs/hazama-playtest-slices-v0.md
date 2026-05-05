@@ -2,7 +2,7 @@
 
 ## Current Goal
 
-Make the v2.24 first playable readable as a small decision loop:
+Make the v2.25 first playable readable as a small decision loop:
 
 `A_start -> HUB_NIGHT -> Gate Run -> Breath Gate -> Ω unlock -> Ω -> A_reborn`
 
@@ -11,6 +11,7 @@ Current master already has:
 - Gate Run / Breath Gate mechanics shared through `hazama-gate-run.js`
 - Browser runtime follows Breath Gate collapse/timeout targets back through `HUB_NIGHT`
 - Gate Run labels `合わせる` readiness as `準備前` or `準備OK`
+- Gate Run labels `戻る` readiness as `退避推奨`, `退避任意`, `再挑戦`, or `Ω保持`
 - Balance policies in `scripts/balance-smoke.mjs`
 - Static route skeleton check in `scripts/first-playable-smoke.mjs`
 - GitHub repo scout notes in `docs/research/github-game-repo-scout-v0.md`
@@ -110,6 +111,7 @@ Checked on a narrow mobile viewport with local static serving:
 
 - `合わせる準備前` appears in the Gate Run mission and sync action before the resonance/gate threshold is ready.
 - `合わせる準備OK` appears in the Gate Run mission and sync action once resonance and gate charge meet the threshold.
+- `退避推奨`, `退避任意`, `再挑戦`, and `Ω保持` appear in the Gate Run retreat mission state at the expected run states.
 - Key Gate Run controls, mission chips, locked Ω choices, and completion text did not horizontally overflow at mobile width.
 - Repeated field Breath Gate timeout returned through `HUB_NIGHT`, marked Gate Run as lost, showed the timeout message, and did not store raw input text.
 - Locked Ω at `HUB_NIGHT` showed `まだ入れない / 扉の開き 48%` and `扉100%で解放`.

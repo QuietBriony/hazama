@@ -732,6 +732,10 @@ body {
 
 .hz-gate-secondary {
   appearance: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
   flex: 0 0 auto;
   border: 1px solid rgba(187, 247, 208, 0.32);
   border-radius: 999px;
@@ -741,6 +745,20 @@ body {
   font-size: 0.76rem;
   font-weight: 800;
   cursor: pointer;
+}
+
+.hz-gate-secondary-badge {
+  display: inline-flex;
+  align-items: center;
+  min-height: 1.1rem;
+  border: 1px solid rgba(34, 197, 94, 0.42);
+  border-radius: 999px;
+  background: rgba(20, 83, 45, 0.22);
+  color: #dcfce7;
+  padding: 0.04rem 0.32rem;
+  font-size: 0.64rem;
+  font-weight: 900;
+  line-height: 1.1;
 }
 
 .hz-gate-omega:hover {
@@ -881,6 +899,50 @@ body {
   border-color: rgba(148, 163, 184, 0.32);
   background: rgba(51, 65, 85, 0.24);
   color: #cbd5e1;
+}
+
+.hz-gate-action-state--retreat {
+  border-color: rgba(125, 211, 252, 0.3);
+  background: rgba(8, 47, 73, 0.24);
+  color: #bae6fd;
+}
+
+.hz-gate-action--retreat-recommended {
+  border-color: rgba(125, 211, 252, 0.72);
+  background:
+    radial-gradient(circle at 82% 18%, rgba(14, 165, 233, 0.14), transparent 34%),
+    #101827;
+}
+
+.hz-gate-action--retreat-recommended .hz-gate-action-state--retreat,
+.hz-gate-action--retreat-recommended .hz-gate-action-result {
+  color: #bae6fd;
+}
+
+.hz-gate-action--retreat-retry {
+  border-color: rgba(248, 113, 113, 0.58);
+  background:
+    radial-gradient(circle at 82% 18%, rgba(248, 113, 113, 0.14), transparent 34%),
+    #17141a;
+}
+
+.hz-gate-action--retreat-retry .hz-gate-action-state--retreat {
+  border-color: rgba(248, 113, 113, 0.52);
+  background: rgba(127, 29, 29, 0.22);
+  color: #fecaca;
+}
+
+.hz-gate-action--retreat-keep {
+  border-color: rgba(34, 197, 94, 0.58);
+  background:
+    radial-gradient(circle at 82% 18%, rgba(34, 197, 94, 0.14), transparent 34%),
+    #101827;
+}
+
+.hz-gate-action--retreat-keep .hz-gate-action-state--retreat {
+  border-color: rgba(34, 197, 94, 0.5);
+  background: rgba(20, 83, 45, 0.22);
+  color: #bbf7d0;
 }
 
 .hz-gate-win,

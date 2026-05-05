@@ -2,7 +2,7 @@
 
 ## Current playable loop summary
 
-Hazama v2.24 is a browser-based static first playable slice that loads `hazama-depths.json` from `index.html` / `hazama-index.html` and renders a text-first depth navigator. The current loop starts at `A_start`, lets the player enter `HUB_NIGHT` or move into the depth chain, and keeps persistent local run state for progress, seed, stability, resonance, marks, best depth, Gate Run progress, and Breath Gate streak counters.
+Hazama v2.25 is a browser-based static first playable slice that loads `hazama-depths.json` from `index.html` / `hazama-index.html` and renders a text-first depth navigator. The current loop starts at `A_start`, lets the player enter `HUB_NIGHT` or move into the depth chain, and keeps persistent local run state for progress, seed, stability, resonance, marks, best depth, Gate Run progress, and Breath Gate streak counters.
 
 The playable systems already present are:
 
@@ -18,6 +18,7 @@ The playable systems already present are:
 - First playable route smoke in `scripts/first-playable-smoke.mjs`, covering the static loop skeleton and shared-model Ω unlock.
 - Breath Gate collapse/timeout targets from the shared model are followed by the browser runtime, so Breath spam failure returns through `HUB_NIGHT`.
 - Sync readiness UI that labels `合わせる` as `準備前` or `準備OK` without changing the balance model.
+- Retreat readiness UI that labels `戻る` as `退避推奨`, `退避任意`, `再挑戦`, or `Ω保持` without changing the balance model.
 
 The current app is already close to a first playable. The main gap is clarity: players can move, breathe, charge the gate, unlock Ω, and reach `A_reborn`, but the intended route and the relationship between story choices, Gate Run actions, Breath Gate, and Ω unlock need to be easier to read at a glance.
 
