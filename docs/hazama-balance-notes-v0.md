@@ -46,4 +46,5 @@
 - Repeated field Breath Gate stays under the field stability cap and pushes gate charge backward.
 - Retreat after a won Gate Run returns to HUB without relocking Ω.
 - Gate actions that are closed after a win do not mutate the shared model.
+- Browser Breath Gate collapse/timeout follows the shared model's HUB target.
 - Raw Breath Gate input is not saved to localStorage or Music payloads.

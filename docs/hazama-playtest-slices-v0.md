@@ -2,13 +2,14 @@
 
 ## Current Goal
 
-Make the v2.22 first playable readable as a small decision loop:
+Make the v2.23 first playable readable as a small decision loop:
 
 `A_start -> HUB_NIGHT -> Gate Run -> Breath Gate -> Ω unlock -> Ω -> A_reborn`
 
 Current master already has:
 
 - Gate Run / Breath Gate mechanics shared through `hazama-gate-run.js`
+- Browser runtime follows Breath Gate collapse/timeout targets back through `HUB_NIGHT`
 - Balance policies in `scripts/balance-smoke.mjs`
 - Static route skeleton check in `scripts/first-playable-smoke.mjs`
 - GitHub repo scout notes in `docs/research/github-game-repo-scout-v0.md`
