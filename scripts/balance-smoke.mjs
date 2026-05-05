@@ -5,8 +5,11 @@ import { createRequire } from "node:module";
 const require = createRequire(import.meta.url);
 const GateRun = require("../hazama-gate-run.js");
 
-function createState() {
+function createState(overrides = {}) {
   return {
+    depthId: "HUB_NIGHT",
+    rank: 0,
+    risk: 1,
     stability: 76,
     resonance: 0,
     marks: 0,
@@ -22,20 +25,21 @@ function createState() {
     gateRunOutcomeAt: 0,
     collapsed: false,
     hardDeadEnd: false,
-    actions: []
+    actions: [],
+    ...overrides
   };
 }
 
 function modelContext(state) {
   return {
     seed: "balance-v0",
-    depthId: "HUB_NIGHT",
-    currentDepthId: "HUB_NIGHT",
+    depthId: state.depthId || "HUB_NIGHT",
+    currentDepthId: state.depthId || "HUB_NIGHT",
     hubDepthId: "HUB_NIGHT",
     startDepthId: "A_start",
     hasHub: true,
-    rank: 0,
-    risk: 1,
+    rank: state.rank ?? 0,
+    risk: state.risk ?? 1,
     now: 1700000000000 + state.actions.length
   };
 }
@@ -43,8 +47,14 @@ function modelContext(state) {
 function applyGateAction(state, actionId) {
   const result = GateRun.applyGateAction(state, modelContext(state), actionId);
   Object.assign(state, result.state);
+  if (result.targetDepthId) {
+    state.depthId = result.targetDepthId;
+    state.rank = result.targetDepthId === "HUB_NIGHT" ? 0 : state.rank;
+    state.risk = result.targetDepthId === "HUB_NIGHT" ? 1 : state.risk;
+  }
   if (result.changed) state.actions.push(actionId);
   if (result.events.lost) state.collapsed = true;
+  return result;
 }
 
 function applyBreath(state) {
@@ -54,8 +64,14 @@ function applyBreath(state) {
     markGain: 0
   }, modelContext(state));
   Object.assign(state, result.state);
+  if (result.targetDepthId) {
+    state.depthId = result.targetDepthId;
+    state.rank = result.targetDepthId === "HUB_NIGHT" ? 0 : state.rank;
+    state.risk = result.targetDepthId === "HUB_NIGHT" ? 1 : state.risk;
+  }
   state.actions.push("breath");
   if (result.events.lost) state.collapsed = true;
+  return result;
 }
 
 const policies = {
@@ -72,6 +88,21 @@ const policies = {
   },
   "sync-rush"() {
     return "sync";
+  },
+  "late-sync"(state) {
+    if (state.gateRunStatus === "lost") return "retreat";
+    if (state.gateRunCharge < 70 && state.stability > 38) return "dive";
+    if (!GateRun.canSyncGate(state)) return "tune";
+    return "sync";
+  },
+  "retreat-retry"(state) {
+    if (state.gateRunStatus === "lost") return "retreat";
+    if (state.collapsed) {
+      if (GateRun.canSyncGate(state)) return "sync";
+      if (state.stability < 40) return "tune";
+      return state.gateRunCharge < 82 ? "dive" : "tune";
+    }
+    return "dive";
   },
   balanced(state) {
     if (state.gateRunStatus === "lost") return "retreat";
@@ -95,6 +126,7 @@ function simulate(policyName, limit = 18) {
   }
   return {
     policy: policyName,
+    depth: state.depthId,
     unlocked: state.gateRunStatus === "won",
     collapsed: state.collapsed,
     hardDeadEnd: state.hardDeadEnd,
@@ -118,13 +150,50 @@ const breathSpam = results.find((r) => r.policy === "breath-spam");
 const syncRush = results.find((r) => r.policy === "sync-rush");
 const balanced = results.find((r) => r.policy === "balanced");
 const aggressive = results.find((r) => r.policy === "aggressive");
+const lateSync = results.find((r) => r.policy === "late-sync");
+const retreatRetry = results.find((r) => r.policy === "retreat-retry");
 
 if (breathSpam?.unlocked) failures.push("breath-spam unlocked Ω");
 if (syncRush?.unlocked && syncRush.actions < 8) failures.push("sync-rush unlocked Ω in fewer than 8 actions");
 if (!balanced?.unlocked || balanced.actions < 8 || balanced.actions > 12) {
   failures.push("balanced did not unlock Ω in 8-12 meaningful actions");
 }
+if (!lateSync?.unlocked || lateSync.actions < 8) failures.push("late-sync did not require a real setup window");
+if (!retreatRetry?.collapsed || retreatRetry.depth !== "HUB_NIGHT") failures.push("retreat-retry did not demonstrate soft recovery through HUB");
 if (aggressive?.collapsed && aggressive.hardDeadEnd) failures.push("aggressive collapse became a hard dead end");
+
+const fieldBreath = createState({
+  depthId: "P",
+  rank: 16,
+  risk: 45,
+  stability: 80,
+  resonance: 12,
+  gateRunCharge: 50
+});
+applyBreath(fieldBreath);
+applyBreath(fieldBreath);
+applyBreath(fieldBreath);
+applyBreath(fieldBreath);
+if (fieldBreath.stability > GateRun.constants.BREATH_FIELD_STABILITY_CAP) {
+  failures.push("field Breath Gate exceeded field stability cap");
+}
+if (fieldBreath.gateRunCharge >= 50) failures.push("repeated field Breath Gate did not push gate charge backward");
+
+const wonRetreat = createState({
+  gateRunStatus: "won",
+  gateRunCharge: 100,
+  resonance: 24,
+  depthId: "Z",
+  rank: 26,
+  risk: 42
+});
+const wonRetreatResult = applyGateAction(wonRetreat, "retreat");
+if (wonRetreat.gateRunStatus !== "won" || wonRetreat.gateRunCharge !== 100 || wonRetreatResult.targetDepthId !== "HUB_NIGHT") {
+  failures.push("won retreat did not preserve Ω unlock while returning to HUB");
+}
+
+const lockedAfterWon = applyGateAction(wonRetreat, "sync");
+if (lockedAfterWon.changed) failures.push("post-win sync mutated a closed Gate Run");
 
 if (failures.length) {
   console.error(`Balance smoke failed:\n- ${failures.join("\n- ")}`);

@@ -38,7 +38,12 @@
 
 - `breath-spam` does not unlock Ω.
 - `sync-rush` does not unlock Ω in fewer than 8 actions.
+- `late-sync` still needs a setup window before opening Ω.
 - `balanced` unlocks Ω in 8-12 meaningful actions.
 - `aggressive` can collapse softly and return to retry instead of hard-ending.
+- `retreat-retry` demonstrates that collapse recovery returns through HUB without a hard dead end.
 - `safe` should remain stable but not outperform the mixed strategy.
+- Repeated field Breath Gate stays under the field stability cap and pushes gate charge backward.
+- Retreat after a won Gate Run returns to HUB without relocking Ω.
+- Gate actions that are closed after a win do not mutate the shared model.
 - Raw Breath Gate input is not saved to localStorage or Music payloads.
