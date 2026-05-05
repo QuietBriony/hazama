@@ -2,7 +2,7 @@
 
 ## Current Goal
 
-Make the v2.25 first playable readable as a small decision loop:
+Make the v2.26 first playable readable as a small decision loop:
 
 `A_start -> HUB_NIGHT -> Gate Run -> Breath Gate -> Ω unlock -> Ω -> A_reborn`
 
@@ -12,6 +12,7 @@ Current master already has:
 - Browser runtime follows Breath Gate collapse/timeout targets back through `HUB_NIGHT`
 - Gate Run labels `合わせる` readiness as `準備前` or `準備OK`
 - Gate Run labels `戻る` readiness as `退避推奨`, `退避任意`, `再挑戦`, or `Ω保持`
+- `A_reborn` completion panel links directly back to HUB for the next loop
 - Balance policies in `scripts/balance-smoke.mjs`
 - Static route skeleton check in `scripts/first-playable-smoke.mjs`
 - GitHub repo scout notes in `docs/research/github-game-repo-scout-v0.md`
@@ -116,6 +117,8 @@ Checked on a narrow mobile viewport with local static serving:
 - Repeated field Breath Gate timeout returned through `HUB_NIGHT`, marked Gate Run as lost, showed the timeout message, and did not store raw input text.
 - Locked Ω at `HUB_NIGHT` showed `まだ入れない / 扉の開き 48%` and `扉100%で解放`.
 - `A_reborn` showed `一周完了。夜のハブから次の周回へ戻れます。`
+- `A_reborn` completion CTA showed `Ω -> A_reborn 到達` and `夜のハブへ戻る / 次の周回へ`.
+- Clicking the completion CTA returned to `HUB_NIGHT` while preserving `gateRunStatus: won` and `gateRunCharge: 100`.
 
 ## Next Manual Pass
 

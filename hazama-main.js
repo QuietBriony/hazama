@@ -1,4 +1,4 @@
-// Hazama main.js v2.25
+// Hazama main.js v2.26
 // Minimal, robust loader + renderer for GitHub Pages / Codespaces.
 // v2.3 adds a lightweight deterministic game layer around depth pressure.
 // v2.5 animates the descent key visual and mandala goal gate.
@@ -22,8 +22,9 @@
 // v2.23 follows Breath Gate collapse/timeout targets back to HUB in the browser.
 // v2.24 makes sync readiness visible before players spend resonance on 合わせる.
 // v2.25 makes retreat readiness visible before players lose a recoverable run.
+// v2.26 makes A_reborn completion and the next HUB step explicit.
 
-const APP_VERSION = "v2.25";
+const APP_VERSION = "v2.26";
 const GateRunModel = globalThis.HazamaGateRun || {};
 const GATE_CONSTANTS = GateRunModel.constants || {};
 
@@ -2056,7 +2057,19 @@ function renderGateRunPanelMarkup() {
       }).join("")
     : "";
   const loopComplete = state.gateRunStatus === "won" && currentDepthId === "A_reborn"
-    ? `<div class="hz-gate-complete">一周完了。夜のハブから次の周回へ戻れます。</div>`
+    ? `
+      <div class="hz-gate-complete" aria-label="Loop complete">
+        <span class="hz-gate-complete-badge">一周完了</span>
+        <div class="hz-gate-complete-copy">
+          <b>Ω -> A_reborn 到達</b>
+          <span>夜のハブから次の周回へ戻れます。</span>
+        </div>
+        <button class="hz-gate-complete-cta" type="button" data-complete-hub="true">
+          <span>夜のハブへ戻る</span>
+          <b>次の周回へ</b>
+        </button>
+      </div>
+    `
     : "";
   const omegaUnlock = state.gateRunStatus === "won" && currentDepthId !== OMEGA_DEPTH && currentDepthId !== "A_reborn"
     ? `
@@ -2094,7 +2107,31 @@ function renderGateRunPanelMarkup() {
   `;
 }
 
+function returnCompletedLoopToHub() {
+  if (navigationLocked) return;
+  const targetDepthId = depths[HUB_DEPTH] ? HUB_DEPTH : DEFAULT_START;
+  clearPause();
+
+  const state = getRunState();
+  if (state.gateRunStatus === "won") {
+    state.lastMoveType = "retreat";
+    state.lastDepthId = targetDepthId;
+    state.lastGateResult = "一周完了 / 夜のハブへ戻る / Ω解放を保持";
+    saveRunState();
+  }
+  runLog = state.gateRunStatus === "won"
+    ? "一周完了 / 夜のハブへ戻る / Ω解放を保持"
+    : "夜のハブへ戻る";
+  renderDepth(targetDepthId, { recordHistory: false, applyRun: false });
+  setStatus(targetDepthId === HUB_DEPTH ? "HUBへ" : "最初へ");
+}
+
 function bindGateRunControls() {
+  const completeHubBtn = document.querySelector("[data-complete-hub]");
+  if (completeHubBtn) {
+    completeHubBtn.addEventListener("click", returnCompletedLoopToHub);
+  }
+
   const omegaBtn = document.querySelector("[data-gate-omega]");
   if (omegaBtn) {
     omegaBtn.addEventListener("click", () => {
