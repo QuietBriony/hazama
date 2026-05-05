@@ -459,6 +459,30 @@ body {
   font-size: 0.82rem;
 }
 
+.hz-resource-roles {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  color: #9fb0c6;
+  font-size: 0.7rem;
+  line-height: 1.35;
+}
+
+.hz-resource-roles span {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  min-height: 1.45rem;
+  border: 1px solid rgba(51, 65, 85, 0.78);
+  border-radius: 999px;
+  background: rgba(8, 15, 26, 0.58);
+  padding: 0.12rem 0.48rem;
+}
+
+.hz-resource-roles b {
+  color: #e2e8f0;
+}
+
 .hz-gate-run-panel {
   display: grid;
   gap: 0.7rem;
@@ -1428,12 +1452,14 @@ body {
   }
 
   .hz-gate-run-status,
-  .hz-gate-run-mission span {
+  .hz-gate-run-mission span,
+  .hz-resource-roles span {
     justify-content: center;
     width: 100%;
   }
 
-  .hz-gate-run-mission {
+  .hz-gate-run-mission,
+  .hz-resource-roles {
     flex-direction: column;
   }
 

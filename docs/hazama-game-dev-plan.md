@@ -2,7 +2,7 @@
 
 ## Current playable loop summary
 
-Hazama v2.20 is a browser-based static first playable slice that loads `hazama-depths.json` from `index.html` / `hazama-index.html` and renders a text-first depth navigator. The current loop starts at `A_start`, lets the player enter `HUB_NIGHT` or move into the depth chain, and keeps persistent local run state for progress, seed, stability, resonance, marks, best depth, and Gate Run progress.
+Hazama v2.21 is a browser-based static first playable slice that loads `hazama-depths.json` from `index.html` / `hazama-index.html` and renders a text-first depth navigator. The current loop starts at `A_start`, lets the player enter `HUB_NIGHT` or move into the depth chain, and keeps persistent local run state for progress, seed, stability, resonance, marks, best depth, Gate Run progress, and Breath Gate streak counters.
 
 The playable systems already present are:
 
@@ -54,7 +54,7 @@ The top-level goal is not to add more systems. The top-level goal is to make the
 - North Star: a first-time player can understand the one-loop intent without audio or external docs, and can reach `A_reborn` in roughly 5-8 minutes.
 - Next merge goal: make the PR1 signposting polish merge-ready by keeping the current UI additions focused on route clarity, Ω lock clarity, Breath Gate framing, and Gate Run action roles.
 - Next playtest goal: verify Gate Run works as a small decision game built around attacking, stabilizing, and syncing rather than as five equivalent buttons.
-- v2.20 goal: call Hazama a first playable vertical slice when the static browser app can reliably complete `A_start -> HUB_NIGHT -> Gate Run / Breath Gate -> Ω unlock -> Ω -> A_reborn`.
+- v2.21 goal: keep Hazama first playable while making Gate Run and Breath Gate balance resistant to simple recovery/sync spam.
 
 Done means the player can answer these questions from the screen itself:
 
@@ -78,7 +78,7 @@ Done means the player can answer these questions from the screen itself:
 
 - Dual charging: normal depth movement and Gate Run actions both change `gateRunCharge`; verify this feels intentional and does not unlock Ω too early or too confusingly.
 - `sync` readiness: `扉に合わせる` becomes strong with enough resonance, marks, or high gate charge; verify players can understand how to prepare it.
-- Turn limit: `GATE_RUN_TURN_LIMIT` is 20; test whether this is generous enough for first playable learning while still creating pressure.
+- Turn limit: `GATE_RUN_TURN_LIMIT` is 14; test whether this creates pressure without making safe HUB retreat feel punitive.
 - Retreat/reset behavior: `夜のハブへ戻る` recovers and may reset completed/lost Gate Run state; verify this does not erase progress in a surprising way.
 - Loss recovery: stability collapse and turn timeout move the player to `HUB_NIGHT` / `A_start` and cap charge; verify recovery feels like a retry loop, not a hard failure.
 - Ω redirect: attempting Ω before unlock redirects toward the hub/start path; verify the message persists long enough to teach the lock.
