@@ -21,6 +21,7 @@ curl -fsS "$ROOT_URL/hazama-style.css" >/tmp/hz_style.css
 curl -fsS "$ROOT_URL/hazama-index.html" >/tmp/hz_alt.html
 curl -fsS "$ROOT_URL/hazama-depths.json" >/tmp/hz_depths.json
 curl -fsS "$ROOT_URL/scripts/balance-smoke.mjs" >/tmp/hz_balance.mjs
+curl -fsS "$ROOT_URL/scripts/first-playable-smoke.mjs" >/tmp/hz_first_playable.mjs
 curl -fsS "$ROOT_URL/assets/hazama-descent-key.png" >/tmp/hz_descent.png
 curl -fsS "$ROOT_URL/assets/hazama-goal-mandala.png" >/tmp/hz_goal.png
 
@@ -35,6 +36,7 @@ gate = Path('/tmp/hz_gate_run.js').read_text(encoding='utf-8')
 css = Path('/tmp/hz_style.css').read_text(encoding='utf-8')
 depths = json.loads(Path('/tmp/hz_depths.json').read_text(encoding='utf-8'))
 balance = Path('/tmp/hz_balance.mjs').read_text(encoding='utf-8')
+first_playable = Path('/tmp/hz_first_playable.mjs').read_text(encoding='utf-8')
 
 for html_name, html in [('index.html', root), ('hazama-index.html', alt)]:
     for asset in [
@@ -67,6 +69,7 @@ assert 'breathStreak' in js and 'breathDiminishForStreak' in js and '限定回�
 assert 'H境界: 落ち着き' in js and 'N境界: 響き' in js and '道を選ぶ' in js and 'Gate Run / 扉操作' in js, 'v2.22 balance UI labels が見つかりません'
 assert 'hz-resource-roles' in js and 'hz-resource-roles' in css, 'resource roles UI が見つかりません'
 assert 'breath-spam' in balance and 'sync-rush' in balance and 'balanced' in balance, 'balance smoke script が見つかりません'
+assert 'first playable smoke passed' in first_playable and 'A_start -> HUB_NIGHT -> Gate Run won -> Ω -> A_reborn -> HUB_NIGHT' in first_playable, 'first playable smoke script が見つかりません'
 assert 'BGM' in js and 'hz-bgm-companion' in js, 'BGM companion UI が見つかりません'
 assert 'START待ち' in js and 'FOLLOW中' in js, 'BGM 状態表示の短いラベルが見つかりません'
 assert '初回操作後にMusicでSTART' in js and '自動再生制限は迂回せず' in js, 'BGM companion の操作後START表示が見つかりません'

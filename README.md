@@ -126,6 +126,14 @@ node scripts/balance-smoke.mjs
 
 `balance-smoke` は `hazama-gate-run.js` と同じ共有モデルを使い、`breath-spam`、`sync-rush`、`late-sync`、`retreat-retry`、`balanced` などの政策でΩ解放、HUB退避、Breath Gate cap、勝利後retreatを確認します。
 
+first playable ルート確認:
+
+```bash
+node scripts/first-playable-smoke.mjs
+```
+
+`first-playable-smoke` は `A_start -> HUB_NIGHT -> Gate Run won -> Ω -> A_reborn -> HUB_NIGHT` の骨格と、共有モデルでΩ解放できることを確認します。
+
 通過条件:
 
 - `index.html` が `hazama-gate-run.js?v=2.22` と `hazama-main.js?v=2.22` を参照している

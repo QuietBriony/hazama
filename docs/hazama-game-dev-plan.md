@@ -15,6 +15,7 @@ The playable systems already present are:
 - Reset flow that clears seed, progress, and run state.
 - BGM companion integration that sends Music profile payloads while keeping Music as background support only.
 - Shared dependency-free Gate Run model in `hazama-gate-run.js`, used by both the browser runtime and `scripts/balance-smoke.mjs`.
+- First playable route smoke in `scripts/first-playable-smoke.mjs`, covering the static loop skeleton and shared-model Ω unlock.
 
 The current app is already close to a first playable. The main gap is clarity: players can move, breathe, charge the gate, unlock Ω, and reach `A_reborn`, but the intended route and the relationship between story choices, Gate Run actions, Breath Gate, and Ω unlock need to be easier to read at a glance.
 
@@ -110,6 +111,7 @@ Done means the player can answer these questions from the screen itself:
 - Breath Gate purpose: submit a short `ひと息置く` response and confirm it feels like optional recovery/preparation, not required story input.
 - Unlock and completion: reach `扉が開いた`, enter `Ω`, then choose `新しい入口へ戻る` and confirm `A_reborn` feels like loop completion.
 - Static regression: run `bash scripts/startup-smoke.sh 8765` and confirm no dependency, build, audio, Music repo, or GitHub Actions changes are needed.
+- Route skeleton regression: run `node scripts/first-playable-smoke.mjs` and confirm `A_start -> HUB_NIGHT -> Gate Run won -> Ω -> A_reborn -> HUB_NIGHT`.
 
 ## PR review checklist
 
