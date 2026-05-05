@@ -810,6 +810,22 @@ body {
   line-height: 1.2;
 }
 
+.hz-gate-action-state {
+  display: inline-flex;
+  align-items: center;
+  min-height: 1.25rem;
+  margin-left: 0.3rem;
+  margin-bottom: 0.35rem;
+  border: 1px solid rgba(250, 204, 21, 0.34);
+  border-radius: 999px;
+  background: rgba(113, 63, 18, 0.26);
+  color: #fde68a;
+  padding: 0.08rem 0.45rem;
+  font-size: 0.68rem;
+  font-weight: 900;
+  line-height: 1.2;
+}
+
 .hz-gate-action-title {
   color: #f8fafc;
   font-size: 0.84rem;
@@ -836,6 +852,29 @@ body {
   border-color: rgba(250, 204, 21, 0.36);
   background: rgba(113, 63, 18, 0.3);
   color: #fde68a;
+}
+
+.hz-gate-action--sync-waiting {
+  border-color: rgba(120, 113, 108, 0.72);
+  background: #10151f;
+}
+
+.hz-gate-action--sync-waiting .hz-gate-action-state,
+.hz-gate-action--sync-waiting .hz-gate-action-result {
+  color: #fbbf24;
+}
+
+.hz-gate-action--sync-ready {
+  border-color: rgba(250, 204, 21, 0.78);
+  background:
+    radial-gradient(circle at 82% 18%, rgba(250, 204, 21, 0.16), transparent 34%),
+    #151a22;
+}
+
+.hz-gate-action--sync-ready .hz-gate-action-state {
+  border-color: rgba(250, 204, 21, 0.72);
+  background: rgba(250, 204, 21, 0.16);
+  color: #fef3c7;
 }
 
 .hz-gate-action--retreat .hz-gate-action-role {

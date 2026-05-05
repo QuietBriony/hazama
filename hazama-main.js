@@ -1,4 +1,4 @@
-// Hazama main.js v2.23
+// Hazama main.js v2.24
 // Minimal, robust loader + renderer for GitHub Pages / Codespaces.
 // v2.3 adds a lightweight deterministic game layer around depth pressure.
 // v2.5 animates the descent key visual and mandala goal gate.
@@ -20,8 +20,9 @@
 // v2.21 tightens Gate Run balance and limits repeated Breath Gate recovery.
 // v2.22 shares Gate Run/Breath Gate mechanics with the balance smoke model.
 // v2.23 follows Breath Gate collapse/timeout targets back to HUB in the browser.
+// v2.24 makes sync readiness visible before players spend resonance on 合わせる.
 
-const APP_VERSION = "v2.23";
+const APP_VERSION = "v2.24";
 const GateRunModel = globalThis.HazamaGateRun || {};
 const GATE_CONSTANTS = GateRunModel.constants || {};
 
@@ -1691,16 +1692,42 @@ function gateRunStatusLabel(state = getRunState()) {
 function gateRunReadinessLabel(state = getRunState()) {
   if (state.gateRunStatus === "won") return "Ω解放中";
   if (state.gateRunStatus === "lost") return "戻るで再挑戦";
-  if (canSyncGate(state)) return "準備OK";
-  return `準備中: 響き${GATE_SYNC_READY_RESONANCE}+扉${GATE_SYNC_READY_CHARGE}%`;
+  return gateRunSyncReadiness(state).label;
+}
+
+function gateRunSyncReadiness(state = getRunState()) {
+  const resonance = Math.round(state.resonance);
+  const charge = Math.round(state.gateRunCharge);
+  const marks = Math.round(state.marks);
+  const markPath = marks > 0;
+  const chargeTarget = markPath ? GATE_SYNC_MARK_CHARGE : GATE_SYNC_READY_CHARGE;
+  const ready = canSyncGate(state);
+  const resource = markPath
+    ? `しるし ${marks} / 扉 ${charge}/${chargeTarget}%`
+    : `響き ${resonance}/${GATE_SYNC_READY_RESONANCE} / 扉 ${charge}/${chargeTarget}%`;
+  let next = "整えるで響き、攻めるで扉";
+  if (ready) next = "次は合わせる";
+  else if (markPath && charge < chargeTarget) next = "攻めるで扉";
+  else if (!markPath && resonance < GATE_SYNC_READY_RESONANCE && charge < chargeTarget) next = "整える+攻める";
+  else if (!markPath && resonance < GATE_SYNC_READY_RESONANCE) next = "整えるで響き";
+  else if (charge < chargeTarget) next = "攻めるで扉";
+
+  return {
+    ready,
+    label: `${ready ? "合わせる準備OK" : "合わせる準備前"}: ${resource}`,
+    badge: ready ? "準備OK" : "準備前",
+    next,
+    resource
+  };
 }
 
 function gateRunMissionText(state = getRunState()) {
   if (state.gateRunStatus === "won") return "Ωへ入ると一周の到達点です。";
   if (state.gateRunStatus === "lost") return "夜のハブへ戻って、落ち着きを戻してから再挑戦できます。";
   if (state.stability < 34) return "落ち着きが薄いので、HUBか限定回復で立て直せます。";
-  if (canSyncGate(state)) return "準備OK。響きを消費して扉に合わせます。";
-  return "攻めるで進め、整えるで準備し、合わせるで扉を開きます。";
+  const readiness = gateRunSyncReadiness(state);
+  if (readiness.ready) return "準備OK。響きを消費して扉に合わせます。";
+  return `${readiness.next}。合わせるは準備後の仕上げです。`;
 }
 
 function gateRunActionPreview(actionId) {
@@ -1746,9 +1773,10 @@ function gateRunActionPreview(actionId) {
     const charge = modelPreview?.chargeDelta ?? (enough ? 18 + Math.min(3, state.marks * 2) + (bonus % 4) : 2 + (bonus % 3));
     return {
       ...common,
+      ready: enough,
       disabled: common.disabled,
-      result: enough ? `扉の開き +${charge} / 響き -16 / 準備OK` : `扉の開き +${charge} / 響き -2 / 落ち着き -4`,
-      title: enough ? "響きを束ねて、扉へ直接つなぐ。" : "響きか扉の開きが薄い。小さな接続だけ通る。"
+      result: enough ? `扉の開き +${charge} / 響き -16 / 準備OK` : `準備前 / 扉の開き +${charge} / 響き -2`,
+      title: enough ? "響きを束ねて、扉へ直接つなぐ。" : "まだ仕上げ前です。整えるか攻めるで準備してから合わせます。"
     };
   }
 
@@ -1914,6 +1942,7 @@ function renderGateRunTrack(state) {
 
 function renderGateRunPanelMarkup() {
   const state = getRunState();
+  const syncReadiness = gateRunSyncReadiness(state);
   const statusClass = state.gateRunStatus === "won" ? "hz-gate-win" : state.gateRunStatus === "lost" ? "hz-gate-loss" : "";
   const status = statusClass
     ? `<span class="${statusClass}">${escapeHtml(gateRunStatusLabel(state))}</span>`
@@ -1950,9 +1979,16 @@ function renderGateRunPanelMarkup() {
   const actionButtons = showGateActions
     ? GATE_RUN_ACTIONS.map((action) => {
         const preview = gateRunActionPreview(action.id);
+        const syncClass = action.id === "sync"
+          ? ` hz-gate-action--sync-${preview.ready ? "ready" : "waiting"}`
+          : "";
+        const syncBadge = action.id === "sync"
+          ? `<span class="hz-gate-action-state">${escapeHtml(syncReadiness.badge)}</span>`
+          : "";
         return `
-          <button class="hz-gate-action hz-gate-action--${escapeHtml(action.id)}" type="button" data-gate-action="${escapeHtml(action.id)}" title="${escapeHtml(preview.title)}"${preview.disabled ? " disabled" : ""}>
+          <button class="hz-gate-action hz-gate-action--${escapeHtml(action.id)}${syncClass}" type="button" data-gate-action="${escapeHtml(action.id)}" title="${escapeHtml(preview.title)}"${preview.disabled ? " disabled" : ""}>
             <span class="hz-gate-action-role">${escapeHtml(action.role)}</span>
+            ${syncBadge}
             <span class="hz-gate-action-title">${escapeHtml(action.title)}</span>
             <span class="hz-gate-action-meta">${escapeHtml(action.meta)}</span>
             <span class="hz-gate-action-result">${escapeHtml(preview.result)}</span>
