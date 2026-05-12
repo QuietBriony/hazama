@@ -2,7 +2,7 @@
 
 ## Current Goal
 
-Make the v2.29 first playable readable as a small roguelike decision loop:
+Make the v2.30 first playable readable as a small roguelike decision loop:
 
 `A_start -> HUB_NIGHT -> Gate Run -> Breath Gate -> Ω unlock -> Ω -> A_reborn`
 
@@ -17,6 +17,8 @@ Current master already has:
 - Optional browser smoke covers the DOM loop when Playwright is available
 - Balance smoke locks the intended roles for `攻める`, `見る`, `整える`, `合わせる`, and `戻る`
 - Roguelike HUD shows floor, turns, calm, sync, gate, risk, depth map, and run log
+- Visual layer keeps the descent scene active and reacts to gate pressure, risk, and win/loss state
+- Default UI is simplified by removing duplicate gauges and always-on explainer panels
 - Balance policies in `scripts/balance-smoke.mjs`
 - Static route skeleton check in `scripts/first-playable-smoke.mjs`
 - GitHub repo scout notes in `docs/research/github-game-repo-scout-v0.md`
@@ -33,6 +35,7 @@ Check:
 - HUB shows that Ω exists but is not yet available.
 - Gate Run panel explains `扉100%でΩ`.
 - The depth map shows current position as `@`, future floors as fog, and locked Ω as unavailable.
+- The first screen does not feel like several competing dashboards before the player chooses a route.
 - `道を選ぶ` does not look like the same control group as Gate Run actions.
 
 Pass signal:
@@ -47,6 +50,7 @@ Check:
 
 - `攻める` visibly advances the gate but costs calm.
 - The HUD top line changes enough that gate pressure and remaining turns feel like a run, not a static menu.
+- Background pressure and gate glow change as Gate Run advances or collapses.
 - `整える` prepares sync but does not race the gate open alone.
 - `合わせる` is understandable as a finisher after setup.
 - `戻る` feels like a valid recovery choice when calm is low.
@@ -132,6 +136,7 @@ Checked on a narrow mobile viewport with local static serving:
 - Browser smoke also covers the won `Ωの扉を試す` story option from a low-stability HUB state.
 - Balance smoke now verifies that risky charge, safe observe, preparation, ready/unready sync, low-state retreat, and won retreat keep their intended numeric roles.
 - v2.29 visual pass adds `FLOOR / TURN / CALM / SYNC / GATE / RISK`, `DEPTH MAP`, and `RUN LOG` as the first read above the existing Gate Run controls.
+- v2.30 visual pass swaps the default images to lightweight WebP, keeps the descent scene behind the run, and removes duplicated always-on HUD panels.
 
 ## Next Manual Pass
 
@@ -142,6 +147,8 @@ Record:
 - where the next goal was unclear
 - where the UI felt like too many equal buttons
 - whether the map/log makes the loop feel like a small roguelike run
+- whether the simplified HUD leaves the next useful action clearer
+- whether the image motion feels like gameplay feedback rather than decoration
 - whether `合わせる` was used too early
 - whether retreat felt useful
 - whether `A_reborn` felt like completion

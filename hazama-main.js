@@ -1,4 +1,4 @@
-// Hazama main.js v2.29
+// Hazama main.js v2.30
 // Minimal, robust loader + renderer for GitHub Pages / Codespaces.
 // v2.3 adds a lightweight deterministic game layer around depth pressure.
 // v2.5 animates the descent key visual and mandala goal gate.
@@ -26,8 +26,9 @@
 // v2.27 hardens Music window posting and adds browser loop smoke coverage.
 // v2.28 locks Gate Run balance invariants and treats all won Ω entries as reward transitions.
 // v2.29 adds a roguelike-style run map, tactical HUD, and event log.
+// v2.30 simplifies the default HUD and makes the visual layer react like a game scene.
 
-const APP_VERSION = "v2.29";
+const APP_VERSION = "v2.30";
 const GateRunModel = globalThis.HazamaGateRun || {};
 const GATE_CONSTANTS = GateRunModel.constants || {};
 
@@ -533,6 +534,8 @@ function syncVisualMotion(depthId) {
   const opacity = clampNumber(0.28 + rank / 62 + state.resonance / 260, 0.28, 0.76);
   const scale = clampNumber(1 + rank / 180 + state.resonance / 520 + gi.gateCharge / 900, 1, 1.26);
   const glow = clampNumber(0.18 + gi.gateCharge / 130, 0.18, 0.95);
+  const cameraZoom = clampNumber(1.03 + rank / 210 + gi.risk / 980, 1.03, 1.18);
+  const sceneSpeed = clampNumber(26 - rank * 0.42 - gi.risk * 0.045, 12, 26);
   const visualMode = visualModeForDepth(depthId, state, gi);
 
   root.style.setProperty("--hz-depth-shift", `${shift.toFixed(1)}px`);
@@ -542,7 +545,12 @@ function syncVisualMotion(depthId) {
   root.style.setProperty("--hz-gate-charge", gi.gateCharge.toFixed(1));
   root.style.setProperty("--hz-gate-glow", glow.toFixed(2));
   root.style.setProperty("--hz-threat", gi.risk.toFixed(1));
+  root.style.setProperty("--hz-calm", clampNumber(state.stability, 0, STABILITY_MAX).toFixed(1));
+  root.style.setProperty("--hz-resonance", clampNumber(state.resonance, 0, RESONANCE_MAX).toFixed(1));
+  root.style.setProperty("--hz-camera-zoom", cameraZoom.toFixed(3));
+  root.style.setProperty("--hz-scene-speed", `${sceneSpeed.toFixed(1)}s`);
   root.dataset.hzVisual = visualMode;
+  root.dataset.hzRunStatus = cleanDataToken(state.gateRunStatus || "running", "running");
 }
 
 function gatePhaseLabel(gateCharge, status = getRunState().gateRunStatus) {
@@ -2030,13 +2038,7 @@ function renderGateRunPanelMarkup() {
   const turnMeta = state.gateRunStatus === "running"
     ? `残り ${Math.max(0, GATE_RUN_TURN_LIMIT - state.gateRunTurns)}`
     : state.gateRunStatus === "won" ? "Ω解放中" : "再挑戦可";
-  const statusLine = `
-    ${status}
-    <span>行動 ${state.gateRunTurns}</span>
-    <span>${escapeHtml(turnMeta)}</span>
-    <span>扉 ${Math.round(state.gateRunCharge)}%</span>
-    <span>Ω解放 100%</span>
-  `;
+  const statusLine = `${status}<span>${escapeHtml(turnMeta)}</span><span>扉 ${Math.round(state.gateRunCharge)}%</span>`;
   const mission = gateRunMissionText(state);
   const readiness = gateRunReadinessLabel(state);
   const introOnly = currentDepthId === DEFAULT_START && state.gateRunStatus === "running";
@@ -2077,7 +2079,6 @@ function renderGateRunPanelMarkup() {
             ${syncBadge}
             ${retreatBadge}
             <span class="hz-gate-action-title">${escapeHtml(action.title)}</span>
-            <span class="hz-gate-action-meta">${escapeHtml(action.meta)}</span>
             <span class="hz-gate-action-result">${escapeHtml(preview.result)}</span>
           </button>
         `;
@@ -2119,9 +2120,7 @@ function renderGateRunPanelMarkup() {
       </div>
       <div class="hz-gate-run-mission">
         <span><b>目標</b> 扉100%でΩ</span>
-        <span><b>基本</b> 攻める / 整える / 合わせる</span>
-        <span><b>準備</b> ${escapeHtml(readiness)}</span>
-        <span><b>退避</b> ${escapeHtml(retreatAdvice.label)}</span>
+        <span><b>次</b> ${escapeHtml(readiness)} / ${escapeHtml(retreatAdvice.badge)}</span>
       </div>
       <div class="hz-gate-run-hint">${escapeHtml(mission)}</div>
       ${renderGateRunTrack(state)}
@@ -2401,27 +2400,14 @@ function renderRunPanelMarkup() {
   const profile = buildMusicProfile(currentDepthId);
   const launchUrl = makeMusicLaunchUrl(profile);
   const localLaunchUrl = makeMusicLaunchUrl(profile, "local");
-  const log = runLog ? `<div class="hz-run-log">${escapeHtml(runLog)}</div>` : "";
   return `
     <aside class="hz-run-panel" aria-label="位相調律">
       <div class="hz-run-head">
-        <span>位相調律</span>
+        <span>RUN</span>
         <span>step ${state.steps}</span>
       </div>
       ${renderRoguelikeHudMarkup(state)}
-      <div class="hz-gauge-grid">
-        ${renderGauge("落ち着き", state.stability, STABILITY_MAX, "hz-gauge-stability")}
-        ${renderGauge("響き", state.resonance, RESONANCE_MAX, "hz-gauge-resonance")}
-      </div>
-      <div class="hz-run-stats">
-        <span>しるし <b>${state.marks}</b></span>
-        <span>最深 <b>${escapeHtml(depthRankLabel(state.bestRank))}</b></span>
-        <span>返答 <b>${state.entries}</b></span>
-      </div>
-      ${renderResourceRolesMarkup()}
-      ${log}
       ${renderGateRunPanelMarkup()}
-      ${renderGateIntelligenceMarkup()}
       ${renderBgmCompanionMarkup(profile, launchUrl, localLaunchUrl)}
     </aside>
   `;
