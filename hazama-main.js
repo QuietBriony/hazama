@@ -1,4 +1,4 @@
-// Hazama main.js v2.28
+// Hazama main.js v2.29
 // Minimal, robust loader + renderer for GitHub Pages / Codespaces.
 // v2.3 adds a lightweight deterministic game layer around depth pressure.
 // v2.5 animates the descent key visual and mandala goal gate.
@@ -25,8 +25,9 @@
 // v2.26 makes A_reborn completion and the next HUB step explicit.
 // v2.27 hardens Music window posting and adds browser loop smoke coverage.
 // v2.28 locks Gate Run balance invariants and treats all won Ω entries as reward transitions.
+// v2.29 adds a roguelike-style run map, tactical HUD, and event log.
 
-const APP_VERSION = "v2.28";
+const APP_VERSION = "v2.29";
 const GateRunModel = globalThis.HazamaGateRun || {};
 const GATE_CONSTANTS = GateRunModel.constants || {};
 
@@ -2291,6 +2292,110 @@ function renderResourceRolesMarkup() {
   `;
 }
 
+function rogueTileLabel(rank) {
+  if (rank <= 0) return "HUB";
+  if (rank >= 28) return "A'";
+  return depthRankLabel(rank);
+}
+
+function rogueTileGlyph(rank, currentRank) {
+  if (rank === currentRank) return "@";
+  if (rank <= 0) return "H";
+  if (rank >= 28) return "A'";
+  if (rank >= 27) return "Ω";
+  return depthRankLabel(rank);
+}
+
+function renderRogueMapMarkup(state, gi) {
+  const currentRank = depthRank(currentDepthId);
+  const bestRank = Math.max(state.bestRank, currentRank);
+  const gateWon = state.gateRunStatus === "won";
+  const mapGatePercent = Math.max(0, Math.min(100, Math.round(gi.gateCharge)));
+  const tiles = Array.from({ length: 29 }, (_, rank) => {
+    const current = rank === currentRank;
+    const seen = rank <= bestRank || current || (rank === 27 && gateWon);
+    const locked = rank >= 27 && !gateWon && !seen;
+    const fog = !seen && !locked;
+    const classes = [
+      "hz-map-tile",
+      current ? "is-current" : "",
+      seen ? "is-seen" : "",
+      locked ? "is-locked" : "",
+      fog ? "is-fog" : "",
+      rank === 0 ? "is-hub" : "",
+      rank === 27 ? "is-omega" : "",
+      rank === 28 ? "is-reborn" : ""
+    ].filter(Boolean).join(" ");
+    const label = rogueTileLabel(rank);
+    const glyph = locked ? "X" : fog ? "." : rogueTileGlyph(rank, currentRank);
+    return `
+      <span class="${classes}" role="listitem" title="${escapeHtml(label)}" aria-label="${escapeHtml(`${label}${current ? " current" : locked ? " locked" : fog ? " unknown" : " seen"}`)}">
+        <b>${escapeHtml(glyph)}</b>
+        <small>${escapeHtml(label)}</small>
+      </span>
+    `;
+  }).join("");
+
+  return `
+    <section class="hz-rogue-map-panel" aria-label="Depth map">
+      <div class="hz-rogue-section-head">
+        <span>DEPTH MAP</span>
+        <b>${escapeHtml(rogueTileLabel(currentRank))} / BEST ${escapeHtml(rogueTileLabel(bestRank))}</b>
+      </div>
+      <div class="hz-rogue-map" style="--hz-map-gate: ${mapGatePercent}%" role="list">
+        ${tiles}
+      </div>
+    </section>
+  `;
+}
+
+function renderRogueLogMarkup(state, gi) {
+  const depth = depths[currentDepthId] || {};
+  const entries = [
+    `${depthRankLabel(depthRank(currentDepthId))}: ${depth.title || currentDepthId}`,
+    state.lastGateResult || runLog || "run initialized",
+    gi.route,
+    state.gateRunStatus === "won"
+      ? "Ω unlocked: reward route ready"
+      : state.gateRunStatus === "lost"
+        ? "soft failure: return to HUB and retry"
+        : `gate ${Math.round(state.gateRunCharge)} / ${GATE_RUN_MAX_CHARGE}`
+  ];
+
+  return `
+    <section class="hz-rogue-log" aria-label="Run log">
+      <div class="hz-rogue-section-head">
+        <span>RUN LOG</span>
+        <b>${escapeHtml(gateRunStatusLabel(state))}</b>
+      </div>
+      <ol>
+        ${entries.map((entry) => `<li>${escapeHtml(entry)}</li>`).join("")}
+      </ol>
+    </section>
+  `;
+}
+
+function renderRoguelikeHudMarkup(state) {
+  const gi = buildGateIntelligence(currentDepthId);
+  const remainingTurns = state.gateRunStatus === "running"
+    ? Math.max(0, GATE_RUN_TURN_LIMIT - state.gateRunTurns)
+    : state.gateRunStatus === "won" ? "OPEN" : "RETRY";
+  return `
+    <section class="hz-rogue-hud" aria-label="Roguelike run HUD">
+      <div class="hz-rogue-topline">
+        <span><b>FLOOR</b>${escapeHtml(depthRankLabel(depthRank(currentDepthId)))}</span>
+        <span><b>TURN</b>${escapeHtml(String(remainingTurns))}</span>
+        <span><b>CALM</b>${Math.round(state.stability)}</span>
+        <span><b>SYNC</b>${Math.round(state.resonance)}</span>
+        <span><b>GATE</b>${Math.round(state.gateRunCharge)}%</span>
+        <span><b>RISK</b>${Math.round(gi.risk)}</span>
+      </div>
+      ${renderRogueMapMarkup(state, gi)}
+      ${renderRogueLogMarkup(state, gi)}
+    </section>
+  `;
+}
+
 function renderRunPanelMarkup() {
   const state = getRunState();
   const profile = buildMusicProfile(currentDepthId);
@@ -2303,6 +2408,7 @@ function renderRunPanelMarkup() {
         <span>位相調律</span>
         <span>step ${state.steps}</span>
       </div>
+      ${renderRoguelikeHudMarkup(state)}
       <div class="hz-gauge-grid">
         ${renderGauge("落ち着き", state.stability, STABILITY_MAX, "hz-gauge-stability")}
         ${renderGauge("響き", state.resonance, RESONANCE_MAX, "hz-gauge-resonance")}
