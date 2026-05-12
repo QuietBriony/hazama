@@ -200,6 +200,52 @@ try {
   const resetState = await runState(page);
   assert(resetState.gateRunStatus === "running" && resetState.gateRunCharge === 0, "reset did not clear Gate Run state");
 
+  await page.evaluate(() => {
+    const seed = "browser-smoke-won-low-stability";
+    localStorage.setItem("hazama_seed", seed);
+    localStorage.setItem("hazama_progress", JSON.stringify({
+      nodeId: "HUB_NIGHT",
+      seed,
+      lastVisitedAt: Date.now()
+    }));
+    localStorage.setItem("hazama_run_v1", JSON.stringify({
+      version: 1,
+      stability: 24,
+      resonance: 12,
+      marks: 1,
+      steps: 12,
+      entries: 0,
+      bestRank: 27,
+      gateRunStatus: "won",
+      gateRunTurns: 11,
+      gateRunCharge: 100,
+      breathStreak: 0,
+      lastBreathDepthId: "",
+      lastBreathStep: 0,
+      lastGateAction: "sync",
+      lastGateResult: "扉が開いた",
+      lastMoveType: "sync",
+      gateRunOutcomeAt: Date.now(),
+      lastDepthId: "HUB_NIGHT",
+      lastChangedAt: Date.now()
+    }));
+  });
+  await page.reload({ waitUntil: "networkidle" });
+  await waitStatus(page, "OK: HUB_NIGHT");
+  await page.locator("#bgm-stop-provider").click({ timeout: 5000 });
+  const wonStoryOmega = await buttonText(page, "Ωの扉を試す");
+  assert(!(await wonStoryOmega.isDisabled()), "won story Ω option should be enabled");
+  await wonStoryOmega.click({ timeout: 5000 });
+  await page.waitForFunction(
+    () => document.body.textContent.includes("新しい入口へ戻る")
+      && JSON.parse(localStorage.getItem("hazama_run_v1") || "{}").gateRunStatus === "won",
+    null,
+    { timeout: 5000 }
+  );
+  const storyOmegaState = await runState(page);
+  assert(storyOmegaState.lastDepthId === "Ω", "won story Ω option did not enter Ω");
+  assert(storyOmegaState.gateRunStatus === "won", "won story Ω option relocked or lost Gate Run");
+
   assert(consoleProblems.length === 0, `browser console problems:\n- ${consoleProblems.join("\n- ")}`);
   console.log("OK: browser first playable smoke passed");
 } catch (error) {

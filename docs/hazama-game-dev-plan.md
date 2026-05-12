@@ -2,7 +2,7 @@
 
 ## Current playable loop summary
 
-Hazama v2.27 is a browser-based static first playable slice that loads `hazama-depths.json` from `index.html` / `hazama-index.html` and renders a text-first depth navigator. The current loop starts at `A_start`, lets the player enter `HUB_NIGHT` or move into the depth chain, and keeps persistent local run state for progress, seed, stability, resonance, marks, best depth, Gate Run progress, and Breath Gate streak counters.
+Hazama v2.28 is a browser-based static first playable slice that loads `hazama-depths.json` from `index.html` / `hazama-index.html` and renders a text-first depth navigator. The current loop starts at `A_start`, lets the player enter `HUB_NIGHT` or move into the depth chain, and keeps persistent local run state for progress, seed, stability, resonance, marks, best depth, Gate Run progress, and Breath Gate streak counters.
 
 The playable systems already present are:
 
@@ -22,6 +22,7 @@ The playable systems already present are:
 - Completion CTA that marks `Ω -> A_reborn` arrival and returns directly to HUB for the next loop.
 - Browser first playable smoke that exercises BGM stop, locked Ω, Gate Run win, Ω entry, completion CTA, and reset when optional Playwright is available.
 - Music bridge send hardening that waits for a Music window to be on the expected origin before posting payload/control messages.
+- Balance smoke invariants for Gate Run action roles: risky charge, safe observe, preparation, ready/unready sync, and retreat behavior.
 
 The current app is already close to a first playable. The main remaining gap is evidence: keep using real browser behavior, localStorage state, and smoke scripts to catch cases where the shared model passes but the DOM flow regresses.
 
@@ -61,7 +62,7 @@ The top-level goal is not to add more systems. The top-level goal is to make the
 
 - North Star: a first-time player can understand the one-loop intent without audio or external docs, and can reach `A_reborn` in roughly 5-8 minutes.
 - Next merge goal: make the PR1 signposting polish merge-ready by keeping the current UI additions focused on route clarity, Ω lock clarity, Breath Gate framing, and Gate Run action roles.
-- Next playtest goal: verify Gate Run works as a small decision game built around attacking, stabilizing, and syncing rather than as five equivalent buttons.
+- Next playtest goal: keep verifying Gate Run as a small decision game built around attacking, stabilizing, and syncing rather than as five equivalent buttons.
 - v2.21 goal: keep Hazama first playable while making Gate Run and Breath Gate balance resistant to simple recovery/sync spam.
 
 Done means the player can answer these questions from the screen itself:
@@ -146,6 +147,7 @@ Done means the player can answer these questions from the screen itself:
    - Acceptance: `scripts/balance-smoke.mjs` and manual play agree on the same rules because both use `hazama-gate-run.js`.
 
 3. Real-signal bug triage and review hardening
-   - Current v2.27 slice fixes an in-browser Ω entry regression found by browser smoke and hardens Music posting while preserving Music payload shape.
+   - v2.27 fixed an in-browser Ω entry regression found by browser smoke and hardened Music posting while preserving Music payload shape.
+   - v2.28 adds role invariants to balance smoke and verifies the story option Ω route after Gate Run victory.
    - Continue fixing bugs found from console output, mobile/touch play, localStorage edge cases, static asset loading, and smoke checks.
    - Acceptance: startup smoke passes, the first playable loop completes in-browser, Music absence is harmless, and only intended files change.

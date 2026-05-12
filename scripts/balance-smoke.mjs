@@ -139,28 +139,98 @@ function simulate(policyName, limit = 18) {
   };
 }
 
+function previewRow(name, actionId, overrides = {}) {
+  const state = createState(overrides);
+  const preview = GateRun.previewGateAction(state, modelContext(state), actionId);
+  return {
+    name,
+    action: actionId,
+    ready: preview.ready,
+    disabled: preview.disabled,
+    stability: preview.stabilityDelta,
+    resonance: preview.resonanceDelta,
+    marks: preview.marksDelta,
+    gate: preview.chargeDelta,
+    target: preview.targetDepthId || "",
+    keepOmega: preview.keepOmegaUnlocked
+  };
+}
+
 const results = Object.keys(policies).map((name) => simulate(name));
 console.table(results.map(({ sequence, ...row }) => row));
 for (const result of results) {
   console.log(`${result.policy}: ${result.sequence}`);
 }
 
+const previews = [
+  previewRow("dive", "dive"),
+  previewRow("observe", "observe"),
+  previewRow("tune", "tune"),
+  previewRow("sync-unready", "sync"),
+  previewRow("sync-ready", "sync", {
+    resonance: GateRun.constants.GATE_SYNC_READY_RESONANCE,
+    gateRunCharge: GateRun.constants.GATE_SYNC_READY_CHARGE
+  }),
+  previewRow("retreat-low", "retreat", {
+    depthId: "Q",
+    rank: 17,
+    risk: 48,
+    stability: 22,
+    gateRunCharge: 62,
+    resonance: 20
+  }),
+  previewRow("retreat-won", "retreat", {
+    depthId: "Z",
+    rank: 26,
+    risk: 42,
+    gateRunStatus: "won",
+    gateRunCharge: 100,
+    resonance: 24
+  })
+];
+console.table(previews);
+
 const failures = [];
 const breathSpam = results.find((r) => r.policy === "breath-spam");
 const syncRush = results.find((r) => r.policy === "sync-rush");
 const balanced = results.find((r) => r.policy === "balanced");
+const safe = results.find((r) => r.policy === "safe");
 const aggressive = results.find((r) => r.policy === "aggressive");
 const lateSync = results.find((r) => r.policy === "late-sync");
 const retreatRetry = results.find((r) => r.policy === "retreat-retry");
+const previewByName = Object.fromEntries(previews.map((row) => [row.name, row]));
 
 if (breathSpam?.unlocked) failures.push("breath-spam unlocked Ω");
 if (syncRush?.unlocked && syncRush.actions < 8) failures.push("sync-rush unlocked Ω in fewer than 8 actions");
+if (safe?.unlocked) failures.push("safe unlocked Ω; safe should stay stable without outperforming the mixed strategy");
 if (!balanced?.unlocked || balanced.actions < 8 || balanced.actions > 12) {
   failures.push("balanced did not unlock Ω in 8-12 meaningful actions");
 }
 if (!lateSync?.unlocked || lateSync.actions < 8) failures.push("late-sync did not require a real setup window");
 if (!retreatRetry?.collapsed || retreatRetry.depth !== "HUB_NIGHT") failures.push("retreat-retry did not demonstrate soft recovery through HUB");
 if (aggressive?.collapsed && aggressive.hardDeadEnd) failures.push("aggressive collapse became a hard dead end");
+
+if (!(previewByName.dive.gate > previewByName.observe.gate && previewByName.dive.stability < 0)) {
+  failures.push("dive no longer reads as the risky main gate-charge action");
+}
+if (!(previewByName.observe.stability > 0 && previewByName.observe.gate < previewByName.dive.gate)) {
+  failures.push("observe no longer reads as the safe, slow probing action");
+}
+if (!(previewByName.tune.stability > 0 && previewByName.tune.resonance >= 5 && previewByName.tune.gate <= 4)) {
+  failures.push("tune no longer reads as preparation over gate rushing");
+}
+if (!(previewByName["sync-unready"].ready === false && previewByName["sync-unready"].gate <= 4 && previewByName["sync-unready"].resonance < 0)) {
+  failures.push("unready sync no longer reads as a weak/failed connection");
+}
+if (!(previewByName["sync-ready"].ready === true && previewByName["sync-ready"].gate >= 18 && previewByName["sync-ready"].resonance < 0)) {
+  failures.push("ready sync no longer reads as a resonance-spending finisher");
+}
+if (!(previewByName["retreat-low"].target === "HUB_NIGHT" && previewByName["retreat-low"].stability >= 20 && previewByName["retreat-low"].gate < 0)) {
+  failures.push("low-state retreat no longer reads as HUB recovery with a gate cost");
+}
+if (!(previewByName["retreat-won"].target === "HUB_NIGHT" && previewByName["retreat-won"].keepOmega && previewByName["retreat-won"].gate === 0)) {
+  failures.push("won retreat no longer preserves Ω unlock");
+}
 
 const fieldBreath = createState({
   depthId: "P",
