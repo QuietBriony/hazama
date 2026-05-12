@@ -2,7 +2,7 @@
 
 ## Current playable loop summary
 
-Hazama v2.29 is a browser-based static first playable slice that loads `hazama-depths.json` from `index.html` / `hazama-index.html` and renders a text-first depth navigator with a roguelike-style run HUD. The current loop starts at `A_start`, lets the player enter `HUB_NIGHT` or move into the depth chain, and keeps persistent local run state for progress, seed, stability, resonance, marks, best depth, Gate Run progress, and Breath Gate streak counters.
+Hazama v2.30 is a browser-based static first playable slice that loads `hazama-depths.json` from `index.html` / `hazama-index.html` and renders a text-first depth navigator with a simplified roguelike-style run HUD. The current loop starts at `A_start`, lets the player enter `HUB_NIGHT` or move into the depth chain, and keeps persistent local run state for progress, seed, stability, resonance, marks, best depth, Gate Run progress, and Breath Gate streak counters.
 
 The playable systems already present are:
 
@@ -24,6 +24,8 @@ The playable systems already present are:
 - Music bridge send hardening that waits for a Music window to be on the expected origin before posting payload/control messages.
 - Balance smoke invariants for Gate Run action roles: risky charge, safe observe, preparation, ready/unready sync, and retreat behavior.
 - Roguelike HUD that shows `FLOOR / TURN / CALM / SYNC / GATE / RISK`, a depth tile map, and a compact run log without changing balance or story data.
+- Lightweight WebP visual assets and a gameplay-reactive visual layer that keeps the descent image active while gate pressure, risk, and win/loss state change the scene.
+- Simplified default HUD surface: duplicate gauges, resource explanation chips, and full Gate Intelligence are no longer constantly shown above the playable controls.
 
 The current app is already close to a first playable. The main remaining gap is evidence: keep using real browser behavior, localStorage state, and smoke scripts to catch cases where the shared model passes but the DOM flow regresses.
 
@@ -151,5 +153,6 @@ Done means the player can answer these questions from the screen itself:
    - v2.27 fixed an in-browser Ω entry regression found by browser smoke and hardened Music posting while preserving Music payload shape.
    - v2.28 adds role invariants to balance smoke and verifies the story option Ω route after Gate Run victory.
    - v2.29 adds the roguelike run HUD so the same Gate Run state reads more like a playable dungeon loop.
+   - v2.30 shifts visual polish toward gameplay feedback and removes duplicated default UI surfaces.
    - Continue fixing bugs found from console output, mobile/touch play, localStorage edge cases, static asset loading, and smoke checks.
    - Acceptance: startup smoke passes, the first playable loop completes in-browser, Music absence is harmless, and only intended files change.

@@ -23,8 +23,8 @@ curl -fsS "$ROOT_URL/hazama-depths.json" >/tmp/hz_depths.json
 curl -fsS "$ROOT_URL/scripts/balance-smoke.mjs" >/tmp/hz_balance.mjs
 curl -fsS "$ROOT_URL/scripts/first-playable-smoke.mjs" >/tmp/hz_first_playable.mjs
 curl -fsS "$ROOT_URL/scripts/browser-first-playable-smoke.mjs" >/tmp/hz_browser_first_playable.mjs
-curl -fsS "$ROOT_URL/assets/hazama-descent-key.png" >/tmp/hz_descent.png
-curl -fsS "$ROOT_URL/assets/hazama-goal-mandala.png" >/tmp/hz_goal.png
+curl -fsS "$ROOT_URL/assets/hazama-descent-key.webp" >/tmp/hz_descent.webp
+curl -fsS "$ROOT_URL/assets/hazama-goal-mandala.webp" >/tmp/hz_goal.webp
 
 python3 - <<'PY'
 import json
@@ -42,20 +42,21 @@ browser_first_playable = Path('/tmp/hz_browser_first_playable.mjs').read_text(en
 
 for html_name, html in [('index.html', root), ('hazama-index.html', alt)]:
     for asset in [
-        'hazama-style.css?v=2.29',
-        'hazama-seed.js?v=2.29',
-        'hazama-state.js?v=2.29',
-        'hazama-gate-run.js?v=2.29',
-        'hazama-main.js?v=2.29',
+        'hazama-style.css?v=2.30',
+        'hazama-seed.js?v=2.30',
+        'hazama-state.js?v=2.30',
+        'hazama-gate-run.js?v=2.30',
+        'hazama-main.js?v=2.30',
     ]:
         assert asset in html, f'{html_name} が最新の {asset} を参照していません'
-assert 'assets/hazama-descent-key.png' in root, 'index.html が探索者キービジュアルを参照していません'
-assert 'assets/hazama-goal-mandala.png' in root, 'index.html が曼荼羅ゲートを参照していません'
-assert 'Hazama main.js v2.29' in js, 'hazama-main.js バージョンが期待値ではありません'
+assert 'assets/hazama-descent-key.webp' in root, 'index.html が軽量探索者キービジュアルを参照していません'
+assert 'assets/hazama-goal-mandala.webp' in root, 'index.html が軽量曼荼羅ゲートを参照していません'
+assert 'Hazama main.js v2.30' in js, 'hazama-main.js バージョンが期待値ではありません'
 assert 'Hazama Gate Run model v1' in gate and 'applyGateAction' in gate and 'applyBreathReward' in gate, 'hazama-gate-run.js の共有モデルが見つかりません'
 assert 'position: fixed' in css and '100vh' in css and 'mask-image' in css, '全画面曼荼羅背景のCSSフックが見つかりません'
-assert 'hz-rogue-hud' in js and 'DEPTH MAP' in js and 'RUN LOG' in js and 'role="listitem"' in js, 'v2.29 roguelike HUD markup が見つかりません'
-assert 'hz-rogue-hud' in css and 'hz-rogue-map' in css and 'hz-map-tile.is-current' in css and 'hz-rogue-topline' in css, 'v2.29 roguelike HUD CSS が見つかりません'
+assert 'hz-rogue-hud' in js and 'DEPTH MAP' in js and 'RUN LOG' in js and 'role="listitem"' in js, 'v2.30 roguelike HUD markup が見つかりません'
+assert 'hz-rogue-hud' in css and 'hz-rogue-map' in css and 'hz-map-tile.is-current' in css and 'hz-rogue-topline' in css, 'v2.30 roguelike HUD CSS が見つかりません'
+assert 'hzRunStatus' in js and 'hzTacticalSweep' in css and 'hz-camera-zoom' in js and 'hz-scene-speed' in js, 'v2.30 visual gameplay hooks が見つかりません'
 assert 'Gate Intelligence' in js, 'hazama-main.js にGIディレクターが見つかりません'
 assert 'createMusicPayload' in js, 'hazama-main.js にMusic sender payloadが見つかりません'
 assert 'postMessage' in js, 'hazama-main.js にMusic postMessage senderが見つかりません'
@@ -64,17 +65,17 @@ assert 'return "exhale"' in js and 'return "root"' in js and 'return "submerge"'
 assert 'Gate Run' in js, 'hazama-main.js にGate Run表示が見つかりません'
 assert 'applyGateRunAction' in js, 'hazama-main.js にGate Run行動が見つかりません'
 assert 'HUBで操作開始' in js and 'data-gate-omega' in js and 'Ωへ入る' in js, 'first playable loop の Gate Run 導線が見つかりません'
-assert 'GATE_RUN_TURN_LIMIT: 14' in gate, 'v2.29 Gate Run のターン制限が見つかりません'
+assert 'GATE_RUN_TURN_LIMIT: 14' in gate, 'v2.30 Gate Run のターン制限が見つかりません'
 assert 'GATE_SYNC_READY_RESONANCE: 18' in gate and 'GATE_SYNC_READY_CHARGE: 45' in gate and 'GATE_SYNC_MARK_CHARGE: 35' in gate and '合わせる準備前' in js and '合わせる準備OK' in js and 'hz-gate-action--sync-ready' in css, 'Gate Run の sync 準備表示が見つかりません'
 assert '退避推奨' in js and '退避任意' in js and 'hz-gate-secondary-badge' in js and 'hz-gate-action--retreat-recommended' in css and 'hz-gate-action--retreat-retry' in css and 'hz-gate-secondary-badge' in css, 'Gate Run の retreat 準備表示が見つかりません'
 assert 'Ω -> A_reborn 到達' in js and 'hz-gate-complete-cta' in js and 'data-complete-hub="true"' in js and '次の周回へ' in js and 'hz-gate-complete-cta' in css, 'A_reborn completion CTA が見つかりません'
-assert 'enterOmegaDepth' in js and 'applyRun: false' in js and 'musicWindowReadyForOrigin' in js and '扉が開いた / Ωへ入る' in js, 'v2.29 browser hardening hooks が見つかりません'
-assert '扉100%でΩ' in js and '攻める / 整える / 合わせる' in js, 'Gate Run の目標/基本手順が見つかりません'
+assert 'enterOmegaDepth' in js and 'applyRun: false' in js and 'musicWindowReadyForOrigin' in js and '扉が開いた / Ωへ入る' in js, 'v2.30 browser hardening hooks が見つかりません'
+assert '扉100%でΩ' in js and 'Gate Run / 扉操作' in js and '合わせる準備' in js, 'Gate Run の目標/準備導線が見つかりません'
 assert 'hz-gate-secondary' in js and 'HUBへ戻る' in js and 'data-gate-action="retreat"' in js, 'Gate Run 勝利後の副CTAが見つかりません'
 assert 'hz-gate-run-mission' in css and 'hz-gate-secondary' in css, 'Gate Run hardening CSS が見つかりません'
 assert 'breathStreak' in js and 'breathDiminishForStreak' in js and '限定回復' in js, 'Breath Gate diminishing returns が見つかりません'
 assert 'targetDepthId = applied.targetDepthId' in js and 'rewardTargetDepthId' in js and 'renderDepth(rewardTargetDepthId' in js, 'Breath Gate のHUB退避ターゲット処理が見つかりません'
-assert 'H境界: 落ち着き' in js and 'N境界: 響き' in js and '道を選ぶ' in js and 'Gate Run / 扉操作' in js, 'v2.29 balance UI labels が見つかりません'
+assert 'H境界: 落ち着き' in js and 'N境界: 響き' in js and '道を選ぶ' in js and 'Gate Run / 扉操作' in js, 'v2.30 balance UI labels が見つかりません'
 assert 'hz-resource-roles' in js and 'hz-resource-roles' in css, 'resource roles UI が見つかりません'
 assert 'breath-spam' in balance and 'sync-rush' in balance and 'balanced' in balance and 'dive no longer reads as the risky main gate-charge action' in balance and 'ready sync no longer reads as a resonance-spending finisher' in balance, 'balance smoke script が見つかりません'
 assert 'first playable smoke passed' in first_playable and 'A_start -> HUB_NIGHT -> Gate Run won -> Ω -> A_reborn -> HUB_NIGHT' in first_playable, 'first playable smoke script が見つかりません'
@@ -89,7 +90,7 @@ assert 'MUSIC.FOLLOW' in js and 'MUSIC.STOP' in js and 'ARC.' in js, 'Music comp
 assert 'canEnterOmega' in js and 'まだ入れない / 扉の開き' in js, 'Ωロック条件が見つかりません'
 assert 'hz-choice-main' in js and 'hz-choice-meta' in js, '選択肢の主文/補足表示が見つかりません'
 assert '夜のハブへ戻る' in json.dumps(depths, ensure_ascii=False), '人間語の選択肢が見つかりません'
-assert '落ち着き' in js and '響き' in js and '立て直し中' in js, 'v2.29 の説明語彙が見つかりません'
+assert '落ち着き' in js and '響き' in js and '立て直し中' in js, 'v2.30 の説明語彙が見つかりません'
 assert 'A_start' in depths, 'hazama-depths.json に A_start がありません'
 assert 'HUB_NIGHT' in depths, 'hazama-depths.json に HUB_NIGHT がありません'
 print('OK: startup smoke passed')
