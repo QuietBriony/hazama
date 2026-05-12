@@ -1,4 +1,4 @@
-// Hazama main.js v2.27
+// Hazama main.js v2.28
 // Minimal, robust loader + renderer for GitHub Pages / Codespaces.
 // v2.3 adds a lightweight deterministic game layer around depth pressure.
 // v2.5 animates the descent key visual and mandala goal gate.
@@ -24,8 +24,9 @@
 // v2.25 makes retreat readiness visible before players lose a recoverable run.
 // v2.26 makes A_reborn completion and the next HUB step explicit.
 // v2.27 hardens Music window posting and adds browser loop smoke coverage.
+// v2.28 locks Gate Run balance invariants and treats all won Ω entries as reward transitions.
 
-const APP_VERSION = "v2.27";
+const APP_VERSION = "v2.28";
 const GateRunModel = globalThis.HazamaGateRun || {};
 const GATE_CONSTANTS = GateRunModel.constants || {};
 
@@ -453,13 +454,21 @@ function transitionPreview(fromId, toId, moveKind = "choice", explicitType = "")
 
 function gateForOption(fromId, toId, option = {}) {
   const state = getRunState();
-  if (toId === OMEGA_DEPTH && !canEnterOmega()) {
-    const charge = Math.round(state.gateRunCharge);
+  if (toId === OMEGA_DEPTH) {
+    if (!canEnterOmega()) {
+      const charge = Math.round(state.gateRunCharge);
+      return {
+        allowed: false,
+        moveType: "sync",
+        label: `まだ入れない / 扉の開き ${charge}%`,
+        title: "Ωは扉が開いた後に入れます。扉の開きを100%まで進めてください。"
+      };
+    }
     return {
-      allowed: false,
+      allowed: true,
       moveType: "sync",
-      label: `まだ入れない / 扉の開き ${charge}%`,
-      title: "Ωは扉が開いた後に入れます。扉の開きを100%まで進めてください。"
+      label: "扉が開いた / Ωへ入る",
+      title: "Gate Runは完了しています。落ち着きを追加で削らず、Ωへ入れます。"
     };
   }
 

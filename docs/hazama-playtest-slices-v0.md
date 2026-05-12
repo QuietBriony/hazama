@@ -2,7 +2,7 @@
 
 ## Current Goal
 
-Make the v2.27 first playable readable as a small decision loop:
+Make the v2.28 first playable readable as a small decision loop:
 
 `A_start -> HUB_NIGHT -> Gate Run -> Breath Gate -> Ω unlock -> Ω -> A_reborn`
 
@@ -15,6 +15,7 @@ Current master already has:
 - `A_reborn` completion panel links directly back to HUB for the next loop
 - Ω entry after Gate Run victory preserves the won run instead of reapplying ordinary depth pressure
 - Optional browser smoke covers the DOM loop when Playwright is available
+- Balance smoke locks the intended roles for `攻める`, `見る`, `整える`, `合わせる`, and `戻る`
 - Balance policies in `scripts/balance-smoke.mjs`
 - Static route skeleton check in `scripts/first-playable-smoke.mjs`
 - GitHub repo scout notes in `docs/research/github-game-repo-scout-v0.md`
@@ -102,7 +103,7 @@ Pass signal:
 ## Current Automated Coverage
 
 - `node scripts/balance-smoke.mjs`
-  - Covers spam, rush, balanced play, late sync, retreat/retry, field Breath cap, won retreat, and post-win closed action.
+  - Covers spam, rush, balanced play, late sync, retreat/retry, field Breath cap, won retreat, post-win closed action, and action-role invariants.
 - `node scripts/first-playable-smoke.mjs`
   - Covers the static route skeleton and shared-model Ω unlock.
 - `node scripts/browser-first-playable-smoke.mjs`
@@ -125,6 +126,8 @@ Checked on a narrow mobile viewport with local static serving:
 - Clicking the completion CTA returned to `HUB_NIGHT` while preserving `gateRunStatus: won` and `gateRunCharge: 100`.
 - Browser smoke caught an Ω-entry regression where ordinary depth pressure could flip a won Gate Run into `lost`; v2.27 now treats Ω entry as a reward transition and keeps the won state.
 - BGM stop did not mutate story progress during browser smoke, and Music posting waits for the expected target origin before sending.
+- Browser smoke also covers the won `Ωの扉を試す` story option from a low-stability HUB state.
+- Balance smoke now verifies that risky charge, safe observe, preparation, ready/unready sync, low-state retreat, and won retreat keep their intended numeric roles.
 
 ## Next Manual Pass
 
