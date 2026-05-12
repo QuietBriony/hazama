@@ -2,7 +2,7 @@
 
 ## Current Goal
 
-Make the v2.26 first playable readable as a small decision loop:
+Make the v2.27 first playable readable as a small decision loop:
 
 `A_start -> HUB_NIGHT -> Gate Run -> Breath Gate -> Ω unlock -> Ω -> A_reborn`
 
@@ -13,6 +13,8 @@ Current master already has:
 - Gate Run labels `合わせる` readiness as `準備前` or `準備OK`
 - Gate Run labels `戻る` readiness as `退避推奨`, `退避任意`, `再挑戦`, or `Ω保持`
 - `A_reborn` completion panel links directly back to HUB for the next loop
+- Ω entry after Gate Run victory preserves the won run instead of reapplying ordinary depth pressure
+- Optional browser smoke covers the DOM loop when Playwright is available
 - Balance policies in `scripts/balance-smoke.mjs`
 - Static route skeleton check in `scripts/first-playable-smoke.mjs`
 - GitHub repo scout notes in `docs/research/github-game-repo-scout-v0.md`
@@ -103,6 +105,8 @@ Pass signal:
   - Covers spam, rush, balanced play, late sync, retreat/retry, field Breath cap, won retreat, and post-win closed action.
 - `node scripts/first-playable-smoke.mjs`
   - Covers the static route skeleton and shared-model Ω unlock.
+- `node scripts/browser-first-playable-smoke.mjs`
+  - Covers the browser DOM loop when optional Playwright is available; skips without adding dependencies when it is not.
 - `bash scripts/startup-smoke.sh 8765`
   - Covers static serving, asset presence, versioned script loading, model/script presence, and key UI strings.
 
@@ -119,6 +123,8 @@ Checked on a narrow mobile viewport with local static serving:
 - `A_reborn` showed `一周完了。夜のハブから次の周回へ戻れます。`
 - `A_reborn` completion CTA showed `Ω -> A_reborn 到達` and `夜のハブへ戻る / 次の周回へ`.
 - Clicking the completion CTA returned to `HUB_NIGHT` while preserving `gateRunStatus: won` and `gateRunCharge: 100`.
+- Browser smoke caught an Ω-entry regression where ordinary depth pressure could flip a won Gate Run into `lost`; v2.27 now treats Ω entry as a reward transition and keeps the won state.
+- BGM stop did not mutate story progress during browser smoke, and Music posting waits for the expected target origin before sending.
 
 ## Next Manual Pass
 

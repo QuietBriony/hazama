@@ -2,7 +2,7 @@
 
 ## Current playable loop summary
 
-Hazama v2.26 is a browser-based static first playable slice that loads `hazama-depths.json` from `index.html` / `hazama-index.html` and renders a text-first depth navigator. The current loop starts at `A_start`, lets the player enter `HUB_NIGHT` or move into the depth chain, and keeps persistent local run state for progress, seed, stability, resonance, marks, best depth, Gate Run progress, and Breath Gate streak counters.
+Hazama v2.27 is a browser-based static first playable slice that loads `hazama-depths.json` from `index.html` / `hazama-index.html` and renders a text-first depth navigator. The current loop starts at `A_start`, lets the player enter `HUB_NIGHT` or move into the depth chain, and keeps persistent local run state for progress, seed, stability, resonance, marks, best depth, Gate Run progress, and Breath Gate streak counters.
 
 The playable systems already present are:
 
@@ -20,8 +20,10 @@ The playable systems already present are:
 - Sync readiness UI that labels `合わせる` as `準備前` or `準備OK` without changing the balance model.
 - Retreat readiness UI that labels `戻る` as `退避推奨`, `退避任意`, `再挑戦`, or `Ω保持` without changing the balance model.
 - Completion CTA that marks `Ω -> A_reborn` arrival and returns directly to HUB for the next loop.
+- Browser first playable smoke that exercises BGM stop, locked Ω, Gate Run win, Ω entry, completion CTA, and reset when optional Playwright is available.
+- Music bridge send hardening that waits for a Music window to be on the expected origin before posting payload/control messages.
 
-The current app is already close to a first playable. The main gap is clarity: players can move, breathe, charge the gate, unlock Ω, and reach `A_reborn`, but the intended route and the relationship between story choices, Gate Run actions, Breath Gate, and Ω unlock need to be easier to read at a glance.
+The current app is already close to a first playable. The main remaining gap is evidence: keep using real browser behavior, localStorage state, and smoke scripts to catch cases where the shared model passes but the DOM flow regresses.
 
 ## First playable loop definition
 
@@ -87,7 +89,7 @@ Done means the player can answer these questions from the screen itself:
 - Turn limit: `GATE_RUN_TURN_LIMIT` is 14; test whether this creates pressure without making safe HUB retreat feel punitive.
 - Retreat/reset behavior: `夜のハブへ戻る` recovers and may reset completed/lost Gate Run state; verify this does not erase progress in a surprising way.
 - Loss recovery: stability collapse and turn timeout move the player to `HUB_NIGHT` / `A_start` and cap charge; verify recovery feels like a retry loop, not a hard failure.
-- Ω redirect: attempting Ω before unlock redirects toward the hub/start path; verify the message persists long enough to teach the lock.
+- Ω redirect: attempting Ω before unlock redirects toward the hub/start path; verify the message persists long enough to teach the lock. After unlock, Ω entry is a reward transition and should not reapply ordinary depth pressure.
 - Actual charge vs GI pressure: Gate Intelligence may display derived gate pressure above stored `gateRunCharge`; verify labels distinguish objective pressure from the actual unlock requirement.
 - Determinism: keep the seeded bonus behavior predictable within a run and avoid non-deterministic balance surprises.
 
@@ -116,6 +118,7 @@ Done means the player can answer these questions from the screen itself:
 - Unlock and completion: reach `扉が開いた`, enter `Ω`, then choose `新しい入口へ戻る` and confirm `A_reborn` feels like loop completion.
 - Static regression: run `bash scripts/startup-smoke.sh 8765` and confirm no dependency, build, audio, Music repo, or GitHub Actions changes are needed.
 - Route skeleton regression: run `node scripts/first-playable-smoke.mjs` and confirm `A_start -> HUB_NIGHT -> Gate Run won -> Ω -> A_reborn -> HUB_NIGHT`.
+- Browser route regression: run `node scripts/browser-first-playable-smoke.mjs` in an environment with Playwright and confirm the same loop completes through the DOM.
 
 ## PR review checklist
 
@@ -143,6 +146,6 @@ Done means the player can answer these questions from the screen itself:
    - Acceptance: `scripts/balance-smoke.mjs` and manual play agree on the same rules because both use `hazama-gate-run.js`.
 
 3. Real-signal bug triage and review hardening
-   - Fix bugs found from console output, mobile/touch play, localStorage edge cases, static asset loading, and smoke checks.
-   - Extend the local smoke script only if it catches first-playable regressions and still requires no GitHub Actions.
+   - Current v2.27 slice fixes an in-browser Ω entry regression found by browser smoke and hardens Music posting while preserving Music payload shape.
+   - Continue fixing bugs found from console output, mobile/touch play, localStorage edge cases, static asset loading, and smoke checks.
    - Acceptance: startup smoke passes, the first playable loop completes in-browser, Music absence is harmless, and only intended files change.

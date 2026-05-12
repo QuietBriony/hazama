@@ -1,4 +1,4 @@
-// Hazama main.js v2.26
+// Hazama main.js v2.27
 // Minimal, robust loader + renderer for GitHub Pages / Codespaces.
 // v2.3 adds a lightweight deterministic game layer around depth pressure.
 // v2.5 animates the descent key visual and mandala goal gate.
@@ -23,8 +23,9 @@
 // v2.24 makes sync readiness visible before players spend resonance on 合わせる.
 // v2.25 makes retreat readiness visible before players lose a recoverable run.
 // v2.26 makes A_reborn completion and the next HUB step explicit.
+// v2.27 hardens Music window posting and adds browser loop smoke coverage.
 
-const APP_VERSION = "v2.26";
+const APP_VERSION = "v2.27";
 const GateRunModel = globalThis.HazamaGateRun || {};
 const GATE_CONSTANTS = GateRunModel.constants || {};
 
@@ -1217,6 +1218,18 @@ function musicTargetOrigin(mode = "production") {
   return mode === "local" ? provider.localOrigin : provider.origin;
 }
 
+function musicWindowReadyForOrigin(target, expectedOrigin) {
+  if (!target || !expectedOrigin) return false;
+  try {
+    const href = target.location?.href || "";
+    if (!href || href === "about:blank") return false;
+    const origin = target.location?.origin || "";
+    return !origin || origin === expectedOrigin;
+  } catch (_) {
+    return true;
+  }
+}
+
 function postMusicPayload(mode = "production", payload = lastMusicPayload) {
   if (!bgmFollowEnabled) return false;
   const target = musicBridgeWindows[mode];
@@ -1225,8 +1238,10 @@ function postMusicPayload(mode = "production", payload = lastMusicPayload) {
     musicBridgeWindows[mode] = null;
     return false;
   }
+  const targetOrigin = musicTargetOrigin(mode);
+  if (!musicWindowReadyForOrigin(target, targetOrigin)) return false;
   try {
-    target.postMessage(payload, musicTargetOrigin(mode));
+    target.postMessage(payload, targetOrigin);
     return true;
   } catch (error) {
     console.warn("[Hazama] Music bridge postMessage failed:", error);
@@ -1241,6 +1256,8 @@ function postMusicControl(action = "resume", mode = "production") {
     musicBridgeWindows[mode] = null;
     return false;
   }
+  const targetOrigin = musicTargetOrigin(mode);
+  if (!musicWindowReadyForOrigin(target, targetOrigin)) return false;
   const payload = {
     type: "hazama-control",
     version: 1,
@@ -1253,7 +1270,7 @@ function postMusicControl(action = "resume", mode = "production") {
     }
   };
   try {
-    target.postMessage(payload, musicTargetOrigin(mode));
+    target.postMessage(payload, targetOrigin);
     return true;
   } catch (error) {
     console.warn("[Hazama] Music control postMessage failed:", error);
@@ -2126,6 +2143,18 @@ function returnCompletedLoopToHub() {
   setStatus(targetDepthId === HUB_DEPTH ? "HUBへ" : "最初へ");
 }
 
+function enterOmegaDepth() {
+  if (!canEnterOmega() || navigationLocked) return;
+  clearPause();
+  const state = getRunState();
+  state.lastMoveType = "sync";
+  state.lastGateResult = state.lastGateResult || "扉が開いた";
+  saveRunState();
+  runLog = "Ωへ入る / 扉が開いた";
+  renderDepth(OMEGA_DEPTH, { moveKind: "choice", moveType: "sync", applyRun: false });
+  setStatus("Ωへ");
+}
+
 function bindGateRunControls() {
   const completeHubBtn = document.querySelector("[data-complete-hub]");
   if (completeHubBtn) {
@@ -2135,10 +2164,7 @@ function bindGateRunControls() {
   const omegaBtn = document.querySelector("[data-gate-omega]");
   if (omegaBtn) {
     omegaBtn.addEventListener("click", () => {
-      if (!canEnterOmega()) return;
-      clearPause();
-      renderDepth(OMEGA_DEPTH, { moveKind: "choice", moveType: "sync" });
-      setStatus("Ωへ");
+      enterOmegaDepth();
     });
   }
 
@@ -2545,6 +2571,10 @@ function renderOptions(depth, optionsEl) {
       if (navigationLocked) return;
       if (!next || !gate.allowed) return;
       clearPause();
+      if (next === OMEGA_DEPTH && canEnterOmega()) {
+        enterOmegaDepth();
+        return;
+      }
       renderDepth(next, { moveKind: "choice", moveType: gate.moveType });
     }, "hz-btn hz-depth-option");
     btn.classList.add("hz-choice-button");
