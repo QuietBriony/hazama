@@ -42,16 +42,16 @@ browser_first_playable = Path('/tmp/hz_browser_first_playable.mjs').read_text(en
 
 for html_name, html in [('index.html', root), ('hazama-index.html', alt)]:
     for asset in [
-        'hazama-style.css?v=2.30',
-        'hazama-seed.js?v=2.30',
-        'hazama-state.js?v=2.30',
-        'hazama-gate-run.js?v=2.30',
-        'hazama-main.js?v=2.30',
+        'hazama-style.css?v=2.33',
+        'hazama-seed.js?v=2.33',
+        'hazama-state.js?v=2.33',
+        'hazama-gate-run.js?v=2.33',
+        'hazama-main.js?v=2.33',
     ]:
         assert asset in html, f'{html_name} が最新の {asset} を参照していません'
 assert 'assets/hazama-descent-key.webp' in root, 'index.html が軽量探索者キービジュアルを参照していません'
 assert 'assets/hazama-goal-mandala.webp' in root, 'index.html が軽量曼荼羅ゲートを参照していません'
-assert 'Hazama main.js v2.30' in js, 'hazama-main.js バージョンが期待値ではありません'
+assert 'Hazama main.js v2.33' in js, 'hazama-main.js バージョンが期待値ではありません'
 assert 'Hazama Gate Run model v1' in gate and 'applyGateAction' in gate and 'applyBreathReward' in gate, 'hazama-gate-run.js の共有モデルが見つかりません'
 assert 'position: fixed' in css and '100vh' in css and 'mask-image' in css, '全画面曼荼羅背景のCSSフックが見つかりません'
 assert 'hz-rogue-hud' in js and 'DEPTH MAP' in js and 'RUN LOG' in js and 'role="listitem"' in js, 'v2.30 roguelike HUD markup が見つかりません'
@@ -65,6 +65,9 @@ assert 'return "exhale"' in js and 'return "root"' in js and 'return "submerge"'
 assert 'Gate Run' in js, 'hazama-main.js にGate Run表示が見つかりません'
 assert 'applyGateRunAction' in js, 'hazama-main.js にGate Run行動が見つかりません'
 assert 'HUBで操作開始' in js and 'data-gate-omega' in js and 'Ωへ入る' in js, 'first playable loop の Gate Run 導線が見つかりません'
+assert 'data-start-hub' in js and 'syncViewportAfterRender' in js and 'START' in js, 'v2.31 first action polish が見つかりません'
+assert '休む / 整える' in js and 'hz-rest-panel' in js and '任意休息' in js and 'hz-rest-panel' in css, 'v2.32 Breath Gate optional rest UI が見つかりません'
+assert 'hz-gate-outcome' in js and 'hz-gate-outcome--win' in css and 'hz-loop-summary' in js and 'hz-loop-summary' in css and 'collapseCount' in js, 'v2.32 outcome/replay UI が見つかりません'
 assert 'GATE_RUN_TURN_LIMIT: 14' in gate, 'v2.30 Gate Run のターン制限が見つかりません'
 assert 'GATE_SYNC_READY_RESONANCE: 18' in gate and 'GATE_SYNC_READY_CHARGE: 45' in gate and 'GATE_SYNC_MARK_CHARGE: 35' in gate and '合わせる準備前' in js and '合わせる準備OK' in js and 'hz-gate-action--sync-ready' in css, 'Gate Run の sync 準備表示が見つかりません'
 assert '退避推奨' in js and '退避任意' in js and 'hz-gate-secondary-badge' in js and 'hz-gate-action--retreat-recommended' in css and 'hz-gate-action--retreat-retry' in css and 'hz-gate-secondary-badge' in css, 'Gate Run の retreat 準備表示が見つかりません'
@@ -82,7 +85,8 @@ assert 'first playable smoke passed' in first_playable and 'A_start -> HUB_NIGHT
 assert 'browser first playable smoke passed' in browser_first_playable and 'optional Playwright' in browser_first_playable and 'won story Ω option should be enabled' in browser_first_playable, 'browser first playable smoke script が見つかりません'
 assert 'BGM' in js and 'hz-bgm-companion' in js, 'BGM companion UI が見つかりません'
 assert 'START待ち' in js and 'FOLLOW中' in js, 'BGM 状態表示の短いラベルが見つかりません'
-assert '初回操作後にMusicでSTART' in js and '自動再生制限は迂回せず' in js, 'BGM companion の操作後START表示が見つかりません'
+assert '別タブMusic → START.HZM' in js and 'MusicタブでSTART.HZM' in js and '自動再生制限は迂回せず' in js, 'BGM companion の別タブSTART表示が見つかりません'
+assert 'リンクでMusicを開く' in js and 'window.location.assign' in js and 'data-bgm-phase="blocked"' in css, 'BGM popup blocked fallback が見つかりません'
 assert 'data-bgm-phase' in js and 'hazama-control' in js, 'BGM 接続状態または停止制御が見つかりません'
 assert 'connectionState' in js and 'autoFollow' in js and 'outputLevel' in js, 'Music companion feedback fields が見つかりません'
 assert 'data-music-state' in js and 'dataset.musicAutofollow' in js and 'dataset.musicCulture' in js, 'Music feedback data attrs が見つかりません'

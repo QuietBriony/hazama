@@ -2,9 +2,9 @@
 
 ## Current Goal
 
-Make the v2.30 first playable readable as a small roguelike decision loop:
+Make the v2.33 first playable readable as a small roguelike decision loop:
 
-`A_start -> HUB_NIGHT -> Gate Run -> Breath Gate -> Ω unlock -> Ω -> A_reborn`
+`A_start -> HUB_NIGHT -> Gate Run -> Ω unlock -> Ω -> A_reborn`
 
 Current master already has:
 
@@ -19,6 +19,11 @@ Current master already has:
 - Roguelike HUD shows floor, turns, calm, sync, gate, risk, depth map, and run log
 - Visual layer keeps the descent scene active and reacts to gate pressure, risk, and win/loss state
 - Default UI is simplified by removing duplicate gauges and always-on explainer panels
+- Initial CTA and Gate Run action buttons now appear before secondary map/log telemetry
+- Breath Gate now sits below route/session controls as `休む / 整える`, so it reads as optional rest rather than the main route
+- Gate Run now shows explicit `扉が開いた`, `立て直し中`, and `時間切れ` outcome panels
+- `A_reborn` completion shows a short run record for turns, route steps, rest count, collapse count, main action, and Ω arrival
+- BGM now reads as `別タブMusic → START.HZM`, so the audio handoff is clear without making Music required
 - Balance policies in `scripts/balance-smoke.mjs`
 - Static route skeleton check in `scripts/first-playable-smoke.mjs`
 - GitHub repo scout notes in `docs/research/github-game-repo-scout-v0.md`
@@ -71,6 +76,7 @@ Check:
 - Repeated breath loses efficiency.
 - Repeated breath in the field does not exceed the field stability cap.
 - Breath spam does not open Ω.
+- The `休む / 整える` panel sits after `道を選ぶ` and session controls, not before the main route.
 - Raw input text is not stored or sent to Music.
 
 Pass signal:
@@ -84,8 +90,10 @@ Goal: opening Ω and reaching `A_reborn` feels like completing one loop.
 Check:
 
 - Once Gate Run is won, the Ω CTA appears clearly.
+- `扉が開いた`, `立て直し中`, and `時間切れ` are visually distinct from ordinary log text.
 - Retreat after a win preserves Ω unlock.
 - `Ω -> A_reborn -> HUB_NIGHT` is available and readable.
+- `A_reborn` shows a compact one-loop record before the next-loop CTA.
 - `A_reborn` reads as completion feedback, not just another ordinary depth.
 
 Pass signal:
@@ -100,6 +108,7 @@ Check:
 
 - Music unopened does not block any Hazama route.
 - BGM controls stay visually secondary to Gate Run and story options.
+- BGM copy makes it clear that Hazama opens Music in another tab and audio starts after `START.HZM` there.
 - `止める` affects follow/control state only, not story progress.
 - Music payload contains sanitized profile data only, never raw input.
 
@@ -137,6 +146,10 @@ Checked on a narrow mobile viewport with local static serving:
 - Balance smoke now verifies that risky charge, safe observe, preparation, ready/unready sync, low-state retreat, and won retreat keep their intended numeric roles.
 - v2.29 visual pass adds `FLOOR / TURN / CALM / SYNC / GATE / RISK`, `DEPTH MAP`, and `RUN LOG` as the first read above the existing Gate Run controls.
 - v2.30 visual pass swaps the default images to lightweight WebP, keeps the descent scene behind the run, and removes duplicated always-on HUD panels.
+- v2.31 first-action pass shortens the visible title, adds a top-level HUB CTA, puts Gate Run controls before map/log telemetry, and returns transitions to the run panel.
+- v2.32 growth-route pass makes Breath Gate optional rest, adds Gate Run outcome feedback, and gives `A_reborn` a compact run record.
+- v2.32 in-app browser check covered fresh reset, `夜のハブへ入る`, Gate Run win, `Ω -> A_reborn`, compact run record, collapse/retry feedback, and BGM unopened with no console errors.
+- v2.33 BGM handoff pass clarifies `別タブMusic → START.HZM` and keeps the companion secondary to the main loop.
 
 ## Next Manual Pass
 
@@ -152,6 +165,8 @@ Record:
 - whether `合わせる` was used too early
 - whether retreat felt useful
 - whether `A_reborn` felt like completion
+- whether the new run result record makes a second loop tempting
+- whether `休む / 整える` feels helpful without becoming the main route
 - whether the new `合わせる準備前/準備OK` labels reduce early sync confusion
 
 Only tune numbers after this pass finds a specific confusing or broken moment.

@@ -1,4 +1,4 @@
-// Hazama main.js v2.30
+// Hazama main.js v2.33
 // Minimal, robust loader + renderer for GitHub Pages / Codespaces.
 // v2.3 adds a lightweight deterministic game layer around depth pressure.
 // v2.5 animates the descent key visual and mandala goal gate.
@@ -27,8 +27,11 @@
 // v2.28 locks Gate Run balance invariants and treats all won Ω entries as reward transitions.
 // v2.29 adds a roguelike-style run map, tactical HUD, and event log.
 // v2.30 simplifies the default HUD and makes the visual layer react like a game scene.
+// v2.31 lifts the first action and Gate Run controls above secondary telemetry.
+// v2.32 frames Breath Gate as optional rest and strengthens run outcomes.
+// v2.33 makes the Music/BGM handoff explicit: Hazama opens Music in another tab, then START.HZM unlocks audio there.
 
-const APP_VERSION = "v2.30";
+const APP_VERSION = "v2.33";
 const GateRunModel = globalThis.HazamaGateRun || {};
 const GATE_CONSTANTS = GateRunModel.constants || {};
 
@@ -254,6 +257,7 @@ function createRunState() {
     gateRunStatus: "running",
     gateRunTurns: 0,
     gateRunCharge: 0,
+    collapseCount: 0,
     breathStreak: 0,
     lastBreathDepthId: "",
     lastBreathStep: 0,
@@ -280,6 +284,7 @@ function normalizeRunState(data) {
     gateRunStatus: ["running", "won", "lost"].includes(src.gateRunStatus) ? src.gateRunStatus : base.gateRunStatus,
     gateRunTurns: Math.max(0, Number(src.gateRunTurns) || 0),
     gateRunCharge: clampNumber(src.gateRunCharge ?? base.gateRunCharge, 0, GATE_RUN_MAX_CHARGE),
+    collapseCount: clampNumber(src.collapseCount ?? base.collapseCount, 0, 99),
     breathStreak: Math.max(0, Number(src.breathStreak) || 0),
     lastBreathDepthId: typeof src.lastBreathDepthId === "string" ? src.lastBreathDepthId.slice(0, 80) : base.lastBreathDepthId,
     lastBreathStep: Math.max(0, Number(src.lastBreathStep) || 0),
@@ -359,6 +364,10 @@ function resetBreathStreak(state = getRunState()) {
   state.breathStreak = 0;
   state.lastBreathDepthId = "";
   state.lastBreathStep = 0;
+}
+
+function recordGateCollapse(state = getRunState()) {
+  state.collapseCount = clampNumber((Number(state.collapseCount) || 0) + 1, 0, 99);
 }
 
 function normalizeMoveType(type) {
@@ -1015,7 +1024,7 @@ function bgmStatusLine(text = "") {
   if (MusicFeedbackState.connected && arc) details.push(arc);
   if (MusicFeedbackState.connected && MusicFeedbackState.outputLevel > 0) details.push(`OUT ${Math.round(MusicFeedbackState.outputLevel * 100)}`);
   if (!MusicFeedbackState.connected && text) details.push(text);
-  if (!MusicFeedbackState.connected && !text) details.push(bgmStageLabel());
+  if (!MusicFeedbackState.connected && !text) details.push("別タブMusic → START.HZM");
   return `BGM: ${bgmPhaseLabel()}${details.length ? ` / ${details.join(" / ")}` : ""}`;
 }
 
@@ -1025,13 +1034,22 @@ function bgmCompactDetail(text = "") {
     return MusicFeedbackState.bpm ? `BPM ${MusicFeedbackState.bpm}` : "再生中";
   }
   if (MusicFeedbackState.connected) return musicArcLabel() || "接続済み";
-  if (musicBridgePhase === "pending") return "Musicを開いてSTART";
+  if (musicBridgePhase === "pending") return "MusicタブSTART";
+  if (musicBridgePhase === "blocked") return "リンクで開く";
+  if (musicBridgePhase === "armed" || musicBridgePhase === "IDLE") return "別タブSTART.HZM";
   return text || bgmStageLabel();
 }
 
 function bgmArcDetail() {
   if (!MusicFeedbackState.connected) return "";
   return musicArcLabel();
+}
+
+function bgmOpenLinkLabel() {
+  if (!bgmFollowEnabled) return "BGM 再開";
+  if (musicBridgePhase === "pending") return "Musicタブへ";
+  if (musicBridgePhase === "blocked") return "リンクでMusicを開く";
+  return "別タブでMusicを開く";
 }
 
 function bgmShouldCollapse() {
@@ -1228,7 +1246,7 @@ function setMusicBridgeStatus(text = "", phase = "") {
   if (detailEl) detailEl.textContent = bgmCompactDetail(text);
   if (arcEl) arcEl.textContent = bgmArcDetail();
   if (status) status.textContent = bgmStatusLine(text);
-  if (openLink) openLink.textContent = bgmFollowEnabled ? "MusicでSTART.HZM" : "BGM 再開";
+  if (openLink) openLink.textContent = bgmOpenLinkLabel();
 }
 
 function musicTargetOrigin(mode = "production") {
@@ -1338,7 +1356,7 @@ function openMusicBridge(mode = "production") {
   const musicWindow = window.open(url, targetName);
   if (!musicWindow) return false;
   musicBridgeWindows[mode] = musicWindow;
-  setMusicBridgeStatus("MusicでSTART.HZM", "pending");
+  setMusicBridgeStatus("MusicタブでSTART.HZM", "pending");
   window.setTimeout(() => postMusicPayload(mode, payload), 600);
   return true;
 }
@@ -1358,13 +1376,13 @@ function attemptMusicAutoStart(ev) {
     return;
   }
   const opened = openMusicBridge("production");
-  setMusicBridgeStatus(opened ? "MusicでSTART.HZM" : "BGM 再開", opened ? "pending" : "blocked");
+  setMusicBridgeStatus(opened ? "MusicタブでSTART.HZM" : "リンクでMusicを開く", opened ? "pending" : "blocked");
 }
 
 function installMusicAutoStart() {
   if (musicAutoStartInstalled) return;
   musicAutoStartInstalled = true;
-  setMusicBridgeStatus("初回操作後にMusicでSTART", "armed");
+  setMusicBridgeStatus("別タブMusic → START.HZM", "armed");
   window.addEventListener("pointerdown", attemptMusicAutoStart, { once: true, capture: true, passive: true });
   window.addEventListener("keydown", attemptMusicAutoStart, { once: true, capture: true });
   window.addEventListener("focus", () => {
@@ -1433,7 +1451,7 @@ function resumeBgmCompanion(mode = "production") {
     }
   }
   const opened = openMusicBridge(mode);
-  setMusicBridgeStatus(opened ? "MusicでSTART.HZM" : "BGM 再開", opened ? "pending" : "blocked");
+  setMusicBridgeStatus(opened ? "MusicタブでSTART.HZM" : "リンクでMusicを開く", opened ? "pending" : "blocked");
   return opened;
 }
 
@@ -1479,20 +1497,28 @@ function bindMusicControls() {
   const openLink = $("music-open-provider");
   if (openLink) {
     openLink.addEventListener("click", (ev) => {
-      ev.preventDefault();
       const opened = resumeBgmCompanion("production");
       musicAutoStartDone = musicAutoStartDone || opened;
-      if (!opened) setMusicStatus("開けません", "blocked");
+      if (opened) {
+        ev.preventDefault();
+      } else {
+        setMusicStatus("リンクでMusicを開く", "blocked");
+        if (openLink.href) window.location.assign(openLink.href);
+      }
     });
   }
 
   const localLink = $("music-open-local");
   if (localLink) {
     localLink.addEventListener("click", (ev) => {
-      ev.preventDefault();
       const opened = resumeBgmCompanion("local");
       musicAutoStartDone = musicAutoStartDone || opened;
-      if (!opened) setMusicStatus("開けません", "blocked");
+      if (opened) {
+        ev.preventDefault();
+      } else {
+        setMusicStatus("リンクでMusicを開く", "blocked");
+        if (localLink.href) window.location.assign(localLink.href);
+      }
     });
   }
 
@@ -1557,6 +1583,7 @@ function applyRunTransition(fromId, toId, moveKind = "choice", explicitType = ""
     targetId = depths[HUB_DEPTH] ? HUB_DEPTH : DEFAULT_START;
     state.gateRunStatus = "lost";
     state.gateRunOutcomeAt = Date.now();
+    recordGateCollapse(state);
     state.stability = 24;
     state.resonance = clampNumber(state.resonance - 6, 0, RESONANCE_MAX);
     state.gateRunCharge = clampNumber(Math.min(state.gateRunCharge, 72), 0, GATE_RUN_MAX_CHARGE);
@@ -1568,6 +1595,7 @@ function applyRunTransition(fromId, toId, moveKind = "choice", explicitType = ""
   }
 
   state.lastDepthId = targetId;
+  state.lastGateResult = notes.join(" / ");
   saveRunState();
   runLog = `${notes.join(" / ")}。`;
   return targetId;
@@ -1668,12 +1696,15 @@ function applyCoreReward(reward, depthId = currentDepthId) {
   if (applied?.events?.won) {
     notes.push("扉が開いた");
   } else if (applied?.events?.timeout) {
+    recordGateCollapse(state);
     notes.push("時間切れ。夜のハブへ戻った");
   } else if (applied?.events?.lost) {
+    recordGateCollapse(state);
     notes.push("立て直し中。夜のハブへ戻った");
   } else if (!applied) {
     targetDepthId = resolveGateRunOutcome(state, notes);
   }
+  state.lastGateResult = notes.join(" / ");
   saveRunState();
 
   runLog = `${notes.join(" / ")}。`;
@@ -1894,6 +1925,7 @@ function resolveGateRunOutcome(state, notes) {
   if (state.stability <= 0) {
     state.gateRunStatus = "lost";
     state.gateRunOutcomeAt = Date.now();
+    recordGateCollapse(state);
     state.stability = Math.max(24, state.stability);
     state.resonance = clampNumber(state.resonance - 8, 0, RESONANCE_MAX);
     state.gateRunCharge = clampNumber(Math.min(state.gateRunCharge, 72), 0, GATE_RUN_MAX_CHARGE);
@@ -1907,6 +1939,7 @@ function resolveGateRunOutcome(state, notes) {
   } else if (state.gateRunStatus === "running" && state.gateRunTurns >= GATE_RUN_TURN_LIMIT) {
     state.gateRunStatus = "lost";
     state.gateRunOutcomeAt = Date.now();
+    recordGateCollapse(state);
     state.stability = Math.max(24, state.stability);
     state.resonance = clampNumber(state.resonance - 8, 0, RESONANCE_MAX);
     state.gateRunCharge = clampNumber(Math.min(state.gateRunCharge, 72), 0, GATE_RUN_MAX_CHARGE);
@@ -1943,8 +1976,10 @@ function applyGateRunAction(actionId) {
     if (applied.events.won) {
       notes.push("扉が開いた");
     } else if (applied.events.timeout) {
+      recordGateCollapse(state);
       notes.push("時間切れ。夜のハブへ戻った");
     } else if (applied.events.lost) {
+      recordGateCollapse(state);
       notes.push("立て直し中。夜のハブへ戻った");
     }
     state.lastGateResult = notes.join(" / ");
@@ -2027,6 +2062,68 @@ function renderGateRunTrack(state) {
   `;
 }
 
+function gateRunActionTitle(actionId) {
+  const action = GATE_RUN_ACTIONS.find((item) => item.id === actionId);
+  return action?.title || MOVE_TYPE_LABELS[actionId] || "道を選んだ";
+}
+
+function renderGateOutcomeMarkup(state) {
+  const result = state.lastGateResult || "";
+  let tone = "";
+  let badge = "";
+  let title = "";
+  let copy = "";
+
+  if (state.gateRunStatus === "won") {
+    tone = "win";
+    badge = "OPEN";
+    title = "扉が開いた";
+    copy = currentDepthId === OMEGA_DEPTH
+      ? "そのままA_rebornへ進めば、一周の終わりが残ります。"
+      : "Ωへ進めます。HUBへ戻っても解放は保持されます。";
+  } else if (state.gateRunStatus === "lost") {
+    const isTimeout = result.includes("時間切れ");
+    tone = isTimeout ? "timeout" : "loss";
+    badge = isTimeout ? "TIME" : "RECOVER";
+    title = isTimeout ? "時間切れ" : "立て直し中";
+    copy = isTimeout
+      ? "HUBで落ち着きを戻して再挑戦できます。扉の開きは少し残ります。"
+      : "崩落は終わりではありません。HUBで整えて、もう一度扉を押せます。";
+  }
+
+  if (!tone) return "";
+  return `
+    <div class="hz-gate-outcome hz-gate-outcome--${tone}" aria-live="polite">
+      <span class="hz-gate-outcome-badge">${escapeHtml(badge)}</span>
+      <div class="hz-gate-outcome-copy">
+        <b>${escapeHtml(title)}</b>
+        <span>${escapeHtml(copy)}</span>
+      </div>
+    </div>
+  `;
+}
+
+function renderLoopSummaryMarkup(state) {
+  const gateTurns = Math.max(0, Number(state.gateRunTurns) || 0);
+  const routeSteps = Math.max(0, Number(state.steps) || 0);
+  const breaths = Math.max(0, Number(state.entries) || 0);
+  const collapses = Math.max(0, Number(state.collapseCount) || 0);
+  const mainAction = gateRunActionTitle(state.lastGateAction || state.lastMoveType);
+  const collapseLabel = collapses > 0 ? `${collapses}回` : "なし";
+  const breathLabel = breaths > 0 ? `${breaths}回` : "なし";
+
+  return `
+    <div class="hz-loop-summary" aria-label="Run result">
+      <span><b>${gateTurns}手</b><small>Gate Run</small></span>
+      <span><b>${routeSteps}歩</b><small>道</small></span>
+      <span><b>${escapeHtml(collapseLabel)}</b><small>崩落</small></span>
+      <span><b>${escapeHtml(breathLabel)}</b><small>休息</small></span>
+      <span><b>${escapeHtml(mainAction)}</b><small>主な行動</small></span>
+      <span><b>到達</b><small>Ω</small></span>
+    </div>
+  `;
+}
+
 function renderGateRunPanelMarkup() {
   const state = getRunState();
   const syncReadiness = gateRunSyncReadiness(state);
@@ -2041,8 +2138,10 @@ function renderGateRunPanelMarkup() {
   const statusLine = `${status}<span>${escapeHtml(turnMeta)}</span><span>扉 ${Math.round(state.gateRunCharge)}%</span>`;
   const mission = gateRunMissionText(state);
   const readiness = gateRunReadinessLabel(state);
+  const outcomeNotice = renderGateOutcomeMarkup(state);
   const introOnly = currentDepthId === DEFAULT_START && state.gateRunStatus === "running";
   if (introOnly) {
+    const startTarget = depths[HUB_DEPTH] ? HUB_DEPTH : "";
     return `
       <section class="hz-gate-run-panel hz-gate-run-panel--intro" aria-label="Gate Run">
         <div class="hz-gate-run-head">
@@ -2052,6 +2151,12 @@ function renderGateRunPanelMarkup() {
         <div class="hz-gate-run-intro">
           <span class="hz-gate-run-start-pill">HUBで操作開始</span>
           <p>入口では夜のハブへ入るのが主導線です。HUBから扉100%を目指します。</p>
+          <div class="hz-gate-run-intro-actions">
+            <button class="hz-start-cta" type="button" data-start-hub="${escapeHtml(startTarget)}"${startTarget ? "" : " disabled"}>
+              夜のハブへ入る
+            </button>
+            <span class="hz-start-note">そこからGate Runを始めます</span>
+          </div>
         </div>
       </section>
     `;
@@ -2090,8 +2195,9 @@ function renderGateRunPanelMarkup() {
         <span class="hz-gate-complete-badge">一周完了</span>
         <div class="hz-gate-complete-copy">
           <b>Ω -> A_reborn 到達</b>
-          <span>夜のハブから次の周回へ戻れます。</span>
+          <span>短い記録を残して、夜のハブから次の周回へ戻れます。</span>
         </div>
+        ${renderLoopSummaryMarkup(state)}
         <button class="hz-gate-complete-cta" type="button" data-complete-hub="true">
           <span>夜のハブへ戻る</span>
           <b>次の周回へ</b>
@@ -2107,7 +2213,7 @@ function renderGateRunPanelMarkup() {
           <span class="hz-gate-secondary-main">HUBへ戻る</span>
           <span class="hz-gate-secondary-badge">${escapeHtml(retreatAdvice.badge)}</span>
         </button>
-        <span>扉は開いています。ここから一周の到達点へ進めます。</span>
+        <span>${currentDepthId === HUB_DEPTH ? "扉は開いています。次はもっと深い輪や別ルートを試せます。" : "扉は開いています。ここから一周の到達点へ進めます。"}</span>
       </div>
     `
     : "";
@@ -2123,6 +2229,7 @@ function renderGateRunPanelMarkup() {
         <span><b>次</b> ${escapeHtml(readiness)} / ${escapeHtml(retreatAdvice.badge)}</span>
       </div>
       <div class="hz-gate-run-hint">${escapeHtml(mission)}</div>
+      ${outcomeNotice}
       ${renderGateRunTrack(state)}
       ${loopComplete}
       ${omegaUnlock}
@@ -2165,6 +2272,16 @@ function enterOmegaDepth() {
 }
 
 function bindGateRunControls() {
+  const startHubBtn = document.querySelector("[data-start-hub]");
+  if (startHubBtn) {
+    startHubBtn.addEventListener("click", () => {
+      const targetDepthId = startHubBtn.getAttribute("data-start-hub");
+      if (!targetDepthId || !depths[targetDepthId] || navigationLocked) return;
+      clearPause();
+      renderDepth(targetDepthId, { moveKind: "choice", moveType: "retreat" });
+    });
+  }
+
   const completeHubBtn = document.querySelector("[data-complete-hub]");
   if (completeHubBtn) {
     completeHubBtn.addEventListener("click", returnCompletedLoopToHub);
@@ -2257,10 +2374,10 @@ function renderBgmCompanionMarkup(profile, launchUrl, localLaunchUrl) {
   const stopButton = bgmFollowEnabled
     ? `<button id="bgm-stop-provider" class="hz-bgm-stop" type="button">止める</button>`
     : "";
-  const openText = bgmFollowEnabled ? "MusicでSTART.HZM" : "BGM 再開";
+  const openText = bgmOpenLinkLabel();
 
   return `
-    <div class="hz-bgm-companion" data-bgm-phase="${escapeHtml(musicBridgePhase)}" data-bgm-collapsed="${bgmShouldCollapse() ? "true" : "false"}" data-bgm-follow="${bgmFollowEnabled ? "on" : "off"}" data-music-state="${escapeHtml(cleanDataToken(MusicFeedbackState.connectionState || "idle", "idle"))}" data-music-autofollow="${MusicFeedbackState.autoFollow ? "on" : "off"}" aria-label="BGM" title="ブラウザの自動再生制限は迂回せず、操作後にMusicへ同期します。">
+    <div class="hz-bgm-companion" data-bgm-phase="${escapeHtml(musicBridgePhase)}" data-bgm-collapsed="${bgmShouldCollapse() ? "true" : "false"}" data-bgm-follow="${bgmFollowEnabled ? "on" : "off"}" data-music-state="${escapeHtml(cleanDataToken(MusicFeedbackState.connectionState || "idle", "idle"))}" data-music-autofollow="${MusicFeedbackState.autoFollow ? "on" : "off"}" aria-label="BGM: Musicを別タブで開き、Music側のSTART.HZMで鳴らします" title="ブラウザの自動再生制限は迂回せず、別タブのMusicでSTART.HZM後に同期します。">
       <div class="hz-bgm-row">
         <button id="bgm-toggle-provider" class="hz-bgm-chip" type="button" aria-label="BGMを起動または表示">
           <span class="hz-bgm-label">BGM</span>
@@ -2270,7 +2387,7 @@ function renderBgmCompanionMarkup(profile, launchUrl, localLaunchUrl) {
         </button>
         ${stopButton}
       </div>
-      <div id="bgm-status" class="hz-bgm-status">${escapeHtml(bgmStatusLine("初回操作後にMusicでSTART"))}</div>
+      <div id="bgm-status" class="hz-bgm-status">${escapeHtml(bgmStatusLine("別タブMusic → START.HZM"))}</div>
       <div class="hz-bgm-unlock">
         <a id="music-open-provider" class="hz-bgm-link" href="${escapeHtml(launchUrl)}" target="hazama-music">${escapeHtml(openText)}</a>
       </div>
@@ -2312,6 +2429,7 @@ function renderRogueMapMarkup(state, gi) {
   const mapGatePercent = Math.max(0, Math.min(100, Math.round(gi.gateCharge)));
   const tiles = Array.from({ length: 29 }, (_, rank) => {
     const current = rank === currentRank;
+    const startCurrent = current && currentDepthId === DEFAULT_START;
     const seen = rank <= bestRank || current || (rank === 27 && gateWon);
     const locked = rank >= 27 && !gateWon && !seen;
     const fog = !seen && !locked;
@@ -2323,10 +2441,11 @@ function renderRogueMapMarkup(state, gi) {
       fog ? "is-fog" : "",
       rank === 0 ? "is-hub" : "",
       rank === 27 ? "is-omega" : "",
-      rank === 28 ? "is-reborn" : ""
+      rank === 28 ? "is-reborn" : "",
+      startCurrent ? "is-start" : ""
     ].filter(Boolean).join(" ");
-    const label = rogueTileLabel(rank);
-    const glyph = locked ? "X" : fog ? "." : rogueTileGlyph(rank, currentRank);
+    const label = startCurrent ? "START" : rogueTileLabel(rank);
+    const glyph = locked ? "X" : fog ? "." : startCurrent ? "@" : rogueTileGlyph(rank, currentRank);
     return `
       <span class="${classes}" role="listitem" title="${escapeHtml(label)}" aria-label="${escapeHtml(`${label}${current ? " current" : locked ? " locked" : fog ? " unknown" : " seen"}`)}">
         <b>${escapeHtml(glyph)}</b>
@@ -2339,7 +2458,7 @@ function renderRogueMapMarkup(state, gi) {
     <section class="hz-rogue-map-panel" aria-label="Depth map">
       <div class="hz-rogue-section-head">
         <span>DEPTH MAP</span>
-        <b>${escapeHtml(rogueTileLabel(currentRank))} / BEST ${escapeHtml(rogueTileLabel(bestRank))}</b>
+        <b>${escapeHtml(currentDepthId === DEFAULT_START ? "START" : rogueTileLabel(currentRank))} / BEST ${escapeHtml(rogueTileLabel(bestRank))}</b>
       </div>
       <div class="hz-rogue-map" style="--hz-map-gate: ${mapGatePercent}%" role="list">
         ${tiles}
@@ -2379,10 +2498,11 @@ function renderRoguelikeHudMarkup(state) {
   const remainingTurns = state.gateRunStatus === "running"
     ? Math.max(0, GATE_RUN_TURN_LIMIT - state.gateRunTurns)
     : state.gateRunStatus === "won" ? "OPEN" : "RETRY";
+  const floorLabel = currentDepthId === DEFAULT_START ? "START" : depthRankLabel(depthRank(currentDepthId));
   return `
     <section class="hz-rogue-hud" aria-label="Roguelike run HUD">
       <div class="hz-rogue-topline">
-        <span><b>FLOOR</b>${escapeHtml(depthRankLabel(depthRank(currentDepthId)))}</span>
+        <span><b>FLOOR</b>${escapeHtml(floorLabel)}</span>
         <span><b>TURN</b>${escapeHtml(String(remainingTurns))}</span>
         <span><b>CALM</b>${Math.round(state.stability)}</span>
         <span><b>SYNC</b>${Math.round(state.resonance)}</span>
@@ -2406,11 +2526,21 @@ function renderRunPanelMarkup() {
         <span>RUN</span>
         <span>step ${state.steps}</span>
       </div>
-      ${renderRoguelikeHudMarkup(state)}
       ${renderGateRunPanelMarkup()}
+      ${renderRoguelikeHudMarkup(state)}
       ${renderBgmCompanionMarkup(profile, launchUrl, localLaunchUrl)}
     </aside>
   `;
+}
+
+function syncViewportAfterRender(previousDepthId, nextDepthId, opts = {}) {
+  if (opts.preserveScroll === true) return;
+  if (!previousDepthId || previousDepthId === nextDepthId) return;
+  const target = $("run-panel-host") || $("story");
+  if (!target || typeof target.scrollIntoView !== "function") return;
+  window.requestAnimationFrame(() => {
+    target.scrollIntoView({ block: "start", inline: "nearest", behavior: "auto" });
+  });
 }
 
 function refreshRunPanel() {
@@ -2555,7 +2685,7 @@ function renderCoreLoop(depth) {
 
     const text = String(input.value || "").trim().slice(0, CORE_MAX_INPUT);
     if (!text) {
-      pause.textContent = "一言だけ置くと、落ち着きと響きが戻ります。";
+      pause.textContent = "休む時は短く一言だけ置いてください。進行は必須ではありません。";
       setStatus("入力待ち");
       return;
     }
@@ -2566,7 +2696,7 @@ function renderCoreLoop(depth) {
     const waitMs = pauseLengthMs(seed, currentDepthId, text);
 
     response.textContent = shifted;
-    pause.textContent = "ひと息置いています… 呼吸を戻しています。";
+    pause.textContent = "休んでいます… 落ち着きを戻しています。";
     nextBtn.hidden = true;
     nextBtn.disabled = true;
     input.value = "";
@@ -2696,7 +2826,31 @@ function renderOptions(depth, optionsEl) {
   }
 }
 
+function renderBreathRestMarkup(question) {
+  return `
+    <div class="hz-rest-panel hz-core-loop" aria-label="Breath Gate optional rest">
+      <div class="hz-rest-head">
+        <div>
+          <span class="hz-rest-kicker">Breath Gate</span>
+          <b>休む / 整える</b>
+        </div>
+        <span class="hz-rest-badge">任意休息</span>
+      </div>
+      <p class="hz-rest-question">${escapeHtml(question)}</p>
+      <p class="hz-core-help">主導線は「道を選ぶ」とGate Runです。ここは落ち着きと響きを少し戻す補助で、連続使用は効きが落ちます。</p>
+      <form id="core-form" class="hz-core-form">
+        <input id="core-input" type="text" maxlength="${CORE_MAX_INPUT}" autocomplete="off" placeholder="短く一言だけ" />
+        <button class="hz-btn" type="submit">休む</button>
+      </form>
+      <p id="core-response" class="hz-core-response" aria-live="polite"></p>
+      <p id="core-pause" class="hz-core-pause" aria-live="polite"></p>
+      <button id="core-next" class="hz-btn" type="button" hidden disabled>このまま先へ進む</button>
+    </div>
+  `;
+}
+
 function renderDepth(depthId, opts = {}) {
+  const previousDepthId = currentDepthId;
   let targetDepthId = depthId;
   if (targetDepthId === OMEGA_DEPTH && !canEnterOmega()) {
     runLog = `Ω LOCK: Gate Runを${GATE_RUN_MAX_CHARGE}%まで開くと入れます。`;
@@ -2752,28 +2906,18 @@ function renderDepth(depthId, opts = {}) {
     <div class="hz-block">
       ${paragraphs.map((p) => `<p>${escapeHtml(p)}</p>`).join("")}
     </div>
-    <div class="hz-block hz-core-loop">
-      <div class="hz-depth-theme">Breath Gate / ひと息置く</div>
-      <p>${escapeHtml(question)}</p>
-      <p class="hz-core-help">限定回復です。連続使用は効きが落ち、扉の開きが少し戻ります。</p>
-      <form id="core-form" class="hz-core-form">
-        <input id="core-input" type="text" maxlength="${CORE_MAX_INPUT}" autocomplete="off" placeholder="短く一言だけ" />
-        <button class="hz-btn" type="submit">ひと息置く</button>
-      </form>
-      <p id="core-response" class="hz-core-response" aria-live="polite"></p>
-      <p id="core-pause" class="hz-core-pause" aria-live="polite"></p>
-      <button id="core-next" class="hz-btn" type="button" hidden disabled>このまま先へ進む</button>
-    </div>
   `;
 
   optionsEl.innerHTML = "";
   renderOptions(depth, optionsEl);
   renderControls(optionsEl);
+  optionsEl.insertAdjacentHTML("beforeend", renderBreathRestMarkup(question));
   renderCoreLoop(depth);
   bindGateRunControls();
   bindMusicControls();
   syncMusicBridge();
   installMusicAutoStart();
+  syncViewportAfterRender(previousDepthId, targetDepthId, opts);
 
   setStatus(`OK: ${targetDepthId}`);
 }

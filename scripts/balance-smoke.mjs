@@ -208,7 +208,9 @@ if (!balanced?.unlocked || balanced.actions < 8 || balanced.actions > 12) {
 }
 if (!lateSync?.unlocked || lateSync.actions < 8) failures.push("late-sync did not require a real setup window");
 if (!retreatRetry?.collapsed || retreatRetry.depth !== "HUB_NIGHT") failures.push("retreat-retry did not demonstrate soft recovery through HUB");
-if (aggressive?.collapsed && aggressive.hardDeadEnd) failures.push("aggressive collapse became a hard dead end");
+if (!aggressive?.collapsed || aggressive.hardDeadEnd) {
+  failures.push("aggressive did not produce a soft collapse");
+}
 
 if (!(previewByName.dive.gate > previewByName.observe.gate && previewByName.dive.stability < 0)) {
   failures.push("dive no longer reads as the risky main gate-charge action");
