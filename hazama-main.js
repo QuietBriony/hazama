@@ -1,4 +1,4 @@
-// Hazama main.js v2.33
+// Hazama main.js v2.34
 // Minimal, robust loader + renderer for GitHub Pages / Codespaces.
 // v2.3 adds a lightweight deterministic game layer around depth pressure.
 // v2.5 animates the descent key visual and mandala goal gate.
@@ -30,8 +30,9 @@
 // v2.31 lifts the first action and Gate Run controls above secondary telemetry.
 // v2.32 frames Breath Gate as optional rest and strengthens run outcomes.
 // v2.33 makes the Music/BGM handoff explicit: Hazama opens Music in another tab, then START.HZM unlocks audio there.
+// v2.34 adds the Music-stack-style PWA shell, install prompt, and service-worker update path.
 
-const APP_VERSION = "v2.33";
+const APP_VERSION = "v2.34";
 const GateRunModel = globalThis.HazamaGateRun || {};
 const GATE_CONSTANTS = GateRunModel.constants || {};
 
@@ -111,6 +112,7 @@ let musicAutoStartDone = false;
 let musicBridgePhase = "armed";
 let bgmFollowEnabled = true;
 let bgmExpanded = false;
+let deferredPwaInstallPrompt = null;
 const MUSIC_FEEDBACK_ALLOWED_ORIGINS = new Set([
   "https://quietbriony.github.io",
   "http://127.0.0.1:8095",
@@ -2922,6 +2924,108 @@ function renderDepth(depthId, opts = {}) {
   setStatus(`OK: ${targetDepthId}`);
 }
 
+function hidePwaInstallButton() {
+  const btn = $("pwa-install");
+  if (btn) btn.hidden = true;
+}
+
+function showPwaInstallButton() {
+  const btn = $("pwa-install");
+  if (!btn) return;
+  btn.hidden = false;
+}
+
+function setupPwaInstallPrompt() {
+  const btn = $("pwa-install");
+  if (btn) {
+    btn.addEventListener("click", async () => {
+      if (!deferredPwaInstallPrompt) {
+        hidePwaInstallButton();
+        return;
+      }
+      deferredPwaInstallPrompt.prompt();
+      try {
+        await deferredPwaInstallPrompt.userChoice;
+      } catch (e) {
+        console.warn("[Hazama] install prompt failed:", e);
+      }
+      deferredPwaInstallPrompt = null;
+      hidePwaInstallButton();
+    });
+  }
+
+  window.addEventListener("beforeinstallprompt", (ev) => {
+    ev.preventDefault();
+    deferredPwaInstallPrompt = ev;
+    showPwaInstallButton();
+  });
+
+  window.addEventListener("appinstalled", () => {
+    deferredPwaInstallPrompt = null;
+    hidePwaInstallButton();
+  });
+}
+
+function showPwaUpdateBanner(registration) {
+  let banner = $("pwa-update");
+  if (!banner) {
+    banner = document.createElement("div");
+    banner.id = "pwa-update";
+    banner.className = "hz-pwa-update";
+    banner.setAttribute("role", "status");
+    banner.innerHTML = `
+      <span>新バージョン利用可能</span>
+      <button id="pwa-update-reload" type="button">更新</button>
+      <button id="pwa-update-dismiss" type="button" aria-label="閉じる">×</button>
+    `;
+    document.body.appendChild(banner);
+  }
+
+  banner.hidden = false;
+
+  const reloadBtn = $("pwa-update-reload");
+  const dismissBtn = $("pwa-update-dismiss");
+  if (reloadBtn) {
+    reloadBtn.onclick = () => {
+      if (registration?.waiting) {
+        registration.waiting.postMessage({ type: "SKIP_WAITING" });
+      }
+      window.setTimeout(() => window.location.reload(), 180);
+    };
+  }
+  if (dismissBtn) {
+    dismissBtn.onclick = () => {
+      banner.hidden = true;
+    };
+  }
+}
+
+function setupServiceWorker() {
+  if (!("serviceWorker" in navigator)) return;
+
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("sw.js").then((registration) => {
+      if (registration.waiting) showPwaUpdateBanner(registration);
+
+      registration.addEventListener("updatefound", () => {
+        const worker = registration.installing;
+        if (!worker) return;
+        worker.addEventListener("statechange", () => {
+          if (worker.state === "installed" && navigator.serviceWorker.controller) {
+            showPwaUpdateBanner(registration);
+          }
+        });
+      });
+
+      if (typeof registration.update === "function") {
+        registration.update().catch(() => {});
+      }
+    }).catch((err) => {
+      console.warn("[Hazama] serviceWorker.register(\"sw.js\") failed:", err);
+    });
+  });
+}
+
 async function loadDepths() {
   setStatus("深度データを読み込み中…");
   const url = buildDepthsURL();
@@ -2978,6 +3082,8 @@ document.addEventListener("DOMContentLoaded", () => {
   if (v) v.textContent = APP_VERSION;
   setupMusicFeedbackReceiver();
   applyMusicFeedbackVisual();
+  setupPwaInstallPrompt();
+  setupServiceWorker();
 
   const resetBtn = $("reset-progress");
   if (resetBtn) {

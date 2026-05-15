@@ -2,7 +2,7 @@
 
 ## Current playable loop summary
 
-Hazama v2.33 is a browser-based static first playable slice that loads `hazama-depths.json` from `index.html` / `hazama-index.html` and renders a text-first depth navigator with a simplified roguelike-style run HUD. The current loop starts at `A_start`, lets the player enter `HUB_NIGHT` or move into the depth chain, and keeps persistent local run state for progress, seed, stability, resonance, marks, best depth, Gate Run progress, Breath Gate streak counters, and a small collapse count for run-result feedback.
+Hazama v2.34 is a browser-based static first playable slice that loads `hazama-depths.json` from `index.html` / `hazama-index.html` and renders a text-first depth navigator with a simplified roguelike-style run HUD. The current loop starts at `A_start`, lets the player enter `HUB_NIGHT` or move into the depth chain, and keeps persistent local run state for progress, seed, stability, resonance, marks, best depth, Gate Run progress, Breath Gate streak counters, and a small collapse count for run-result feedback.
 
 The playable systems already present are:
 
@@ -30,6 +30,7 @@ The playable systems already present are:
 - Simplified default HUD surface: duplicate gauges, resource explanation chips, and full Gate Intelligence are no longer constantly shown above the playable controls.
 - First action polish that lifts the initial `夜のハブへ入る` CTA and Gate Run action buttons above secondary map/log telemetry.
 - Growth-route polish that keeps Gate Run and route choices primary while Breath Gate reads as optional rest.
+- PWA shell modeled after the music-stack `Music` repo family: standalone manifest, local icons, service-worker precache/offline fallback, install prompt, and update banner.
 
 The current app is already close to a first playable. The main remaining gap is evidence: keep using real browser behavior, localStorage state, and smoke scripts to catch cases where the shared model passes but the DOM flow regresses.
 
@@ -68,7 +69,7 @@ Breath Gate means the existing short text rest mechanic, now framed as `休む /
 The top-level goal is not to add more systems. The top-level goal is to make the existing first playable readable enough that a new player can complete one intended loop without outside explanation.
 
 - North Star: a first-time player can understand the one-loop intent without audio or external docs, and can reach `A_reborn` in roughly 5-8 minutes.
-- Next merge goal: verify the v2.33 handoff copy plus v2.32 growth-route polish in a real browser pass, especially the BGM separate-tab read, Breath Gate hierarchy, outcome panels, and the `A_reborn` run record.
+- Next merge goal: verify the v2.34 PWA shell plus v2.33 handoff copy in a real browser pass, especially installability, offline reload, BGM separate-tab read, Breath Gate hierarchy, outcome panels, and the `A_reborn` run record.
 - Next playtest goal: keep verifying Gate Run as a small decision game built around attacking, stabilizing, and syncing rather than as five equivalent buttons.
 - v2.21 goal: keep Hazama first playable while making Gate Run and Breath Gate balance resistant to simple recovery/sync spam.
 
@@ -116,6 +117,7 @@ Done means the player can answer these questions from the screen itself:
 - Reduced-motion mode avoids required animation cues.
 - Music unavailable or unopened does not block Hazama progression.
 - BGM stop/follow controls do not mutate Hazama story progress.
+- PWA install/offline behavior does not block JSON loading, reset, or the first playable loop.
 
 ## First playable test scenarios
 
@@ -137,6 +139,7 @@ Done means the player can answer these questions from the screen itself:
 - Preserves existing story text except tiny UI-facing copy when absolutely necessary.
 - Keeps Music/BGM as background companion only.
 - Does not alter public routes, storage keys, JSON schema, or Music payload shape unless the PR explicitly scopes and documents that change.
+- Keeps PWA cache cleanup scoped to Hazama cache names so same-origin Music apps are not evicted.
 - Keeps raw player input out of persistent state and Music payloads.
 - Verifies `index.html` and `hazama-index.html` stay aligned.
 - Runs `bash scripts/startup-smoke.sh 8765` before merge.
@@ -161,5 +164,6 @@ Done means the player can answer these questions from the screen itself:
    - v2.30 shifts visual polish toward gameplay feedback and removes duplicated default UI surfaces.
    - v2.32 frames Breath Gate as optional rest, adds outcome feedback, and records a compact loop result at `A_reborn`.
    - v2.33 clarifies that Hazama opens Music separately and audio starts after `START.HZM` in the Music tab.
+   - v2.34 adds a standalone PWA manifest, icons, service worker, install prompt, and update banner.
    - Continue fixing bugs found from console output, mobile/touch play, localStorage edge cases, static asset loading, and smoke checks.
    - Acceptance: startup smoke passes, the first playable loop completes in-browser, Music absence is harmless, and only intended files change.

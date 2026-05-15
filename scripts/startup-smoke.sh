@@ -20,11 +20,16 @@ curl -fsS "$ROOT_URL/hazama-gate-run.js" >/tmp/hz_gate_run.js
 curl -fsS "$ROOT_URL/hazama-style.css" >/tmp/hz_style.css
 curl -fsS "$ROOT_URL/hazama-index.html" >/tmp/hz_alt.html
 curl -fsS "$ROOT_URL/hazama-depths.json" >/tmp/hz_depths.json
+curl -fsS "$ROOT_URL/manifest.webmanifest" >/tmp/hz_manifest.webmanifest
+curl -fsS "$ROOT_URL/sw.js" >/tmp/hz_sw.js
 curl -fsS "$ROOT_URL/scripts/balance-smoke.mjs" >/tmp/hz_balance.mjs
 curl -fsS "$ROOT_URL/scripts/first-playable-smoke.mjs" >/tmp/hz_first_playable.mjs
 curl -fsS "$ROOT_URL/scripts/browser-first-playable-smoke.mjs" >/tmp/hz_browser_first_playable.mjs
 curl -fsS "$ROOT_URL/assets/hazama-descent-key.webp" >/tmp/hz_descent.webp
 curl -fsS "$ROOT_URL/assets/hazama-goal-mandala.webp" >/tmp/hz_goal.webp
+curl -fsS "$ROOT_URL/icons/icon-192.png" >/tmp/hz_icon_192.png
+curl -fsS "$ROOT_URL/icons/icon-512.png" >/tmp/hz_icon_512.png
+curl -fsS "$ROOT_URL/icons/icon-512-maskable.png" >/tmp/hz_icon_maskable.png
 
 python3 - <<'PY'
 import json
@@ -36,24 +41,39 @@ js = Path('/tmp/hz_main.js').read_text(encoding='utf-8')
 gate = Path('/tmp/hz_gate_run.js').read_text(encoding='utf-8')
 css = Path('/tmp/hz_style.css').read_text(encoding='utf-8')
 depths = json.loads(Path('/tmp/hz_depths.json').read_text(encoding='utf-8'))
+manifest = json.loads(Path('/tmp/hz_manifest.webmanifest').read_text(encoding='utf-8'))
+sw = Path('/tmp/hz_sw.js').read_text(encoding='utf-8')
 balance = Path('/tmp/hz_balance.mjs').read_text(encoding='utf-8')
 first_playable = Path('/tmp/hz_first_playable.mjs').read_text(encoding='utf-8')
 browser_first_playable = Path('/tmp/hz_browser_first_playable.mjs').read_text(encoding='utf-8')
 
 for html_name, html in [('index.html', root), ('hazama-index.html', alt)]:
     for asset in [
-        'hazama-style.css?v=2.33',
-        'hazama-seed.js?v=2.33',
-        'hazama-state.js?v=2.33',
-        'hazama-gate-run.js?v=2.33',
-        'hazama-main.js?v=2.33',
+        'hazama-style.css?v=2.34',
+        'hazama-seed.js?v=2.34',
+        'hazama-state.js?v=2.34',
+        'hazama-gate-run.js?v=2.34',
+        'hazama-main.js?v=2.34',
     ]:
         assert asset in html, f'{html_name} が最新の {asset} を参照していません'
+    for pwa_asset in [
+        'rel="manifest" href="manifest.webmanifest"',
+        'rel="apple-touch-icon" href="icons/apple-touch-icon.png"',
+        'name="theme-color" content="#070a12"',
+        'id="pwa-install"',
+    ]:
+        assert pwa_asset in html, f'{html_name} に PWA asset {pwa_asset} が見つかりません'
 assert 'assets/hazama-descent-key.webp' in root, 'index.html が軽量探索者キービジュアルを参照していません'
 assert 'assets/hazama-goal-mandala.webp' in root, 'index.html が軽量曼荼羅ゲートを参照していません'
-assert 'Hazama main.js v2.33' in js, 'hazama-main.js バージョンが期待値ではありません'
+assert 'Hazama main.js v2.34' in js, 'hazama-main.js バージョンが期待値ではありません'
+assert manifest['name'] == 'Hazama' and manifest['start_url'] == 'index.html' and manifest['display'] == 'standalone', 'PWA manifest の基本設定が不正です'
+assert any(icon.get('sizes') == '192x192' for icon in manifest['icons']), 'PWA manifest に192px iconがありません'
+assert any(icon.get('sizes') == '512x512' and icon.get('purpose') == 'maskable' for icon in manifest['icons']), 'PWA manifest にmaskable 512px iconがありません'
+assert 'hazama-pwa-v2.34' in sw and 'PRECACHE_URLS' in sw and 'hazama-depths.json' in sw and 'CACHE_PREFIX' in sw, 'service worker のPWA cache設定が見つかりません'
+assert 'serviceWorker.register("sw.js")' in js and 'beforeinstallprompt' in js and '新バージョン利用可能' in js, 'hazama-main.js のPWA登録/更新UIが見つかりません'
 assert 'Hazama Gate Run model v1' in gate and 'applyGateAction' in gate and 'applyBreathReward' in gate, 'hazama-gate-run.js の共有モデルが見つかりません'
 assert 'position: fixed' in css and '100vh' in css and 'mask-image' in css, '全画面曼荼羅背景のCSSフックが見つかりません'
+assert 'hz-pwa-update' in css and 'hz-pwa-install' in css, 'PWA install/update CSS が見つかりません'
 assert 'hz-rogue-hud' in js and 'DEPTH MAP' in js and 'RUN LOG' in js and 'role="listitem"' in js, 'v2.30 roguelike HUD markup が見つかりません'
 assert 'hz-rogue-hud' in css and 'hz-rogue-map' in css and 'hz-map-tile.is-current' in css and 'hz-rogue-topline' in css, 'v2.30 roguelike HUD CSS が見つかりません'
 assert 'hzRunStatus' in js and 'hzTacticalSweep' in css and 'hz-camera-zoom' in js and 'hz-scene-speed' in js, 'v2.30 visual gameplay hooks が見つかりません'

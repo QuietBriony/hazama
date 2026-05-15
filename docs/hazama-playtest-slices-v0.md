@@ -2,7 +2,7 @@
 
 ## Current Goal
 
-Make the v2.33 first playable readable as a small roguelike decision loop:
+Make the v2.34 first playable readable as a small roguelike decision loop:
 
 `A_start -> HUB_NIGHT -> Gate Run -> Ω unlock -> Ω -> A_reborn`
 
@@ -24,6 +24,7 @@ Current master already has:
 - Gate Run now shows explicit `扉が開いた`, `立て直し中`, and `時間切れ` outcome panels
 - `A_reborn` completion shows a short run record for turns, route steps, rest count, collapse count, main action, and Ω arrival
 - BGM now reads as `別タブMusic → START.HZM`, so the audio handoff is clear without making Music required
+- PWA manifest, icons, service worker, install prompt, and update banner are now present without changing the main loop
 - Balance policies in `scripts/balance-smoke.mjs`
 - Static route skeleton check in `scripts/first-playable-smoke.mjs`
 - GitHub repo scout notes in `docs/research/github-game-repo-scout-v0.md`
@@ -116,6 +117,22 @@ Pass signal:
 
 - Player can complete the loop with audio unavailable.
 
+## Slice 6: PWA Boundary
+
+Goal: install/offline support feels like a wrapper, not a new game system.
+
+Check:
+
+- Browser sees `manifest.webmanifest`, app icons, and `sw.js`.
+- Reload after first visit still reaches `A_start` or saved progress when offline-capable cache is present.
+- `アプリ化` appears only when the browser exposes an install prompt.
+- `新バージョン利用可能` update banner is secondary and does not cover core controls on mobile.
+- Service worker cache names are scoped to Hazama and do not evict Music-stack caches on the same origin.
+
+Pass signal:
+
+- Player can install or reload offline without losing the first playable route.
+
 ## Current Automated Coverage
 
 - `node scripts/balance-smoke.mjs`
@@ -125,7 +142,7 @@ Pass signal:
 - `node scripts/browser-first-playable-smoke.mjs`
   - Covers the browser DOM loop when optional Playwright is available; skips without adding dependencies when it is not.
 - `bash scripts/startup-smoke.sh 8765`
-  - Covers static serving, asset presence, versioned script loading, model/script presence, and key UI strings.
+  - Covers static serving, asset presence, versioned script loading, PWA manifest/service worker/icons, model/script presence, and key UI strings.
 
 ## Latest Browser Smoke Notes
 
@@ -150,6 +167,7 @@ Checked on a narrow mobile viewport with local static serving:
 - v2.32 growth-route pass makes Breath Gate optional rest, adds Gate Run outcome feedback, and gives `A_reborn` a compact run record.
 - v2.32 in-app browser check covered fresh reset, `夜のハブへ入る`, Gate Run win, `Ω -> A_reborn`, compact run record, collapse/retry feedback, and BGM unopened with no console errors.
 - v2.33 BGM handoff pass clarifies `別タブMusic → START.HZM` and keeps the companion secondary to the main loop.
+- v2.34 PWA pass adds install/offline shell behavior while keeping route progress and Music handoff unchanged.
 
 ## Next Manual Pass
 

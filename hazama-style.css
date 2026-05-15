@@ -2158,6 +2158,49 @@ body {
   color: #f8fafc;
 }
 
+.hz-pwa-install {
+  border-color: rgba(125, 211, 252, 0.42);
+  color: #bfdbfe;
+}
+
+.hz-pwa-update {
+  position: fixed;
+  right: 1rem;
+  bottom: 1rem;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  border: 1px solid rgba(125, 211, 252, 0.42);
+  border-radius: 999px;
+  background: rgba(7, 10, 18, 0.92);
+  box-shadow: 0 1rem 2.4rem rgba(0, 0, 0, 0.34);
+  color: #dbeafe;
+  padding: 0.48rem 0.62rem 0.48rem 0.8rem;
+  font-size: 0.75rem;
+  backdrop-filter: blur(14px);
+}
+
+.hz-pwa-update[hidden] {
+  display: none;
+}
+
+.hz-pwa-update button {
+  appearance: none;
+  border: 1px solid rgba(125, 211, 252, 0.38);
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.9);
+  color: #e0f2fe;
+  cursor: pointer;
+  font: inherit;
+  padding: 0.28rem 0.58rem;
+}
+
+.hz-pwa-update button:hover {
+  border-color: rgba(191, 219, 254, 0.7);
+  color: #f8fafc;
+}
+
 @media (max-width: 640px) {
   #app {
     padding: 1rem 0.75rem 2.5rem;
@@ -2208,7 +2251,16 @@ body {
 
   .hz-bgm-chip,
   .hz-bgm-stop,
-  .hz-start-cta {
+  .hz-start-cta,
+  .hz-pwa-install,
+  .hz-reset {
+    justify-content: center;
+  }
+
+  .hz-pwa-update {
+    right: 0.75rem;
+    bottom: 0.75rem;
+    left: 0.75rem;
     justify-content: center;
   }
 
