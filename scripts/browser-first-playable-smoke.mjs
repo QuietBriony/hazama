@@ -22,7 +22,9 @@ const MIME_TYPES = {
   ".html": "text/html; charset=utf-8",
   ".js": "text/javascript; charset=utf-8",
   ".json": "application/json; charset=utf-8",
-  ".png": "image/png"
+  ".png": "image/png",
+  ".webmanifest": "application/manifest+json; charset=utf-8",
+  ".webp": "image/webp"
 };
 
 function assert(condition, message) {
@@ -100,6 +102,42 @@ async function runState(page) {
   return page.evaluate(() => JSON.parse(localStorage.getItem("hazama_run_v1") || "{}"));
 }
 
+async function pwaState(page) {
+  return page.evaluate(async () => {
+    const manifestLink = document.querySelector('link[rel="manifest"]')?.getAttribute("href") || "";
+    const appleIcon = document.querySelector('link[rel="apple-touch-icon"]')?.getAttribute("href") || "";
+    const themeColor = document.querySelector('meta[name="theme-color"]')?.getAttribute("content") || "";
+    const manifest = manifestLink
+      ? await fetch(manifestLink).then((response) => response.json())
+      : null;
+    const swText = await fetch("sw.js").then((response) => response.text());
+
+    let serviceWorkerState = "unsupported";
+    let cacheNames = [];
+    let cachedShell = false;
+    if ("serviceWorker" in navigator) {
+      const registration = await navigator.serviceWorker.ready;
+      serviceWorkerState = registration.active?.state || registration.waiting?.state || registration.installing?.state || "ready";
+      cacheNames = await caches.keys();
+      cachedShell = Boolean(
+        await caches.match(new URL("index.html", location.href).toString())
+          || await caches.match("index.html")
+      );
+    }
+
+    return {
+      manifestLink,
+      appleIcon,
+      themeColor,
+      manifest,
+      swHasVersion: swText.includes("hazama-pwa-v2.34"),
+      serviceWorkerState,
+      cacheNames,
+      cachedShell
+    };
+  });
+}
+
 async function nextBalancedAction(page) {
   return page.evaluate(() => {
     const state = JSON.parse(localStorage.getItem("hazama_run_v1") || "{}");
@@ -151,6 +189,19 @@ page.on("pageerror", (error) => {
 try {
   await page.goto(baseUrl, { waitUntil: "networkidle" });
   await waitStatus(page, "OK: A_start");
+
+  const pwa = await pwaState(page);
+  assert(pwa.manifestLink === "manifest.webmanifest", "PWA manifest link is missing");
+  assert(pwa.appleIcon === "icons/apple-touch-icon.png", "PWA apple touch icon is missing");
+  assert(pwa.themeColor === "#070a12", "PWA theme color changed");
+  assert(pwa.manifest?.name === "Hazama", "PWA manifest name is not Hazama");
+  assert(pwa.manifest?.display === "standalone", "PWA manifest is not standalone");
+  assert(pwa.manifest?.start_url === "index.html", "PWA manifest start_url changed");
+  assert(Array.isArray(pwa.manifest?.icons) && pwa.manifest.icons.some((icon) => icon.sizes === "512x512" && icon.purpose === "maskable"), "PWA manifest maskable icon is missing");
+  assert(pwa.swHasVersion, "PWA service worker version is missing");
+  assert(pwa.serviceWorkerState === "activated", `PWA service worker did not activate: ${pwa.serviceWorkerState}`);
+  assert(pwa.cacheNames.some((name) => name.startsWith("hazama-pwa-v2.34")), "PWA cache was not created");
+  assert(pwa.cachedShell, "PWA shell was not cached");
 
   await page.locator("#bgm-stop-provider").click({ timeout: 5000 });
   assert((await progress(page)).nodeId === "A_start", "BGM stop changed story progress");

@@ -102,7 +102,7 @@ assert 'H境界: 落ち着き' in js and 'N境界: 響き' in js and '道を選�
 assert 'hz-resource-roles' in js and 'hz-resource-roles' in css, 'resource roles UI が見つかりません'
 assert 'breath-spam' in balance and 'sync-rush' in balance and 'balanced' in balance and 'dive no longer reads as the risky main gate-charge action' in balance and 'ready sync no longer reads as a resonance-spending finisher' in balance, 'balance smoke script が見つかりません'
 assert 'first playable smoke passed' in first_playable and 'A_start -> HUB_NIGHT -> Gate Run won -> Ω -> A_reborn -> HUB_NIGHT' in first_playable, 'first playable smoke script が見つかりません'
-assert 'browser first playable smoke passed' in browser_first_playable and 'optional Playwright' in browser_first_playable and 'won story Ω option should be enabled' in browser_first_playable, 'browser first playable smoke script が見つかりません'
+assert 'browser first playable smoke passed' in browser_first_playable and 'optional Playwright' in browser_first_playable and 'won story Ω option should be enabled' in browser_first_playable and 'PWA manifest link is missing' in browser_first_playable and 'hazama-pwa-v2.34' in browser_first_playable, 'browser first playable smoke script が見つかりません'
 assert 'BGM' in js and 'hz-bgm-companion' in js, 'BGM companion UI が見つかりません'
 assert 'START待ち' in js and 'FOLLOW中' in js, 'BGM 状態表示の短いラベルが見つかりません'
 assert '別タブMusic → START.HZM' in js and 'MusicタブでSTART.HZM' in js and '自動再生制限は迂回せず' in js, 'BGM companion の別タブSTART表示が見つかりません'

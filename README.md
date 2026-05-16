@@ -251,7 +251,7 @@ node scripts/first-playable-smoke.mjs
 node scripts/browser-first-playable-smoke.mjs
 ```
 
-`browser-first-playable-smoke` はPlaywrightが利用できる環境ではローカルHTTPサーバを立て、モバイル幅でBGM停止、locked Ω、Gate Run勝利、Ω入場、`A_reborn` completion CTA、resetを確認します。Playwrightが無い環境では依存を追加せずskipします。
+`browser-first-playable-smoke` はPlaywrightが利用できる環境ではローカルHTTPサーバを立て、モバイル幅でPWA manifest / service worker cache、BGM停止、locked Ω、Gate Run勝利、Ω入場、`A_reborn` completion CTA、resetを確認します。Playwrightが無い環境では依存を追加せずskipします。
 
 手動プレイテストの切り口は `docs/hazama-playtest-slices-v0.md` に整理しています。
 

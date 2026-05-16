@@ -140,7 +140,7 @@ Pass signal:
 - `node scripts/first-playable-smoke.mjs`
   - Covers the static route skeleton and shared-model Ω unlock.
 - `node scripts/browser-first-playable-smoke.mjs`
-  - Covers the browser DOM loop when optional Playwright is available; skips without adding dependencies when it is not.
+  - Covers the browser DOM loop and PWA shell when optional Playwright is available; skips without adding dependencies when it is not.
 - `bash scripts/startup-smoke.sh 8765`
   - Covers static serving, asset presence, versioned script loading, PWA manifest/service worker/icons, model/script presence, and key UI strings.
 
