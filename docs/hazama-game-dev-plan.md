@@ -31,6 +31,7 @@ The playable systems already present are:
 - First action polish that lifts the initial `夜のハブへ入る` CTA and Gate Run action buttons above secondary map/log telemetry.
 - Growth-route polish that keeps Gate Run and route choices primary while Breath Gate reads as optional rest.
 - PWA shell modeled after the music-stack `Music` repo family: standalone manifest, local icons, service-worker precache/offline fallback, install prompt, and update banner.
+- Hazama-local autonomous development engine adapted from music-stack: `AGENTS.md`, `docs/autonomy/`, Codex/Claude collaboration notes, and a single `node scripts/hazama-check.mjs` verification entrypoint.
 
 The current app is already close to a first playable. The main remaining gap is evidence: keep using real browser behavior, localStorage state, and smoke scripts to catch cases where the shared model passes but the DOM flow regresses.
 
@@ -128,6 +129,7 @@ Done means the player can answer these questions from the screen itself:
 - Unlock and completion: reach `扉が開いた`, enter `Ω`, then choose `新しい入口へ戻る` and confirm `A_reborn` feels like loop completion.
 - Replay hook: confirm `A_reborn` shows turns, route steps, rest count, collapse count, main action, and Ω arrival without storing raw Breath Gate input.
 - Static regression: run `bash scripts/startup-smoke.sh 8765` and confirm no dependency, build, audio, Music repo, or GitHub Actions changes are needed.
+- Autonomy regression: run `node scripts/hazama-check.mjs` and confirm all required smoke checks pass, with only optional Playwright browser smoke allowed to skip.
 - Route skeleton regression: run `node scripts/first-playable-smoke.mjs` and confirm `A_start -> HUB_NIGHT -> Gate Run won -> Ω -> A_reborn -> HUB_NIGHT`.
 - Browser route regression: run `node scripts/browser-first-playable-smoke.mjs` in an environment with Playwright and confirm the same loop completes through the DOM.
 

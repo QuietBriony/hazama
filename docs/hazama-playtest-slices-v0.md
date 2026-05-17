@@ -25,6 +25,7 @@ Current master already has:
 - `A_reborn` completion shows a short run record for turns, route steps, rest count, collapse count, main action, and Ω arrival
 - BGM now reads as `別タブMusic → START.HZM`, so the audio handoff is clear without making Music required
 - PWA manifest, icons, service worker, install prompt, and update banner are now present without changing the main loop
+- Hazama-local autonomous development engine now gives Codex / Claude Code the same BACKLOG, SESSION-LEDGER, claim rules, and `node scripts/hazama-check.mjs` entrypoint
 - Balance policies in `scripts/balance-smoke.mjs`
 - Static route skeleton check in `scripts/first-playable-smoke.mjs`
 - GitHub repo scout notes in `docs/research/github-game-repo-scout-v0.md`
@@ -143,6 +144,10 @@ Pass signal:
   - Covers the browser DOM loop and PWA shell when optional Playwright is available; skips without adding dependencies when it is not.
 - `bash scripts/startup-smoke.sh 8765`
   - Covers static serving, asset presence, versioned script loading, PWA manifest/service worker/icons, model/script presence, and key UI strings.
+- `node scripts/localstorage-migration-smoke.mjs`
+  - Covers old progress fallback, partial run-state normalization, reset recovery, and locked Ω behavior when optional Playwright is available; skips without adding dependencies when it is not.
+- `node scripts/hazama-check.mjs`
+  - Aggregates the balance, first playable, startup, and optional browser smoke checks as the autonomy engine's single gate.
 
 ## Latest Browser Smoke Notes
 
@@ -170,6 +175,12 @@ Checked on a narrow mobile viewport with local static serving:
 - v2.34 PWA pass adds install/offline shell behavior while keeping route progress and Music handoff unchanged.
 
 ## Next Manual Pass
+
+Latest agent/in-app browser support note:
+
+- `docs/playtest/first-playable-agent-pass-2026-05-16.md`
+- Human playtest template: `docs/playtest/human-playtest-template.md`
+- Gate Run balance decision rubric: `docs/playtest/gate-run-balance-decision-rubric.md`
 
 Run a local server and play one loop on desktop and a narrow mobile viewport.
 

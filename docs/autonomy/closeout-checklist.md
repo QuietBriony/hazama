@@ -1,0 +1,48 @@
+# Closeout Checklist — Hazama Agents
+
+Use this before commit, PR, or handoff. Keep the session small and leave the repo easier for the next agent to trust.
+
+## 1. Reconfirm the Contract
+
+- Read `AGENTS.md` and the autonomy entry docs you used: `STACK-INDEX.md`, `AUTONOMOUS-RUN.md`, plus the relevant `BACKLOG.md` / `SESSION-LEDGER.md` entries.
+- Stay inside the claimed write scope. Do not edit runtime, scripts, README, backlog, or ledger unless the task explicitly allowed it.
+- Run `git status --short --branch` and identify which changes are yours.
+- Do not revert, overwrite, reformat, or "clean up" changes made by humans or other agents.
+
+## 2. Check Hazama Integrity
+
+- Run from repo root before commit/PR/handoff when code, tests, smoke scripts, story data, runtime assets, cache/version files, or public behavior changed:
+
+```bash
+node scripts/hazama-check.mjs
+```
+
+- `0 FAIL` is the commit baseline. If it fails, report the failing check, likely cause, and whether you fixed it.
+- Optional browser-backed smokes may report `SKIP` when Playwright is unavailable. Treat that as a valid zero exit only if the rest passes; add a manual or in-app browser note when the task needed UI confidence.
+- Docs-only / autonomy-only edits usually do not require version or PWA cache bumps. Still run `hazama-check` if the handoff expects a verified repo state.
+
+## 3. Guard the Hard Rules
+
+- Keep Hazama static Web first: no build step, server runtime, database, or GitHub Actions.
+- Do not change public routes, storage keys, `hazama-depths.json` schema, or Music payload shape without explicit scope.
+- Never store raw Breath Gate input or send it to Music. Only seed, progress position, and aggregated run state are allowed.
+- Keep Music optional: game progress must not depend on Music launch, audio playback, or an external tab.
+- Do not add audio files, samples, lyrics, external dependencies, or copied Music runtime code.
+- Touch only Hazama-namespaced PWA cache behavior. Do not clear same-origin Music caches.
+
+## 4. Handle Human Gates
+
+- Do not mark `human-gate: yes` work as done by agent verification alone.
+- Agent closeout may include implementation, prepared checklist, smoke results, and notes for the human pass.
+- Leave PWA install, offline feel, mobile feel, Music START.HZM experience, and taste calls for a human result unless the user explicitly supplies that result.
+
+## 5. Final Handoff
+
+Include only the useful closeout facts:
+
+- Changed files you touched.
+- What changed and why, in one or two sentences.
+- Verification run, including exact command and result, or why it was not run.
+- Any optional `SKIP` results and the fallback/manual note if relevant.
+- Remaining blockers, human-gate items, or follow-up risks.
+- No unattended merge, push, release, or PR action unless the user explicitly asked for it.

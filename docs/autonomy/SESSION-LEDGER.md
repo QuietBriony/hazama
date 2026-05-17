@@ -1,0 +1,89 @@
+# Session Ledger — Hazama
+
+Hazama 自律開発 session の追記専用ログ。
+新しい session は最新エントリを読んでから始める。
+古いエントリは編集せず、新しいものを先頭に積む。
+
+## Entry Format
+
+```text
+## YYYY-MM-DD — one-line summary
+- agent      : agent / model
+- goal       : session goal
+- shipped    : files / behavior
+- checks     : PASS / FAIL / SKIP
+- backlog    : closed / added items
+- next       : recommended next task
+- blockers   : human wait / unresolved issue
+```
+
+---
+
+## 2026-05-16 — Static contract and closeout hardening
+- agent      : Codex parent + 3 worker agents
+- goal       : PWA/static 契約を依存なし smoke に分離し、agent closeout と balance 判断の型を固定する
+- shipped    :
+  - `scripts/pwa-static-contract-smoke.mjs`: entry HTML / manifest / sw / icons / PWA文字列の静的契約チェック
+  - `scripts/hazama-check.mjs`: pwa-static-contract smoke を必須ステップへ追加
+  - `docs/autonomy/closeout-checklist.md`: commit / PR / handoff 前の agent 締めチェック
+  - `docs/playtest/gate-run-balance-decision-rubric.md`: HZ-BL-003 の数値調整判断ルール
+  - `README.md` / `docs/autonomy/`: 新しい smoke と docs への導線を追加
+- checks     : `node scripts/hazama-check.mjs` -> 5 PASS / 0 FAIL / 2 SKIP
+- backlog    : HZ-BL-003 は open 維持。ただし tuning の判断基準を準備済み
+- next       : 人間の HZ-BL-001 / HZ-BL-002 結果が出たら、rubric に沿って HZ-BL-003 を実施するか判断
+- blockers   : 実機 install/offline と taste 判断は agent では完了不可
+
+## 2026-05-16 — Result templates and docs smoke
+- agent      : Codex parent + 3 worker agents
+- goal       : human-gated pass の結果記録をテンプレート化し、autonomy docs 接続を smoke で固定する
+- shipped    :
+  - `docs/autonomy/pwa-install-offline-result-template.md`: HZ-BL-001 実機結果テンプレート
+  - `docs/playtest/human-playtest-template.md`: HZ-BL-002 人間プレイテスト記録テンプレート
+  - `scripts/autonomy-docs-smoke.mjs`: autonomy docs / README / BACKLOG / LEDGER 接続確認
+  - `scripts/hazama-check.mjs`: autonomy docs smoke を必須ステップへ追加
+  - `README.md` / `docs/autonomy/`: 新テンプレートと smoke への導線を追加
+- checks     : `node scripts/hazama-check.mjs` -> 4 PASS / 0 FAIL / 2 SKIP
+- backlog    : HZ-BL-001 / HZ-BL-002 は open 維持。ただし結果記録の型まで準備済み
+- next       : 人間がテンプレートを埋め、結果に応じて HZ-BL-001 / HZ-BL-002 を close または HZ-BL-003 へ進める
+- blockers   : 実機 install/offline と taste 判断は agent では完了不可
+
+## 2026-05-16 — Human-gate prep sprint
+- agent      : Codex parent + 3 worker agents
+- goal       : 残る human-gated item をすぐ回せる状態にし、次 agent への投げ先を準備する
+- shipped    :
+  - `docs/autonomy/pwa-install-offline-checklist.md`: PWA install/offline 実機確認の手順書
+  - `docs/playtest/first-playable-agent-pass-2026-05-16.md`: in-app browser / smoke ベースの first playable pass note
+  - `docs/autonomy/next-agent-prompts.md`: 次 agent 用の PWA / playtest / balance / Playwright prompt 集
+  - `README.md` / `docs/autonomy/`: 新しい docs への導線を追加
+- checks     : `node scripts/hazama-check.mjs` -> 3 PASS / 0 FAIL / 2 SKIP
+- backlog    : HZ-BL-001 と HZ-BL-002 を ready-for-human へ前進。human-gate のため open 維持
+- next       : 人間が HZ-BL-001 実機 PWA/offline、HZ-BL-002 taste playtest を実施。具体的な違和感が出た時だけ HZ-BL-003
+- blockers   : 実機 install/offline と taste 判断は agent では完了不可
+
+## 2026-05-16 — Multi-agent backlog sprint
+- agent      : Codex parent + 3 worker agents
+- goal       : HZ-BL-004 / HZ-BL-005 / HZ-BL-006 を並列で消化し、次の自律ランを軽くする
+- shipped    :
+  - `docs/autonomy/browser-smoke-fallback.md`: optional Playwright skip 時の手動 fallback
+  - `docs/research/github-game-repo-scout-v0.md`: research scout decision pass
+  - `scripts/localstorage-migration-smoke.mjs`: localStorage migration edge smoke
+  - `scripts/hazama-check.mjs`: localStorage smoke を単一チェック入口へ統合
+  - `README.md` / `docs/autonomy/`: 新しい smoke と fallback docs への導線を追加
+- checks     : `node scripts/hazama-check.mjs` -> 3 PASS / 0 FAIL / 2 SKIP
+- backlog    : HZ-BL-004 / HZ-BL-005 / HZ-BL-006 done
+- next       : HZ-BL-001 PWA install/offline human pass、HZ-BL-002 first playable manual play notes
+- blockers   : Playwright が無い環境では browser-backed smokes は SKIP。実機 PWA / offline は human-gate
+
+## 2026-05-16 — Hazama autonomy engine import
+- agent      : Codex
+- goal       : music-stack の自律開発エンジンを Hazama に薄く取り込む
+- shipped    :
+  - `AGENTS.md`: Hazama repo operating contract
+  - `docs/autonomy/`: STACK-INDEX / AUTONOMOUS-RUN / BACKLOG / SESSION-LEDGER / README
+  - `docs/COLLAB-CLAUDE-AND-CODEX.md`: Codex と Claude の共同開発プレイブック
+  - `scripts/hazama-check.mjs`: 既存 smoke を集約する単一チェック入口
+  - `README.md`: 自律開発エンジンへの入口を追加
+- checks     : `node scripts/hazama-check.mjs` -> 3 PASS / 0 FAIL / 1 SKIP
+- backlog    : HZ-BL-000 done、HZ-BL-001〜007 を seed
+- next       : HZ-BL-001 PWA install/offline human pass、または HZ-BL-002 manual play notes
+- blockers   : 実機 PWA / offline は human-gate

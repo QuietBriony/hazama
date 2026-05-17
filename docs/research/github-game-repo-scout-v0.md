@@ -13,6 +13,24 @@ Immediate decisions:
 - Use external repos as reference only unless a later PR explicitly accepts dependency cost and license obligations.
 - Reject GPL/AGPL/unclear/no-license code reuse. Reading for ideas is okay; copying is not.
 
+## HZ-BL-005 decision pass
+
+Default posture: adopt no dependency and copy no code. "Adopt candidate" below means Hazama can adopt the pattern in Hazama-owned code or docs after a focused change; it does not approve vendoring, package installs, assets, samples, or runtime integration.
+
+| Repo | Classification | Hazama area | Rationale |
+| --- | --- | --- | --- |
+| [y-lohse/inkjs](https://github.com/y-lohse/inkjs) | Reference-only | `hazama-depths.json`, choice continuation, save/resume notes | Useful vocabulary for variables and continuation, but adopting Ink would change authoring and runtime shape. Keep as a future docs spike only. |
+| [inkle/ink-library](https://github.com/inkle/ink-library) | Reference-only | Narrative planning docs | Good example corpus for branch documentation and sample structure. No direct app harvest needed. |
+| [videlais/snowman](https://github.com/videlais/snowman) | Reference-only | Option rendering, story-flow conventions, CSS feel | Helpful for small link-like passage flow ideas, but Twine migration and JS/CSS assumptions do not fit Hazama now. |
+| [lunafromthemoon/RenJS-V2](https://github.com/lunafromthemoon/RenJS-V2) | No-harvest | Visual pacing notes only | CC-BY-SA plus VN/rendering-stack size make code, asset, and dependency reuse a poor fit. At most, use broad staging observations in docs. |
+| [okaybenji/text-engine](https://github.com/okaybenji/text-engine) | No-harvest | Input/reply loop concepts only | Conceptually close to browser text play, but GPL-3.0 blocks code reuse for Hazama's current posture. |
+| [jakesgordon/javascript-state-machine](https://github.com/jakesgordon/javascript-state-machine) | Adopt candidate | `hazama-gate-run.js`, run-state naming, transition tests | Small MIT FSM library is a strong reference for explicit transition boundaries. Adopt the state vocabulary/pattern in local code, not the package. |
+| [statelyai/xstate](https://github.com/statelyai/xstate) | Reference-only | Future state diagrams, edge-case docs | Excellent statechart language, but the actor/TypeScript ecosystem is too large for the static first playable. |
+| [boardgameio/boardgame.io](https://github.com/boardgameio/boardgame.io) | Adopt candidate | Gate Run move model, balance smoke policies | Reducer-like moves, turn limits, and legal-action simulation map well to balance checks. Adopt the model ideas only. |
+| [reduxjs/redux](https://github.com/reduxjs/redux) | Adopt candidate | Pure run reducers, testable state transitions | Pure reducer discipline is a good fit for Hazama-owned logic and smoke tests. No global-state dependency needed. |
+| [phaserjs/phaser](https://github.com/phaserjs/phaser) | No-harvest | HUD vocabulary and future visual experiments only | Full game framework is far beyond Hazama's text/depth/breath core. Do not import runtime or examples. |
+| [end3r/Gamedev-Canvas-workshop](https://github.com/end3r/Gamedev-Canvas-workshop) | No-harvest | Lightweight smoke/test teaching ideas only | Static tutorial shape is relevant, but licensing is not clean enough for code reuse. |
+
 ## Candidate table
 
 | Repo | License | Active | Complexity | Use for Hazama | Decision | Affected Hazama areas |
