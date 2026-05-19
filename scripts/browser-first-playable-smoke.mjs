@@ -130,7 +130,7 @@ async function pwaState(page) {
       appleIcon,
       themeColor,
       manifest,
-      swHasVersion: swText.includes("hazama-pwa-v2.35"),
+      swHasVersion: swText.includes("hazama-pwa-v2.37"),
       serviceWorkerState,
       cacheNames,
       cachedShell
@@ -200,7 +200,7 @@ try {
   assert(Array.isArray(pwa.manifest?.icons) && pwa.manifest.icons.some((icon) => icon.sizes === "512x512" && icon.purpose === "maskable"), "PWA manifest maskable icon is missing");
   assert(pwa.swHasVersion, "PWA service worker version is missing");
   assert(pwa.serviceWorkerState === "activated", `PWA service worker did not activate: ${pwa.serviceWorkerState}`);
-  assert(pwa.cacheNames.some((name) => name.startsWith("hazama-pwa-v2.35")), "PWA cache was not created");
+  assert(pwa.cacheNames.some((name) => name.startsWith("hazama-pwa-v2.37")), "PWA cache was not created");
   assert(pwa.cachedShell, "PWA shell was not cached");
 
   await page.locator("#bgm-stop-provider").click({ timeout: 5000 });
@@ -244,6 +244,10 @@ try {
   await page.locator(".hz-gate-complete-cta").click({ timeout: 5000 });
   await waitStatus(page, "HUBへ");
   assert((await progress(page)).nodeId === "HUB_NIGHT", "completion CTA did not return to HUB_NIGHT");
+  const nextLoopState = await runState(page);
+  assert(nextLoopState.gateRunStatus === "running" && nextLoopState.gateRunCharge === 0, "completion CTA did not close Ω for the next loop");
+  const relockedOmega = await buttonText(page, "Ωの扉を試す");
+  assert(await relockedOmega.isDisabled(), "Ω stayed open after returning from A_reborn");
 
   await page.locator("#reset-progress").click({ timeout: 5000 });
   await waitStatus(page, "OK: A_start");

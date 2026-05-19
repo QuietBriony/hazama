@@ -129,17 +129,18 @@
     };
 
     if (actionId === "retreat") {
-      const keepOmegaUnlocked = src.gateRunStatus === "won";
+      const nextLoop = src.gateRunStatus === "won";
       return {
         ...common,
         disabled: ctx.navigationLocked,
         countsAsTurn: false,
-        keepOmegaUnlocked,
+        keepOmegaUnlocked: false,
+        resetWon: nextLoop,
         resetLost: src.gateRunStatus === "lost",
         targetDepthId: ctx.currentDepthId !== ctx.hubDepthId && ctx.hasHub ? ctx.hubDepthId : null,
-        stabilityDelta: keepOmegaUnlocked ? 8 : 22,
-        resonanceDelta: keepOmegaUnlocked ? -2 : -4,
-        chargeDelta: keepOmegaUnlocked ? 0 : -8
+        stabilityDelta: nextLoop ? 12 : 22,
+        resonanceDelta: nextLoop ? 0 : -4,
+        chargeDelta: nextLoop ? -100 : -8
       };
     }
 
@@ -233,6 +234,7 @@
     const preview = previewGateAction(next, ctx, actionId);
     const events = {
       resetLost: false,
+      resetWon: false,
       keepOmegaUnlocked: false,
       lost: false,
       won: false,
@@ -247,6 +249,10 @@
     if (preview.resetLost) {
       resetGateRunFields(next);
       events.resetLost = true;
+    }
+    if (preview.resetWon) {
+      resetGateRunFields(next);
+      events.resetWon = true;
     }
     if (preview.keepOmegaUnlocked) events.keepOmegaUnlocked = true;
 

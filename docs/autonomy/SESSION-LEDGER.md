@@ -19,6 +19,32 @@ Hazama 自律開発 session の追記専用ログ。
 
 ---
 
+## 2026-05-20 — Same-screen mobile BGM path
+- agent      : Codex
+- goal       : スマホでゲーム画面へ戻ってもBGMを鳴らしながら遊べるよう、別タブ依存を避けるBGM導線を追加する
+- shipped    :
+  - `hazama-main.js` / `hazama-style.css`: `BGM` チップと `同じ画面で鳴らす` から、同じページ内の lightweight Web Audio BGM を開始
+  - `hazama-main.js`: `hazama-profile` の sanitized audio / ucm / stage を使い、テンポ・密度・明るさ・低域・簡易フレーズを生成
+  - `hazama-main.js`: 可能な環境では Web Audio を hidden media stream bridge に流し、iOS / Bluetooth / media route へ寄せる
+  - `index.html` / `hazama-index.html` / `sw.js` / smoke scripts / `README.md`: runtime asset 更新に合わせて v2.37 / `hazama-pwa-v2.37` へ同期
+- checks     : `node --check hazama-main.js` -> PASS; `git diff --check` -> PASS; `node scripts/hazama-check.mjs` -> 5 PASS / 0 FAIL / 2 SKIP; in-app browser mobile BGM start -> `INLINE` / `playing`
+- backlog    : HZ-BL-002 は human-gate のため open 維持。ただしスマホBGMの主要な構造問題は同一画面再生へ寄せた
+- next       : 実機スマホで `同じ画面で鳴らす` -> 通しプレイ -> ロック画面/ホーム移動時の挙動を記録
+- blockers   : 実機OSのバックグラウンド継続、Bluetooth route、最終的な音量/音色の好みは human wait
+
+## 2026-05-20 — Story-first loop and next-loop polish
+- agent      : Codex
+- goal       : 実機プレイの違和感を受け、BGM導線、Ω周回、選択UIを first playable の範囲で整える
+- shipped    :
+  - `hazama-main.js` / `hazama-style.css`: 本文後に単一 `展開` パネルを置き、Gate Run / 道の選択 / Breath休息 / セッション操作を集約
+  - `hazama-gate-run.js` / `scripts/balance-smoke.mjs`: `A_reborn` 後や勝利後 retreat で次周回を開始し、Ωを再ロックするよう更新
+  - BGM companion: 自動タブ起動と同一タブ fallback をやめ、スマホでは止まったらMusic側で再開する任意導線へ変更
+  - `index.html` / `hazama-index.html` / `sw.js` / smoke scripts / `README.md`: runtime asset 更新に合わせて v2.36 / `hazama-pwa-v2.36` へ同期
+- checks     : `node --check hazama-main.js` -> PASS; `node --check hazama-gate-run.js` -> PASS; `git diff --check` -> PASS; `node scripts/hazama-check.mjs` -> 5 PASS / 0 FAIL / 2 SKIP; in-app browser desktop/mobile DOM layout pass
+- backlog    : HZ-BL-002 は human-gate のため open 維持。ただし今回の手触り指摘は runtime polish として反映済み
+- next       : 人間のスマホ通しプレイで、BGM再開導線と「本文 -> 展開」動線が集中を邪魔しないか確認
+- blockers   : 実機 BGMのバックグラウンド継続可否、PWA install/offline、ゲーム性の taste 判断は human wait
+
 ## 2026-05-19 — First-screen guidance polish
 - agent      : Codex
 - goal       : 初期画面で最初に何をすればよいか迷う問題を、静的 first playable の範囲で解消する

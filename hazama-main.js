@@ -1,4 +1,4 @@
-// Hazama main.js v2.35
+// Hazama main.js v2.37
 // Minimal, robust loader + renderer for GitHub Pages / Codespaces.
 // v2.3 adds a lightweight deterministic game layer around depth pressure.
 // v2.5 animates the descent key visual and mandala goal gate.
@@ -32,8 +32,10 @@
 // v2.33 makes the Music/BGM handoff explicit: Hazama opens Music in another tab, then START.HZM unlocks audio there.
 // v2.34 adds the Music-stack-style PWA shell, install prompt, and service-worker update path.
 // v2.35 adds a first-screen mission card so the opening action is unambiguous.
+// v2.36 closes Ω on new loops and moves choices into one post-story flow panel.
+// v2.37 adds same-screen generated BGM for mobile play while keeping external Music as a companion.
 
-const APP_VERSION = "v2.35";
+const APP_VERSION = "v2.37";
 const GateRunModel = globalThis.HazamaGateRun || {};
 const GATE_CONSTANTS = GateRunModel.constants || {};
 
@@ -114,6 +116,20 @@ let musicBridgePhase = "armed";
 let bgmFollowEnabled = true;
 let bgmExpanded = false;
 let deferredPwaInstallPrompt = null;
+const InlineBgmState = {
+  audioCtx: null,
+  master: null,
+  filter: null,
+  drone: [],
+  pulseTimer: null,
+  bridgeDestination: null,
+  bridgeAudio: null,
+  playing: false,
+  route: "idle",
+  params: null,
+  step: 0,
+  lastStatusAt: 0
+};
 const MUSIC_FEEDBACK_ALLOWED_ORIGINS = new Set([
   "https://quietbriony.github.io",
   "http://127.0.0.1:8095",
@@ -1001,6 +1017,7 @@ function bgmStageLabel() {
 
 function musicConnectionStateCode() {
   const state = MusicFeedbackState;
+  if (inlineBgmIsPlaying()) return "MUSIC.INLINE";
   if (!bgmFollowEnabled || state.connectionState === "stop" || state.connectionState === "stopped") return "MUSIC.STOP";
   if (state.connectionState === "pause" || state.connectionState === "paused") return "MUSIC.PAUSE";
   if (state.connected && (state.autoFollow || state.connectionState === "follow" || state.connectionState === "following" || state.connectionState === "sync" || state.connectionState === "synced")) return "MUSIC.FOLLOW";
@@ -1011,6 +1028,7 @@ function musicConnectionStateCode() {
 
 function bgmStateLabel() {
   const code = musicConnectionStateCode();
+  if (code === "MUSIC.INLINE") return "INLINE";
   if (code === "MUSIC.STOP") return "STOP";
   if (code === "MUSIC.PAUSE") return "STOP";
   if (code === "MUSIC.FOLLOW") return "FOLLOW中";
@@ -1045,6 +1063,7 @@ function bgmPhaseLabel(phase = musicBridgePhase) {
 }
 
 function bgmStatusLine(text = "") {
+  if (inlineBgmIsPlaying()) return `BGM: INLINE / ${inlineBgmStatusText()}`;
   const arc = musicArcLabel();
   const details = [];
   if (!bgmFollowEnabled) return "BGM: MUSIC.STOP";
@@ -1058,13 +1077,14 @@ function bgmStatusLine(text = "") {
 
 function bgmCompactDetail(text = "") {
   if (!bgmFollowEnabled) return "停止中";
+  if (inlineBgmIsPlaying()) return `同じ画面 ${InlineBgmState.params?.tempo || ""}`.trim();
   if (MusicFeedbackState.connected && MusicFeedbackState.bpm) {
     return MusicFeedbackState.bpm ? `BPM ${MusicFeedbackState.bpm}` : "再生中";
   }
   if (MusicFeedbackState.connected) return musicArcLabel() || "接続済み";
   if (musicBridgePhase === "pending") return "MusicタブSTART";
   if (musicBridgePhase === "blocked") return "リンクで開く";
-  if (musicBridgePhase === "armed" || musicBridgePhase === "IDLE") return "別タブSTART.HZM";
+  if (musicBridgePhase === "armed" || musicBridgePhase === "IDLE") return "同じ画面START";
   return text || bgmStageLabel();
 }
 
@@ -1075,13 +1095,320 @@ function bgmArcDetail() {
 
 function bgmOpenLinkLabel() {
   if (!bgmFollowEnabled) return "BGM 再開";
+  if (inlineBgmIsPlaying()) return "外部Musicも開く";
   if (musicBridgePhase === "pending") return "Musicタブへ";
   if (musicBridgePhase === "blocked") return "リンクでMusicを開く";
   return "別タブでMusicを開く";
 }
 
 function bgmShouldCollapse() {
-  return bgmFollowEnabled && MusicFeedbackState.connected && MusicFeedbackState.playing && musicConnectionStateCode() === "MUSIC.FOLLOW" && !bgmExpanded;
+  return bgmFollowEnabled && ((MusicFeedbackState.connected && MusicFeedbackState.playing && musicConnectionStateCode() === "MUSIC.FOLLOW") || inlineBgmIsPlaying()) && !bgmExpanded;
+}
+
+function inlineBgmSupported() {
+  return typeof window !== "undefined" && Boolean(window.AudioContext || window.webkitAudioContext);
+}
+
+function inlineBgmIsPlaying() {
+  return !!(InlineBgmState.playing && InlineBgmState.audioCtx && InlineBgmState.audioCtx.state !== "closed");
+}
+
+function inlineBgmRouteLabel() {
+  if (InlineBgmState.route === "bridge") return "iOS bridge";
+  if (InlineBgmState.route === "direct") return "direct";
+  return "inline";
+}
+
+function inlineBgmStatusText() {
+  const params = InlineBgmState.params;
+  if (!inlineBgmIsPlaying() || !params) return "同じ画面BGM待ち";
+  return `同じ画面BGM / BPM ${params.tempo} / ${inlineBgmRouteLabel()}`;
+}
+
+function inlineBgmProfileParams(profile = buildMusicProfile(currentDepthId)) {
+  const source = profile?.source || {};
+  const audio = profile?.audio || {};
+  const ucm = profile?.ucm || {};
+  const stage = cleanDataToken(source.stage || "submerge", "submerge");
+  const rank = clampNumber(Number(source.rank) || depthRank(currentDepthId), 0, 28);
+  const tempo = Math.round(clampNumber(Number(audio.tempo) || 72, 48, 132));
+  const density = clampNumber(Number(audio.density) || 0.42, 0.16, 0.82);
+  const brightness = clampNumber(Number(audio.brightness) || 0.48, 0.05, 0.9);
+  const silenceRate = clampNumber(Number(audio.silenceRate) || 0.28, 0.05, 0.72);
+  const bassWeight = clampNumber(Number(audio.bassWeight) || 0.38, 0.08, 0.78);
+  const space = clampNumber(Number(audio.space) || 0.5, 0.1, 0.95);
+  const energy = clampNumber(Number(ucm.energy) || 45, 0, 100);
+  const circle = clampNumber(Number(ucm.circle) || 35, 0, 100);
+  const stageHash = numericHash(`${stage}|${profile?.name || ""}|${rank}`);
+  const baseMidi = 38 + (stageHash % 7) + Math.floor(rank / 5);
+  const baseFreq = 440 * Math.pow(2, (baseMidi - 69) / 12);
+  const scale = stage === "exhale"
+    ? [0, 2, 5, 7, 9, 12]
+    : stage === "root"
+      ? [0, 3, 5, 7, 10, 12]
+      : [0, 2, 3, 7, 10, 12];
+  return {
+    stage,
+    tempo,
+    density,
+    brightness,
+    silenceRate,
+    bassWeight,
+    space,
+    energy,
+    circle,
+    baseFreq,
+    scale,
+    seed: stageHash,
+    droneGain: 0.018 + bassWeight * 0.028,
+    pulseGain: 0.016 + density * 0.026,
+    filterFreq: 360 + brightness * 1900 + circle * 5,
+    intervalMs: Math.round(clampNumber(60000 / tempo, 360, 1250))
+  };
+}
+
+function ensureInlineBgmContext() {
+  if (InlineBgmState.audioCtx && InlineBgmState.audioCtx.state !== "closed") return InlineBgmState.audioCtx;
+  const AudioContextCtor = window.AudioContext || window.webkitAudioContext;
+  try {
+    InlineBgmState.audioCtx = new AudioContextCtor({ latencyHint: "playback" });
+  } catch (_) {
+    InlineBgmState.audioCtx = new AudioContextCtor();
+  }
+  return InlineBgmState.audioCtx;
+}
+
+function resetInlineBgmGraph() {
+  if (InlineBgmState.pulseTimer) {
+    window.clearInterval(InlineBgmState.pulseTimer);
+    InlineBgmState.pulseTimer = null;
+  }
+  const ctx = InlineBgmState.audioCtx;
+  for (const voice of InlineBgmState.drone) {
+    try {
+      voice.gain?.gain?.cancelScheduledValues(ctx?.currentTime || 0);
+      voice.gain?.gain?.setTargetAtTime(0.0001, ctx?.currentTime || 0, 0.03);
+      voice.osc?.stop((ctx?.currentTime || 0) + 0.08);
+    } catch (_) {}
+    try { voice.osc?.disconnect(); } catch (_) {}
+    try { voice.gain?.disconnect(); } catch (_) {}
+  }
+  InlineBgmState.drone = [];
+  try { InlineBgmState.filter?.disconnect(); } catch (_) {}
+  try { InlineBgmState.master?.disconnect(); } catch (_) {}
+  try { InlineBgmState.bridgeDestination?.disconnect(); } catch (_) {}
+  if (InlineBgmState.bridgeAudio) {
+    try { InlineBgmState.bridgeAudio.pause(); } catch (_) {}
+    try { InlineBgmState.bridgeAudio.srcObject = null; } catch (_) {}
+  }
+  InlineBgmState.master = null;
+  InlineBgmState.filter = null;
+  InlineBgmState.bridgeDestination = null;
+  InlineBgmState.bridgeAudio = null;
+  InlineBgmState.playing = false;
+  InlineBgmState.route = "idle";
+}
+
+function createInlineDroneVoice(ctx, freq, type, gainValue) {
+  const osc = ctx.createOscillator();
+  const gain = ctx.createGain();
+  osc.type = type;
+  osc.frequency.setValueAtTime(freq, ctx.currentTime);
+  gain.gain.setValueAtTime(0.0001, ctx.currentTime);
+  gain.gain.setTargetAtTime(gainValue, ctx.currentTime + 0.02, 0.55);
+  osc.connect(gain);
+  gain.connect(InlineBgmState.filter);
+  osc.start();
+  return { osc, gain };
+}
+
+async function connectInlineBgmOutput(ctx, master) {
+  InlineBgmState.route = "direct";
+  if (typeof ctx.createMediaStreamDestination === "function" && typeof Audio !== "undefined") {
+    try {
+      const destination = ctx.createMediaStreamDestination();
+      const audio = new Audio();
+      audio.autoplay = false;
+      audio.controls = false;
+      audio.playsInline = true;
+      audio.srcObject = destination.stream;
+      master.connect(destination);
+      await audio.play();
+      InlineBgmState.bridgeDestination = destination;
+      InlineBgmState.bridgeAudio = audio;
+      InlineBgmState.route = "bridge";
+      return;
+    } catch (_) {
+      try { master.disconnect(destination); } catch (e) {}
+      try { InlineBgmState.bridgeDestination?.disconnect(); } catch (e) {}
+      if (InlineBgmState.bridgeAudio) {
+        try { InlineBgmState.bridgeAudio.pause(); } catch (e) {}
+        try { InlineBgmState.bridgeAudio.srcObject = null; } catch (e) {}
+      }
+      InlineBgmState.bridgeDestination = null;
+      InlineBgmState.bridgeAudio = null;
+    }
+  }
+  master.connect(ctx.destination);
+}
+
+function playInlineBgmPulse() {
+  if (!inlineBgmIsPlaying() || !InlineBgmState.master || !InlineBgmState.params) return;
+  const ctx = InlineBgmState.audioCtx;
+  const params = InlineBgmState.params;
+  if (!ctx || ctx.state === "closed") return;
+  if (ctx.state === "suspended") ctx.resume().catch(() => {});
+  const step = InlineBgmState.step++;
+  const gate = ((params.seed + step * 37) % 100) / 100;
+  if (gate > Math.max(0.18, params.density * (1 - params.silenceRate * 0.45))) return;
+
+  const degree = params.scale[(step + params.seed) % params.scale.length];
+  const octave = step % 8 === 0 ? 0.5 : step % 5 === 0 ? 2 : 1;
+  const freq = params.baseFreq * octave * Math.pow(2, degree / 12);
+  const osc = ctx.createOscillator();
+  const gain = ctx.createGain();
+  const now = ctx.currentTime + 0.02;
+  const dur = clampNumber(0.16 + params.space * 0.38, 0.18, 0.62);
+  osc.type = params.brightness > 0.58 ? "triangle" : "sine";
+  osc.frequency.setValueAtTime(freq, now);
+  gain.gain.setValueAtTime(0.0001, now);
+  gain.gain.exponentialRampToValueAtTime(params.pulseGain, now + 0.025);
+  gain.gain.exponentialRampToValueAtTime(0.0001, now + dur);
+  osc.connect(gain);
+  gain.connect(InlineBgmState.filter || InlineBgmState.master);
+  osc.start(now);
+  osc.stop(now + dur + 0.04);
+  window.setTimeout(() => {
+    try { osc.disconnect(); } catch (_) {}
+    try { gain.disconnect(); } catch (_) {}
+  }, Math.round((dur + 0.2) * 1000));
+}
+
+function scheduleInlineBgmPulse() {
+  if (InlineBgmState.pulseTimer) window.clearInterval(InlineBgmState.pulseTimer);
+  const interval = InlineBgmState.params?.intervalMs || 720;
+  InlineBgmState.pulseTimer = window.setInterval(playInlineBgmPulse, interval);
+  playInlineBgmPulse();
+}
+
+function updateInlineMediaSession(params, playing = inlineBgmIsPlaying()) {
+  if (!("mediaSession" in navigator)) return;
+  try {
+    navigator.mediaSession.metadata = new MediaMetadata({
+      title: "Hazama BGM",
+      artist: "Hazama",
+      album: `Gate ${params?.stage || "inline"}`,
+      artwork: [
+        { src: "icons/icon-192.png", sizes: "192x192", type: "image/png" },
+        { src: "icons/icon-512.png", sizes: "512x512", type: "image/png" }
+      ]
+    });
+    navigator.mediaSession.playbackState = playing ? "playing" : "paused";
+    navigator.mediaSession.setActionHandler("play", () => startInlineBgm().catch(() => {}));
+    navigator.mediaSession.setActionHandler("pause", () => stopInlineBgm());
+    navigator.mediaSession.setActionHandler("stop", () => stopInlineBgm());
+  } catch (_) {}
+}
+
+function updateInlineBgm(profile = buildMusicProfile(currentDepthId)) {
+  if (!inlineBgmIsPlaying() || !InlineBgmState.params) return false;
+  const next = inlineBgmProfileParams(profile);
+  const prevInterval = InlineBgmState.params.intervalMs;
+  const ctx = InlineBgmState.audioCtx;
+  const now = ctx.currentTime;
+  InlineBgmState.params = next;
+  if (InlineBgmState.master) {
+    InlineBgmState.master.gain.setTargetAtTime(0.18 + next.energy * 0.0013, now, 0.35);
+  }
+  if (InlineBgmState.filter) {
+    InlineBgmState.filter.frequency.setTargetAtTime(next.filterFreq, now, 0.5);
+    InlineBgmState.filter.Q.setTargetAtTime(0.6 + next.brightness * 1.4, now, 0.5);
+  }
+  InlineBgmState.drone.forEach((voice, index) => {
+    const ratio = index === 0 ? 1 : index === 1 ? 1.5 : 2;
+    const gain = index === 0 ? next.droneGain : next.droneGain * 0.48;
+    voice.osc.frequency.setTargetAtTime(next.baseFreq * ratio, now, 0.6);
+    voice.gain.gain.setTargetAtTime(gain, now, 0.7);
+  });
+  if (Math.abs(prevInterval - next.intervalMs) > 24) scheduleInlineBgmPulse();
+  updateInlineMediaSession(next, true);
+  if (Date.now() - InlineBgmState.lastStatusAt > 1100) {
+    InlineBgmState.lastStatusAt = Date.now();
+    setMusicBridgeStatus(inlineBgmStatusText(), "inline");
+  }
+  return true;
+}
+
+async function startInlineBgm(profile = buildMusicProfile(currentDepthId)) {
+  bgmFollowEnabled = true;
+  bgmExpanded = false;
+  musicAutoStartDone = true;
+  if (!inlineBgmSupported()) {
+    setMusicBridgeStatus("このブラウザはWeb Audio非対応", "blocked");
+    return false;
+  }
+
+  const ctx = ensureInlineBgmContext();
+  const params = inlineBgmProfileParams(profile);
+  resetInlineBgmGraph();
+  InlineBgmState.audioCtx = ctx;
+  InlineBgmState.params = params;
+  InlineBgmState.step = 0;
+  InlineBgmState.master = ctx.createGain();
+  InlineBgmState.master.gain.setValueAtTime(0.0001, ctx.currentTime);
+  InlineBgmState.master.gain.setTargetAtTime(0.18 + params.energy * 0.0013, ctx.currentTime + 0.03, 0.45);
+  InlineBgmState.filter = ctx.createBiquadFilter();
+  InlineBgmState.filter.type = "lowpass";
+  InlineBgmState.filter.frequency.setValueAtTime(params.filterFreq, ctx.currentTime);
+  InlineBgmState.filter.Q.setValueAtTime(0.6 + params.brightness * 1.4, ctx.currentTime);
+  InlineBgmState.filter.connect(InlineBgmState.master);
+
+  try {
+    await ctx.resume();
+    await connectInlineBgmOutput(ctx, InlineBgmState.master);
+  } catch (error) {
+    console.warn("[Hazama] inline BGM start failed:", error);
+    resetInlineBgmGraph();
+    setMusicBridgeStatus("タップでBGM再試行", "blocked");
+    return false;
+  }
+
+  InlineBgmState.drone = [
+    createInlineDroneVoice(ctx, params.baseFreq, "sine", params.droneGain),
+    createInlineDroneVoice(ctx, params.baseFreq * 1.5, params.brightness > 0.55 ? "triangle" : "sine", params.droneGain * 0.48)
+  ];
+  InlineBgmState.playing = true;
+  scheduleInlineBgmPulse();
+  updateInlineMediaSession(params, true);
+  setMusicBridgeStatus(inlineBgmStatusText(), "inline");
+  return true;
+}
+
+function stopInlineBgm() {
+  if (!inlineBgmIsPlaying()) return false;
+  const params = InlineBgmState.params;
+  resetInlineBgmGraph();
+  updateInlineMediaSession(params, false);
+  return true;
+}
+
+function resumeInlineBgmIfNeeded() {
+  const ctx = InlineBgmState.audioCtx;
+  if (!inlineBgmIsPlaying() || !ctx || ctx.state !== "suspended") return;
+  ctx.resume().then(() => {
+    setMusicBridgeStatus(inlineBgmStatusText(), "inline");
+  }).catch(() => {});
+}
+
+function installInlineBgmResumeHooks() {
+  if (InlineBgmState.resumeInstalled) return;
+  InlineBgmState.resumeInstalled = true;
+  ["pointerdown", "touchend", "keydown"].forEach((eventName) => {
+    window.addEventListener(eventName, resumeInlineBgmIfNeeded, { capture: true, passive: true });
+  });
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "visible") resumeInlineBgmIfNeeded();
+  });
 }
 
 function isLocalDevHost() {
@@ -1266,6 +1593,7 @@ function setMusicBridgeStatus(text = "", phase = "") {
     companion.dataset.bgmPhase = musicBridgePhase;
     companion.dataset.bgmCollapsed = bgmShouldCollapse() ? "true" : "false";
     companion.dataset.bgmFollow = bgmFollowEnabled ? "on" : "off";
+    companion.dataset.inlineBgm = inlineBgmIsPlaying() ? "playing" : "idle";
     companion.dataset.musicState = cleanDataToken(MusicFeedbackState.connectionState || "idle", "idle");
     companion.dataset.musicAutofollow = MusicFeedbackState.autoFollow ? "on" : "off";
     companion.setAttribute("aria-hidden", "false");
@@ -1360,6 +1688,9 @@ function hasOpenMusicWindow(mode = "production") {
 
 function syncMusicBridge(profile = buildMusicProfile()) {
   lastMusicPayload = createMusicPayload(profile);
+  if (inlineBgmIsPlaying()) {
+    updateInlineBgm(profile);
+  }
   if (!bgmFollowEnabled) {
     setMusicBridgeStatus("止めています", "off");
     return { payload: lastMusicPayload, sent: false };
@@ -1403,14 +1734,13 @@ function attemptMusicAutoStart(ev) {
     setMusicBridgeStatus("同期しました", "synced");
     return;
   }
-  const opened = openMusicBridge("production");
-  setMusicBridgeStatus(opened ? "MusicタブでSTART.HZM" : "リンクでMusicを開く", opened ? "pending" : "blocked");
+  setMusicBridgeStatus("同じ画面BGM待ち", "armed");
 }
 
 function installMusicAutoStart() {
   if (musicAutoStartInstalled) return;
   musicAutoStartInstalled = true;
-  setMusicBridgeStatus("別タブMusic → START.HZM", "armed");
+  setMusicBridgeStatus("同じ画面BGM待ち", "armed");
   window.addEventListener("pointerdown", attemptMusicAutoStart, { once: true, capture: true, passive: true });
   window.addEventListener("keydown", attemptMusicAutoStart, { once: true, capture: true });
   window.addEventListener("focus", () => {
@@ -1484,6 +1814,7 @@ function resumeBgmCompanion(mode = "production") {
 }
 
 function stopBgmCompanion() {
+  stopInlineBgm();
   bgmFollowEnabled = false;
   bgmExpanded = false;
   musicAutoStartDone = true;
@@ -1531,8 +1862,16 @@ function bindMusicControls() {
         ev.preventDefault();
       } else {
         setMusicStatus("リンクでMusicを開く", "blocked");
-        if (openLink.href) window.location.assign(openLink.href);
       }
+    });
+  }
+
+  const inlineBtn = $("bgm-inline-start");
+  if (inlineBtn) {
+    inlineBtn.addEventListener("click", async () => {
+      const started = await startInlineBgm();
+      musicAutoStartDone = musicAutoStartDone || started;
+      if (!started) setMusicStatus("タップでBGM再試行", "blocked");
     });
   }
 
@@ -1545,21 +1884,21 @@ function bindMusicControls() {
         ev.preventDefault();
       } else {
         setMusicStatus("リンクでMusicを開く", "blocked");
-        if (localLink.href) window.location.assign(localLink.href);
       }
     });
   }
 
   const bgmToggle = $("bgm-toggle-provider");
   if (bgmToggle) {
-    bgmToggle.addEventListener("click", () => {
-      if (!bgmFollowEnabled || !MusicFeedbackState.connected || !MusicFeedbackState.playing) {
-        const opened = resumeBgmCompanion("production");
-        musicAutoStartDone = musicAutoStartDone || opened;
+    bgmToggle.addEventListener("click", async () => {
+      if (!inlineBgmIsPlaying()) {
+        const started = await startInlineBgm();
+        musicAutoStartDone = musicAutoStartDone || started;
+        if (!started) setMusicStatus("タップでBGM再試行", "blocked");
         return;
       }
       bgmExpanded = !bgmExpanded;
-      setMusicBridgeStatus(musicFeedbackStatusText(), "LISTENING");
+      setMusicBridgeStatus(inlineBgmStatusText(), "inline");
     });
   }
 
@@ -1581,6 +1920,13 @@ function applyRunTransition(fromId, toId, moveKind = "choice", explicitType = ""
   if (toId === OMEGA_DEPTH && !canEnterOmega(state)) {
     runLog = `Ω LOCK: Gate Runを${GATE_RUN_MAX_CHARGE}%まで開くと入れます。`;
     return depths[HUB_DEPTH] ? HUB_DEPTH : fromId;
+  }
+
+  if (fromId === "A_reborn" && toId === HUB_DEPTH && state.gateRunStatus === "won") {
+    startNextLoopState(state, toId);
+    saveRunState();
+    runLog = "次周回開始 / Ωは閉じた。";
+    return toId;
   }
 
   const preview = transitionPreview(fromId, toId, moveKind, explicitType);
@@ -1796,10 +2142,10 @@ function gateRunRetreatAdvice(state = getRunState()) {
   const charge = Math.round(state.gateRunCharge);
   if (state.gateRunStatus === "won") {
     return {
-      level: "keep",
-      badge: "Ω保持",
-      label: "Ω保持: 戻っても扉は開いたまま",
-      next: "HUBへ戻れる"
+      level: "next-loop",
+      badge: "次周回",
+      label: "次周回: HUBへ戻るとΩは閉じる",
+      next: "HUBで再挑戦"
     };
   }
   if (state.gateRunStatus === "lost") {
@@ -1923,15 +2269,15 @@ function gateRunActionPreview(actionId) {
   return {
     ...common,
     disabled: navigationLocked,
-    result: modelPreview?.keepOmegaUnlocked || state.gateRunStatus === "won"
-      ? "HUBへ / Ω解放を保持"
+    result: modelPreview?.resetWon || state.gateRunStatus === "won"
+      ? "次周回開始 / Ωを閉じる"
       : state.gateRunStatus === "lost"
         ? "再挑戦開始 / 落ち着き +22"
         : state.stability < 38
           ? "退避推奨 / 落ち着き +22 / 扉の開き -8"
           : "退避任意 / 落ち着き +22 / 扉の開き -8",
     title: state.gateRunStatus === "won"
-      ? "扉は開いたまま、夜のハブへ戻ります。Ωへ入れます。"
+      ? "一周を閉じ、夜のハブから次のGate Runを始めます。"
       : state.gateRunStatus === "running"
         ? "落ち着きが薄い時は、戻って立て直すと崩落を避けやすくなります。"
         : "崩落後の記録を閉じ、次の挑戦を起こす。"
@@ -1945,6 +2291,23 @@ function resetGateRunState(state) {
   state.lastGateAction = "";
   state.lastGateResult = "";
   state.gateRunOutcomeAt = 0;
+}
+
+function startNextLoopState(state, targetDepthId = HUB_DEPTH) {
+  const bestRank = Math.max(Number(state.bestRank) || 0, depthRank(currentDepthId));
+  const collapseCount = Math.max(0, Number(state.collapseCount) || 0);
+  resetGateRunState(state);
+  resetBreathStreak(state);
+  state.stability = Math.max(76, Math.min(STABILITY_MAX, Number(state.stability) || 76));
+  state.resonance = 0;
+  state.marks = 0;
+  state.steps = 0;
+  state.entries = 0;
+  state.bestRank = bestRank;
+  state.collapseCount = collapseCount;
+  state.lastMoveType = "retreat";
+  state.lastDepthId = targetDepthId;
+  state.lastGateResult = "次周回開始 / Ωは閉じた";
 }
 
 function resolveGateRunOutcome(state, notes) {
@@ -2000,7 +2363,10 @@ function applyGateRunAction(actionId) {
     Object.assign(state, applied.state);
     targetDepthId = applied.targetDepthId;
     if (applied.events.resetLost) notes.push("再挑戦を開始");
-    if (applied.events.keepOmegaUnlocked) notes.push("Ω解放を保持");
+    if (applied.events.resetWon) {
+      startNextLoopState(state, targetDepthId || HUB_DEPTH);
+      notes.push("次周回開始 / Ωを閉じた");
+    }
     if (applied.events.won) {
       notes.push("扉が開いた");
     } else if (applied.events.timeout) {
@@ -2022,15 +2388,18 @@ function applyGateRunAction(actionId) {
     const countsAsGateTurn = actionId !== "retreat";
 
     if (actionId === "retreat") {
-      const keepOmegaUnlocked = state.gateRunStatus === "won";
+      const nextLoop = state.gateRunStatus === "won";
       if (state.gateRunStatus === "lost") {
         resetGateRunState(state);
         notes.push("再挑戦を開始");
       }
-      stabilityDelta = keepOmegaUnlocked ? 8 : 22;
-      resonanceDelta = keepOmegaUnlocked ? -2 : -4;
-      chargeDelta = keepOmegaUnlocked ? 0 : -8;
-      if (keepOmegaUnlocked) notes.push("Ω解放を保持");
+      if (nextLoop) {
+        startNextLoopState(state);
+        notes.push("次周回開始 / Ωを閉じた");
+      }
+      stabilityDelta = nextLoop ? 0 : 22;
+      resonanceDelta = nextLoop ? 0 : -4;
+      chargeDelta = nextLoop ? 0 : -8;
       targetDepthId = currentDepthId !== HUB_DEPTH && depths[HUB_DEPTH] ? HUB_DEPTH : null;
     } else if (actionId === "dive") {
       stabilityDelta = -(15 + Math.ceil(risk / 18));
@@ -2274,14 +2643,13 @@ function returnCompletedLoopToHub() {
   clearPause();
 
   const state = getRunState();
-  if (state.gateRunStatus === "won") {
-    state.lastMoveType = "retreat";
-    state.lastDepthId = targetDepthId;
-    state.lastGateResult = "一周完了 / 夜のハブへ戻る / Ω解放を保持";
+  const wasWon = state.gateRunStatus === "won";
+  if (wasWon) {
+    startNextLoopState(state, targetDepthId);
     saveRunState();
   }
-  runLog = state.gateRunStatus === "won"
-    ? "一周完了 / 夜のハブへ戻る / Ω解放を保持"
+  runLog = wasWon
+    ? "一周完了 / 夜のハブへ戻る / Ωは閉じた"
     : "夜のハブへ戻る";
   renderDepth(targetDepthId, { recordHistory: false, applyRun: false });
   setStatus(targetDepthId === HUB_DEPTH ? "HUBへ" : "最初へ");
@@ -2404,7 +2772,7 @@ function renderBgmCompanionMarkup(profile, launchUrl, localLaunchUrl) {
   const openText = bgmOpenLinkLabel();
 
   return `
-    <div class="hz-bgm-companion" data-bgm-phase="${escapeHtml(musicBridgePhase)}" data-bgm-collapsed="${bgmShouldCollapse() ? "true" : "false"}" data-bgm-follow="${bgmFollowEnabled ? "on" : "off"}" data-music-state="${escapeHtml(cleanDataToken(MusicFeedbackState.connectionState || "idle", "idle"))}" data-music-autofollow="${MusicFeedbackState.autoFollow ? "on" : "off"}" aria-label="BGM: Musicを別タブで開き、Music側のSTART.HZMで鳴らします" title="ブラウザの自動再生制限は迂回せず、別タブのMusicでSTART.HZM後に同期します。">
+    <div class="hz-bgm-companion" data-bgm-phase="${escapeHtml(musicBridgePhase)}" data-bgm-collapsed="${bgmShouldCollapse() ? "true" : "false"}" data-bgm-follow="${bgmFollowEnabled ? "on" : "off"}" data-inline-bgm="${inlineBgmIsPlaying() ? "playing" : "idle"}" data-music-state="${escapeHtml(cleanDataToken(MusicFeedbackState.connectionState || "idle", "idle"))}" data-music-autofollow="${MusicFeedbackState.autoFollow ? "on" : "off"}" aria-label="BGM: 同じ画面で生成BGMを鳴らせます" title="自動再生制限は迂回せず、タップ後に同じ画面のWeb Audioで鳴らします。外部Musicは任意 companion です。">
       <div class="hz-bgm-row">
         <button id="bgm-toggle-provider" class="hz-bgm-chip" type="button" aria-label="BGMを起動または表示">
           <span class="hz-bgm-label">BGM</span>
@@ -2414,9 +2782,11 @@ function renderBgmCompanionMarkup(profile, launchUrl, localLaunchUrl) {
         </button>
         ${stopButton}
       </div>
-      <div id="bgm-status" class="hz-bgm-status">${escapeHtml(bgmStatusLine("別タブMusic → START.HZM"))}</div>
+      <div id="bgm-status" class="hz-bgm-status">${escapeHtml(bgmStatusLine("同じ画面BGM待ち"))}</div>
       <div class="hz-bgm-unlock">
+        <button id="bgm-inline-start" class="hz-bgm-inline" type="button">同じ画面で鳴らす</button>
         <a id="music-open-provider" class="hz-bgm-link" href="${escapeHtml(launchUrl)}" target="hazama-music">${escapeHtml(openText)}</a>
+        <span class="hz-bgm-mobile-note">スマホは同じ画面再生を推奨</span>
       </div>
       ${devTools}
     </div>
@@ -2563,7 +2933,7 @@ function renderRunPanelMarkup() {
 function syncViewportAfterRender(previousDepthId, nextDepthId, opts = {}) {
   if (opts.preserveScroll === true) return;
   if (!previousDepthId || previousDepthId === nextDepthId) return;
-  const target = $("run-panel-host") || $("story");
+  const target = $("story");
   if (!target || typeof target.scrollIntoView !== "function") return;
   window.requestAnimationFrame(() => {
     target.scrollIntoView({ block: "start", inline: "nearest", behavior: "auto" });
@@ -2922,10 +3292,6 @@ function renderDepth(depthId, opts = {}) {
   const question = questionForDepth(depth);
 
   storyEl.innerHTML = `
-    ${renderStartGuideMarkup()}
-    <div id="run-panel-host">
-      ${renderRunPanelMarkup()}
-    </div>
     <div class="hz-block">
       <div class="hz-depth-title">${escapeHtml(title)}</div>
       ${desc ? `<div class="hz-depth-desc">${escapeHtml(desc)}</div>` : ""}
@@ -2937,9 +3303,25 @@ function renderDepth(depthId, opts = {}) {
   `;
 
   optionsEl.innerHTML = "";
-  renderOptions(depth, optionsEl);
-  renderControls(optionsEl);
-  optionsEl.insertAdjacentHTML("beforeend", renderBreathRestMarkup(question));
+  optionsEl.innerHTML = `
+    <section class="hz-decision-panel" aria-label="展開">
+      ${renderStartGuideMarkup()}
+      <div class="hz-decision-head">
+        <span>展開</span>
+        <b>本文を読んでから選ぶ</b>
+      </div>
+      <div id="run-panel-host">
+        ${renderRunPanelMarkup()}
+      </div>
+      <div id="route-options-host" class="hz-route-options"></div>
+      <div id="session-controls-host"></div>
+      ${renderBreathRestMarkup(question)}
+    </section>
+  `;
+  const routeHost = $("route-options-host") || optionsEl;
+  const controlsHost = $("session-controls-host") || optionsEl;
+  renderOptions(depth, routeHost);
+  renderControls(controlsHost);
   renderCoreLoop(depth);
   bindGateRunControls();
   bindMusicControls();
@@ -3107,6 +3489,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const v = $("app-version");
   if (v) v.textContent = APP_VERSION;
   setupMusicFeedbackReceiver();
+  installInlineBgmResumeHooks();
   applyMusicFeedbackVisual();
   setupPwaInstallPrompt();
   setupServiceWorker();

@@ -152,7 +152,8 @@ function previewRow(name, actionId, overrides = {}) {
     marks: preview.marksDelta,
     gate: preview.chargeDelta,
     target: preview.targetDepthId || "",
-    keepOmega: preview.keepOmegaUnlocked
+    keepOmega: preview.keepOmegaUnlocked,
+    resetWon: preview.resetWon === true
   };
 }
 
@@ -230,8 +231,8 @@ if (!(previewByName["sync-ready"].ready === true && previewByName["sync-ready"].
 if (!(previewByName["retreat-low"].target === "HUB_NIGHT" && previewByName["retreat-low"].stability >= 20 && previewByName["retreat-low"].gate < 0)) {
   failures.push("low-state retreat no longer reads as HUB recovery with a gate cost");
 }
-if (!(previewByName["retreat-won"].target === "HUB_NIGHT" && previewByName["retreat-won"].keepOmega && previewByName["retreat-won"].gate === 0)) {
-  failures.push("won retreat no longer preserves Ω unlock");
+if (!(previewByName["retreat-won"].target === "HUB_NIGHT" && previewByName["retreat-won"].resetWon && !previewByName["retreat-won"].keepOmega && previewByName["retreat-won"].gate < 0)) {
+  failures.push("won retreat no longer starts a closed next loop");
 }
 
 const fieldBreath = createState({
@@ -260,12 +261,11 @@ const wonRetreat = createState({
   risk: 42
 });
 const wonRetreatResult = applyGateAction(wonRetreat, "retreat");
-if (wonRetreat.gateRunStatus !== "won" || wonRetreat.gateRunCharge !== 100 || wonRetreatResult.targetDepthId !== "HUB_NIGHT") {
-  failures.push("won retreat did not preserve Ω unlock while returning to HUB");
+if (wonRetreat.gateRunStatus !== "running" || wonRetreat.gateRunCharge !== 0 || wonRetreatResult.targetDepthId !== "HUB_NIGHT") {
+  failures.push("won retreat did not close Ω while returning to HUB");
 }
 
-const lockedAfterWon = applyGateAction(wonRetreat, "sync");
-if (lockedAfterWon.changed) failures.push("post-win sync mutated a closed Gate Run");
+if (wonRetreatResult.events.resetWon !== true) failures.push("won retreat did not report resetWon");
 
 if (failures.length) {
   console.error(`Balance smoke failed:\n- ${failures.join("\n- ")}`);

@@ -5,7 +5,7 @@ import path from "node:path";
 
 const root = process.cwd();
 const failures = [];
-const APP_VERSION = "2.35";
+const APP_VERSION = "2.37";
 const CACHE_VERSION = `hazama-pwa-v${APP_VERSION}`;
 
 function repoPath(relativePath) {
@@ -179,7 +179,10 @@ for (const needle of [
   "新バージョン利用可能",
   "別タブMusic → START.HZM",
   "MusicタブでSTART.HZM",
-  "自動再生制限は迂回せず"
+  "自動再生制限は迂回せず",
+  "同じ画面で鳴らす",
+  "startInlineBgm",
+  "MediaMetadata"
 ]) {
   assertIncludes(startupSmoke, needle, "scripts/startup-smoke.sh contract");
 }
@@ -187,7 +190,10 @@ for (const needle of [
 for (const needle of [
   "別タブMusic → START.HZM",
   "MusicタブでSTART.HZM",
-  "自動再生制限は迂回せず"
+  "自動再生制限は迂回せず",
+  "同じ画面で鳴らす",
+  "createMediaStreamDestination",
+  "data-inline-bgm"
 ]) {
   assertIncludes(main, needle, "hazama-main.js startup contract");
 }
