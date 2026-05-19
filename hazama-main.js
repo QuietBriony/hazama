@@ -1,4 +1,4 @@
-// Hazama main.js v2.34
+// Hazama main.js v2.35
 // Minimal, robust loader + renderer for GitHub Pages / Codespaces.
 // v2.3 adds a lightweight deterministic game layer around depth pressure.
 // v2.5 animates the descent key visual and mandala goal gate.
@@ -31,8 +31,9 @@
 // v2.32 frames Breath Gate as optional rest and strengthens run outcomes.
 // v2.33 makes the Music/BGM handoff explicit: Hazama opens Music in another tab, then START.HZM unlocks audio there.
 // v2.34 adds the Music-stack-style PWA shell, install prompt, and service-worker update path.
+// v2.35 adds a first-screen mission card so the opening action is unambiguous.
 
-const APP_VERSION = "v2.34";
+const APP_VERSION = "v2.35";
 const GateRunModel = globalThis.HazamaGateRun || {};
 const GATE_CONSTANTS = GateRunModel.constants || {};
 
@@ -626,6 +627,31 @@ function renderFirstPlayableGuideMarkup() {
       <div class="hz-loop-next"><span>次</span><b>${escapeHtml(guide.next)}</b></div>
       <div class="hz-loop-detail">${escapeHtml(guide.detail)}</div>
     </div>
+  `;
+}
+
+function renderStartGuideMarkup() {
+  const state = getRunState();
+  if (currentDepthId !== DEFAULT_START || state.gateRunStatus !== "running") return "";
+
+  const startTarget = depths[HUB_DEPTH] ? HUB_DEPTH : "";
+  return `
+    <section class="hz-start-guide" aria-label="最初にやること">
+      <div class="hz-start-guide-copy">
+        <span class="hz-start-kicker">最初にやること</span>
+        <h2>まず夜のハブへ入る</h2>
+        <p>ここは入口です。HUBに入るとGate Runが開き、扉100%からΩを目指せます。</p>
+      </div>
+      <button class="hz-start-guide-cta" type="button" data-start-hub="${escapeHtml(startTarget)}"${startTarget ? "" : " disabled"}>
+        <span>まず進む</span>
+        <b>夜のハブへ</b>
+      </button>
+      <ol class="hz-start-steps" aria-label="初回ループの流れ">
+        <li><b>1</b><span>夜のハブへ入る</span></li>
+        <li><b>2</b><span>Gate Runで扉を100%</span></li>
+        <li><b>3</b><span>Ωへ入って一周する</span></li>
+      </ol>
+    </section>
   `;
 }
 
@@ -2274,8 +2300,7 @@ function enterOmegaDepth() {
 }
 
 function bindGateRunControls() {
-  const startHubBtn = document.querySelector("[data-start-hub]");
-  if (startHubBtn) {
+  for (const startHubBtn of document.querySelectorAll("[data-start-hub]")) {
     startHubBtn.addEventListener("click", () => {
       const targetDepthId = startHubBtn.getAttribute("data-start-hub");
       if (!targetDepthId || !depths[targetDepthId] || navigationLocked) return;
@@ -2897,6 +2922,7 @@ function renderDepth(depthId, opts = {}) {
   const question = questionForDepth(depth);
 
   storyEl.innerHTML = `
+    ${renderStartGuideMarkup()}
     <div id="run-panel-host">
       ${renderRunPanelMarkup()}
     </div>

@@ -6,7 +6,7 @@ Hazama を触る agent が最初に読む構造マップ。
 
 ## Repo
 
-ローカル配置: `C:\workspace\github-inventory\side-stack\hazama`
+ローカル配置: `C:\workspace\hazama`
 
 | area | role | key files | check |
 |---|---|---|---|

@@ -4,7 +4,7 @@ Scope: HZ-BL-002 support note. This is an agent / in-app browser / smoke pass, n
 
 ## Environment
 
-- Repo: `C:\workspace\github-inventory\side-stack\hazama`
+- Repo: `C:\workspace\hazama`
 - Date: 2026-05-16
 - App target: Hazama v2.34 static first playable
 - Local URL: `http://127.0.0.1:58911/index.html`

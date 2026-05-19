@@ -8,7 +8,7 @@ Claude / Codex / 人間の誰が回しても同じ状態から始め、同じ記
 
 ## 0. 前提
 
-- 作業 root: `C:\workspace\github-inventory\side-stack\hazama`
+- 作業 root: `C:\workspace\hazama`
 - repo 契約: `AGENTS.md`
 - 待ち行列: `docs/autonomy/BACKLOG.md`
 - 記録: `docs/autonomy/SESSION-LEDGER.md`
@@ -84,7 +84,7 @@ node scripts/hazama-check.mjs
 新しい Codex / Claude session へ渡す短いプロンプト:
 
 ```text
-Hazama の自律ランを 1 回回して。起点は C:\workspace\github-inventory\side-stack\hazama
+Hazama の自律ランを 1 回回して。起点は C:\workspace\hazama
 
 手順は docs/autonomy/AUTONOMOUS-RUN.md に従う:
 1. STACK-INDEX / SESSION-LEDGER 最新 / BACKLOG / AGENTS.md を読む

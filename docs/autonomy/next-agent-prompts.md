@@ -1,12 +1,12 @@
 # Next Agent Prompts — Hazama
 
 Ready-to-paste prompts for the post-sprint handoff. Each prompt assumes the agent starts
-in `C:\workspace\github-inventory\side-stack\hazama` and must obey `AGENTS.md`.
+in `C:\workspace\hazama` and must obey `AGENTS.md`.
 
 ## PWA Human-Gate Follow-Up
 
 ```text
-You are working in C:\workspace\github-inventory\side-stack\hazama. The worktree may be
+You are working in C:\workspace\hazama. The worktree may be
 dirty from other agents; do not revert or overwrite changes you did not make.
 
 Task: prepare and record the HZ-BL-001 PWA install / offline human pass.
@@ -30,7 +30,7 @@ Required checks:
 ## First Playable Human Playtest Synthesis
 
 ```text
-You are working in C:\workspace\github-inventory\side-stack\hazama. The worktree may be
+You are working in C:\workspace\hazama. The worktree may be
 dirty from other agents; do not revert or overwrite changes you did not make.
 
 Task: synthesize HZ-BL-002 first playable manual play notes into an actionable, compact
@@ -56,7 +56,7 @@ Required checks:
 ## Gate Run Balance Tuning After Notes
 
 ```text
-You are working in C:\workspace\github-inventory\side-stack\hazama. The worktree may be
+You are working in C:\workspace\hazama. The worktree may be
 dirty from other agents; do not revert or overwrite changes you did not make.
 
 Task: tune HZ-BL-003 Gate Run balance only if concrete manual playtest notes identify a
@@ -83,7 +83,7 @@ Required checks:
 ## Optional Playwright Enablement Review
 
 ```text
-You are working in C:\workspace\github-inventory\side-stack\hazama. The worktree may be
+You are working in C:\workspace\hazama. The worktree may be
 dirty from other agents; do not revert or overwrite changes you did not make.
 
 Task: review whether optional Playwright browser smoke can be enabled or improved without

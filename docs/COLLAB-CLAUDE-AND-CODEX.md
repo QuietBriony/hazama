@@ -65,7 +65,7 @@ git status --short
 ## Handoff Prompt
 
 ```text
-Hazama の続き。起点は C:\workspace\github-inventory\side-stack\hazama
+Hazama の続き。起点は C:\workspace\hazama
 
 AGENTS.md と docs/autonomy/AUTONOMOUS-RUN.md に従って。
 まず STACK-INDEX / SESSION-LEDGER 最新 / BACKLOG を読んで、

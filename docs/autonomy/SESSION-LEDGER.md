@@ -19,6 +19,17 @@ Hazama 自律開発 session の追記専用ログ。
 
 ---
 
+## 2026-05-19 — First-screen guidance polish
+- agent      : Codex
+- goal       : 初期画面で最初に何をすればよいか迷う問題を、静的 first playable の範囲で解消する
+- shipped    :
+  - `hazama-main.js` / `hazama-style.css`: `A_start` 上部に `最初にやること` guide、主CTA、初回ループ3手順を追加
+  - `index.html` / `hazama-index.html` / `sw.js` / smoke scripts / `README.md`: runtime asset 更新に合わせて v2.35 / `hazama-pwa-v2.35` へ同期
+- checks     : `node --check hazama-main.js` -> PASS; `git diff --check` -> PASS; `node scripts/hazama-check.mjs` -> 5 PASS / 0 FAIL / 2 SKIP; in-app browser desktop/mobile first-screen CTA pass
+- backlog    : HZ-BL-002 は human-gate のため open 維持。ただし初期画面の迷いは修正済み
+- next       : 人間の5〜8分通しプレイで、HUB後のGate Run判断が読めるか確認
+- blockers   : 実機 PWA install/offline と taste 判断は human wait
+
 ## 2026-05-16 — Static contract and closeout hardening
 - agent      : Codex parent + 3 worker agents
 - goal       : PWA/static 契約を依存なし smoke に分離し、agent closeout と balance 判断の型を固定する
