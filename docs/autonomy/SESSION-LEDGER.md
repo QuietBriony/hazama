@@ -19,6 +19,18 @@ Hazama 自律開発 session の追記専用ログ。
 
 ---
 
+## 2026-05-24 — Gameplay consistency polish
+- agent      : Codex
+- goal       : 既存 first playable を壊さず、矛盾検証と「次にやること」の体感導線を強める
+- shipped    :
+  - `hazama-main.js` / `hazama-style.css`: `展開` パネル内に初回ループ guide、次アクション、主導線/補助/BGM の優先順位を常時表示
+  - `scripts/hazama-consistency-smoke.mjs` / `scripts/hazama-check.mjs`: depth graph、first playable route、Ω lock/relock、version drift、次アクション導線を依存なし smoke に追加
+  - `index.html` / `hazama-index.html` / `sw.js` / smoke scripts / docs: runtime asset 更新に合わせて v2.38 / `hazama-pwa-v2.38` へ同期
+- checks     : `node --check hazama-main.js` -> PASS; `node --check scripts/hazama-consistency-smoke.mjs` -> PASS; `node scripts/hazama-consistency-smoke.mjs` -> PASS; `node scripts/balance-smoke.mjs` -> PASS; `node scripts/first-playable-smoke.mjs` -> PASS; `git diff --check` -> PASS; `node scripts/hazama-check.mjs` -> 6 PASS / 0 FAIL / 2 SKIP; in-app browser desktop/mobile -> v2.38 next-action guide visible, no horizontal overflow
+- backlog    : HZ-BL-001 / HZ-BL-002 は human-gate のため open 維持。HZ-BL-003 の数値調整は具体メモ待ち
+- next       : 実機スマホで `次にやること` guide、同じ画面BGM、次周回Ω再ロックが集中を邪魔しないか記録
+- blockers   : 実機 PWA install/offline、BGMバックグラウンド継続、ゲーム性の taste 判断は human wait
+
 ## 2026-05-20 — Same-screen mobile BGM path
 - agent      : Codex
 - goal       : スマホでゲーム画面へ戻ってもBGMを鳴らしながら遊べるよう、別タブ依存を避けるBGM導線を追加する

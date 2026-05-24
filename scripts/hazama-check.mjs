@@ -67,6 +67,11 @@ const steps = [
     args: ["scripts/pwa-static-contract-smoke.mjs"]
   },
   {
+    name: "hazama-consistency",
+    command: "node",
+    args: ["scripts/hazama-consistency-smoke.mjs"]
+  },
+  {
     name: "balance",
     command: "node",
     args: ["scripts/balance-smoke.mjs"]

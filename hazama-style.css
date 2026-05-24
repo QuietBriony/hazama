@@ -1726,6 +1726,31 @@ body {
   line-height: 1.45;
 }
 
+.hz-loop-priority {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.hz-loop-priority span {
+  display: inline-flex;
+  align-items: center;
+  min-height: 1.45rem;
+  border: 1px solid rgba(96, 165, 250, 0.2);
+  border-radius: 999px;
+  background: rgba(8, 15, 26, 0.62);
+  color: #cbd5e1;
+  padding: 0.1rem 0.48rem;
+  font-size: 0.68rem;
+  font-weight: 800;
+  line-height: 1.2;
+}
+
+.hz-loop-priority span:first-child {
+  border-color: rgba(250, 204, 21, 0.42);
+  color: #fde68a;
+}
+
 .hz-gi-objective {
   color: #f8fafc;
   font-size: 0.86rem;
@@ -2487,6 +2512,15 @@ body {
   .hz-gate-run-hint,
   .hz-loop-detail {
     font-size: 0.8rem;
+  }
+
+  .hz-loop-priority {
+    flex-direction: column;
+  }
+
+  .hz-loop-priority span {
+    justify-content: center;
+    width: 100%;
   }
 
   .hz-rogue-hud {
