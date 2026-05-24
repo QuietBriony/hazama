@@ -2,7 +2,7 @@
 
 ## Current Goal
 
-Make the v2.34 first playable readable as a small roguelike decision loop:
+Make the v2.38 first playable readable as a small roguelike decision loop:
 
 `A_start -> HUB_NIGHT -> Gate Run -> Ω unlock -> Ω -> A_reborn`
 
@@ -23,8 +23,11 @@ Current master already has:
 - Breath Gate now sits below route/session controls as `休む / 整える`, so it reads as optional rest rather than the main route
 - Gate Run now shows explicit `扉が開いた`, `立て直し中`, and `時間切れ` outcome panels
 - `A_reborn` completion shows a short run record for turns, route steps, rest count, collapse count, main action, and Ω arrival
-- BGM now reads as `別タブMusic → START.HZM`, so the audio handoff is clear without making Music required
+- BGM now supports same-screen BGM for smartphone play while preserving `別タブMusic → START.HZM` as an optional companion path
 - PWA manifest, icons, service worker, install prompt, and update banner are now present without changing the main loop
+- The post-story `展開` panel keeps the first playable guide, next action, operation priority, Gate Run, route choices, Breath Gate, session controls, and BGM in one flow
+- `A_reborn -> HUB_NIGHT` closes Ω on the next loop, so replay starts by opening the gate again
+- Consistency smoke checks depth graph integrity, first playable route contract, Ω lock/relock markers, and docs/runtime version drift
 - Hazama-local autonomous development engine now gives Codex / Claude Code the same BACKLOG, SESSION-LEDGER, claim rules, and `node scripts/hazama-check.mjs` entrypoint
 - Balance policies in `scripts/balance-smoke.mjs`
 - Static route skeleton check in `scripts/first-playable-smoke.mjs`
@@ -142,6 +145,8 @@ Pass signal:
   - Covers the static route skeleton and shared-model Ω unlock.
 - `node scripts/browser-first-playable-smoke.mjs`
   - Covers the browser DOM loop and PWA shell when optional Playwright is available; skips without adding dependencies when it is not.
+- `node scripts/hazama-consistency-smoke.mjs`
+  - Covers depth graph integrity, first playable route contract, Ω lock/relock markers, current version alignment, and the next-action guide in the post-story flow.
 - `bash scripts/startup-smoke.sh 8765`
   - Covers static serving, asset presence, versioned script loading, PWA manifest/service worker/icons, model/script presence, and key UI strings.
 - `node scripts/localstorage-migration-smoke.mjs`
@@ -173,6 +178,10 @@ Checked on a narrow mobile viewport with local static serving:
 - v2.32 in-app browser check covered fresh reset, `夜のハブへ入る`, Gate Run win, `Ω -> A_reborn`, compact run record, collapse/retry feedback, and BGM unopened with no console errors.
 - v2.33 BGM handoff pass clarifies `別タブMusic → START.HZM` and keeps the companion secondary to the main loop.
 - v2.34 PWA pass adds install/offline shell behavior while keeping route progress and Music handoff unchanged.
+- v2.35 first-screen guidance makes the initial `夜のハブへ` action explicit.
+- v2.36 story-first loop polish moves controls into a post-story `展開` panel and closes Ω on the next loop.
+- v2.37 same-screen BGM lets smartphone play continue without depending on returning from an external Music tab.
+- v2.38 consistency polish keeps the next action visible inside `展開` and adds a docs/runtime drift smoke.
 
 ## Next Manual Pass
 
@@ -197,5 +206,6 @@ Record:
 - whether the new run result record makes a second loop tempting
 - whether `休む / 整える` feels helpful without becoming the main route
 - whether the new `合わせる準備前/準備OK` labels reduce early sync confusion
+- whether the `次にやること` guide makes the main action clearer than the secondary Breath Gate/BGM affordances
 
 Only tune numbers after this pass finds a specific confusing or broken moment.

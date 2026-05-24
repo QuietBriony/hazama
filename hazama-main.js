@@ -1,4 +1,4 @@
-// Hazama main.js v2.37
+// Hazama main.js v2.38
 // Minimal, robust loader + renderer for GitHub Pages / Codespaces.
 // v2.3 adds a lightweight deterministic game layer around depth pressure.
 // v2.5 animates the descent key visual and mandala goal gate.
@@ -34,8 +34,9 @@
 // v2.35 adds a first-screen mission card so the opening action is unambiguous.
 // v2.36 closes Ω on new loops and moves choices into one post-story flow panel.
 // v2.37 adds same-screen generated BGM for mobile play while keeping external Music as a companion.
+// v2.38 keeps the post-story flow focused with an always-visible next-action guide.
 
-const APP_VERSION = "v2.37";
+const APP_VERSION = "v2.38";
 const GateRunModel = globalThis.HazamaGateRun || {};
 const GATE_CONSTANTS = GateRunModel.constants || {};
 
@@ -593,11 +594,15 @@ function buildFirstPlayableGuide(depthId = currentDepthId, state = getRunState()
   let active = "Gate Run";
   let next = `扉を${GATE_RUN_MAX_CHARGE}%まで開く`;
   let detail = `扉 ${gateCharge}% / 攻める・整える・合わせるを選ぶ。`;
+  let primary = "主導線: Gate Run / 道を選ぶ";
+  let support = "補助: Breath Gate";
+  let bgm = "BGM: 同じ画面推奨";
 
   if (depthId === DEFAULT_START) {
     active = "A_start";
     next = "夜のハブへ入る";
     detail = "まずHUBへ。Gate RunはHUBから操作できる。";
+    primary = "主導線: 夜のハブへ";
   } else if (depthId === HUB_DEPTH && state.gateRunStatus !== "won") {
     active = "HUB";
     next = "Gate Runで扉100%";
@@ -606,26 +611,35 @@ function buildFirstPlayableGuide(depthId = currentDepthId, state = getRunState()
     active = "Ω";
     next = "新しい入口へ戻る";
     detail = "一周の到達点。ここからA_rebornへつなぐ。";
+    primary = "主導線: 新しい入口へ戻る";
+    support = "補助: HUBへ戻る";
   } else if (depthId === "A_reborn") {
     active = "A_reborn";
     next = "夜のハブへ戻る";
     detail = "一周完了。次の挑戦はHUBから始める。";
+    primary = "主導線: 次の周回へ";
+    support = "補助: 記録を読む";
   } else if (state.gateRunStatus === "won") {
     active = "Ω unlock";
     next = "Ωへ入る";
     detail = "扉100%。一周の到達点へ進める。";
+    primary = "主導線: Ωへ入る";
+    support = "補助: HUBへ戻る";
   } else if (state.gateRunStatus === "lost" || state.stability < 34) {
     active = "Breath Gate";
     next = "ひと息置く";
     detail = `落ち着き ${Math.round(state.stability)} / 回復してから扉へ戻る。`;
+    primary = "主導線: 立て直して再挑戦";
+    support = "補助: Breath Gate / HUB退避";
   } else if (gateCharge >= 82) {
     active = "Gate Run";
     next = "扉に合わせる";
     detail = `扉 ${gateCharge}% / あと少しでΩ解放。`;
+    primary = "主導線: 合わせる準備";
   }
 
   const stages = ["A_start", "HUB", "Gate Run", "Breath Gate", "Ω unlock", "Ω", "A_reborn"];
-  return { active, next, detail, stages };
+  return { active, next, detail, primary, support, bgm, stages };
 }
 
 function renderFirstPlayableGuideMarkup() {
@@ -640,8 +654,13 @@ function renderFirstPlayableGuideMarkup() {
         <b>5〜8分で一周</b>
       </div>
       <div class="hz-loop-steps">${chips}</div>
-      <div class="hz-loop-next"><span>次</span><b>${escapeHtml(guide.next)}</b></div>
+      <div class="hz-loop-next"><span>次にやること</span><b>${escapeHtml(guide.next)}</b></div>
       <div class="hz-loop-detail">${escapeHtml(guide.detail)}</div>
+      <div class="hz-loop-priority" aria-label="操作の優先順位">
+        <span>${escapeHtml(guide.primary)}</span>
+        <span>${escapeHtml(guide.support)}</span>
+        <span>${escapeHtml(guide.bgm)}</span>
+      </div>
     </div>
   `;
 }
@@ -3310,6 +3329,7 @@ function renderDepth(depthId, opts = {}) {
         <span>展開</span>
         <b>本文を読んでから選ぶ</b>
       </div>
+      ${renderFirstPlayableGuideMarkup()}
       <div id="run-panel-host">
         ${renderRunPanelMarkup()}
       </div>

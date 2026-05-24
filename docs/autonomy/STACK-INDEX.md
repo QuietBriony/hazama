@@ -14,6 +14,7 @@ Hazama を触る agent が最初に読む構造マップ。
 | runtime | UI render, story navigation, local state, Music bridge | `hazama-main.js`, `hazama-style.css`, `hazama-seed.js`, `hazama-state.js` | `node scripts/browser-first-playable-smoke.mjs` when Playwright exists |
 | game model | dependency-free Gate Run / Breath Gate rules | `hazama-gate-run.js` | `node scripts/balance-smoke.mjs` |
 | story data | depth graph and route text | `hazama-depths.json` | `node scripts/first-playable-smoke.mjs` |
+| consistency | depth graph, route contract, version drift, next-action guide | `hazama-depths.json`, `hazama-main.js`, docs, smoke scripts | `node scripts/hazama-consistency-smoke.mjs` |
 | docs | playtest plan, balance notes, research, autonomy engine | `docs/` | review + `node scripts/hazama-check.mjs` |
 | playtest notes | agent/human passes and synthesis | `docs/playtest/` | review + relevant smoke |
 
@@ -56,6 +57,7 @@ It aggregates:
 - `node scripts/balance-smoke.mjs`
 - `node scripts/first-playable-smoke.mjs`
 - `node scripts/pwa-static-contract-smoke.mjs`
+- `node scripts/hazama-consistency-smoke.mjs`
 - `bash scripts/startup-smoke.sh <free-port>`
 - `node scripts/localstorage-migration-smoke.mjs`
 - `node scripts/browser-first-playable-smoke.mjs`

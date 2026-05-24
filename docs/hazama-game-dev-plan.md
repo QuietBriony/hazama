@@ -2,7 +2,7 @@
 
 ## Current playable loop summary
 
-Hazama v2.34 is a browser-based static first playable slice that loads `hazama-depths.json` from `index.html` / `hazama-index.html` and renders a text-first depth navigator with a simplified roguelike-style run HUD. The current loop starts at `A_start`, lets the player enter `HUB_NIGHT` or move into the depth chain, and keeps persistent local run state for progress, seed, stability, resonance, marks, best depth, Gate Run progress, Breath Gate streak counters, and a small collapse count for run-result feedback.
+Hazama v2.38 is a browser-based static first playable slice that loads `hazama-depths.json` from `index.html` / `hazama-index.html` and renders a text-first depth navigator with a simplified roguelike-style run HUD. The current loop starts at `A_start`, lets the player enter `HUB_NIGHT` or move into the depth chain, and keeps persistent local run state for progress, seed, stability, resonance, marks, best depth, Gate Run progress, Breath Gate streak counters, and a small collapse count for run-result feedback.
 
 The playable systems already present are:
 
@@ -13,7 +13,7 @@ The playable systems already present are:
 - Ω locking through `canEnterOmega()`, requiring `gateRunStatus === "won"` before Ω entry.
 - Completion path from `Ω` to `A_reborn`, then back to `HUB_NIGHT`.
 - Reset flow that clears seed, progress, and run state.
-- BGM companion integration that sends Music profile payloads while keeping Music as background support only, with the handoff labeled as a separate Music tab and `START.HZM` unlock.
+- BGM companion integration that sends Music profile payloads while keeping Music as background support only, with same-screen generated BGM recommended on mobile and the external Music handoff preserved as an optional tab.
 - Shared dependency-free Gate Run model in `hazama-gate-run.js`, used by both the browser runtime and `scripts/balance-smoke.mjs`.
 - First playable route smoke in `scripts/first-playable-smoke.mjs`, covering the static loop skeleton and shared-model Ω unlock.
 - Breath Gate collapse/timeout targets from the shared model are followed by the browser runtime, so Breath spam failure returns through `HUB_NIGHT`.
@@ -30,6 +30,10 @@ The playable systems already present are:
 - Simplified default HUD surface: duplicate gauges, resource explanation chips, and full Gate Intelligence are no longer constantly shown above the playable controls.
 - First action polish that lifts the initial `夜のハブへ入る` CTA and Gate Run action buttons above secondary map/log telemetry.
 - Growth-route polish that keeps Gate Run and route choices primary while Breath Gate reads as optional rest.
+- Story-first polish that places Gate Run, route choices, Breath Gate, and session controls in one post-story `展開` panel after the player reads the current depth.
+- Next-loop polish that closes Ω after `A_reborn -> HUB_NIGHT`, so a new loop asks the player to open the gate again.
+- Same-screen generated BGM so smartphone play does not depend on returning from an external Music tab.
+- Consistency smoke coverage for depth graph integrity, first playable route contract, Ω lock/relock markers, and version drift.
 - PWA shell modeled after the music-stack `Music` repo family: standalone manifest, local icons, service-worker precache/offline fallback, install prompt, and update banner.
 - Hazama-local autonomous development engine adapted from music-stack: `AGENTS.md`, `docs/autonomy/`, Codex/Claude collaboration notes, and a single `node scripts/hazama-check.mjs` verification entrypoint.
 
@@ -70,7 +74,7 @@ Breath Gate means the existing short text rest mechanic, now framed as `休む /
 The top-level goal is not to add more systems. The top-level goal is to make the existing first playable readable enough that a new player can complete one intended loop without outside explanation.
 
 - North Star: a first-time player can understand the one-loop intent without audio or external docs, and can reach `A_reborn` in roughly 5-8 minutes.
-- Next merge goal: verify the v2.34 PWA shell plus v2.33 handoff copy in a real browser pass, especially installability, offline reload, BGM separate-tab read, Breath Gate hierarchy, outcome panels, and the `A_reborn` run record.
+- Next merge goal: verify the v2.38 post-story flow and same-screen BGM in a real browser/device pass, especially next-action clarity, mobile touch hierarchy, install/offline reload, Breath Gate hierarchy, outcome panels, and the `A_reborn` run record.
 - Next playtest goal: keep verifying Gate Run as a small decision game built around attacking, stabilizing, and syncing rather than as five equivalent buttons.
 - v2.21 goal: keep Hazama first playable while making Gate Run and Breath Gate balance resistant to simple recovery/sync spam.
 
@@ -91,6 +95,7 @@ Done means the player can answer these questions from the screen itself:
 - Breath Gate framing: `休む / 整える` should read as an optional recovery/resource action, not as a required text-entry gate.
 - Win/loss feedback: `扉が開いた`, `立て直し中`, and `時間切れ` should be unmistakable, with the next useful action obvious.
 - BGM companion: keep Music/BGM as background companion only. Do not make Music a primary route, required action, or source of player progression.
+- Consistency drift: keep docs, runtime version markers, PWA cache names, and smoke scripts aligned whenever runtime assets change.
 
 ## Gate Run logic issues to evaluate
 
@@ -167,5 +172,9 @@ Done means the player can answer these questions from the screen itself:
    - v2.32 frames Breath Gate as optional rest, adds outcome feedback, and records a compact loop result at `A_reborn`.
    - v2.33 clarifies that Hazama opens Music separately and audio starts after `START.HZM` in the Music tab.
    - v2.34 adds a standalone PWA manifest, icons, service worker, install prompt, and update banner.
+   - v2.35 adds first-screen guidance for the opening action.
+   - v2.36 moves choices into one post-story `展開` panel and closes Ω on the next loop.
+   - v2.37 adds same-screen generated BGM for smartphone play.
+   - v2.38 adds a visible next-action guide and consistency smoke for docs/runtime drift.
    - Continue fixing bugs found from console output, mobile/touch play, localStorage edge cases, static asset loading, and smoke checks.
    - Acceptance: startup smoke passes, the first playable loop completes in-browser, Music absence is harmless, and only intended files change.
