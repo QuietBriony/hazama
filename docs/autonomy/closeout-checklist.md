@@ -46,3 +46,8 @@ Include only the useful closeout facts:
 - Any optional `SKIP` results and the fallback/manual note if relevant.
 - Remaining blockers, human-gate items, or follow-up risks.
 - No unattended merge, push, release, or PR action unless the user explicitly asked for it.
+
+For autonomy or first-playable handoffs, also review
+[harness-quality-checklist-candidate-001.md](harness-quality-checklist-candidate-001.md)
+while it remains candidate status. It helps shape the return packet, but it does
+not replace human evidence for `HZ-BL-001` or `HZ-BL-002`.

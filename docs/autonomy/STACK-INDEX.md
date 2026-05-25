@@ -71,3 +71,7 @@ Human-gated PWA install/offline passes use
 Record the result with [pwa-install-offline-result-template.md](pwa-install-offline-result-template.md).
 Human first playable taste passes can use `docs/playtest/human-playtest-template.md`.
 Balance tuning decisions can use `docs/playtest/gate-run-balance-decision-rubric.md`.
+Agent return packets and autonomy run reviews can use
+[harness-quality-checklist-candidate-001.md](harness-quality-checklist-candidate-001.md)
+as a candidate quality gate. It is a handoff aid, not permission to close
+human-gated work.

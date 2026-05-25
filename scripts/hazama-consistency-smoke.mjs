@@ -127,9 +127,14 @@ assertIncludes(main, "次周回: HUBへ戻るとΩは閉じる", "hazama-main.js
 assertIncludes(main, "次にやること", "hazama-main.js");
 assertIncludes(main, "hz-loop-priority", "hazama-main.js");
 assertIncludes(main, "BGM: 同じ画面推奨", "hazama-main.js");
+assertIncludes(main, "今のノリ", "hazama-main.js");
+assertIncludes(main, "hz-gate-pulse", "hazama-main.js");
+assertIncludes(main, "おすすめ", "hazama-main.js");
 assertIncludes(gate, "resetWon", "hazama-gate-run.js");
 assertIncludes(gate, "keepOmegaUnlocked: false", "hazama-gate-run.js");
 assertIncludes(style, "hz-loop-priority", "hazama-style.css");
+assertIncludes(style, "hz-gate-pulse", "hazama-style.css");
+assertIncludes(style, "hz-gate-action--recommended", "hazama-style.css");
 
 assertIncludes(gamePlan, `Hazama ${appVersionLabel}`, "docs/hazama-game-dev-plan.md");
 assert(!gamePlan.includes("Hazama v2.34 is"), "game dev plan still describes current app as v2.34");

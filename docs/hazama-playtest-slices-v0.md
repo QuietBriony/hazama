@@ -2,7 +2,7 @@
 
 ## Current Goal
 
-Make the v2.38 first playable readable as a small roguelike decision loop:
+Make the v2.39 first playable readable as a small roguelike decision loop:
 
 `A_start -> HUB_NIGHT -> Gate Run -> Ω unlock -> Ω -> A_reborn`
 
@@ -28,6 +28,7 @@ Current master already has:
 - The post-story `展開` panel keeps the first playable guide, next action, operation priority, Gate Run, route choices, Breath Gate, session controls, and BGM in one flow
 - `A_reborn -> HUB_NIGHT` closes Ω on the next loop, so replay starts by opening the gate again
 - Consistency smoke checks depth graph integrity, first playable route contract, Ω lock/relock markers, and docs/runtime version drift
+- Gate Run now shows `今のノリ` pulse cues and an `おすすめ` action badge so the current pressure state reads more like a small decision game
 - Hazama-local autonomous development engine now gives Codex / Claude Code the same BACKLOG, SESSION-LEDGER, claim rules, and `node scripts/hazama-check.mjs` entrypoint
 - Balance policies in `scripts/balance-smoke.mjs`
 - Static route skeleton check in `scripts/first-playable-smoke.mjs`
@@ -182,6 +183,7 @@ Checked on a narrow mobile viewport with local static serving:
 - v2.36 story-first loop polish moves controls into a post-story `展開` panel and closes Ω on the next loop.
 - v2.37 same-screen BGM lets smartphone play continue without depending on returning from an external Music tab.
 - v2.38 consistency polish keeps the next action visible inside `展開` and adds a docs/runtime drift smoke.
+- v2.39 playful polish adds Gate Run pulse cues and recommended-action highlights without changing balance numbers.
 
 ## Next Manual Pass
 
@@ -207,5 +209,6 @@ Record:
 - whether `休む / 整える` feels helpful without becoming the main route
 - whether the new `合わせる準備前/準備OK` labels reduce early sync confusion
 - whether the `次にやること` guide makes the main action clearer than the secondary Breath Gate/BGM affordances
+- whether `今のノリ` and `おすすめ` make Gate Run feel more like a pressure loop without becoming too directive
 
 Only tune numbers after this pass finds a specific confusing or broken moment.

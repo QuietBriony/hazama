@@ -19,6 +19,28 @@ Hazama 自律開発 session の追記専用ログ。
 
 ---
 
+## 2026-05-25 — Playful Gate Run polish
+- agent      : Codex
+- goal       : first playable の route / balance を変えず、Gate Run の選択が少し楽しく読めるようにする
+- shipped    :
+  - `hazama-main.js` / `hazama-style.css`: Gate Run に `今のノリ` pulse、状態別の推し手、`おすすめ` action highlight、A_reborn の loop flavor copy を追加
+  - `index.html` / `hazama-index.html` / `sw.js` / smoke scripts / docs: runtime asset 更新に合わせて v2.39 / `hazama-pwa-v2.39` へ同期
+- checks     : `node --check hazama-main.js` -> PASS; `node scripts/hazama-consistency-smoke.mjs` -> PASS; `node scripts/first-playable-smoke.mjs` -> PASS; `node scripts/hazama-check.mjs` -> 6 PASS / 0 FAIL / 2 SKIP; `git diff --check` -> PASS
+- backlog    : HZ-BL-001 / HZ-BL-002 は human-gate のため open 維持。HZ-BL-003 は数値変更なし
+- next       : 実機スマホで `今のノリ` / `おすすめ` が楽しい補助に見えるか、押し付けに見えないか記録
+- blockers   : 実機 PWA / offline、スマホBGM、ゲーム性 taste は human wait
+
+## 2026-05-25 — Human validation handoff baseline
+- agent      : Codex
+- goal       : v2.38 Pages deploy 後の次作業を、実機 / 人間 evidence 取得に絞って迷わないようにする
+- shipped    :
+  - `docs/autonomy/README.md` / `STACK-INDEX.md` / `closeout-checklist.md`: harness-quality checklist candidate への導線を追加
+  - `docs/autonomy/BACKLOG.md`: HZ-BL-001 / HZ-BL-002 の次 pass 対象を v2.38 Pages 実機確認として明記
+- checks     : `node scripts/hazama-check.mjs` -> 6 PASS / 0 FAIL / 2 SKIP; `git diff --check` -> PASS
+- backlog    : HZ-BL-001 / HZ-BL-002 は human-gate のため open 維持。HZ-BL-003 は具体的な人間 playtest friction 待ち
+- next       : Pages 版で install / standalone / offline reload と 5〜8分 first playable taste pass を人間が記録
+- blockers   : 実機 PWA / offline、スマホBGM、ゲーム性 taste は agent だけでは完了不可
+
 ## 2026-05-24 — Gameplay consistency polish
 - agent      : Codex
 - goal       : 既存 first playable を壊さず、矛盾検証と「次にやること」の体感導線を強める
