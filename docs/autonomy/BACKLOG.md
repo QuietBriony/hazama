@@ -35,6 +35,7 @@ Hazama 自律開発の作業待ち行列。
 - source   : v2.34 PWA shell
 - detail   : 実機ブラウザで install prompt、standalone 起動、初回 visit 後の offline reload、
   reset、`A_start -> HUB_NIGHT` を確認する。agent は手順整理と結果記録まで。
+  現在の実施対象は Pages 配信済みの v2.38。
   手順書は `docs/autonomy/pwa-install-offline-checklist.md`、結果テンプレートは
   `docs/autonomy/pwa-install-offline-result-template.md` に準備済み。
 
@@ -47,6 +48,8 @@ Hazama 自律開発の作業待ち行列。
 - source   : `docs/hazama-playtest-slices-v0.md`
 - detail   : 5〜8分の通しプレイで、Ω unlock までの迷い、Gate Run の意思決定感、
   Breath Gate の任意感、`A_reborn` の完了感を記録する。数値調整はメモ後。
+  現在の v2.38 pass では `次にやること` guide、同じ画面BGM、次周回Ω再ロックが
+  集中を邪魔しないかも記録する。
   agent / in-app browser pass は `docs/playtest/first-playable-agent-pass-2026-05-16.md`
   に記録済みだが、人間の taste pass は未完了。人間記録テンプレートは
   `docs/playtest/human-playtest-template.md`。
