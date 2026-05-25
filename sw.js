@@ -6,7 +6,7 @@
    - Keeps cache cleanup scoped to Hazama-owned cache names.
 ========================================================= */
 
-const VERSION = "hazama-pwa-v2.38";
+const VERSION = "hazama-pwa-v2.39";
 const CACHE_PREFIX = "hazama-pwa-";
 const STATIC_CACHE = `${VERSION}-static`;
 const RUNTIME_CACHE = `${VERSION}-runtime`;

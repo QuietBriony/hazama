@@ -1,4 +1,4 @@
-// Hazama main.js v2.38
+// Hazama main.js v2.39
 // Minimal, robust loader + renderer for GitHub Pages / Codespaces.
 // v2.3 adds a lightweight deterministic game layer around depth pressure.
 // v2.5 animates the descent key visual and mandala goal gate.
@@ -35,8 +35,9 @@
 // v2.36 closes Ω on new loops and moves choices into one post-story flow panel.
 // v2.37 adds same-screen generated BGM for mobile play while keeping external Music as a companion.
 // v2.38 keeps the post-story flow focused with an always-visible next-action guide.
+// v2.39 makes Gate Run feel more playful with a live pulse cue and recommended action highlight.
 
-const APP_VERSION = "v2.38";
+const APP_VERSION = "v2.39";
 const GateRunModel = globalThis.HazamaGateRun || {};
 const GATE_CONSTANTS = GateRunModel.constants || {};
 
@@ -2235,6 +2236,107 @@ function gateRunMissionText(state = getRunState()) {
   return `${readiness.next}。合わせるは準備後の仕上げです。`;
 }
 
+function gateRunPulseCue(state = getRunState()) {
+  const charge = Math.round(clampNumber(state.gateRunCharge, 0, GATE_RUN_MAX_CHARGE));
+  const stability = Math.round(clampNumber(state.stability, 0, STABILITY_MAX));
+  const turnsLeft = Math.max(0, GATE_RUN_TURN_LIMIT - state.gateRunTurns);
+  const readiness = gateRunSyncReadiness(state);
+
+  if (state.gateRunStatus === "won") {
+    return {
+      tone: "win",
+      label: "開門",
+      actionId: "omega",
+      action: "Ωへ",
+      copy: "扉は開いている。ここは報酬ターン。"
+    };
+  }
+
+  if (state.gateRunStatus === "lost") {
+    return {
+      tone: "retry",
+      label: "再挑戦",
+      actionId: "retreat",
+      action: "戻る",
+      copy: "HUBで崩落を閉じて、次の挑戦へ。"
+    };
+  }
+
+  if (stability < 38) {
+    return {
+      tone: "calm",
+      label: "退避ライン",
+      actionId: "retreat",
+      action: "戻る",
+      copy: `落ち着き ${stability}。今は立て直しが強い。`
+    };
+  }
+
+  if (readiness.ready) {
+    return {
+      tone: "sync",
+      label: "合わせどき",
+      actionId: "sync",
+      action: "合わせる",
+      copy: "響きと扉が噛み合っている。仕上げに行ける。"
+    };
+  }
+
+  if (charge >= 82) {
+    return {
+      tone: "sync",
+      label: "あと一押し",
+      actionId: "sync",
+      action: "準備して合わせる",
+      copy: `扉 ${charge}%。整えてから合わせると気持ちいい。`
+    };
+  }
+
+  if (turnsLeft <= 4) {
+    return {
+      tone: "push",
+      label: "時間圧",
+      actionId: charge >= 64 ? "sync" : "dive",
+      action: charge >= 64 ? "合わせる準備" : "攻める",
+      copy: `残り ${turnsLeft}。迷うより、扉を動かす。`
+    };
+  }
+
+  if (state.resonance < GATE_SYNC_READY_RESONANCE && charge >= 38) {
+    return {
+      tone: "tune",
+      label: "溜めどき",
+      actionId: "tune",
+      action: "整える",
+      copy: "響きを溜めると、次の合わせが読みやすい。"
+    };
+  }
+
+  return {
+    tone: "push",
+    label: "攻めどき",
+    actionId: "dive",
+    action: "攻める",
+    copy: "まず扉を動かす。リスクはあるが進みが大きい。"
+  };
+}
+
+function renderGateRunPulseMarkup(state = getRunState(), cue = gateRunPulseCue(state)) {
+  const turnsLeft = state.gateRunStatus === "running"
+    ? `${Math.max(0, GATE_RUN_TURN_LIMIT - state.gateRunTurns)}手`
+    : state.gateRunStatus === "won" ? "OPEN" : "RETRY";
+  const gate = Math.round(clampNumber(state.gateRunCharge, 0, GATE_RUN_MAX_CHARGE));
+  return `
+    <div class="hz-gate-pulse hz-gate-pulse--${escapeHtml(cue.tone)}" aria-label="Gate Run pulse">
+      <span class="hz-gate-pulse-kicker">今のノリ</span>
+      <b>${escapeHtml(cue.label)}</b>
+      <span>${escapeHtml(cue.copy)}</span>
+      <span class="hz-gate-pulse-pick">推し手: ${escapeHtml(cue.action)}</span>
+      <span class="hz-gate-pulse-meta">扉 ${gate}% / ${escapeHtml(turnsLeft)}</span>
+    </div>
+  `;
+}
+
 function gateRunActionPreview(actionId) {
   const state = getRunState();
   const context = gateRunModelContext(currentDepthId);
@@ -2540,10 +2642,22 @@ function renderLoopSummaryMarkup(state) {
   `;
 }
 
+function loopFlavorLabel(state) {
+  const gateTurns = Math.max(0, Number(state.gateRunTurns) || 0);
+  const breaths = Math.max(0, Number(state.entries) || 0);
+  const collapses = Math.max(0, Number(state.collapseCount) || 0);
+  if (collapses > 0) return "立て直して掴んだ一周";
+  if (gateTurns > 0 && gateTurns <= 9) return "駆け抜けた一周";
+  if (breaths > 0) return "呼吸でつないだ一周";
+  if (gateTurns >= 13) return "ぎりぎりで開いた一周";
+  return "扉と噛み合った一周";
+}
+
 function renderGateRunPanelMarkup() {
   const state = getRunState();
   const syncReadiness = gateRunSyncReadiness(state);
   const retreatAdvice = gateRunRetreatAdvice(state);
+  const pulseCue = gateRunPulseCue(state);
   const statusClass = state.gateRunStatus === "won" ? "hz-gate-win" : state.gateRunStatus === "lost" ? "hz-gate-loss" : "";
   const status = statusClass
     ? `<span class="${statusClass}">${escapeHtml(gateRunStatusLabel(state))}</span>`
@@ -2594,9 +2708,15 @@ function renderGateRunPanelMarkup() {
         const retreatBadge = action.id === "retreat"
           ? `<span class="hz-gate-action-state hz-gate-action-state--retreat">${escapeHtml(retreatAdvice.badge)}</span>`
           : "";
+        const recommended = action.id === pulseCue.actionId;
+        const recommendedClass = recommended ? " hz-gate-action--recommended" : "";
+        const recommendedBadge = recommended
+          ? `<span class="hz-gate-action-state hz-gate-action-state--recommended">おすすめ</span>`
+          : "";
         return `
-          <button class="hz-gate-action hz-gate-action--${escapeHtml(action.id)}${syncClass}${retreatClass}" type="button" data-gate-action="${escapeHtml(action.id)}" title="${escapeHtml(preview.title)}"${preview.disabled ? " disabled" : ""}>
+          <button class="hz-gate-action hz-gate-action--${escapeHtml(action.id)}${syncClass}${retreatClass}${recommendedClass}" type="button" data-gate-action="${escapeHtml(action.id)}" title="${escapeHtml(preview.title)}"${preview.disabled ? " disabled" : ""}>
             <span class="hz-gate-action-role">${escapeHtml(action.role)}</span>
+            ${recommendedBadge}
             ${syncBadge}
             ${retreatBadge}
             <span class="hz-gate-action-title">${escapeHtml(action.title)}</span>
@@ -2611,7 +2731,7 @@ function renderGateRunPanelMarkup() {
         <span class="hz-gate-complete-badge">一周完了</span>
         <div class="hz-gate-complete-copy">
           <b>Ω -> A_reborn 到達</b>
-          <span>短い記録を残して、夜のハブから次の周回へ戻れます。</span>
+          <span>${escapeHtml(loopFlavorLabel(state))}。夜のハブから次の周回へ戻れます。</span>
         </div>
         ${renderLoopSummaryMarkup(state)}
         <button class="hz-gate-complete-cta" type="button" data-complete-hub="true">
@@ -2645,6 +2765,7 @@ function renderGateRunPanelMarkup() {
         <span><b>次</b> ${escapeHtml(readiness)} / ${escapeHtml(retreatAdvice.badge)}</span>
       </div>
       <div class="hz-gate-run-hint">${escapeHtml(mission)}</div>
+      ${renderGateRunPulseMarkup(state, pulseCue)}
       ${outcomeNotice}
       ${renderGateRunTrack(state)}
       ${loopComplete}
