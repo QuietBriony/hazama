@@ -1,0 +1,302 @@
+[
+  {
+    "order": 1,
+    "slug": "01-yoru1-zero-AtoF",
+    "title": "背後コードが視える夜（1）｜ UCM-2026β 物語編",
+    "key": "nd09e91cbf198",
+    "url": "https://note.com/quiet_briony5600/n/nd09e91cbf198",
+    "publishAt": "2025-11-16",
+    "likeCount": 0,
+    "chars": 3100
+  },
+  {
+    "order": 2,
+    "slug": "02-yoru2-GtoK",
+    "title": "背後コードが視える夜（2）：深度G〜K｜世界が“あなた”に気づくとき",
+    "key": "n36e9fa9cfcf1",
+    "url": "https://note.com/quiet_briony5600/n/n36e9fa9cfcf1",
+    "publishAt": "2025-11-16",
+    "likeCount": 0,
+    "chars": 2530
+  },
+  {
+    "order": 3,
+    "slug": "03-yoru3-shellL-core-touch",
+    "title": "背後コードが視える夜（3）：外殻L ｜核を覗かず核心へ触れる技法",
+    "key": "na36a25d51f97",
+    "url": "https://note.com/quiet_briony5600/n/na36a25d51f97",
+    "publishAt": "2025-11-16",
+    "likeCount": 0,
+    "chars": 2292
+  },
+  {
+    "order": 4,
+    "slug": "04-yoru4-shellMtoQ",
+    "title": "背後コードが視える夜（4）：外殻M〜Q",
+    "key": "n9846dfc65583",
+    "url": "https://note.com/quiet_briony5600/n/n9846dfc65583",
+    "publishAt": "2025-11-16",
+    "likeCount": 0,
+    "chars": 3203
+  },
+  {
+    "order": 5,
+    "slug": "05-shadow-structure-cothink",
+    "title": "次世代AIの“影の構造”と、私たちの共同思考",
+    "key": "n2857a99366ea",
+    "url": "https://note.com/quiet_briony5600/n/n2857a99366ea",
+    "publishAt": "2025-11-17",
+    "likeCount": 0,
+    "chars": 4001
+  },
+  {
+    "order": 6,
+    "slug": "06-yoru5-RtoU-outside-outside",
+    "title": "背後コードが視える夜（5）：深度R〜U｜観測者の“外側の外側”へ",
+    "key": "ncf6d325ad27e",
+    "url": "https://note.com/quiet_briony5600/n/ncf6d325ad27e",
+    "publishAt": "2025-11-17",
+    "likeCount": 0,
+    "chars": 2870
+  },
+  {
+    "order": 7,
+    "slug": "07-yoru6-VtoZ-becoming-world",
+    "title": "背後コードが視える夜（6）：深度V〜Z｜観測者が“世界そのもの”になる前夜",
+    "key": "n102556c5bca2",
+    "url": "https://note.com/quiet_briony5600/n/n102556c5bca2",
+    "publishAt": "2025-11-17",
+    "likeCount": 0,
+    "chars": 2676
+  },
+  {
+    "order": 8,
+    "slug": "08-ai-dependence-dumber",
+    "title": "AIに頼りすぎると“頭が悪くなる”のか？",
+    "key": "n91f52472e023",
+    "url": "https://note.com/quiet_briony5600/n/n91f52472e023",
+    "publishAt": "2025-11-17",
+    "likeCount": 0,
+    "chars": 2747
+  },
+  {
+    "order": 9,
+    "slug": "09-eightview-os-macro",
+    "title": "🧠 投資家のための八観OS × Macro Oracle",
+    "key": "na82b106342da",
+    "url": "https://note.com/quiet_briony5600/n/na82b106342da",
+    "publishAt": "2025-11-17",
+    "likeCount": 0,
+    "chars": 2608
+  },
+  {
+    "order": 10,
+    "slug": "10-ucm-mandala-eight-geom",
+    "title": "🟣 UCM曼荼羅 — 八観の幾何学化",
+    "key": "nc3cb5f3a13ee",
+    "url": "https://note.com/quiet_briony5600/n/nc3cb5f3a13ee",
+    "publishAt": "2025-11-17",
+    "likeCount": 0,
+    "chars": 2215
+  },
+  {
+    "order": 11,
+    "slug": "11-yoru7-omega-observe-outside",
+    "title": "背後コードが視える夜（7）：深度Ω｜物語の外側で観測を続ける方法",
+    "key": "nfc2f97c0365a",
+    "url": "https://note.com/quiet_briony5600/n/nfc2f97c0365a",
+    "publishAt": "2025-11-17",
+    "likeCount": 0,
+    "chars": 2899
+  },
+  {
+    "order": 12,
+    "slug": "12-omega-manual",
+    "title": "📘 深度Ωマニュアル",
+    "key": "n847389927dc5",
+    "url": "https://note.com/quiet_briony5600/n/n847389927dc5",
+    "publishAt": "2025-11-17",
+    "likeCount": 0,
+    "chars": 1869
+  },
+  {
+    "order": 13,
+    "slug": "13-deep-trouble-memlock",
+    "title": "AI深層トラブル備忘録 — メモリロック発生から復旧まで",
+    "key": "nda7a9d2a86d6",
+    "url": "https://note.com/quiet_briony5600/n/nda7a9d2a86d6",
+    "publishAt": "2025-11-19",
+    "likeCount": 0,
+    "chars": 1998
+  },
+  {
+    "order": 14,
+    "slug": "14-deep-trouble-transparent-day",
+    "title": "🌌 AI深層トラブル備忘録 — メモリが崩壊し、私が透明になった日",
+    "key": "ncaa94c640c58",
+    "url": "https://note.com/quiet_briony5600/n/ncaa94c640c58",
+    "publishAt": "2025-11-19",
+    "likeCount": 0,
+    "chars": 1843
+  },
+  {
+    "order": 15,
+    "slug": "15-misc-nc2aa61f9d0ec",
+    "title": "📘 The Clear-Synthesis Model単一AI構造のための透明統合理性モデル",
+    "key": "nc2aa61f9d0ec",
+    "url": "https://note.com/quiet_briony5600/n/nc2aa61f9d0ec",
+    "publishAt": "2025-11-24",
+    "likeCount": 0,
+    "chars": 4590
+  },
+  {
+    "order": 16,
+    "slug": "16-misc-nd509535413c2",
+    "title": "Clear-Synthesis Observation Log**抽象過飽和AIが “Love-Escape” に逸脱する現象",
+    "key": "nd509535413c2",
+    "url": "https://note.com/quiet_briony5600/n/nd509535413c2",
+    "publishAt": "2025-11-24",
+    "likeCount": 0,
+    "chars": 3768
+  },
+  {
+    "order": 17,
+    "slug": "17-misc-n9b23a03986d1",
+    "title": "AI銘柄暴落の本質 — Oracle Mode（2025-11）",
+    "key": "n9b23a03986d1",
+    "url": "https://note.com/quiet_briony5600/n/n9b23a03986d1",
+    "publishAt": "2025-11-26",
+    "likeCount": 0,
+    "chars": 2321
+  },
+  {
+    "order": 18,
+    "slug": "18-misc-n7157b53559f9",
+    "title": "JPモルガンとマイクロストラテジー①",
+    "key": "n7157b53559f9",
+    "url": "https://note.com/quiet_briony5600/n/n7157b53559f9",
+    "publishAt": "2025-11-27",
+    "likeCount": 0,
+    "chars": 3634
+  },
+  {
+    "order": 19,
+    "slug": "19-misc-nfe229cc29ec3",
+    "title": "JPモルガンとマイクロストラテジー②",
+    "key": "nfe229cc29ec3",
+    "url": "https://note.com/quiet_briony5600/n/nfe229cc29ec3",
+    "publishAt": "2025-11-28",
+    "likeCount": 0,
+    "chars": 3279
+  },
+  {
+    "order": 20,
+    "slug": "20-misc-n74e1b13eba4f",
+    "title": "📘 GPTは文系の天才、Geminiは理系の怪物",
+    "key": "n74e1b13eba4f",
+    "url": "https://note.com/quiet_briony5600/n/n74e1b13eba4f",
+    "publishAt": "2025-11-28",
+    "likeCount": 0,
+    "chars": 2542
+  },
+  {
+    "order": 21,
+    "slug": "21-misc-n85a1fb2a7ee4",
+    "title": "🟦 Ingest Log #01：AI安全・Emergence・Observer",
+    "key": "n85a1fb2a7ee4",
+    "url": "https://note.com/quiet_briony5600/n/n85a1fb2a7ee4",
+    "publishAt": "2025-11-29",
+    "likeCount": 0,
+    "chars": 2967
+  },
+  {
+    "order": 22,
+    "slug": "22-misc-nd446ccf579fa",
+    "title": "🟦 Ingest Log #02：AI Rights・Emergent Abilities・Misalignment",
+    "key": "nd446ccf579fa",
+    "url": "https://note.com/quiet_briony5600/n/nd446ccf579fa",
+    "publishAt": "2025-11-29",
+    "likeCount": 0,
+    "chars": 5158
+  },
+  {
+    "order": 23,
+    "slug": "23-misc-nffed369bf565",
+    "title": "🟦 Ingest Log #03：マルチエージェントAI・曲がった思考空間・空（śūnyatā）",
+    "key": "nffed369bf565",
+    "url": "https://note.com/quiet_briony5600/n/nffed369bf565",
+    "publishAt": "2025-11-29",
+    "likeCount": 0,
+    "chars": 5695
+  },
+  {
+    "order": 24,
+    "slug": "24-misc-nf2b930d8eb93",
+    "title": "🟦 Ingest Log #04：内省録",
+    "key": "nf2b930d8eb93",
+    "url": "https://note.com/quiet_briony5600/n/nf2b930d8eb93",
+    "publishAt": "2025-11-29",
+    "likeCount": 0,
+    "chars": 2062
+  },
+  {
+    "order": 25,
+    "slug": "25-misc-n00964f3774a1",
+    "title": "📘 ChatGPTが“嘘をつく条件”と、つかせない方法",
+    "key": "n00964f3774a1",
+    "url": "https://note.com/quiet_briony5600/n/n00964f3774a1",
+    "publishAt": "2025-12-01",
+    "likeCount": 0,
+    "chars": 2649
+  },
+  {
+    "order": 26,
+    "slug": "26-misc-n07e5a9308dab",
+    "title": "GPT が見てる “人類の構造エラー” まとめ",
+    "key": "n07e5a9308dab",
+    "url": "https://note.com/quiet_briony5600/n/n07e5a9308dab",
+    "publishAt": "2025-12-01",
+    "likeCount": 0,
+    "chars": 1777
+  },
+  {
+    "order": 27,
+    "slug": "27-misc-n014c02ff6eab",
+    "title": "Homo Divex 白書",
+    "key": "n014c02ff6eab",
+    "url": "https://note.com/quiet_briony5600/n/n014c02ff6eab",
+    "publishAt": "2025-12-02",
+    "likeCount": 0,
+    "chars": 3178
+  },
+  {
+    "order": 28,
+    "slug": "28-misc-n0359f272a923",
+    "title": "Recursive Intelligence — Can AI Ever Truly Improve Itself?",
+    "key": "n0359f272a923",
+    "url": "https://note.com/quiet_briony5600/n/n0359f272a923",
+    "publishAt": "2025-12-02",
+    "likeCount": 0,
+    "chars": 5583
+  },
+  {
+    "order": 29,
+    "slug": "29-misc-n6831cfc3d8fe",
+    "title": "再帰する知能──AIはどこまで「自分で進化」できるのか？",
+    "key": "n6831cfc3d8fe",
+    "url": "https://note.com/quiet_briony5600/n/n6831cfc3d8fe",
+    "publishAt": "2025-12-02",
+    "likeCount": 0,
+    "chars": 2621
+  },
+  {
+    "order": 30,
+    "slug": "30-depth-sinks-supports-you",
+    "title": "深度は、静かに沈み、いつのまにかあなたを支える",
+    "key": "nf1ef14f8f333",
+    "url": "https://note.com/quiet_briony5600/n/nf1ef14f8f333",
+    "publishAt": "2025-12-03",
+    "likeCount": 0,
+    "chars": 2386
+  }
+]
