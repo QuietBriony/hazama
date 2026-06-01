@@ -42,16 +42,58 @@ body[data-phase="deep"]   { --bg: #03040a; --ink: #b6c0cb; --accent: #79a9b6; --
 body[data-phase="bottom"] { --bg: #020308; --ink: #aab4bf; --accent: #8aa6ac; --ink-dim: #5c6671; --line: rgba(127,182,196,0.14); }
 
 /* ---------- 背景 ---------- */
-.hz-bg { position: fixed; inset: 0; z-index: 0; overflow: hidden; background: #02040a; }
+/* 奈落のドーム：上端がわずかに醒め、下へ向けて漆黒へ沈む。硬く乾いた沈下の地。 */
+.hz-bg {
+  position: fixed; inset: 0; z-index: 0; overflow: hidden;
+  background:
+    radial-gradient(150% 95% at 50% -12%,
+      #0a131d 0%, #060c15 34%, #03060e 68%, #010206 100%);
+}
 .hz-bg-descent {
   position: absolute; inset: -4%;
   width: 108%; height: 108%;
   object-fit: cover;
-  /* 沈むほど暗く・彩度が落ち・わずかに沈降 */
-  filter: brightness(calc(0.62 - var(--sink) * 0.45)) saturate(calc(0.8 - var(--sink) * 0.5)) contrast(1.05);
+  /* 沈むほど暗く・彩度が落ち・わずかに沈降。深部はやや締めて硬く（contrast↑・寒色へ）。 */
+  filter:
+    brightness(calc(0.6 - var(--sink) * 0.46))
+    saturate(calc(0.78 - var(--sink) * 0.5))
+    contrast(calc(1.05 + var(--sink) * 0.12))
+    hue-rotate(calc(var(--sink) * -8deg));
   transform: translateY(calc(var(--sink) * 2.4%)) scale(calc(1 + var(--sink) * 0.06));
   transition: filter 1.6s ease, transform 3s ease;
-  opacity: 0.9;
+  opacity: 0.88;
+}
+
+/* 沈降グロー：底中央から立ち上る冷たい淵。沈むほど増光し、わずかに迫り上がる。
+   mandala（同じく下から迫り上がる）がこの光の底から現れる＝目的地への奥行き。 */
+.hz-bg-abyss {
+  position: absolute; inset: 0; pointer-events: none;
+  background:
+    radial-gradient(78% 56% at 50% 116%,
+      rgba(74, 142, 162, calc(0.10 + var(--sink) * 0.30)) 0%,
+      rgba(34, 78, 96,  calc(0.05 + var(--sink) * 0.14)) 36%,
+      transparent 70%);
+  transform: translateY(calc(var(--sink) * -9%));
+  mix-blend-mode: screen;
+  transition: background 1.8s ease, transform 3s ease;
+}
+
+/* 配線グリッド：浅では無、沈むほど露出する縦の導線（鉄錆の編み目／世界の裏側）。
+   下方ほど明るく密に見えるよう mask で沈降の遠近を作る。静止＝モバイル軽量・reduced 安全。 */
+.hz-bg-grid {
+  position: absolute; inset: 0; pointer-events: none;
+  opacity: calc(var(--sink) * 0.5);
+  background-image:
+    repeating-linear-gradient(90deg,
+      rgba(127, 182, 196, 0.055) 0px, rgba(127, 182, 196, 0.055) 1px,
+      transparent 1px, transparent 44px),
+    repeating-linear-gradient(90deg,
+      rgba(127, 182, 196, 0.10) 0px, rgba(127, 182, 196, 0.10) 1px,
+      transparent 1px, transparent 132px);
+  -webkit-mask-image: linear-gradient(to bottom, transparent 6%, rgba(0,0,0,0.45) 46%, #000 100%);
+          mask-image: linear-gradient(to bottom, transparent 6%, rgba(0,0,0,0.45) 46%, #000 100%);
+  mix-blend-mode: screen;
+  transition: opacity 1.8s ease;
 }
 .hz-bg-mandala {
   position: absolute; left: 50%; top: 118%;
@@ -283,7 +325,7 @@ body[data-tension="high"] .hz-scene { animation: hz-shudder 2.6s ease-in-out inf
 @media (prefers-reduced-motion: reduce) {
   .hz-line .ch, .hz-line .ch.lit { opacity: 1 !important; filter: none !important; transition: none !important; }
   body[data-tension="high"] .hz-scene { animation: none; }
-  .hz-bg-descent, .hz-bg-mandala, .hz-vignette { transition: none; }
+  .hz-bg-descent, .hz-bg-mandala, .hz-vignette, .hz-bg-abyss, .hz-bg-grid { transition: none; }
   .hz-choice { transition: opacity .2s; transform: none; }
   /* グレインは静止（消さずに質感だけ残す）。観測者の呼吸は止める。 */
   .hz-grain { animation: none; opacity: 0.03; }

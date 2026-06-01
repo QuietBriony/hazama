@@ -9,11 +9,15 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="Hazama" />
   <meta name="robots" content="noindex" />
-  <link rel="stylesheet" href="slice.css?v=m2-09" />
+  <link rel="stylesheet" href="slice.css?v=m2-10" />
 </head>
 <body data-phase="surface">
   <div class="hz-bg" aria-hidden="true">
     <img class="hz-bg-descent" src="assets/hazama-descent-key.webp" alt="" decoding="async" fetchpriority="high" />
+    <!-- 沈降グロー：底中央から立ち上る冷たい淵。沈むほど増光・上昇し、曼荼羅が光の底から現れる。 -->
+    <div class="hz-bg-abyss"></div>
+    <!-- 配線グリッド：沈むほど露出する縦の導線（「世界は塗装だった／編み目」の視覚化）。下方ほど密。 -->
+    <div class="hz-bg-grid"></div>
     <div class="hz-bg-mandala"><canvas id="mandala" aria-hidden="true"></canvas></div>
     <div class="hz-vignette"></div>
     <div class="hz-scanline"></div>
@@ -47,6 +51,6 @@
     </div>
   </div>
 
-  <script src="slice.js?v=m2-09"></script>
+  <script src="slice.js?v=m2-10"></script>
 </body>
 </html>

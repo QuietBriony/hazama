@@ -609,7 +609,7 @@
       iframe.tabIndex = -1;
       // 不可視だが描画は生かす（display:none は一部環境で audio を止めるため 1px オフスクリーン）。
       iframe.style.cssText = HIDDEN_CSS;
-      iframe.src = "depth.html?v=m2-09"; // 相対＝本番プレビューでは同一オリジン
+      iframe.src = "depth.html?v=m2-10"; // 相対＝本番プレビューでは同一オリジン
       iframe.addEventListener("load", () => { loaded = true; if (pending) post(pending); });
       document.body.appendChild(iframe);
     }
@@ -705,7 +705,7 @@
 
   // ---------- 起動 ----------
   async function loadData() {
-    const res = await fetch("depths-shell.json?v=m2-09", { cache: "no-store" });
+    const res = await fetch("depths-shell.json?v=m2-10", { cache: "no-store" });
     DATA = await res.json();
   }
   let entered = false;
