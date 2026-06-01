@@ -64,7 +64,8 @@
   //   - 自力で最下部へ戻れば追従を再開する。
   //   - 追従の解除は実手勢イベント(wheel/touchmove)のみが行い、programmatic な scrollTop 設定
   //     （これは scroll は撃つが wheel/touch は撃たない）と取り違えない＝カクつき/奪い合いを断つ。
-  //   - 吸着は rAF で間引く＝1フレーム複数回の scrollTop 書き込みを束ね、慣性スクロールと競合しない。
+  //   - 吸着は行追加/選択肢表示の時だけの同期 scrollTop（低頻度・1文字ごとには撃たない）＝
+  //     慣性スクロールと競合せず、rAF にも依存しない（非表示/スクロール中の rAF 間引きで止まらない）。
   const Follow = (() => {
     const NEAR = 64; // px: これ以内なら「最下部に居る」とみなす（慣性の揺れに対する許容）
     let following = true;
@@ -202,44 +203,19 @@
     sinkFill.style.height = (sinkNorm * 100).toFixed(1) + "%";
     renderReturnPaths();
     renderObserver();
-    Audio.update(sinkNorm, Math.min(1, state.dread));
-    Mandala.update(sinkNorm, state.observer, Math.min(1, state.dread));
-    Music.push(buildProfile(node));
+    // 音は同一document の内製エンジンが鳴らす（cross-document iframe は廃止）。
+    // 深さは沈下とランク(物語深度)の濃い方、密度は観測者数。沈むほど深く・暗く・密に。
+    const dr = Math.min(1, state.dread);
+    const depthN = Math.max(sinkNorm, clamp01(state.rank / 28));
+    const densityN = clamp01((state.observer - 1) / 18);
+    Audio.update(depthN, dr, densityN);
+    Mandala.update(sinkNorm, state.observer, dr);
   }
 
-  // ---------- slice state → depth.html wire format（hazama-profile v1） ----------
-  // depth.html(engine bridge) の ingest 契約に正確に合わせる:
-  //   source.rank(0..28)=深さの第一義 / pressure(0..1) / stability・resonance は 0..100 /
-  //   audio.{brightness,bassWeight,density,space} は 0..1 / ucm.energy は 0..100。
-  //   profile.depth は送らない＝rank を深さの正にする（北極星：沈むほど鳴りが深く・暗く・密に）。
-  function buildProfile(node) {
-    const depthN = clamp01(state.rank / 28);
-    const dr = Math.min(1, state.dread);
-    const obsN = clamp01((state.observer - 1) / 18);
-    const stability = Math.round(clamp01(0.96 - depthN * 0.5 - dr * 0.4) * 100); // 沈むほど不安定
-    const resonance = Math.round(clamp01(0.10 + obsN * 0.70 + dr * 0.25) * 100); // 観測者が増えるほど共鳴
-    const stage = (node && node.title) ? String(node.title).slice(0, 40) : (state.id || "");
-    return {
-      provider: "music", type: "hazama-profile", version: 1,
-      profile: {
-        ucm: { energy: Math.round(clamp01(0.2 + dr * 0.8) * 100) },
-        audio: {
-          brightness: +clamp01(0.60 - depthN * 0.50 - dr * 0.12).toFixed(3), // 沈むほど暗い
-          bassWeight: +clamp01(0.18 + depthN * 0.78).toFixed(3),             // 沈むほど低域
-          density:    +clamp01(0.14 + obsN * 0.60 + depthN * 0.22).toFixed(3), // 多声で密
-          space:      +clamp01(0.10 + depthN * 0.72).toFixed(3)              // 沈むほど広い残響
-        },
-        pressure: +clamp01(0.45 * depthN + 0.60 * dr).toFixed(3),            // 圧＝dread 主体
-        source: {
-          depthId: state.id || "zero",
-          stage,
-          stability, resonance,
-          marks: state.resisted + state.refused,
-          rank: state.rank
-        }
-      }
-    };
-  }
+  // 注: 以前ここにあった buildProfile()（depth.html へ postMessage する hazama-profile v1 wire
+  // format）は、音を cross-document iframe で鳴らす方式が「モバイルで AudioContext を resume
+  // できない／全画面オーバーレイがフリーズの元」だったため廃止。音は同一document の内製エンジン
+  // (Audio) が applyAtmosphere の Audio.update で直接鳴らす。depth.html 単体デモは別repoに残す。
   function phaseFor(s) { return s < 0.18 ? "surface" : s < 0.45 ? "drift" : s < 0.75 ? "deep" : "bottom"; }
 
   // ---------- slow-reveal レンダラ ----------
@@ -432,8 +408,11 @@
   //  - below 周回ごとに setColor(seed) で detune/うねりを微妙にずらす＝底なしの質感差。
   const Audio = (() => {
     let ctx = null, master = null, filter = null, dryGain = null, conv = null, wetGain = null;
-    let lfo = null, lfoGain = null, drones = [], pulseTimer = null, on = false;
-    let cur = { sink: 0, dread: 0 }, colorSeed = 0;
+    let lfo = null, lfoGain = null, drones = [], pulseTimer = null, on = false, playing = false;
+    // depth=深度(rank/沈下の濃い方・0..1) / dread=圧(0..1) / density=観測者の多声(0..1)。
+    // depth.html のリアクティブ設計（深さ→音域/cutoff/残響、多声→密度、圧→不協和/鼓動）を
+    // 同一document の内製エンジンへ畳み込んだ信号。menace=浅は馴染む/深で威圧。
+    let cur = { depth: 0, dread: 0, density: 0 }, colorSeed = 0;
     const supported = () => !!(window.AudioContext || window.webkitAudioContext);
 
     // 倍音: ratio=基音比, base=常時gain, bloom=深度で開く量, diss=不協和(dread で開く)
@@ -480,36 +459,40 @@
         lfoGain.connect(osc.detune); osc.start();
         drones.push({ osc, g, spec });
       });
-      on = true; schedulePulse(); apply(true);
-      if (ctx.state !== "running") ctx.resume(); // 内製モードへ切替時の再開
+      on = true; playing = true; schedulePulse(); apply(true);
+      // 実手勢の中で resume()＝モバイルでも解禁される（同一document の context なので通る）。
+      if (ctx.state !== "running") ctx.resume();
     }
-    function silence() { if (on && ctx && ctx.state === "running") { try { ctx.suspend(); } catch (e) {} } }
+    // playing は「鳴らす意図」を表す（ctx.suspend/resume は非同期で state 反映が遅れるため、
+    // チップ表示はこの意図フラグを正にする）。
     function toggle() {
-      const btn = $("audio-toggle");
       if (!on) return start();
-      if (ctx.state === "running") { ctx.suspend(); btn.setAttribute("aria-pressed", "false"); btn.textContent = "♪ 鳴らす"; }
-      else { ctx.resume(); btn.setAttribute("aria-pressed", "true"); btn.textContent = "♪ 鳴っている"; }
+      playing = !playing;
+      try { if (playing) ctx.resume(); else ctx.suspend(); } catch (e) {}
     }
     function apply(now) {
       if (!on || !ctx) return;
       const t = ctx.currentTime;
-      const s = cur.sink, d = cur.dread;
-      const base = 70 - s * 42;                          // 沈むほど低く（70→28Hz）
-      const cutoff = 1150 - s * 830 - d * 200;           // 沈むほど暗く
+      const s = cur.depth, d = cur.dread, dens = cur.density;
+      const base = 70 - s * 44;                          // 沈むほど低く（70→26Hz）
+      const cutoff = 1150 - s * 860 - d * 220;           // 沈むほど暗く（深さ＋圧で翳る）
+      const bloomCurve = Math.max(0, s - 0.10) / 0.90;   // 浅では開かない／深で倍音が開花
+      const menace = d * (0.30 + 0.70 * s);              // 不協和は浅は馴染み・深で威圧（menaceカーブ）
       const seedCents = (((colorSeed * 37) % 25) - 12) * 0.6; // 周回ごとの微デチューン
       const slow = now ? 0.25 : 1.3;
       drones.forEach((dr) => {
         const sp = dr.spec;
-        let g = sp.base + sp.bloom * Math.max(0, s - 0.12) / 0.88 + sp.diss * d;
+        // 多声(density)が増えるほど倍音が密に開く＝沈むほど密。不協和は menace で。
+        let g = sp.base + sp.bloom * bloomCurve * (1 + dens * 0.7) + sp.diss * menace;
         dr.g.gain.setTargetAtTime(Math.max(0, g), t, now ? 0.3 : 1.6);
         dr.osc.frequency.setTargetAtTime(base * sp.ratio, t, slow);
         dr.osc.detune.setTargetAtTime(seedCents, t, 1.8);
       });
-      filter.frequency.setTargetAtTime(Math.max(110, cutoff), t, slow);
+      filter.frequency.setTargetAtTime(Math.max(105, cutoff), t, slow);
       master.gain.setTargetAtTime(0.13 + d * 0.05, t, 0.8);
-      wetGain.gain.setTargetAtTime(0.1 + s * 0.32, t, 1.8);            // 深いほど広い残響
+      wetGain.gain.setTargetAtTime(0.1 + s * 0.34, t, 1.8);            // 深いほど広い残響
       lfo.frequency.setTargetAtTime(0.05 + s * 0.1, t, 1.8);
-      lfoGain.gain.setTargetAtTime(3 + s * 10 + (colorSeed % 5), t, 1.8); // うねり幅（cents）
+      lfoGain.gain.setTargetAtTime(3 + s * 10 + dens * 4 + (colorSeed % 5), t, 1.8); // うねり幅（cents）
     }
     function schedulePulse() {
       if (pulseTimer) clearInterval(pulseTimer);
@@ -519,18 +502,24 @@
       if (!on || !ctx || ctx.state !== "running") return;
       const t = ctx.currentTime;
       const osc = ctx.createOscillator(), g = ctx.createGain();
-      osc.type = "sine"; osc.frequency.value = 44 - cur.sink * 16;
-      osc.frequency.setTargetAtTime((44 - cur.sink * 16) * 0.7, t, 0.18); // 鼓動の沈み込み
+      osc.type = "sine"; osc.frequency.value = 44 - cur.depth * 16;
+      osc.frequency.setTargetAtTime((44 - cur.depth * 16) * 0.7, t, 0.18); // 鼓動の沈み込み
       g.gain.value = 0.0001;
       g.gain.exponentialRampToValueAtTime(0.05 * amp + cur.dread * 0.045, t + 0.02);
       g.gain.exponentialRampToValueAtTime(0.0001, t + 0.55);
       osc.connect(g); g.connect(filter); osc.start(t); osc.stop(t + 0.6); // 鼓動も残響を通す
     }
     return {
-      start, toggle, silence, pulseOnce: (a) => beat(a),
+      start, toggle, pulseOnce: (a) => beat(a),
       get on() { return on; },
+      get playing() { return playing; }, // 鳴らす意図（チップ表示の正）
       setColor: (seed) => { colorSeed = seed; apply(false); },
-      update: (sink, dread) => { const prev = cur.dread; cur = { sink, dread }; apply(false); if (Math.abs(prev - dread) > 0.08) schedulePulse(); }
+      update: (depth, dread, density) => {
+        const prev = cur.dread;
+        cur = { depth, dread, density: density || 0 };
+        apply(false);
+        if (Math.abs(prev - dread) > 0.08) schedulePulse(); // 圧が動いたら鼓動の速さを取り直す
+      }
     };
   })();
 
@@ -637,142 +626,47 @@
     };
   })();
 
-  // ---------- 音楽ブリッジ（depth.html をリアクティブ音楽レイヤーとして連動） ----------
-  // 推奨方式: depth.html を 1px の不可視 iframe として埋め込み、降下の状態変化ごとに
-  // hazama-profile を postMessage で流す。音は slice の "沈む" タップ操作（実ユーザー手勢）で
-  // depth.html 内 START を click して解禁する（本番プレビューは同一オリジン＝quietbriony.github.io）。
-  // モード: depth(連動・既定) / inner(内製音) / off(消音)。二重鳴りを避けるため inner 以外は内製を止める。
+  // ---------- 音楽コントローラ（同一document・実手勢で解禁する内製エンジン） ----------
+  // 旧方式（depth.html を不可視 iframe に埋め、START を親から click して解禁）は廃止した:
+  //   ・AudioContext.resume()/Tone.start() は「その context を持つ document の window」が
+  //     transient activation を持つ実手勢ハンドラ内でしか通らない。User Activation は親→子
+  //     iframe に降りないため、親(slice)の「沈む」タップでは cross-document の iframe を解禁
+  //     できず、モバイルで音が鳴らなかった（不具合2）。
+  //   ・解禁のため全画面オーバーレイ iframe を敷くと、重い depth 描画＋親 canvas が二重化して
+  //     モバイルでフリーズした（v=m2-11 のフリーズ修正でオーバーレイを畳むと、今度は解錠タップが
+  //     iframe に着地せず resume 不能に逆戻り）。
+  // 解決: 音楽を slice 自身の document 内で鳴らす。内製エンジン(Audio)は同一document の
+  //   AudioContext なので、「沈む」タップ（実ユーザー手勢・同一document）の中で start()→resume()
+  //   すれば、その手勢がそのまま resume を通す＝モバイルでも堅牢に鳴り始める。depth.html の
+  //   リアクティブ設計（深さ→音域/cutoff/残響、多声→密度、圧→不協和/鼓動、menaceカーブ）は
+  //   Audio 側へ畳み込み済み（applyAtmosphere の Audio.update）。depth.html 単体デモは別repoに残す。
   const Music = (() => {
-    const MODES = ["depth", "inner", "off"];
-    let mode = "depth";
-    let iframe = null, pending = null, loaded = false;
-    const HIDDEN_CSS = "position:fixed;left:-2px;bottom:-2px;width:1px;height:1px;opacity:0;border:0;pointer-events:none;z-index:-1;";
     const chip = $("audio-toggle");
-
-    function ensureIframe() {
-      if (iframe) return;
-      iframe = document.createElement("iframe");
-      iframe.id = "depth-frame";
-      iframe.title = "depth music layer";
-      iframe.setAttribute("aria-hidden", "true");
-      iframe.tabIndex = -1;
-      // 不可視だが描画は生かす（display:none は一部環境で audio を止めるため 1px オフスクリーン）。
-      iframe.style.cssText = HIDDEN_CSS;
-      iframe.src = "depth.html?v=m2-11"; // 相対＝本番プレビューでは同一オリジン
-      iframe.addEventListener("load", () => { loaded = true; if (pending) post(pending); });
-      document.body.appendChild(iframe);
-    }
-
-    // ── モバイル堅牢解錠 ──────────────────────────────────────────────
-    // バグ: AudioContext.resume()/Tone.start() は、その context を持つ document の
-    // window が transient activation を持つ実手勢ハンドラ内で呼ぶ必要がある。User
-    // Activation は「イベントが発火した document の window とその祖先」にのみ付与され、
-    // 親→子 iframe には降りない。よって親(slice)の「沈む」タップ中に start.click() を
-    // プログラム実行しても iframe(depth) の window は未 activation ＝ resume が弾かれる。
-    // 修正: 最初の実タップを iframe 自身に着地させ（透明・全画面のタップ捕捉面）、
-    // iframe window に本物の activation を与え、その手勢ハンドラ内で同期的に START を叩く。
-    // これが「親から iframe の音を解禁する」最も堅牢なパターン（同一オリジン前提）。
-    function armUnlock(onUnlock) {
-      ensureIframe();
-      let done = false;
-      const proceed = () => { if (done) return; done = true; collapse(); onUnlock(); };
-      const arm = () => {
-        let doc = null;
-        try { doc = iframe.contentDocument; } catch (e) { doc = null; }
-        if (!doc) return; // cross-origin(dev): 武装せず、gate ボタン直叩き(enter)の旧手勢経路に委ねる
-        // iframe を透明・全画面・最前面のタップ捕捉面へ（ゲートは透けて見える）。
-        iframe.style.cssText = "position:fixed;inset:0;width:100%;height:100%;opacity:0;border:0;pointer-events:auto;z-index:9999;touch-action:manipulation;";
-        const fire = () => {
-          // ここは iframe document に着地した実タップのハンドラ＝iframe window は activation 済み。
-          // 同期で START を叩けば resume() が手勢の呼出スタック内で走り、モバイルでも解禁される。
-          try {
-            const w = iframe.contentWindow;
-            const st = w.DepthEngine && w.DepthEngine.getState && w.DepthEngine.getState();
-            if (!(st && st.running)) {
-              const start = w.document.getElementById("start");
-              if (start && !start.disabled) start.click();
-            }
-          } catch (e) {}
-          proceed();
-        };
-        // 最速の pointerdown/touchstart で解禁＆即畳む＝全画面オーバーレイの寿命を最小化する。
-        // 全画面オーバーレイ(depth.html=full-screen canvas+音)が降下開始まで残ると、重い背景＋
-        // 親 mandala canvas と二重に描画が走りモバイルでフリーズする。pointerdown も活性化手勢
-        // として有効＝この最速イベント中に START を叩けば iOS でも音は解禁できる。
-        ["pointerdown", "touchstart", "pointerup", "click"].forEach((ev) =>
-          doc.addEventListener(ev, fire, { capture: true }));
-      };
-      if (loaded) arm();
-      else iframe.addEventListener("load", arm, { once: true });
-    }
-    function collapse() { if (iframe) iframe.style.cssText = HIDDEN_CSS; }
-    // enter から必ず呼ぶ安全弁：解錠タップが iframe に着地できず（iOS の opacity:0 iframe ヒット
-    // テスト抜け等）gate ボタン直叩き経路で enter した場合でも、全画面オーバーレイが残って降下
-    // 描画と二重化しフリーズするのを確実に防ぐ。armUnlock 経路で既に畳まれていれば no-op。
-    function disarm() { collapse(); }
-
-    // 既に解禁済みかの確認（startPrimary から呼ぶ・armUnlock 後は no-op）。
-    function tryUnlock() {
-      if (mode !== "depth") return;
-      try {
-        const w = iframe && iframe.contentWindow; if (!w) return;
-        const st = w.DepthEngine && w.DepthEngine.getState && w.DepthEngine.getState();
-        if (st && st.running) return;
-        const start = w.document && w.document.getElementById("start");
-        if (start && !start.disabled) start.click();
-      } catch (e) { /* cross-origin: 手勢伝播に任せる */ }
-    }
-    function stopDepth() {
-      try {
-        const w = iframe && iframe.contentWindow; if (!w) return;
-        const stop = w.document && w.document.getElementById("stop");
-        if (stop && !stop.disabled) stop.click();
-      } catch (e) {}
-    }
-    function post(profile) {
-      if (!iframe || !iframe.contentWindow) return;
-      try { iframe.contentWindow.postMessage(profile, "*"); } catch (e) {} // depth 側で origin 検証
-    }
-    function push(profile) {
-      pending = profile;
-      // ロード前の post は about:blank に落ちて無害（load 時に pending を再送）。
-      // 降下中は状態変化ごとに送るので、ready ゲートは不要＝取りこぼしを無くす。
-      if (mode === "depth") post(profile);
-    }
     function label() {
       if (!chip) return;
-      chip.textContent = mode === "depth" ? "♪ depth 連動" : mode === "inner" ? "♪ 内製音" : "♪ 消音";
-      chip.setAttribute("aria-pressed", mode === "off" ? "false" : "true");
+      chip.textContent = Audio.playing ? "♪ 鳴っている" : "♪ 鳴らす";
+      chip.setAttribute("aria-pressed", Audio.playing ? "true" : "false");
     }
-    function applyMode() {
-      if (mode === "depth") { ensureIframe(); tryUnlock(); if (pending) post(pending); Audio.silence(); }
-      else if (mode === "inner") { stopDepth(); Audio.start(); }
-      else { stopDepth(); Audio.silence(); }
-      label();
-    }
-    function startPrimary() {
-      if (chip) chip.hidden = false;
-      applyMode(); // 既定 depth：iframe 解禁＋内製ミュート
-    }
-    function cycle() { mode = MODES[(MODES.indexOf(mode) + 1) % MODES.length]; applyMode(); }
-    // iframe は boot で先に生成しておく（沈む click 時点でロード済み＝手勢内で START を click できる）。
-    function preload() { ensureIframe(); }
-    return { push, startPrimary, cycle, preload, armUnlock, disarm };
+    // 「沈む」タップ（実手勢・同一document）の中で呼ばれる＝ここで resume が通る。
+    function startPrimary() { if (chip) chip.hidden = false; Audio.start(); label(); }
+    function cycle() { Audio.toggle(); label(); }
+    return { startPrimary, cycle };
   })();
 
   // ---------- 起動 ----------
   async function loadData() {
-    const res = await fetch("depths-shell.json?v=m2-12", { cache: "no-store" });
+    const res = await fetch("depths-shell.json?v=m2-13", { cache: "no-store" });
     DATA = await res.json();
   }
   let entered = false;
   function enter() {
-    if (entered) return; // overlay 解錠経路と gate ボタン経路の二重発火を防ぐ
+    if (entered) return;
     entered = true;
-    Music.disarm(); // ★最優先：解錠オーバーレイを必ず畳む（残ると降下描画と二重化しフリーズ）
     gateEl.classList.add("gone");
     buildReturnPaths();
-    Music.startPrimary(); // depth.html を実ユーザー手勢の中で解禁（既定）／内製はミュート
+    // ★ここは「沈む」ボタンの実タップ（同一document・transient activation 有）の中。
+    //   この手勢の中で AudioContext を生成＆resume するので、モバイルでも音が鳴り始める。
+    Music.startPrimary();
     Mandala.start();
     renderNode(DATA.start || "zero");
   }
@@ -793,12 +687,9 @@
   loadData().then(() => {
     const gb = $("gate-enter");
     gb.disabled = false;
-    // フォールバック経路（cross-origin/オーバーレイ未武装/デスクトップ）：ボタン直叩きで enter。
+    // 「沈む」の実タップ＝同一document の手勢。この中で enter()→Audio.start()→resume() が走る
+    // ＝モバイルで AudioContext を堅牢に解禁できる（cross-document iframe・全画面オーバーレイは廃止）。
     gb.addEventListener("click", enter, { once: false });
-    Music.preload(); // depth.html を先にロード（沈む click 時点でロード済み＝手勢内で解禁できる）
-    // モバイル堅牢解錠：ゲート上に透明 iframe を敷き、最初の実タップを iframe 内で受けて
-    // depth の AudioContext を本物の手勢で解禁してから降下を開始する。
-    Music.armUnlock(enter);
   }).catch((e) => {
     $("scene").textContent = "深度データの読み込みに失敗しました。再読み込みしてください。";
     console.warn("[Hazama slice] load failed:", e);
