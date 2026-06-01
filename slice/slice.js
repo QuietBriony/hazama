@@ -21,8 +21,14 @@
   const REDUCED = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   const RETURN_PATHS_START = 5;
   const SINK_SCALE = 22; // sink値→0..1正規化（縁でほぼ1）
+  // 抗う/戻るの作法（尺度＝観測者数＝物語深度）:
+  //   observer < RESIST_STRAIN : 浅い。少し戻れる。
+  //   RESIST_STRAIN..<DEEP_LOCK: 中盤。抗えるが世界が引き込む。
+  //   observer >= DEEP_LOCK     : 深部。本当に戻れない（戻り道が残っていても失敗）。
+  const RESIST_STRAIN = 3; // 観測者3（深度E〜）から「抗えるが引き込まれる」
+  const DEEP_LOCK = 9;     // 観測者9（深度Q・外側の外側〜）から「戻れない」
 
-  const state = { id: null, sink: 0, dread: 0, returnPaths: RETURN_PATHS_START, maxSink: 0, observer: 1, steps: 0, belowLoop: 0 };
+  const state = { id: null, sink: 0, dread: 0, returnPaths: RETURN_PATHS_START, maxSink: 0, observer: 1, steps: 0, belowLoop: 0, resisted: 0, refused: 0, resistBeat: null };
   let DATA = null;
   let revealToken = 0;
 
@@ -156,6 +162,7 @@
     renderReturnPaths();
     renderObserver();
     Audio.update(sinkNorm, Math.min(1, state.dread));
+    Mandala.update(sinkNorm, state.observer, Math.min(1, state.dread));
   }
   function phaseFor(s) { return s < 0.18 ? "surface" : s < 0.45 ? "drift" : s < 0.75 ? "deep" : "bottom"; }
 
@@ -179,7 +186,11 @@
     const revealMs = REDUCED ? 0 : (34 + state.dread * 64);
     let delay = 0;
 
-    (node.lines || []).forEach((line) => {
+    // 抗い/戻りの結果ビート（あれば本文の先頭に差す。一度きり）。
+    const lines = state.resistBeat ? [state.resistBeat].concat(node.lines || []) : (node.lines || []);
+    state.resistBeat = null;
+
+    lines.forEach((line) => {
       const p = document.createElement("p");
       p.className = "hz-line " + (WHO_CLASS[line.who] || "");
       sceneEl.appendChild(p);
@@ -191,6 +202,7 @@
       window.setTimeout(() => {
         if (myToken !== revealToken) return;
         p.classList.add("shown");
+        sceneEl.scrollTop = sceneEl.scrollHeight; // 行が現れるたび最新行を底へ追従
         p.querySelectorAll(".ch").forEach((s, i) => {
           window.setTimeout(() => {
             if (myToken !== revealToken) return;
@@ -221,15 +233,60 @@
       const appear = REDUCED ? 0 : 120 + idx * 150 + (c.kind === "retreat" ? state.maxSink * 800 : 0);
       window.setTimeout(() => btn.classList.add("in"), appear);
     });
+    // ボタンを積んで scene が縮んだ“後”に最新行を底へ。重なりはレイアウトで防止済み、
+    // ここは「最後の行を選択肢の真上に見せる」ためのスクロール追従。
+    sceneEl.scrollTop = sceneEl.scrollHeight;
   }
 
+  function sinkNorm() { return Math.min(1, state.sink / SINK_SCALE); }
+
   function choose(c) {
+    if (c.kind === "retreat" && !c.terminal) return resolveResist(c);
     state.sink += c.sink || 0;
     state.dread = Math.min(1, state.dread + (c.dread || 0));
     if (c.close && state.returnPaths > 0) state.returnPaths -= 1; // 戻り道は復活しない
     Audio.pulseOnce(c.kind === "descend" ? 1 : 0.5);
     if (c.to === "__edge") return renderEdge();
     renderNode(c.to);
+  }
+
+  // 抗う/戻るの判定。尺度は観測者数＝物語深度（単調増加で、早々に飽和する沈下より安定）。
+  //  浅い (observer<RESIST_STRAIN) : 少し戻れる。back へ上がり、戻り道 −1。沈下は残る。
+  //  中盤 (..<DEEP_LOCK)           : 抗えるが世界が引き込む。_hold(c.to) へ・沈下が一段進む。戻り道 −1。
+  //  深部 (>=DEEP_LOCK)            : 戻れない。戻り道が残っていても効かない。failTo/c.to へ落ち、dread が跳ねる。
+  function resolveResist(c) {
+    const depth = state.observer;
+    const hasPath = state.returnPaths > 0;
+    let target, beat = null, addSink = c.sink || 0, addDread = c.dread || 0;
+
+    if (depth >= DEEP_LOCK || !hasPath) {
+      // 失敗：世界が引き込む。戻り道は消費しない（残っていても、もう効かない＝無効化された救い）。
+      state.refused += 1;
+      target = c.failTo || c.to;
+      beat = { who: "danger", t: hasPath
+        ? "——戻ろうとする。が、上が、もう無い。世界が、一段こちらを引き込んだ。"
+        : "——抗う手が、空を掻く。戻り道は、とうに尽きていた。" };
+      addSink += 2; addDread += 0.06;
+      Audio.pulseOnce(1);
+    } else if (depth >= RESIST_STRAIN) {
+      // 抗えるが引き込まれる（_hold ノードが地の文で語るので、ここでは追いビートを足さない）
+      state.returnPaths -= 1; state.resisted += 1;
+      target = c.to;
+      addSink += 1; addDread -= 0.03;
+      Audio.pulseOnce(0.55);
+    } else {
+      // 浅い：少し戻れる
+      state.returnPaths -= 1; state.resisted += 1;
+      target = c.back || c.to;
+      beat = { who: "cold", t: "——息を整え、来た方へ。まだ、戻れる。だが沈んだ分は、もう戻らない。" };
+      addDread -= 0.06;
+      Audio.pulseOnce(0.4);
+    }
+    state.sink += addSink;
+    state.dread = Math.min(1, Math.max(0, state.dread + addDread));
+    state.resistBeat = beat;
+    if (target === "__edge") return renderEdge();
+    renderNode(target);
   }
 
   // ---------- 縁（増分の終わり。沈みきり/辛うじて で分岐） ----------
@@ -258,7 +315,7 @@
       card.className = "hz-line cold";
       card.style.cssText = "margin-top:2em;font-size:0.8rem;line-height:1.9;";
       const lit = Math.round(state.maxSink * 8);
-      card.textContent = `― 深度Ω 到達・外殻踏破 ―  到達深度: ${"▮".repeat(lit)}${"▯".repeat(8 - lit)} / 残った戻り道: ${state.returnPaths}/${RETURN_PATHS_START} / 観測者: ${state.observer}`;
+      card.textContent = `― 深度Ω 到達・外殻踏破 ―  到達深度: ${"▮".repeat(lit)}${"▯".repeat(8 - lit)} / 残った戻り道: ${state.returnPaths}/${RETURN_PATHS_START} / 観測者: ${state.observer} / 抗った: ${state.resisted} ・ 戻れなかった: ${state.refused}`;
       sceneEl.appendChild(card); card.classList.add("shown");
       const more = document.createElement("p");
       more.className = "hz-line"; more.style.cssText = "margin-top:0.6em;font-size:0.78rem;color:#6b7682;";
@@ -377,20 +434,124 @@
     };
   })();
 
+  // ---------- 手続き的曼荼羅（Ω/到達点の reactive ビジュアル） ----------
+  // 硬い・乾いた・サイバーパンクの沈下美学。手描き画像でなく canvas で生成し、深度に呼応させる:
+  //  - 8回対称（八観）。観測者数で層(rings)とスポーク(spokes)が増殖する。
+  //  - 沈むほど暗く・彩度↓・最外リングが迫り上がる（CSSで下から接近、ここで輝度を上げる）。
+  //  - 高dread で最外に warn 色の不協和リングが立つ。
+  //  - 中心＝核は描かない(§4-1)。沈むほど中心の空白(void)が退いて広がり、深部のみ縁が白く灼ける。
+  //  - reduced-motion は1枚静止描画。タブ非表示で rAF 停止（モバイル負荷）。
+  const Mandala = (() => {
+    const cv = $("mandala");
+    if (!cv || !cv.getContext) return { start() {}, update() {} };
+    const g = cv.getContext("2d");
+    let raf = 0, last = 0, lastT = 0, size = 0, dpr = 1, started = false;
+    let cur = { sink: 0, observer: 1, dread: 0 };
+
+    function resize() {
+      const r = cv.getBoundingClientRect();
+      dpr = Math.min(window.devicePixelRatio || 1, 2);
+      size = Math.max(120, Math.floor(Math.min(r.width || 300, r.height || 300)));
+      cv.width = Math.floor(size * dpr); cv.height = Math.floor(size * dpr);
+      draw(0);
+    }
+    function draw(time) {
+      if (!cv.width) return;
+      const s = cur.sink, obs = cur.observer, d = cur.dread;
+      const W = cv.width, H = cv.height, cx = W / 2, cy = H / 2, R = W * 0.46;
+      g.clearRect(0, 0, W, H);
+      g.globalCompositeOperation = "lighter";
+      const rot = REDUCED ? 0.3 : time * 0.00002;
+      const spokes = 8 * (1 + Math.floor(obs / 7));        // 八観の倍数で増殖
+      const rings = Math.min(16, 3 + Math.floor(obs / 1.5));
+      const voidR = R * (0.10 + s * 0.32);                 // 核は描かない＝沈むほど退いて広がる空白
+      const baseA = 0.045 + s * 0.05;
+      for (let i = 0; i < rings; i++) {
+        const f = (rings > 1) ? i / (rings - 1) : 0;       // 0=内 → 1=外
+        const rr = voidR + (R - voidR) * f;
+        if (rr <= voidR) continue;
+        const dir = (i % 2) ? -1 : 1;                      // 交互逆回転＝モアレ
+        const a = rot * (1 + i * 0.18) * dir + i * 0.2;
+        const warn = (d > 0.6 && i >= rings - 1);
+        const alpha = Math.min(0.5, baseA * (0.5 + f) * (0.7 + s * 0.7));
+        g.beginPath();
+        for (let k = 0; k <= spokes; k++) {
+          const ang = a + (k / spokes) * Math.PI * 2;
+          const wob = 1 + Math.sin(ang * 3 + i) * 0.014 * (1 + d);
+          const x = cx + Math.cos(ang) * rr * wob, y = cy + Math.sin(ang) * rr * wob;
+          k ? g.lineTo(x, y) : g.moveTo(x, y);
+        }
+        g.closePath();
+        g.lineWidth = Math.max(1, dpr * (warn ? 1.3 : 0.7));
+        g.strokeStyle = warn
+          ? "rgba(196,107,90," + (alpha * 1.5).toFixed(3) + ")"
+          : "rgba(" + Math.round(127 - s * 34) + "," + Math.round(182 - s * 44) + "," + Math.round(196 - s * 30) + "," + alpha.toFixed(3) + ")";
+        g.stroke();
+      }
+      // 放射スポーク（八観の軸）。void へは踏み込ませない。
+      g.lineWidth = Math.max(1, dpr * 0.55);
+      g.strokeStyle = "rgba(127,182,196," + (0.03 + s * 0.05).toFixed(3) + ")";
+      for (let k = 0; k < spokes; k++) {
+        const ang = rot * 0.6 + (k / spokes) * Math.PI * 2;
+        const inner = voidR * 1.05, outer = R * (0.6 + s * 0.36);
+        g.beginPath();
+        g.moveTo(cx + Math.cos(ang) * inner, cy + Math.sin(ang) * inner);
+        g.lineTo(cx + Math.cos(ang) * outer, cy + Math.sin(ang) * outer);
+        g.stroke();
+      }
+      // 中心の空（核）: “描かない”を黒で描く。沈むほど深い穴。
+      g.globalCompositeOperation = "source-over";
+      const vg = g.createRadialGradient(cx, cy, 0, cx, cy, voidR);
+      vg.addColorStop(0, "rgba(0,0,0,1)");
+      vg.addColorStop(0.72, "rgba(1,3,8,0.96)");
+      vg.addColorStop(1, "rgba(2,4,10,0)");
+      g.fillStyle = vg; g.beginPath(); g.arc(cx, cy, voidR, 0, Math.PI * 2); g.fill();
+      if (s > 0.7) { // 覗くと白く灼ける（深部のみ・細い縁／点滅は reduced で固定）
+        const flick = REDUCED ? 0.45 : (0.5 + 0.5 * Math.sin(time * 0.004));
+        g.globalCompositeOperation = "lighter";
+        g.lineWidth = Math.max(1, dpr * 0.8);
+        g.strokeStyle = "rgba(222,233,238," + (0.06 * ((s - 0.7) / 0.3) * flick).toFixed(3) + ")";
+        g.beginPath(); g.arc(cx, cy, voidR * 0.99, 0, Math.PI * 2); g.stroke();
+      }
+    }
+    function loop(time) {
+      if (time - last >= 33) { last = time; lastT = time; draw(time); } // ~30fps
+      raf = requestAnimationFrame(loop);
+    }
+    function start() {
+      if (started) return; started = true;
+      resize();
+      window.addEventListener("resize", resize);
+      if (REDUCED) return;
+      document.addEventListener("visibilitychange", () => {
+        if (document.hidden) { cancelAnimationFrame(raf); raf = 0; }
+        else if (!raf) { last = 0; raf = requestAnimationFrame(loop); }
+      });
+      raf = requestAnimationFrame(loop);
+    }
+    return {
+      start,
+      // 深度が変わった瞬間に1枚即描画（reactivity の即応＋rAF が間引かれる環境でも反映）。
+      // rAF ループは回転を継続させる。
+      update: (sink, observer, dread) => { cur = { sink, observer, dread }; draw(lastT); }
+    };
+  })();
+
   // ---------- 起動 ----------
   async function loadData() {
-    const res = await fetch("depths-shell.json?v=m2-06", { cache: "no-store" });
+    const res = await fetch("depths-shell.json?v=m2-07", { cache: "no-store" });
     DATA = await res.json();
   }
   function enter() {
     gateEl.classList.add("gone");
     buildReturnPaths();
     Audio.start();
+    Mandala.start();
     renderNode(DATA.start || "zero");
   }
   function restart() {
     revealToken++;
-    state.id = null; state.sink = 0; state.dread = 0; state.returnPaths = RETURN_PATHS_START; state.maxSink = 0; state.observer = 1; state.steps = 0; state.belowLoop = 0;
+    state.id = null; state.sink = 0; state.dread = 0; state.returnPaths = RETURN_PATHS_START; state.maxSink = 0; state.observer = 1; state.steps = 0; state.belowLoop = 0; state.resisted = 0; state.refused = 0; state.resistBeat = null;
     $("restart").hidden = true;
     buildReturnPaths();
     renderNode(DATA.start || "zero");
@@ -398,6 +559,9 @@
 
   $("audio-toggle").addEventListener("click", () => Audio.toggle());
   $("restart").addEventListener("click", restart);
+
+  // 開発用フック（プレビュー検証専用・本体統合時は外す）: 任意ノードへ跳ぶ／状態を読む。
+  window.__hz = { go: renderNode, choose, state, get sink() { return sinkNorm(); } };
 
   loadData().then(() => {
     const gb = $("gate-enter");

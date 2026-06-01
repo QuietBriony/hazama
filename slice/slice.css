@@ -63,11 +63,9 @@ body[data-phase="bottom"] { --bg: #020308; --ink: #aab4bf; --accent: #8aa6ac; --
   transition: top 3s ease, opacity 3s ease;
   mix-blend-mode: screen;
 }
-.hz-bg-mandala img {
-  width: 100%; height: 100%; object-fit: contain;
-  animation: hz-rot 80s linear infinite;
-}
-@keyframes hz-rot { to { transform: rotate(360deg); } }
+/* 手続き的曼荼羅（canvas）。回転・層・色は JS が深度/観測者に連動させる。
+   中心は決して描かない＝核（§4-1）。沈むほど中心の空白が“退いて”広がる。 */
+.hz-bg-mandala canvas { width: 100%; height: 100%; display: block; }
 
 .hz-vignette {
   position: absolute; inset: 0;
@@ -114,9 +112,9 @@ body[data-phase="bottom"] { --bg: #020308; --ink: #aab4bf; --accent: #8aa6ac; --
   max-width: 680px;
   width: 100%;
   margin: 0 auto;
-  padding: max(18px, env(safe-area-inset-top)) 22px 14px;
-  overflow-y: auto;
-  overscroll-behavior: contain;
+  padding: max(18px, env(safe-area-inset-top)) 22px 0;
+  min-height: 0;
+  overflow: hidden;            /* スクロールは #scene が内部で持つ。choices と本文は別トラックで絶対に重ならない */
 }
 
 /* 沈下ゲージ：右端に細い縦線。fill が下へ伸びる＝沈んだ深さ */
@@ -162,14 +160,20 @@ body[data-phase="bottom"] { --bg: #020308; --ink: #aab4bf; --accent: #8aa6ac; --
   50%      { opacity: 1; text-shadow: 0 0 9px rgba(127,182,196,0.6); }
 }
 
-/* シーン本文 */
+/* シーン本文：ここが内部スクロール領域。choices とは別トラックなので本文がボタンに被らない。
+   ::before の margin-top:auto で「本文が短い時は下寄せ（沈下の手触り）／長い時は上から素直にスクロール」
+   を両立する（flex+overflow の“上端が掴めない”バグを回避する定番手法）。 */
 .hz-scene {
-  flex: 1;
-  display: flex; flex-direction: column; justify-content: center;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  display: flex; flex-direction: column; justify-content: flex-start;
   gap: 1.05em;
-  padding: 6vh 0 4vh;
-  min-height: 50vh;
+  padding: 5vh 2px 3vh;
+  -webkit-overflow-scrolling: touch;
 }
+.hz-scene::before { content: ""; margin-top: auto; }
 .hz-line {
   margin: 0;
   font-size: clamp(1.02rem, 1rem + 0.8vw, 1.34rem);
@@ -195,12 +199,19 @@ body[data-tension="high"] .hz-scene { animation: hz-shudder 2.6s ease-in-out inf
   75% { transform: translateX(0.6px); }
 }
 
-/* 選択肢 */
+/* 選択肢：scene の下に固定された別トラック（flex:0 0 auto）。本文と重ならない。
+   上端に短いフェードを置き、スクロールする本文がボタンへ溶け込むように消える。 */
 .hz-choices {
-  position: sticky; bottom: 0;
+  position: relative;
+  flex: 0 0 auto;
   display: flex; flex-direction: column; gap: 10px;
-  padding: 10px 0 max(14px, env(safe-area-inset-bottom));
-  background: linear-gradient(to top, var(--bg) 62%, transparent);
+  padding: 12px 0 max(14px, env(safe-area-inset-bottom));
+  background: var(--bg);
+}
+.hz-choices::before {
+  content: ""; position: absolute; left: 0; right: 0; top: -34px; height: 34px;
+  pointer-events: none;
+  background: linear-gradient(to top, var(--bg), transparent);
 }
 .hz-choice {
   appearance: none; -webkit-appearance: none;
@@ -270,7 +281,6 @@ body[data-tension="high"] .hz-scene { animation: hz-shudder 2.6s ease-in-out inf
 
 /* ---------- アクセシビリティ ---------- */
 @media (prefers-reduced-motion: reduce) {
-  .hz-bg-mandala img { animation: none; }
   .hz-line .ch, .hz-line .ch.lit { opacity: 1 !important; filter: none !important; transition: none !important; }
   body[data-tension="high"] .hz-scene { animation: none; }
   .hz-bg-descent, .hz-bg-mandala, .hz-vignette { transition: none; }
