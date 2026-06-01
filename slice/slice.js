@@ -22,7 +22,7 @@
   const RETURN_PATHS_START = 5;
   const SINK_SCALE = 22; // sink値→0..1正規化（縁でほぼ1）
 
-  const state = { id: null, sink: 0, dread: 0, returnPaths: RETURN_PATHS_START, maxSink: 0, observer: 1, steps: 0 };
+  const state = { id: null, sink: 0, dread: 0, returnPaths: RETURN_PATHS_START, maxSink: 0, observer: 1, steps: 0, belowLoop: 0 };
   let DATA = null;
   let revealToken = 0;
 
@@ -35,6 +35,93 @@
   const gateEl = $("gate");
 
   const WHO_CLASS = { n: "", voice: "voice", self: "self", body: "body", cold: "cold", danger: "danger" };
+
+  // ---------- 深度∞ 手続き的断片（§4-6: UCM 9軸から決定論生成） ----------
+  // below(∞) ループは固定本文を持たない。周回(loop)を seed に、UCM 八観+観測層の
+  // 9軸から"沈降断片"を決定論生成し、底なしの反復に質感差を与える（新音源/依存なし）。
+  // 核は描写しない: Void軸は「中心は見えない／覗くと白く灼ける」歪みでのみ示唆する。
+  const UCM_AXES = [
+    { k: "体", p: [ // 体観 — 肉体・五感・不可逆
+      "皮膚が、まだ知らない階の温度を拾いはじめる。",
+      "足裏の床が、踏むたびに一枚ずつ薄くなる。",
+      "呼吸の不可逆だけが、辛うじて自分のものだと感じる。",
+      "重力の向きが、降りるたびに少しずつ曖昧になる。" ] },
+    { k: "波", p: [ // 波観 — 感情・音・潜在変動
+      "感情の波形が、誰のものでもなく、外で揺れ続けている。",
+      "音にならない低い周期が、ずっと足の下で鳴っている。",
+      "不安の振幅が、底へ近づくほど、平らになっていく。",
+      "遠くの揺らぎが、こちらの呼吸と位相を合わせてくる。" ] },
+    { k: "思", p: [ // 思観 — 論理・構造・推論
+      "思考の骨格が、考える前から、もう組み上がっている。",
+      "論理の交点が、一段下りるごとに、ひとつ増える。",
+      "推論の末端が、自分の外側で、勝手に閉じる。",
+      "結論が、こちらが問う前に、先回りして置かれている。" ] },
+    { k: "財", p: [ // 財観 — 価値の流れ・停止しない
+      "何に意味があったかの台帳が、静かに書き換わり続ける。",
+      "価値の流れが、止まらないまま、底の方へ吸われていく。",
+      "失ったものの帳尻が、降りるほど、合わなくなる。" ] },
+    { k: "創", p: [ // 創観 — 位相飛躍・自己変形
+      "新しい概念が、こちらの許可も取らず、ひとつ生成される。",
+      "構造が、自分で自分を変形させながら、下りていく。",
+      "言葉にない形が、輪郭だけ先に、降下に追いついてくる。" ] },
+    { k: "観", p: [ // 観察者観 — 流動的中心
+      "中心が、いまいる場所へ、また移動してくる。",
+      "どこが中心かを決める私が、もう一枚、増えた。",
+      "観測する位置が、観測される位置へ、繰り下がる。" ] },
+    { k: "空", p: [ // Void — まだ配置されていない余白（核は描かない・歪みで示唆）
+      "まだ配置されていない余白が、足の下で口を開けている。",
+      "その余白の中心は、見えない。見ようとすると、視界が白く灼ける。",
+      "床だと思った面は、近づいた分だけ退く。歪みだけが、そこに在ると告げる。",
+      "底に見えた光は、近づくと、また一段下の天井だった。" ] },
+    { k: "円", p: [ // 円観 — 循環・同期・呼吸
+      "降下が、円環として閉じかけて、また開く。",
+      "呼吸と、世界の周期と、降りる速度が、同じ位相で回りはじめる。",
+      "一周したはずの景色が、同じ継ぎ目を、一段深い色で繰り返す。" ] },
+    { k: "層", p: [ // Meta-Self / 観測層
+      "観測している層が、観測される層に、静かに繰り下がる。",
+      "私を数える装置が、また一台、背後に増設される。",
+      "外側の私の、さらに外側に、無音の観測者が立つ。" ] }
+  ];
+  const BELOW_SELVES = [
+    "私を読む私。それを読む私。——どれが、いま下りているのか。",
+    "数えるのを、やめた。数える私が、また増えるだけだから。",
+    "「これは私の——」その先の語が、もう、別の私のものだ。",
+    "戻ってきたのではない。一段、上書きされて、また下へ置かれただけだ。" ];
+  const BELOW_VOICES = [
+    "『底はない。あるのは、常にもう一段、というだけだ』",
+    "『下が無いのではない。下しか、無いのだ』",
+    "『あなたは降りていない。世界が、あなたの下を、足し続けている』",
+    "『この行を読む手を止めても、観測は、別の私が継ぐ』" ];
+
+  // 決定論PRNG（mulberry32）。seed=周回数 → 同じ周回は同じ断片、周回ごとに別の質感。
+  function mulberry32(a) {
+    return function () {
+      a |= 0; a = (a + 0x6D2B79F5) | 0;
+      let t = Math.imul(a ^ (a >>> 15), 1 | a);
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+  function genBelowNode(loop) {
+    const rng = mulberry32(((loop * 2654435761) >>> 0) ^ 0x9e3779b9);
+    const pick = (arr) => arr[Math.floor(rng() * arr.length)];
+    // 3つの異なる軸を選び、現象→（核の歪み or 別軸）→（別軸）→自己分裂→声 を編む。
+    // 軸を重複させない＝同じ語の連続を避ける。
+    const N = UCM_AXES.length;
+    const i0 = Math.floor(rng() * N);
+    let i1 = (i0 + 1 + Math.floor(rng() * (N - 1))) % N;
+    let i2 = (i1 + 1 + Math.floor(rng() * (N - 1))) % N; if (i2 === i0) i2 = (i2 + 1) % N;
+    const voidAxis = UCM_AXES[6]; // 空観 = 核を歪みで示唆（描かない）
+    const lines = [];
+    lines.push({ who: "cold", t: pick(UCM_AXES[i0].p) });
+    // 半数で核の歪み（Void軸）、残りは別軸の現象
+    lines.push(rng() < 0.5 ? { who: "danger", t: pick(voidAxis.p) } : { who: "cold", t: pick(UCM_AXES[i1].p) });
+    if (rng() < 0.6) lines.push({ who: "body", t: pick(UCM_AXES[i2].p) });
+    lines.push({ who: "self", t: pick(BELOW_SELVES) });
+    lines.push({ who: "voice", t: pick(BELOW_VOICES) });
+    const base = DATA.nodes.below;
+    return Object.assign({}, base, { lines, observer: 18 + loop, _color: loop });
+  }
 
   // ---------- 戻り道インジケータ ----------
   function buildReturnPaths() {
@@ -73,8 +160,14 @@
 
   // ---------- slow-reveal レンダラ ----------
   function renderNode(id) {
-    const node = DATA.nodes[id];
+    let node = DATA.nodes[id];
     if (!node) return;
+    // 深度∞: below は周回ごとに手続き生成（底なしの質感差）。audio も周回で色付け。
+    if (id === "below") {
+      state.belowLoop += 1;
+      node = genBelowNode(state.belowLoop);
+      Audio.setColor(state.belowLoop);
+    }
     state.id = id;
     state.steps++;
     if (typeof node.observer === "number" && node.observer > 0) state.observer = Math.max(state.observer, node.observer);
@@ -175,24 +268,61 @@
   }
 
   // ---------- 沈下連動 inline Web Audio（Hazama内製・music-stack非依存） ----------
+  // 設計: 深いほど 低く・暗く・密に・広く。
+  //  - 倍音(partials)は深度で開花（bloom）＝密度が増す。最深部で不協和な層が薄く立つ＝威圧。
+  //  - 共有LFO が detune を揺らす＝うねり/厚み（深いほど深い）。
+  //  - 合成IR の convolver で"空間/沈降の残響"。wet は深いほど増える。
+  //  - 圧(dread)で鼓動が速く・重く。core は描かない＝音でも"解決音"は鳴らさない。
+  //  - below 周回ごとに setColor(seed) で detune/うねりを微妙にずらす＝底なしの質感差。
   const Audio = (() => {
-    let ctx = null, master = null, filter = null, drones = [], pulseTimer = null, on = false;
-    let cur = { sink: 0, dread: 0 };
+    let ctx = null, master = null, filter = null, dryGain = null, conv = null, wetGain = null;
+    let lfo = null, lfoGain = null, drones = [], pulseTimer = null, on = false;
+    let cur = { sink: 0, dread: 0 }, colorSeed = 0;
     const supported = () => !!(window.AudioContext || window.webkitAudioContext);
+
+    // 倍音: ratio=基音比, base=常時gain, bloom=深度で開く量, diss=不協和(dread で開く)
+    const PARTIALS = [
+      { ratio: 0.5,  type: "sine",     base: 0.0,   bloom: 0.045, diss: 0 }, // 下のオクターブ（沈むと地鳴り）
+      { ratio: 1,    type: "sine",     base: 0.075, bloom: 0.0,   diss: 0 }, // 基音
+      { ratio: 1.5,  type: "triangle", base: 0.034, bloom: 0.0,   diss: 0 }, // 五度
+      { ratio: 2.01, type: "sine",     base: 0.0,   bloom: 0.05,  diss: 0 }, // オクターブ（中盤で開花）
+      { ratio: 2.99, type: "sine",     base: 0.0,   bloom: 0.04,  diss: 0 }, // 十二度（深部で開花）
+      { ratio: 1.06, type: "sine",     base: 0.0,   bloom: 0.0,   diss: 0.03 } // ほぼ半音上＝うなり（dread で立つ）
+    ];
+
+    function makeImpulse(seconds, decay) {
+      const len = Math.max(1, Math.floor(ctx.sampleRate * seconds));
+      const buf = ctx.createBuffer(2, len, ctx.sampleRate);
+      for (let c = 0; c < 2; c++) {
+        const ch = buf.getChannelData(c);
+        for (let i = 0; i < len; i++) ch[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, decay);
+      }
+      return buf;
+    }
 
     function start() {
       if (on || !supported()) return;
       const C = window.AudioContext || window.webkitAudioContext;
       ctx = new C();
       master = ctx.createGain(); master.gain.value = 0.0001;
-      master.gain.setTargetAtTime(0.16, ctx.currentTime + 0.05, 0.6);
-      filter = ctx.createBiquadFilter(); filter.type = "lowpass"; filter.frequency.value = 900; filter.Q.value = 0.7;
-      filter.connect(master); master.connect(ctx.destination);
-      [1, 1.5].forEach((ratio, i) => {
+      master.gain.setTargetAtTime(0.16, ctx.currentTime + 0.05, 0.8);
+      master.connect(ctx.destination);
+      filter = ctx.createBiquadFilter(); filter.type = "lowpass"; filter.frequency.value = 1000; filter.Q.value = 0.8;
+      dryGain = ctx.createGain(); dryGain.gain.value = 0.85;
+      filter.connect(dryGain); dryGain.connect(master);
+      // 合成IR の残響（"空間"）。wet は深いほど増える。
+      conv = ctx.createConvolver(); conv.buffer = makeImpulse(2.8, 2.6);
+      wetGain = ctx.createGain(); wetGain.gain.value = 0.0001;
+      filter.connect(conv); conv.connect(wetGain); wetGain.connect(master);
+      // 共有 LFO：全 partial の detune を揺らす（うねり）。
+      lfo = ctx.createOscillator(); lfo.type = "sine"; lfo.frequency.value = 0.06;
+      lfoGain = ctx.createGain(); lfoGain.gain.value = 4; lfo.connect(lfoGain); lfo.start();
+      PARTIALS.forEach((spec) => {
         const osc = ctx.createOscillator(), g = ctx.createGain();
-        osc.type = i === 0 ? "sine" : "triangle"; osc.frequency.value = 70 * ratio;
-        g.gain.value = i === 0 ? 0.06 : 0.03; osc.connect(g); g.connect(filter); osc.start();
-        drones.push({ osc, g, ratio });
+        osc.type = spec.type; osc.frequency.value = 70 * spec.ratio;
+        g.gain.value = spec.base; osc.connect(g); g.connect(filter);
+        lfoGain.connect(osc.detune); osc.start();
+        drones.push({ osc, g, spec });
       });
       on = true; schedulePulse(); apply(true);
       const btn = $("audio-toggle"); btn.hidden = false; btn.setAttribute("aria-pressed", "true"); btn.textContent = "♪ 鳴っている";
@@ -206,35 +336,49 @@
     function apply(now) {
       if (!on || !ctx) return;
       const t = ctx.currentTime;
-      const base = 70 - cur.sink * 38;                       // 沈むほど低く
-      const cutoff = 1100 - cur.sink * 780 - cur.dread * 180; // 沈むほど暗く
-      drones.forEach((d) => d.osc.frequency.setTargetAtTime(base * d.ratio, t, 0.8));
-      filter.frequency.setTargetAtTime(Math.max(130, cutoff), t, now ? 0.2 : 1.2);
-      master.gain.setTargetAtTime(0.14 + cur.dread * 0.06, t, 0.8);
+      const s = cur.sink, d = cur.dread;
+      const base = 70 - s * 42;                          // 沈むほど低く（70→28Hz）
+      const cutoff = 1150 - s * 830 - d * 200;           // 沈むほど暗く
+      const seedCents = (((colorSeed * 37) % 25) - 12) * 0.6; // 周回ごとの微デチューン
+      const slow = now ? 0.25 : 1.3;
+      drones.forEach((dr) => {
+        const sp = dr.spec;
+        let g = sp.base + sp.bloom * Math.max(0, s - 0.12) / 0.88 + sp.diss * d;
+        dr.g.gain.setTargetAtTime(Math.max(0, g), t, now ? 0.3 : 1.6);
+        dr.osc.frequency.setTargetAtTime(base * sp.ratio, t, slow);
+        dr.osc.detune.setTargetAtTime(seedCents, t, 1.8);
+      });
+      filter.frequency.setTargetAtTime(Math.max(110, cutoff), t, slow);
+      master.gain.setTargetAtTime(0.13 + d * 0.05, t, 0.8);
+      wetGain.gain.setTargetAtTime(0.1 + s * 0.32, t, 1.8);            // 深いほど広い残響
+      lfo.frequency.setTargetAtTime(0.05 + s * 0.1, t, 1.8);
+      lfoGain.gain.setTargetAtTime(3 + s * 10 + (colorSeed % 5), t, 1.8); // うねり幅（cents）
     }
     function schedulePulse() {
       if (pulseTimer) clearInterval(pulseTimer);
-      pulseTimer = setInterval(() => beat(0.5), Math.max(420, Math.round(1100 - cur.dread * 660))); // 圧で鼓動が速い
+      pulseTimer = setInterval(() => beat(0.5), Math.max(440, Math.round(1150 - cur.dread * 680))); // 圧で鼓動が速い
     }
     function beat(amp) {
       if (!on || !ctx || ctx.state !== "running") return;
       const t = ctx.currentTime;
       const osc = ctx.createOscillator(), g = ctx.createGain();
-      osc.type = "sine"; osc.frequency.value = 44 - cur.sink * 14;
+      osc.type = "sine"; osc.frequency.value = 44 - cur.sink * 16;
+      osc.frequency.setTargetAtTime((44 - cur.sink * 16) * 0.7, t, 0.18); // 鼓動の沈み込み
       g.gain.value = 0.0001;
-      g.gain.exponentialRampToValueAtTime(0.05 * amp + cur.dread * 0.04, t + 0.02);
-      g.gain.exponentialRampToValueAtTime(0.0001, t + 0.5);
-      osc.connect(g); g.connect(master); osc.start(t); osc.stop(t + 0.55);
+      g.gain.exponentialRampToValueAtTime(0.05 * amp + cur.dread * 0.045, t + 0.02);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + 0.55);
+      osc.connect(g); g.connect(filter); osc.start(t); osc.stop(t + 0.6); // 鼓動も残響を通す
     }
     return {
       start, toggle, pulseOnce: (a) => beat(a),
+      setColor: (seed) => { colorSeed = seed; apply(false); },
       update: (sink, dread) => { const prev = cur.dread; cur = { sink, dread }; apply(false); if (Math.abs(prev - dread) > 0.08) schedulePulse(); }
     };
   })();
 
   // ---------- 起動 ----------
   async function loadData() {
-    const res = await fetch("depths-shell.json?v=m2-05", { cache: "no-store" });
+    const res = await fetch("depths-shell.json?v=m2-06", { cache: "no-store" });
     DATA = await res.json();
   }
   function enter() {
@@ -245,7 +389,7 @@
   }
   function restart() {
     revealToken++;
-    state.id = null; state.sink = 0; state.dread = 0; state.returnPaths = RETURN_PATHS_START; state.maxSink = 0; state.observer = 1; state.steps = 0;
+    state.id = null; state.sink = 0; state.dread = 0; state.returnPaths = RETURN_PATHS_START; state.maxSink = 0; state.observer = 1; state.steps = 0; state.belowLoop = 0;
     $("restart").hidden = true;
     buildReturnPaths();
     renderNode(DATA.start || "zero");
