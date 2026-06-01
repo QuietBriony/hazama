@@ -28,9 +28,22 @@
   const RESIST_STRAIN = 3; // 観測者3（深度E〜）から「抗えるが引き込まれる」
   const DEEP_LOCK = 9;     // 観測者9（深度Q・外側の外側〜）から「戻れない」
 
-  const state = { id: null, sink: 0, dread: 0, returnPaths: RETURN_PATHS_START, maxSink: 0, observer: 1, steps: 0, belowLoop: 0, resisted: 0, refused: 0, resistBeat: null };
+  const state = { id: null, sink: 0, dread: 0, returnPaths: RETURN_PATHS_START, maxSink: 0, observer: 1, steps: 0, belowLoop: 0, resisted: 0, refused: 0, resistBeat: null, rank: 0 };
   let DATA = null;
   let revealToken = 0;
+  const clamp01 = (x) => Math.max(0, Math.min(1, x));
+
+  // 降下インデックス＝音楽ブリッジの第一義 depth（depth.html は source.rank/28 で深さを取る）。
+  // production の深度梯子(A_start..Z,Ω,A_reborn,HUB_NIGHT=0..28)に対応。retreat/drift は
+  // ランクを持たず＝直前の深さを保つ（沈下は残す）。below(∞)は最深=28。
+  const RANK = {
+    zero: 0, zero_hold: 0, A: 1, B: 2, C: 3, D: 4, E: 5, E_noreturn: 5, F: 6,
+    G: 7, G_hold: 7, H: 8, I: 9, J: 10, K: 11, L: 12,
+    M: 13, N: 14, O: 15, O_hold: 15, P: 16, Q: 17,
+    R: 18, S: 19, S_hold: 19, T: 20, U: 21,
+    V: 22, W: 23, X: 24, X_hold: 24, Y: 25, Z: 26,
+    Omega: 27, below: 28, reborn: 27
+  };
 
   const $ = (id) => document.getElementById(id);
   const sceneEl = $("scene");
@@ -163,6 +176,41 @@
     renderObserver();
     Audio.update(sinkNorm, Math.min(1, state.dread));
     Mandala.update(sinkNorm, state.observer, Math.min(1, state.dread));
+    Music.push(buildProfile(node));
+  }
+
+  // ---------- slice state → depth.html wire format（hazama-profile v1） ----------
+  // depth.html(engine bridge) の ingest 契約に正確に合わせる:
+  //   source.rank(0..28)=深さの第一義 / pressure(0..1) / stability・resonance は 0..100 /
+  //   audio.{brightness,bassWeight,density,space} は 0..1 / ucm.energy は 0..100。
+  //   profile.depth は送らない＝rank を深さの正にする（北極星：沈むほど鳴りが深く・暗く・密に）。
+  function buildProfile(node) {
+    const depthN = clamp01(state.rank / 28);
+    const dr = Math.min(1, state.dread);
+    const obsN = clamp01((state.observer - 1) / 18);
+    const stability = Math.round(clamp01(0.96 - depthN * 0.5 - dr * 0.4) * 100); // 沈むほど不安定
+    const resonance = Math.round(clamp01(0.10 + obsN * 0.70 + dr * 0.25) * 100); // 観測者が増えるほど共鳴
+    const stage = (node && node.title) ? String(node.title).slice(0, 40) : (state.id || "");
+    return {
+      provider: "music", type: "hazama-profile", version: 1,
+      profile: {
+        ucm: { energy: Math.round(clamp01(0.2 + dr * 0.8) * 100) },
+        audio: {
+          brightness: +clamp01(0.60 - depthN * 0.50 - dr * 0.12).toFixed(3), // 沈むほど暗い
+          bassWeight: +clamp01(0.18 + depthN * 0.78).toFixed(3),             // 沈むほど低域
+          density:    +clamp01(0.14 + obsN * 0.60 + depthN * 0.22).toFixed(3), // 多声で密
+          space:      +clamp01(0.10 + depthN * 0.72).toFixed(3)              // 沈むほど広い残響
+        },
+        pressure: +clamp01(0.45 * depthN + 0.60 * dr).toFixed(3),            // 圧＝dread 主体
+        source: {
+          depthId: state.id || "zero",
+          stage,
+          stability, resonance,
+          marks: state.resisted + state.refused,
+          rank: state.rank
+        }
+      }
+    };
   }
   function phaseFor(s) { return s < 0.18 ? "surface" : s < 0.45 ? "drift" : s < 0.75 ? "deep" : "bottom"; }
 
@@ -178,6 +226,7 @@
     }
     state.id = id;
     state.steps++;
+    if (typeof RANK[id] === "number") state.rank = RANK[id]; // drift/未登録は直前の深さを保つ
     if (typeof node.observer === "number" && node.observer > 0) state.observer = Math.max(state.observer, node.observer);
     applyAtmosphere(node);
     sceneEl.innerHTML = "";
@@ -383,8 +432,9 @@
         drones.push({ osc, g, spec });
       });
       on = true; schedulePulse(); apply(true);
-      const btn = $("audio-toggle"); btn.hidden = false; btn.setAttribute("aria-pressed", "true"); btn.textContent = "♪ 鳴っている";
+      if (ctx.state !== "running") ctx.resume(); // 内製モードへ切替時の再開
     }
+    function silence() { if (on && ctx && ctx.state === "running") { try { ctx.suspend(); } catch (e) {} } }
     function toggle() {
       const btn = $("audio-toggle");
       if (!on) return start();
@@ -428,7 +478,8 @@
       osc.connect(g); g.connect(filter); osc.start(t); osc.stop(t + 0.6); // 鼓動も残響を通す
     }
     return {
-      start, toggle, pulseOnce: (a) => beat(a),
+      start, toggle, silence, pulseOnce: (a) => beat(a),
+      get on() { return on; },
       setColor: (seed) => { colorSeed = seed; apply(false); },
       update: (sink, dread) => { const prev = cur.dread; cur = { sink, dread }; apply(false); if (Math.abs(prev - dread) > 0.08) schedulePulse(); }
     };
@@ -537,27 +588,101 @@
     };
   })();
 
+  // ---------- 音楽ブリッジ（depth.html をリアクティブ音楽レイヤーとして連動） ----------
+  // 推奨方式: depth.html を 1px の不可視 iframe として埋め込み、降下の状態変化ごとに
+  // hazama-profile を postMessage で流す。音は slice の "沈む" タップ操作（実ユーザー手勢）で
+  // depth.html 内 START を click して解禁する（本番プレビューは同一オリジン＝quietbriony.github.io）。
+  // モード: depth(連動・既定) / inner(内製音) / off(消音)。二重鳴りを避けるため inner 以外は内製を止める。
+  const Music = (() => {
+    const MODES = ["depth", "inner", "off"];
+    let mode = "depth";
+    let iframe = null, pending = null;
+    const chip = $("audio-toggle");
+
+    function ensureIframe() {
+      if (iframe) return;
+      iframe = document.createElement("iframe");
+      iframe.id = "depth-frame";
+      iframe.title = "depth music layer";
+      iframe.setAttribute("aria-hidden", "true");
+      iframe.tabIndex = -1;
+      // 不可視だが描画は生かす（display:none は一部環境で audio を止めるため 1px オフスクリーン）。
+      iframe.style.cssText = "position:fixed;left:-2px;bottom:-2px;width:1px;height:1px;opacity:0;border:0;pointer-events:none;";
+      iframe.src = "depth.html?v=m2-08"; // 相対＝本番プレビューでは同一オリジン
+      iframe.addEventListener("load", () => { tryUnlock(); if (pending) post(pending); });
+      document.body.appendChild(iframe);
+    }
+    // 同一オリジン時のみ可能：START を実ユーザー手勢の中で click して AudioContext を解禁。
+    // クロスオリジン（ローカル開発で github.io を指す等）は例外で握りつぶす。
+    function tryUnlock() {
+      if (mode !== "depth") return;
+      try {
+        const w = iframe && iframe.contentWindow; if (!w) return;
+        const st = w.DepthEngine && w.DepthEngine.getState && w.DepthEngine.getState();
+        if (st && st.running) return;
+        const start = w.document && w.document.getElementById("start");
+        if (start && !start.disabled) start.click();
+      } catch (e) { /* cross-origin: 手勢伝播に任せる */ }
+    }
+    function stopDepth() {
+      try {
+        const w = iframe && iframe.contentWindow; if (!w) return;
+        const stop = w.document && w.document.getElementById("stop");
+        if (stop && !stop.disabled) stop.click();
+      } catch (e) {}
+    }
+    function post(profile) {
+      if (!iframe || !iframe.contentWindow) return;
+      try { iframe.contentWindow.postMessage(profile, "*"); } catch (e) {} // depth 側で origin 検証
+    }
+    function push(profile) {
+      pending = profile;
+      // ロード前の post は about:blank に落ちて無害（load 時に pending を再送）。
+      // 降下中は状態変化ごとに送るので、ready ゲートは不要＝取りこぼしを無くす。
+      if (mode === "depth") post(profile);
+    }
+    function label() {
+      if (!chip) return;
+      chip.textContent = mode === "depth" ? "♪ depth 連動" : mode === "inner" ? "♪ 内製音" : "♪ 消音";
+      chip.setAttribute("aria-pressed", mode === "off" ? "false" : "true");
+    }
+    function applyMode() {
+      if (mode === "depth") { ensureIframe(); tryUnlock(); if (pending) post(pending); Audio.silence(); }
+      else if (mode === "inner") { stopDepth(); Audio.start(); }
+      else { stopDepth(); Audio.silence(); }
+      label();
+    }
+    function startPrimary() {
+      if (chip) chip.hidden = false;
+      applyMode(); // 既定 depth：iframe 解禁＋内製ミュート
+    }
+    function cycle() { mode = MODES[(MODES.indexOf(mode) + 1) % MODES.length]; applyMode(); }
+    // iframe は boot で先に生成しておく（沈む click 時点でロード済み＝手勢内で START を click できる）。
+    function preload() { ensureIframe(); }
+    return { push, startPrimary, cycle, preload };
+  })();
+
   // ---------- 起動 ----------
   async function loadData() {
-    const res = await fetch("depths-shell.json?v=m2-07", { cache: "no-store" });
+    const res = await fetch("depths-shell.json?v=m2-08", { cache: "no-store" });
     DATA = await res.json();
   }
   function enter() {
     gateEl.classList.add("gone");
     buildReturnPaths();
-    Audio.start();
+    Music.startPrimary(); // depth.html を実ユーザー手勢の中で解禁（既定）／内製はミュート
     Mandala.start();
     renderNode(DATA.start || "zero");
   }
   function restart() {
     revealToken++;
-    state.id = null; state.sink = 0; state.dread = 0; state.returnPaths = RETURN_PATHS_START; state.maxSink = 0; state.observer = 1; state.steps = 0; state.belowLoop = 0; state.resisted = 0; state.refused = 0; state.resistBeat = null;
+    state.id = null; state.sink = 0; state.dread = 0; state.returnPaths = RETURN_PATHS_START; state.maxSink = 0; state.observer = 1; state.steps = 0; state.belowLoop = 0; state.resisted = 0; state.refused = 0; state.resistBeat = null; state.rank = 0;
     $("restart").hidden = true;
     buildReturnPaths();
     renderNode(DATA.start || "zero");
   }
 
-  $("audio-toggle").addEventListener("click", () => Audio.toggle());
+  $("audio-toggle").addEventListener("click", () => Music.cycle());
   $("restart").addEventListener("click", restart);
 
   // 開発用フック（プレビュー検証専用・本体統合時は外す）: 任意ノードへ跳ぶ／状態を読む。
@@ -567,6 +692,7 @@
     const gb = $("gate-enter");
     gb.disabled = false;
     gb.addEventListener("click", enter, { once: false });
+    Music.preload(); // depth.html を先にロード（沈む click 時点でロード済み＝手勢内で解禁できる）
   }).catch((e) => {
     $("scene").textContent = "深度データの読み込みに失敗しました。再読み込みしてください。";
     console.warn("[Hazama slice] load failed:", e);
