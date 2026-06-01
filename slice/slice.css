@@ -89,8 +89,8 @@ body[data-phase="bottom"] { --bg: #020308; --ink: #aab4bf; --accent: #8aa6ac; --
 
 /* フィルムグレイン：合成ノイズ（SVG feTurbulence）を細かく振る。圧で濃くなる。 */
 .hz-grain {
-  position: absolute; inset: -50%;
-  width: 200%; height: 200%;
+  position: absolute; inset: -8%;
+  width: 116%; height: 116%;   /* translate ±3% を覆う最小限。blend面積を抑えモバイル負荷を軽減 */
   pointer-events: none; z-index: 1;
   opacity: calc(0.035 + var(--press) * 0.07);
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
