@@ -9,16 +9,24 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="Hazama" />
   <meta name="robots" content="noindex" />
-  <link rel="stylesheet" href="slice.css?v=m2-15" />
+  <link rel="stylesheet" href="slice.css?v=m2-16" />
 </head>
 <body data-phase="surface">
   <div class="hz-bg" aria-hidden="true">
     <img class="hz-bg-descent" src="assets/hazama-descent-key.webp" alt="" decoding="async" fetchpriority="high" />
+    <!-- 反転重森ガーデン（R6）：深く潜るほど"世界の輪郭が溶け"、サイバーパンク×重森三玲の
+         枯山水（砂紋/石組/市松苔）が色相反転（自然色を180°反転＝不気味）して progressive に露出する。
+         構図は分岐エンジンの信号（周回/到達深度/弾かれ履歴/ランク）= worldSeed で再生成。
+         浅はクリーン（opacity 0）。state 変化時のみ再描画＝モバイル軽量。reduced は静止1枚。 -->
+    <canvas class="hz-bg-garden" id="garden" aria-hidden="true"></canvas>
     <!-- 沈降グロー：底中央から立ち上る冷たい淵。沈むほど増光・上昇し、曼荼羅が光の底から現れる。 -->
     <div class="hz-bg-abyss"></div>
     <!-- 配線グリッド：沈むほど露出する縦の導線（「世界は塗装だった／編み目」の視覚化）。下方ほど密。 -->
     <div class="hz-bg-grid"></div>
     <div class="hz-bg-mandala"><canvas id="mandala" aria-hidden="true"></canvas></div>
+    <!-- 原色 leak（R6）：ティファニーブルー／ラスタ（赤・金・緑）が隙間（あわい）から"ちらちら"漏れる。
+         常時は出さず、グリッジのバーストに同調して一瞬だけ明滅＝抑えるほど効く。深いほど明るく漏れる。 -->
+    <div class="hz-bg-leak" aria-hidden="true"></div>
     <!-- グリッジ：深度連動の走査線の裂け＋RGBずれ＋データモッシュ。「描画の乱れ」＝塗装が剥がれる。
          既定は不可視（visibility:hidden）。JS が深いほど高頻度・高強度の短いバーストで点灯。 -->
     <div class="hz-glitch" aria-hidden="true"></div>
@@ -52,8 +60,9 @@
     <div class="hz-gate-inner">
       <h1 class="hz-sr-only">Hazama 狭間</h1>
       <!-- タイトル＝バスキア的な生マーク（手で書きつけた声）が冷たい構造を突き破る。
-           王冠＝降下を戴冠する記号。RGBずれ＝グリッジでありオイルスティックの刷り重ね。
-           打ち消し線＝「描かれない核」を手が消し込む否定。displace フィルタで手描きの荒れ。 -->
+           R6: 王冠（安っぽいバスキア）は削除。代わりに枯山水の砂紋（掻き目）が冠さず沈下を示す。
+           RGBずれ＝グリッジでありオイルスティックの刷り重ね。打ち消し線＝「描かれない核」を手が消し込む否定。
+           表紙は静止でなく動く＝背後に反転ガーデンが薄く滲み、グリッジが時折タイトルを裂く（slice.js）。 -->
       <svg class="hz-gate-art" viewBox="0 0 440 300" role="img" aria-label="Hazama / 狭間" aria-hidden="true" preserveAspectRatio="xMidYMid meet">
         <defs>
           <filter id="hz-rough" x="-20%" y="-30%" width="140%" height="160%">
@@ -73,12 +82,12 @@
           <path d="M52 196 L120 188 L210 198 L300 186 L388 196" stroke="#c4513a" stroke-width="3.5" fill="none" opacity="0.5"/>
         </g>
 
-        <!-- 王冠（三峰・手描きストローク）：降下を戴冠する -->
-        <g filter="url(#hz-rough)" stroke="#e0a83c" stroke-width="5.5" fill="none" stroke-linejoin="round" stroke-linecap="round">
-          <path d="M150 78 L150 48 L186 70 L220 38 L254 70 L290 48 L290 78 Z"/>
-        </g>
-        <g fill="#e0a83c" filter="url(#hz-rough)">
-          <circle cx="150" cy="44" r="4.5"/><circle cx="220" cy="34" r="5"/><circle cx="290" cy="44" r="4.5"/>
+        <!-- 砂紋（枯山水の掻き目）：王冠の代わり。冠さず、ただ下方へ向かう沈下＝渦の縁を示す。
+             冷たい青緑＝反転ガーデンと同系。手描きの荒れ（rough）で生のまま。 -->
+        <g filter="url(#hz-rough)" stroke="#7fb6c4" fill="none" stroke-linecap="round" opacity="0.55">
+          <path d="M118 72 Q220 40 322 72" stroke-width="2.6"/>
+          <path d="M148 80 Q220 56 292 80" stroke-width="2.1"/>
+          <path d="M176 86 Q220 70 264 86" stroke-width="1.6"/>
         </g>
 
         <!-- HAZAMA：RGBずれ三層（cyan/red/bone）＝グリッジ＆刷り重ね。bone は荒れフィルタ。 -->
@@ -106,10 +115,10 @@
 
       <p class="hz-gate-sub">狭間（あわい）。<br><span class="hz-strike">進むほど、戻り道は細くなる。</span></p>
       <button id="gate-enter" class="hz-gate-enter" type="button" disabled><span>沈む</span></button>
-      <p class="hz-gate-note">音あり推奨・片手で読める縦長 / preview build (M2 · R6 分岐)</p>
+      <p class="hz-gate-note">音あり推奨・片手で読める縦長 / preview build (M2 · R6 反転ガーデン)</p>
     </div>
   </div>
 
-  <script src="slice.js?v=m2-15"></script>
+  <script src="slice.js?v=m2-16"></script>
 </body>
 </html>

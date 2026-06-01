@@ -60,8 +60,21 @@ body[data-phase="bottom"] { --bg: #020308; --ink: #aab4bf; --accent: #8aa6ac; --
     contrast(calc(1.05 + var(--sink) * 0.12))
     hue-rotate(calc(var(--sink) * -8deg));
   transform: translateY(calc(var(--sink) * 2.4%)) scale(calc(1 + var(--sink) * 0.06));
-  transition: filter 1.6s ease, transform 3s ease;
-  opacity: 0.88;
+  transition: filter 1.6s ease, transform 3s ease, opacity 2.2s ease;
+  /* R6: 深く潜るほど"世界の輪郭が溶ける"＝写真が退き、下から反転ガーデンが露出して取って代わる。 */
+  opacity: calc(0.88 - var(--sink) * 0.52);
+}
+
+/* 反転重森ガーデン（R6）：canvas は slice.js が描く。ここでは載せ方だけ規定する。
+   screen blend＝冷たいワイヤーフレームの掻き目/石組/市松が地に焼き込まれて浮く。
+   opacity は JS が深度で開く（cv.style.opacity）。浅はクリーン（≒0）。 */
+.hz-bg-garden {
+  position: absolute; inset: 0;
+  width: 100%; height: 100%;
+  z-index: 0; pointer-events: none;
+  mix-blend-mode: screen;
+  opacity: 0;
+  filter: contrast(1.12) saturate(0.92);
 }
 
 /* 沈降グロー：底中央から立ち上る冷たい淵。沈むほど増光し、わずかに迫り上がる。
@@ -108,6 +121,24 @@ body[data-phase="bottom"] { --bg: #020308; --ink: #aab4bf; --accent: #8aa6ac; --
 /* 手続き的曼荼羅（canvas）。回転・層・色は JS が深度/観測者に連動させる。
    中心は決して描かない＝核（§4-1）。沈むほど中心の空白が“退いて”広がる。 */
 .hz-bg-mandala canvas { width: 100%; height: 100%; display: block; }
+
+/* 原色 leak（R6）：基本ダークトーンの世界の"隙間（あわい）"から、原色（ティファニーブルー／
+   ラスタ＝赤・金・緑）が細い亀裂となって"ちらちら"漏れる。常時は不可視（opacity 0）。
+   slice.js のグリッジ・バーストに同調して body.leak-on が付き、一瞬だけ点く＝抑えるほど効く。
+   色は JS が --leak-rgb に注ぐ（バーストごとに別の原色）。深いほど（--gi）明るく漏れる。 */
+.hz-bg-leak {
+  position: absolute; inset: 0; z-index: 1; pointer-events: none;
+  --leak-rgb: 10, 186, 181;
+  opacity: 0;
+  mix-blend-mode: screen;
+  background:
+    linear-gradient(101deg, transparent 0 37.6%, rgba(var(--leak-rgb), 0.55) 37.9% 38.4%, transparent 38.7% 100%),
+    linear-gradient(96deg, transparent 0 63.4%, rgba(var(--leak-rgb), 0.42) 63.7% 64.1%, transparent 64.4% 100%),
+    linear-gradient(88deg, transparent 0 81.2%, rgba(var(--leak-rgb), 0.34) 81.5% 81.9%, transparent 82.2% 100%),
+    radial-gradient(62% 7% at 50% 90%, rgba(var(--leak-rgb), 0.4), transparent 72%);
+  transition: opacity .16s steps(2, end);
+}
+body.leak-on .hz-bg-leak { opacity: calc(0.22 + 0.5 * var(--gi)); }
 
 .hz-vignette {
   position: absolute; inset: 0;
@@ -307,7 +338,10 @@ body[data-tension="high"] .hz-scene { animation: hz-shudder 2.6s ease-in-out inf
 .hz-gate {
   position: fixed; inset: 0; z-index: 10;
   display: flex; align-items: center; justify-content: center;
-  background: radial-gradient(120% 120% at 50% 30%, #0a1018, #02040a 70%);
+  /* R6: 表紙を"動く"ものに。背景は半透明にして、背後の反転ガーデン＋グリッジ＋原色 leak が
+     薄く滲んで見える＝静止でない生きた表紙。中央は読みやすさのため濃いまま。 */
+  background: radial-gradient(135% 125% at 50% 32%,
+    rgba(10, 16, 24, 0.80) 0%, rgba(4, 8, 15, 0.86) 46%, rgba(2, 4, 10, 0.93) 100%);
   transition: opacity .9s ease;
 }
 .hz-gate.gone { opacity: 0; pointer-events: none; }
@@ -442,9 +476,9 @@ body.peeling .hz-peel { visibility: visible; animation: hz-peel-sweep .62s cubic
 /* ---------- 選択肢の手マーク（descend＝戴冠の沈降 / retreat＝消し込まれた戻り道） ---------- */
 .hz-choice { position: relative; }
 .hz-choice .lead { position: relative; display: inline-block; }
-.hz-choice.descend .lead::before {     /* 王冠＝降下を冠する */
-  content: ""; position: absolute; left: -1.55em; top: 0.05em; width: 1.2em; height: 0.86em;
-  background: no-repeat center/contain url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='24'%20height='17'%20viewBox='0%200%2024%2017'%3E%3Cpath%20d='M2%2015%20L2%204%20L8%2010%20L12%202%20L16%2010%20L22%204%20L22%2015%20Z'%20fill='none'%20stroke='%23e0a83c'%20stroke-width='2.2'%20stroke-linejoin='round'/%3E%3C/svg%3E");
+.hz-choice.descend .lead::before {     /* R6: 王冠を廃し、下方へ沈む砂紋（渦の縁）に。冠さず、ただ降りる。 */
+  content: ""; position: absolute; left: -1.55em; top: 0.12em; width: 1.2em; height: 0.82em;
+  background: no-repeat center/contain url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='24'%20height='16'%20viewBox='0%200%2024%2016'%3E%3Cg%20fill='none'%20stroke='%237fb6c4'%20stroke-width='1.8'%20stroke-linecap='round'%3E%3Cpath%20d='M2%203%20Q12%208%2022%203'/%3E%3Cpath%20d='M5%208%20Q12%2012%2019%208'/%3E%3Cpath%20d='M9%2013%20Q12%2014.5%2015%2013'/%3E%3C/g%3E%3C/svg%3E");
 }
 .hz-choice.descend .lead::after {      /* 生の手の下線（沈むほど効く差し色） */
   content: ""; position: absolute; left: 0; right: -4px; bottom: -3px; height: 6px;
@@ -515,4 +549,8 @@ body.glitch-hard .hz-tl-r { animation: hz-tl-r-glitch .18s steps(2) 1; }
   body.glitch-soft .hz-bg, body.glitch-hard .hz-bg { animation: none; }
   body.peeling .hz-peel { animation: none; visibility: hidden; }
   .hz-line.scrawl { transform: none; }
+  /* R6: 反転ガーデンは生成art＝静止1枚で残す（slice.js が深度で1回描く）。原色 leak の明滅は
+     グリッジ・バーストに紐づくため reduced では発火せず＝事実上 off（保険で薄い静止に固定）。 */
+  .hz-bg-descent { transition: none; }
+  body.leak-on .hz-bg-leak { opacity: 0.08; transition: none; }
 }

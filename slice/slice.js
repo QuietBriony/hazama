@@ -184,6 +184,21 @@
   function hashStr(s) { let h = 2166136261; for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); } return h >>> 0; }
   const pickR = (rng, arr) => arr[Math.floor(rng() * arr.length)];
 
+  // ---------- 共有"深度信号"（全チャンネルが1つの信号で呼応＝インスピレーションを回しあう） ----------
+  // R6 の要：背景アート（反転ガーデン）・音・テキスト分岐が、バラバラでなく "一緒に壊れていく"。
+  // worldSeed は分岐エンジン(m2-15)が既に持つ状態 ── 周回(cycles)・到達深度(maxRank)・弾かれ履歴
+  // (surfaceBounces)・現在ランク(rank) ── を畳み込んだ決定論シード。これを背景ガーデンの構図 seed に
+  // 渡すことで、テキストを分岐させているのと"同じ信号"が背景の構図も再生成する。深度(depthN)・圧(dread)は
+  // applyAtmosphere が一括で Audio / Mandala / Glitch / Garden へ配り、leak/グリッジ/音の裂けも同調する。
+  function worldSeed() {
+    const lg = state.legacy;
+    return (hashStr("hazama:world")
+      ^ Math.imul(lg.cycles + 1, 0x9e3779b9)
+      ^ Math.imul(lg.maxRank + 1, 0x85ebca6b)
+      ^ Math.imul(lg.surfaceBounces + 1, 0xc2b2ae35)
+      ^ Math.imul(state.rank + 1, 0x27d4eb2f)) >>> 0;
+  }
+
   // 原文の特定行に対する言い換え（原文も常に選択肢に含む＝周回でたまに元へ戻る）。
   const NODE_VARIANTS = {
     zero: {
@@ -357,7 +372,10 @@
     const densityN = clamp01((state.observer - 1) / 18);
     Audio.update(depthN, dr, densityN);
     Mandala.update(sinkNorm, state.observer, dr);
-    Glitch.update(depthN, dr);   // 深いほどグリッジが高頻度・高強度
+    Glitch.update(depthN, dr);   // 深いほどグリッジが高頻度・高強度（leak/音の裂けも同 burst で同調）
+    // 反転重森ガーデン：浅クリーン→深で露出。構図は分岐エンジンの信号(worldSeed)で再生成
+    // ＝テキストを分岐させているのと同じ信号が背景の構図も組み直す（一緒に壊れていく）。
+    Garden.update(depthN, dr, worldSeed());
   }
 
   // 注: 以前ここにあった buildProfile()（depth.html へ postMessage する hazama-profile v1 wire
@@ -572,7 +590,7 @@
     // depth=深度(rank/沈下の濃い方・0..1) / dread=圧(0..1) / density=観測者の多声(0..1)。
     // depth.html のリアクティブ設計（深さ→音域/cutoff/残響、多声→密度、圧→不協和/鼓動）を
     // 同一document の内製エンジンへ畳み込んだ信号。menace=浅は馴染む/深で威圧。
-    let cur = { depth: 0, dread: 0, density: 0 }, colorSeed = 0;
+    let cur = { depth: 0, dread: 0, density: 0 }, colorSeed = 0, baseCents = 0;
     const supported = () => !!(window.AudioContext || window.webkitAudioContext);
 
     // 倍音: ratio=基音比, base=常時gain, bloom=深度で開く量, diss=不協和(dread で開く)
@@ -638,7 +656,7 @@
       const cutoff = 1150 - s * 860 - d * 220;           // 沈むほど暗く（深さ＋圧で翳る）
       const bloomCurve = Math.max(0, s - 0.10) / 0.90;   // 浅では開かない／深で倍音が開花
       const menace = d * (0.30 + 0.70 * s);              // 不協和は浅は馴染み・深で威圧（menaceカーブ）
-      const seedCents = (((colorSeed * 37) % 25) - 12) * 0.6; // 周回ごとの微デチューン
+      baseCents = (((colorSeed * 37) % 25) - 12) * 0.6; // 周回ごとの微デチューン（glitchHit の復帰先）
       const slow = now ? 0.25 : 1.3;
       drones.forEach((dr) => {
         const sp = dr.spec;
@@ -646,7 +664,7 @@
         let g = sp.base + sp.bloom * bloomCurve * (1 + dens * 0.7) + sp.diss * menace;
         dr.g.gain.setTargetAtTime(Math.max(0, g), t, now ? 0.3 : 1.6);
         dr.osc.frequency.setTargetAtTime(base * sp.ratio, t, slow);
-        dr.osc.detune.setTargetAtTime(seedCents, t, 1.8);
+        dr.osc.detune.setTargetAtTime(baseCents, t, 1.8);
       });
       filter.frequency.setTargetAtTime(Math.max(105, cutoff), t, slow);
       master.gain.setTargetAtTime(0.13 + d * 0.05, t, 0.8);
@@ -669,8 +687,41 @@
       g.gain.exponentialRampToValueAtTime(0.0001, t + 0.55);
       osc.connect(g); g.connect(filter); osc.start(t); osc.stop(t + 0.6); // 鼓動も残響を通す
     }
+    // グリッジ・バーストと同期して音も一瞬"裂ける"（共有信号＝視覚と一緒に壊れていく）。
+    //  - drone を一瞬デチューン（音程が割れる）→ baseCents へ復帰
+    //  - フィルタ cutoff を一瞬跳ねさせる（デジタルな破断）
+    //  - 短いノイズ・バースト（バンドパス）でデータモッシュ的なザッという質感
+    // intensity は深いほど大きい（Glitch から depth 連動で渡す）。
+    function glitchHit(intensity) {
+      if (!on || !ctx || ctx.state !== "running") return;
+      const t = ctx.currentTime, amt = Math.max(0, Math.min(1.2, intensity));
+      try {
+        drones.forEach((dr) => {
+          dr.osc.detune.cancelScheduledValues(t);
+          dr.osc.detune.setValueAtTime(baseCents + (Math.random() * 2 - 1) * 55 * amt, t);
+          dr.osc.detune.setTargetAtTime(baseCents, t + 0.03, 0.10);
+        });
+        const f0 = filter.frequency.value;
+        filter.frequency.cancelScheduledValues(t);
+        filter.frequency.setValueAtTime(Math.max(90, f0 * (1 + (Math.random() - 0.5) * 0.7 * amt)), t);
+        filter.frequency.setTargetAtTime(f0, t + 0.04, 0.12);
+        // 短いノイズ・バースト（datamosh の"ザッ"）。深いほど目立つ。
+        const len = Math.floor(ctx.sampleRate * 0.05);
+        const buf = ctx.createBuffer(1, len, ctx.sampleRate);
+        const ch = buf.getChannelData(0);
+        for (let i = 0; i < len; i++) ch[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 2);
+        const src = ctx.createBufferSource(); src.buffer = buf;
+        const bp = ctx.createBiquadFilter(); bp.type = "bandpass";
+        bp.frequency.value = 800 + Math.random() * 2600; bp.Q.value = 0.7;
+        const ng = ctx.createGain(); ng.gain.value = 0.0001;
+        ng.gain.setValueAtTime(0.018 * amt + cur.dread * 0.012, t);
+        ng.gain.exponentialRampToValueAtTime(0.0001, t + 0.05);
+        src.connect(bp); bp.connect(ng); ng.connect(master);
+        src.start(t); src.stop(t + 0.06);
+      } catch (e) {}
+    }
     return {
-      start, toggle, pulseOnce: (a) => beat(a),
+      start, toggle, pulseOnce: (a) => beat(a), glitchHit,
       get on() { return on; },
       get playing() { return playing; }, // 鳴らす意図（チップ表示の正）
       setColor: (seed) => { colorSeed = seed; apply(false); },
@@ -786,19 +837,150 @@
     };
   })();
 
+  // ---------- 反転重森ガーデン（R6：深度ゲートの背景ブレイクダウン） ----------
+  // サイバーパンク × 重森三玲（Mirei Shigemori）のモダン枯山水が"バグった"背景。
+  //  - 砂紋（掻き目／渦）・石組（角張った幾何）・市松苔（東福寺 北庭の象徴）を平面にぶちまける。
+  //  - 色は枯山水の自然色（砂=暖ベージュ/苔=緑/石=灰）の色相を 180°反転＝不気味な反転色相
+  //    （砂→冷たい青, 苔→マゼンタ）。基本ダーク・低彩度。原色は出さない（原色は leak 層が明滅で担う）。
+  //  - 浅はクリーン（opacity≈0）。深く潜り"世界の輪郭が溶ける"深度から progressive に露出する。
+  //  - 構図は worldSeed（＝分岐エンジンの信号：周回/到達深度/弾かれ履歴/ランク）で決定論再生成
+  //    ＝state が変わるたび構図が組み直る。バグ（行ずらし/反転セル）は深さ+圧で強まる。
+  //  - 描画は state 変化時（と resize）のみ＝rAF を持たない＝モバイル軽量。reduced は静止1枚。
+  //    "動き"は上に乗る CSS グリッジ/leak が担う（共有信号）。
+  const Garden = (() => {
+    const cv = $("garden");
+    if (!cv || !cv.getContext) return { start() {}, update() {} };
+    const g = cv.getContext("2d");
+    let W = 0, H = 0, dpr = 1, started = false;
+    let cur = { depth: 0, dread: 0, seed: 0 };
+
+    function resize() {
+      dpr = Math.min(window.devicePixelRatio || 1, 2);
+      W = Math.max(1, Math.floor((window.innerWidth || 360) * dpr));
+      H = Math.max(1, Math.floor((window.innerHeight || 640) * dpr));
+      cv.width = W; cv.height = H;
+      draw();
+    }
+    function draw() {
+      if (!W) return;
+      g.clearRect(0, 0, W, H);
+      const s = cur.depth, d = cur.dread;
+      // 浅はクリーン（露出しない）。深く潜るほど世界が剥き出しに。screen blend で焼き込む。
+      const vis = Math.max(0, (s - 0.12) / 0.88);
+      cv.style.opacity = (vis * 0.92).toFixed(3);
+      if (vis <= 0.003) return;
+      const rng = mulberry32((cur.seed >>> 0) || 1);
+      const R = (n) => rng() * (n == null ? 1 : n);
+      const bright = 0.5 + s * 0.5;        // 深いほど僅かに灼ける（不気味な反転色が立つ）
+      const mosh = s * 0.6 + d * 0.4;      // バグの強度：行ずらし／反転セル
+      const minWH = Math.min(W, H);
+      g.lineCap = "round";
+
+      // --- 砂紋（掻き目）：水平の掻き目を平面にぶちまける。深いほど波打ち・行ずれ（datamosh）。 ---
+      const rows = 22;
+      const amp = H * 0.013 * (1 + s);
+      const step = Math.max(8, Math.floor(12 * dpr));
+      for (let i = 0; i < rows; i++) {
+        const y = H * (i + 0.5) / rows;
+        const a = (0.05 + s * 0.15) * bright;
+        g.strokeStyle = "hsla(216," + (28 + s * 30).toFixed(0) + "%," + (46 + s * 16).toFixed(0) + "%," + a.toFixed(3) + ")";
+        g.lineWidth = Math.max(1, dpr * 0.8);
+        // バグ：一部の行を横方向にごっそりずらす＝データモッシュの帯
+        const band = (rng() < mosh * 0.55) ? (R(2) - 1) * W * 0.14 * mosh : 0;
+        const freq = 2 + (i % 3);
+        g.beginPath();
+        for (let x = 0; x <= W; x += step) {
+          const yy = y + Math.sin((x / W) * Math.PI * 2 * freq + i) * amp;
+          const xx = x + (x > W * 0.5 ? band : 0);
+          x === 0 ? g.moveTo(xx, yy) : g.lineTo(xx, yy);
+        }
+        g.stroke();
+      }
+
+      // --- 石組＋渦（砂紋が石の周りで同心円に巻く） ---
+      const stones = 2 + Math.floor(R(2.4));
+      for (let n = 0; n < stones; n++) {
+        const cx = W * (0.14 + R(0.72)), cy = H * (0.16 + R(0.66));
+        const rings = 4 + Math.floor(R(4));
+        for (let r = 1; r <= rings; r++) {
+          const rr = r * (minWH * 0.022) * (1 + s * 0.5);
+          const a = (0.08 + s * 0.13) * bright / Math.sqrt(r);
+          g.strokeStyle = "hsla(210," + (30 + s * 24).toFixed(0) + "%," + (52 + s * 12).toFixed(0) + "%," + a.toFixed(3) + ")";
+          g.lineWidth = Math.max(1, dpr * 0.7);
+          g.beginPath();
+          for (let k = 0; k <= 40; k++) {
+            const ang = (k / 40) * Math.PI * 2;
+            const wob = 1 + Math.sin(ang * 5 + r) * 0.045 * (1 + d);
+            const x = cx + Math.cos(ang) * rr * wob, y = cy + Math.sin(ang) * rr * wob * 0.72;
+            k ? g.lineTo(x, y) : g.moveTo(x, y);
+          }
+          g.closePath(); g.stroke();
+        }
+        // 石＝角張った幾何のワイヤーフレーム（冷たいシアン rim）
+        const verts = 5 + Math.floor(R(3)), sr = minWH * (0.028 + R(0.03));
+        g.strokeStyle = "hsla(190," + (40 + s * 20).toFixed(0) + "%," + (58 + s * 14).toFixed(0) + "%," + ((0.28 + s * 0.3) * bright).toFixed(3) + ")";
+        g.lineWidth = Math.max(1, dpr * 1.1);
+        g.beginPath();
+        for (let k = 0; k <= verts; k++) {
+          const ang = (k / verts) * Math.PI * 2 + R(0.3);
+          const rad = sr * (0.7 + R(0.5));
+          const x = cx + Math.cos(ang) * rad, y = cy + Math.sin(ang) * rad;
+          k ? g.lineTo(x, y) : g.moveTo(x, y);
+        }
+        g.closePath(); g.stroke();
+      }
+
+      // --- 市松苔（東福寺 北庭の象徴）：反転モス＝マゼンタの石畳。端でフェード＝市松が崩れる。 ---
+      const cols = 6, rowsC = 5, cell = minWH * 0.058 * (1 + s * 0.3);
+      const ox = W * (0.04 + R(0.40)), oy = H * (0.50 + R(0.32));
+      for (let yy = 0; yy < rowsC; yy++) for (let xx = 0; xx < cols; xx++) {
+        if ((xx + yy) % 2) continue;                       // 市松＝一つ飛ばし
+        const fade = 1 - (yy / rowsC) * 0.7;
+        let gx = ox + xx * cell, gy = oy + yy * cell;
+        const glitched = rng() < mosh * 0.4;               // バグ：深いほどセルがずれ／飛ぶ
+        if (glitched) gx += (R(2) - 1) * cell * 0.5 * mosh;
+        const a = (0.10 + s * 0.20) * fade * bright;
+        g.fillStyle = glitched
+          ? "hsla(170,70%,60%," + (a * 0.9).toFixed(3) + ")"   // 反転バグ＝シアンへ飛ぶ
+          : "hsla(300," + (34 + s * 26).toFixed(0) + "%," + (30 + s * 16).toFixed(0) + "%," + a.toFixed(3) + ")";
+        g.fillRect(gx, gy, cell * 0.92, cell * 0.92);
+      }
+    }
+    return {
+      start() {
+        if (started) return; started = true;
+        resize();
+        window.addEventListener("resize", resize);
+      },
+      // depth=深度(0..1) / dread=圧(0..1) / seed=worldSeed（分岐エンジンの信号）。state 変化時のみ再描画。
+      update: (depth, dread, seed) => { cur = { depth, dread, seed }; draw(); }
+    };
+  })();
+
   // ---------- グリッジ（深度連動・描画の乱れ＝塗装が剥がれる） ----------
   // 短いバーストで body に .glitch-soft/.glitch-hard を付け、CSS が RGBずれ/走査線の裂け/
   // データモッシュを一瞬走らせる。深いほど高頻度・高強度（--gi）。バーストは <360ms・低頻度・
   // タブ非表示で停止＝モバイル軽量。reduced-motion は start を no-op（CSSが薄い静止フリンジ）。
   const Glitch = (() => {
     const root = document.documentElement.style;
-    let depth = 0, dread = 0, timer = 0, started = false, paused = false;
+    let depth = 0, dread = 0, timer = 0, started = false, paused = false, leakTimer = 0;
     const clearBurst = () => document.body.classList.remove("glitch-soft", "glitch-hard");
+    // 隙間（あわい）から漏れる原色：ティファニーブルー／ラスタ（赤・金・緑）。常時は出さず明滅で。
+    const LEAK = ["10,186,181", "216,68,46", "224,168,60", "46,168,96"];
     function setGi() { root.setProperty("--gi", Math.min(1, depth * 0.85 + dread * 0.28).toFixed(3)); }
     function burst() {
       const hard = Math.random() < (0.12 + depth * 0.55 + dread * 0.15);
       document.body.classList.add(hard ? "glitch-hard" : "glitch-soft");
       const dur = hard ? 130 + Math.random() * 210 : 80 + Math.random() * 110;
+      // 原色 leak（深いほど漏れやすい・抑えるほど効く）：バーストに同調して一瞬だけ点く。
+      if (Math.random() < (0.16 + depth * 0.5)) {
+        root.setProperty("--leak-rgb", LEAK[Math.floor(Math.random() * LEAK.length)]);
+        document.body.classList.add("leak-on");
+        clearTimeout(leakTimer);
+        leakTimer = window.setTimeout(() => document.body.classList.remove("leak-on"), Math.round(dur * 0.8));
+      }
+      // 音も一緒に裂ける（共有信号）：hard ほど・深いほど強い破断。Audio 未解禁時は no-op。
+      Audio.glitchHit(hard ? (0.55 + depth * 0.5) : (0.28 + depth * 0.32));
       window.setTimeout(clearBurst, dur);
     }
     function schedule() {
@@ -860,13 +1042,33 @@
 
   // ---------- 起動 ----------
   async function loadData() {
-    const res = await fetch("depths-shell.json?v=m2-15", { cache: "no-store" });
+    const res = await fetch("depths-shell.json?v=m2-16", { cache: "no-store" });
     DATA = await res.json();
   }
+  // ---------- 動く表紙（R6：タイトルも state/seed に応じて動く・静止でない） ----------
+  // ゲート表示中、背後に反転ガーデンを薄く宿し（gate 背景は半透明）、グリッジが時折タイトルを裂き、
+  // 原色が隙間から明滅する。構図は per-load の seed で毎回ちがい、ゆっくり別構図へ再生成＝生きた庭。
+  // enter すると同じ深度信号（applyAtmosphere）へ引き継がれ、降下とともに深まる。
+  let titleTimer = 0, titleSeed = 1;
+  function titleAmbient() {
+    Garden.start();
+    Glitch.update(0.42, 0.16);       // 表紙の浅め深度：グリッジ頻度・--gi・原色 leak 強度の基準
+    Glitch.start();                  // reduced は no-op（CSS が薄い静止フリンジ＝それでも"動かない表紙"でない）
+    titleSeed = (Math.floor((Math.random() || 0.5) * 0x7fffffff)) >>> 0 || 1;
+    Garden.update(0.5, 0.18, titleSeed);
+    if (REDUCED) return;
+    titleTimer = window.setInterval(() => {
+      titleSeed = (Math.imul(titleSeed, 1664525) + 1013904223) >>> 0;  // ゆっくり別構図へ＝庭が掻き直される
+      Garden.update(0.5, 0.18, titleSeed);
+    }, 4800);
+  }
+  function stopTitleAmbient() { if (titleTimer) { clearInterval(titleTimer); titleTimer = 0; } }
+
   let entered = false;
   function enter() {
     if (entered) return;
     entered = true;
+    stopTitleAmbient();              // 表紙の生成ループを止め、深度信号（降下）へ明け渡す
     gateEl.classList.add("gone");
     buildReturnPaths();
     // ★ここは「沈む」ボタンの実タップ（同一document・transient activation 有）の中。
@@ -894,6 +1096,7 @@
   loadData().then(() => {
     const gb = $("gate-enter");
     gb.disabled = false;
+    titleAmbient();   // 表紙を動かす（反転ガーデン＋グリッジ＋原色 leak をゲート背後で薄く生かす）
     // 「沈む」の実タップ＝同一document の手勢。この中で enter()→Audio.start()→resume() が走る
     // ＝モバイルで AudioContext を堅牢に解禁できる（cross-document iframe・全画面オーバーレイは廃止）。
     gb.addEventListener("click", enter, { once: false });
