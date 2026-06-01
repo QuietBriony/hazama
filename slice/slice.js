@@ -609,7 +609,7 @@
       iframe.tabIndex = -1;
       // 不可視だが描画は生かす（display:none は一部環境で audio を止めるため 1px オフスクリーン）。
       iframe.style.cssText = HIDDEN_CSS;
-      iframe.src = "depth.html?v=m2-10"; // 相対＝本番プレビューでは同一オリジン
+      iframe.src = "depth.html?v=m2-11"; // 相対＝本番プレビューでは同一オリジン
       iframe.addEventListener("load", () => { loaded = true; if (pending) post(pending); });
       document.body.appendChild(iframe);
     }
@@ -632,7 +632,7 @@
         try { doc = iframe.contentDocument; } catch (e) { doc = null; }
         if (!doc) return; // cross-origin(dev): 武装せず、gate ボタン直叩き(enter)の旧手勢経路に委ねる
         // iframe を透明・全画面・最前面のタップ捕捉面へ（ゲートは透けて見える）。
-        iframe.style.cssText = "position:fixed;inset:0;width:100%;height:100%;opacity:0;border:0;pointer-events:auto;z-index:9999;";
+        iframe.style.cssText = "position:fixed;inset:0;width:100%;height:100%;opacity:0;border:0;pointer-events:auto;z-index:9999;touch-action:manipulation;";
         const fire = () => {
           // ここは iframe document に着地した実タップのハンドラ＝iframe window は activation 済み。
           // 同期で START を叩けば resume() が手勢の呼出スタック内で走り、モバイルでも解禁される。
@@ -646,13 +646,21 @@
           } catch (e) {}
           proceed();
         };
-        doc.addEventListener("pointerup", fire, { capture: true });
-        doc.addEventListener("click", fire, { capture: true }); // pointer 非対応環境の保険
+        // 最速の pointerdown/touchstart で解禁＆即畳む＝全画面オーバーレイの寿命を最小化する。
+        // 全画面オーバーレイ(depth.html=full-screen canvas+音)が降下開始まで残ると、重い背景＋
+        // 親 mandala canvas と二重に描画が走りモバイルでフリーズする。pointerdown も活性化手勢
+        // として有効＝この最速イベント中に START を叩けば iOS でも音は解禁できる。
+        ["pointerdown", "touchstart", "pointerup", "click"].forEach((ev) =>
+          doc.addEventListener(ev, fire, { capture: true }));
       };
       if (loaded) arm();
-      else { ensureIframe(); iframe.addEventListener("load", arm, { once: true }); }
+      else iframe.addEventListener("load", arm, { once: true });
     }
     function collapse() { if (iframe) iframe.style.cssText = HIDDEN_CSS; }
+    // enter から必ず呼ぶ安全弁：解錠タップが iframe に着地できず（iOS の opacity:0 iframe ヒット
+    // テスト抜け等）gate ボタン直叩き経路で enter した場合でも、全画面オーバーレイが残って降下
+    // 描画と二重化しフリーズするのを確実に防ぐ。armUnlock 経路で既に畳まれていれば no-op。
+    function disarm() { collapse(); }
 
     // 既に解禁済みかの確認（startPrimary から呼ぶ・armUnlock 後は no-op）。
     function tryUnlock() {
@@ -700,18 +708,19 @@
     function cycle() { mode = MODES[(MODES.indexOf(mode) + 1) % MODES.length]; applyMode(); }
     // iframe は boot で先に生成しておく（沈む click 時点でロード済み＝手勢内で START を click できる）。
     function preload() { ensureIframe(); }
-    return { push, startPrimary, cycle, preload, armUnlock };
+    return { push, startPrimary, cycle, preload, armUnlock, disarm };
   })();
 
   // ---------- 起動 ----------
   async function loadData() {
-    const res = await fetch("depths-shell.json?v=m2-10", { cache: "no-store" });
+    const res = await fetch("depths-shell.json?v=m2-11", { cache: "no-store" });
     DATA = await res.json();
   }
   let entered = false;
   function enter() {
     if (entered) return; // overlay 解錠経路と gate ボタン経路の二重発火を防ぐ
     entered = true;
+    Music.disarm(); // ★最優先：解錠オーバーレイを必ず畳む（残ると降下描画と二重化しフリーズ）
     gateEl.classList.add("gone");
     buildReturnPaths();
     Music.startPrimary(); // depth.html を実ユーザー手勢の中で解禁（既定）／内製はミュート
