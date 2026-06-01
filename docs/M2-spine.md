@@ -324,6 +324,31 @@ note原典(1〜7)から確定レジスターで本文化され、∞の作法（
       不変**（R4 のスクロール/可読は無改変、荒々しさは枠/タイトル/差し色/背景/遷移/scrawl で出す）。
     - **本体コア・本番/master 無変更**。検証はヘッドレスの eval/computed-style/DOM（screenshot は当環境で不安定）
       ＋ live curl。視覚の最終確認は実機モバイルに委ねる。コンソールエラー無し。
+  - **R6（分岐していく物語：周回で別の幹／弾き＝別ルートへ前進）** `v=m2-15`（`depths-shell.json`/`slice.js`/`slice.css`/`index.html`）← 最新:
+    - **狙い**: 周回するほど“ちゃんと別の物語に変わる”／弾かれても同じ所へ戻るループでなく、別の展開へ
+      分岐して**前進**する。実現は「**分岐の組み合わせ × シード手続き生成(mulberry32) × 状態持ち越し**」
+      ＝**実行時LLM無し**で“毎回違う・尽きない”を出す（below∞生成器・R5 applyCycle の延長思想）。
+    - **(1) 分岐素材バンク（寄り道イベント）** `depths-shell.json` に `det_mirror/memory/cothink/otherself/scar`
+      の5ノードを追加。source主題（影/記憶改竄/共同思考/別系統の自分/弾かれの痕跡）から自己完結の1画面イベント。
+      各々の選択肢は `to:"__rejoin"` ＝本筋の**“前方”へ合流**（drift のような戻りループにしない）。
+    - **(2) 知覚ゲート（表層読み＝弾かれ→別ルート前進）** 選択肢 `kind:"surface"` を新設。A（既存の
+      retreat→drift ループを置換）と J に設置。表層で読む＝世界がはじく→**同じ所へ戻さず**、seedで選んだ
+      寄り道へ逸れて前進（A は B を飛ばし C へ／J は別の筋を経て K へ）。構造で読む＝従来どおり降下。
+      ＝perception-gate（表層読み＝弾かれ／構造読み＝降下）の最小実装。
+    - **(3) 周回で別の幹** `slice.js Route`: 周回(`cycle>=1`)では主要ジャンクション **A の“構造読み(降下)”も**
+      別の寄り道を経由してから合流＝毎周回ちがう筋を通る。**cycle 0 は不変**（作り込んだ導入を保全）。
+    - **(4) 状態持ち越し** `state.legacy`(`cycles/surfaceBounces/detoursSeen/maxRank`、reborn を跨いで保持・
+      restart のみ reset)を `Route.seedFor` の mulberry32 seed に織り込む＝**前周の弾かれ履歴・到達深度・
+      通った筋が次周の分岐選択を変える**。未見の寄り道を優先＝毎回ちがう別の筋。**`det_scar`（弾かれの痕跡）は
+      弾かれ履歴がある時だけ地形に出現**＝弾かれた事実が次の物語を変える、を最も直接に体現。
+    - **signals**: surface choice の逸れマーク(⤳・点線枠・生の差し色)、フッタ status と終端カードに
+      **周回/別ルート(表層弾き)/分岐(通った筋)** の数。**本文(R4可読)・R5アート・音(内製エンジン)は無改変。
+      本体コア・本番/master 無干渉。depth.html 無変更**（そもそも R5 で iframe 連動は廃止済み）。
+    - 検証（headless eval、screenshot は当環境で不安定）: Route 単体＝cycle0 表層弾き→det→C(前進・B飛ばし)、
+      cycle0 構造読み→B(splice無し・導入保全)、cycle1 構造読み→det→B(周回splice)、det_scar は surfaceBounces>0
+      でのみ出現、4周回で4種の別ルート。自動3周回プレイ＝**cycle0:A→det_cothink→C／cycle1:A→det_scar→B
+      （弾かれ履歴で痕跡出現）／cycle2:A→det_mirror→B＋J弾き→det_memory** と毎周回別ノードを通り、cycle単調増加・
+      終端カード健全（周回2・表層で弾かれ3・通った別の筋3）・**コンソールエラー無し**。視覚最終は実機モバイルに委ねる。
 - `docs/M2-spine.md`（本書）/ `docs/source/`（30記事）/ `slice/`（プレビュー実体）/ `.claude/launch.json`（slice配信）。
 
 ### スパイン全景（37ノード）
