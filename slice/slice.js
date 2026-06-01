@@ -596,7 +596,8 @@
   const Music = (() => {
     const MODES = ["depth", "inner", "off"];
     let mode = "depth";
-    let iframe = null, pending = null;
+    let iframe = null, pending = null, loaded = false;
+    const HIDDEN_CSS = "position:fixed;left:-2px;bottom:-2px;width:1px;height:1px;opacity:0;border:0;pointer-events:none;z-index:-1;";
     const chip = $("audio-toggle");
 
     function ensureIframe() {
@@ -607,13 +608,53 @@
       iframe.setAttribute("aria-hidden", "true");
       iframe.tabIndex = -1;
       // 不可視だが描画は生かす（display:none は一部環境で audio を止めるため 1px オフスクリーン）。
-      iframe.style.cssText = "position:fixed;left:-2px;bottom:-2px;width:1px;height:1px;opacity:0;border:0;pointer-events:none;";
-      iframe.src = "depth.html?v=m2-08"; // 相対＝本番プレビューでは同一オリジン
-      iframe.addEventListener("load", () => { tryUnlock(); if (pending) post(pending); });
+      iframe.style.cssText = HIDDEN_CSS;
+      iframe.src = "depth.html?v=m2-09"; // 相対＝本番プレビューでは同一オリジン
+      iframe.addEventListener("load", () => { loaded = true; if (pending) post(pending); });
       document.body.appendChild(iframe);
     }
-    // 同一オリジン時のみ可能：START を実ユーザー手勢の中で click して AudioContext を解禁。
-    // クロスオリジン（ローカル開発で github.io を指す等）は例外で握りつぶす。
+
+    // ── モバイル堅牢解錠 ──────────────────────────────────────────────
+    // バグ: AudioContext.resume()/Tone.start() は、その context を持つ document の
+    // window が transient activation を持つ実手勢ハンドラ内で呼ぶ必要がある。User
+    // Activation は「イベントが発火した document の window とその祖先」にのみ付与され、
+    // 親→子 iframe には降りない。よって親(slice)の「沈む」タップ中に start.click() を
+    // プログラム実行しても iframe(depth) の window は未 activation ＝ resume が弾かれる。
+    // 修正: 最初の実タップを iframe 自身に着地させ（透明・全画面のタップ捕捉面）、
+    // iframe window に本物の activation を与え、その手勢ハンドラ内で同期的に START を叩く。
+    // これが「親から iframe の音を解禁する」最も堅牢なパターン（同一オリジン前提）。
+    function armUnlock(onUnlock) {
+      ensureIframe();
+      let done = false;
+      const proceed = () => { if (done) return; done = true; collapse(); onUnlock(); };
+      const arm = () => {
+        let doc = null;
+        try { doc = iframe.contentDocument; } catch (e) { doc = null; }
+        if (!doc) return; // cross-origin(dev): 武装せず、gate ボタン直叩き(enter)の旧手勢経路に委ねる
+        // iframe を透明・全画面・最前面のタップ捕捉面へ（ゲートは透けて見える）。
+        iframe.style.cssText = "position:fixed;inset:0;width:100%;height:100%;opacity:0;border:0;pointer-events:auto;z-index:9999;";
+        const fire = () => {
+          // ここは iframe document に着地した実タップのハンドラ＝iframe window は activation 済み。
+          // 同期で START を叩けば resume() が手勢の呼出スタック内で走り、モバイルでも解禁される。
+          try {
+            const w = iframe.contentWindow;
+            const st = w.DepthEngine && w.DepthEngine.getState && w.DepthEngine.getState();
+            if (!(st && st.running)) {
+              const start = w.document.getElementById("start");
+              if (start && !start.disabled) start.click();
+            }
+          } catch (e) {}
+          proceed();
+        };
+        doc.addEventListener("pointerup", fire, { capture: true });
+        doc.addEventListener("click", fire, { capture: true }); // pointer 非対応環境の保険
+      };
+      if (loaded) arm();
+      else { ensureIframe(); iframe.addEventListener("load", arm, { once: true }); }
+    }
+    function collapse() { if (iframe) iframe.style.cssText = HIDDEN_CSS; }
+
+    // 既に解禁済みかの確認（startPrimary から呼ぶ・armUnlock 後は no-op）。
     function tryUnlock() {
       if (mode !== "depth") return;
       try {
@@ -659,15 +700,18 @@
     function cycle() { mode = MODES[(MODES.indexOf(mode) + 1) % MODES.length]; applyMode(); }
     // iframe は boot で先に生成しておく（沈む click 時点でロード済み＝手勢内で START を click できる）。
     function preload() { ensureIframe(); }
-    return { push, startPrimary, cycle, preload };
+    return { push, startPrimary, cycle, preload, armUnlock };
   })();
 
   // ---------- 起動 ----------
   async function loadData() {
-    const res = await fetch("depths-shell.json?v=m2-08", { cache: "no-store" });
+    const res = await fetch("depths-shell.json?v=m2-09", { cache: "no-store" });
     DATA = await res.json();
   }
+  let entered = false;
   function enter() {
+    if (entered) return; // overlay 解錠経路と gate ボタン経路の二重発火を防ぐ
+    entered = true;
     gateEl.classList.add("gone");
     buildReturnPaths();
     Music.startPrimary(); // depth.html を実ユーザー手勢の中で解禁（既定）／内製はミュート
@@ -691,8 +735,12 @@
   loadData().then(() => {
     const gb = $("gate-enter");
     gb.disabled = false;
+    // フォールバック経路（cross-origin/オーバーレイ未武装/デスクトップ）：ボタン直叩きで enter。
     gb.addEventListener("click", enter, { once: false });
     Music.preload(); // depth.html を先にロード（沈む click 時点でロード済み＝手勢内で解禁できる）
+    // モバイル堅牢解錠：ゲート上に透明 iframe を敷き、最初の実タップを iframe 内で受けて
+    // depth の AudioContext を本物の手勢で解禁してから降下を開始する。
+    Music.armUnlock(enter);
   }).catch((e) => {
     $("scene").textContent = "深度データの読み込みに失敗しました。再読み込みしてください。";
     console.warn("[Hazama slice] load failed:", e);

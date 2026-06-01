@@ -261,6 +261,25 @@ note原典(1〜7)から確定レジスターで本文化され、∞の作法（
     - **depth.html は無変更**（別セッション管理）。本増分の編集は `slice.js` / `index.html` のみ。
       検証は live と同一コミット(`056d40a`)の depth.html を同一オリジンで埋め、gate→各深度→Ω→below、
       実choice click まで通し、depth.html 側 `DepthEngine.getState()` で rank/depth/music の追従を確認。
+  - **磨き込み5（音解禁のモバイル堅牢化＝バグ修正）** `v=m2-09`（`slice.js`/`index.html`のみ）← 最新:
+    - **バグ**: スマホで depth 連動の音が鳴らない。原因＝`AudioContext.resume()`/`Tone.start()` は
+      その context を持つ document の **window が transient activation を持つ実手勢ハンドラ内**で呼ぶ必要が
+      あるが、**User Activation は「イベント発火 document の window とその祖先」にのみ付与され、親→子
+      iframe には降りない**。よって親(slice)の「沈む」タップ中に iframe 内 START を `click()` しても
+      depth の window は未 activation ＝ resume が弾かれる（磨き込み4 の解禁経路がモバイルで無効だった）。
+    - **修正**: ゲート表示中、depth iframe を **透明・全画面・最前面(z-index 9999)のタップ捕捉面**に
+      し（ゲートは透けて見える）、**最初の実タップを iframe 自身に着地させる**。iframe document の
+      `pointerup`(capture) を親から購読し、**その手勢ハンドラ内で同期的に START を `click()`**＝iframe
+      window は本物のタッチで activation 済みなので resume が手勢スタック内で走り解禁される。解禁後は
+      iframe を 1px へ collapse し `enter()`（降下開始）。`enter` は二重発火ガード付き。
+    - これは「親から iframe の音を解禁する」**最も堅牢なパターン**（実タップを子フレームに通す）。
+      同一オリジン前提（本番プレビュー）。**cross-origin(dev) は武装せず**、従来の gate ボタン直叩き
+      （`enter`→`tryUnlock`）にフォールバック。
+    - 検証（ヘッドレスは実機モバイル音を再現不可）: live と同一の depth.html を同一オリジンで一時埋め込み、
+      モバイル幅で gate→オーバーレイ武装（全画面/透明/pointer-events auto/z9999・depth #start 在）を確認、
+      iframe document への `pointerup` 発火で **depth #start が click 到達（disabled→true）/ゲート消失/降下開始**
+      を確認（`isTrusted:false` のため running は立たないが、実機の本物タッチでは activation が付き解禁）。
+      コンソールエラー無し。
 - `docs/M2-spine.md`（本書）/ `docs/source/`（30記事）/ `slice/`（プレビュー実体）/ `.claude/launch.json`（slice配信）。
 
 ### スパイン全景（37ノード）
@@ -288,7 +307,7 @@ AIの声＝外側の私／いまこの行を読んでいる私）が一列に並
 ### プレビュー（別repo・本番無干渉）
 
 - URL: **https://quietbriony.github.io/hazama-preview/**（repo `QuietBriony/hazama-preview`、`main`）。
-- 現在ライブ＝**磨き込み4（音楽連動）**（37ノード、cache-bust `v=m2-08`、CDN実体確認済み）。
+- 現在ライブ＝**磨き込み5（音解禁のモバイル堅牢化）**（37ノード、cache-bust `v=m2-09`、CDN実体確認済み）。
   本文/選択肢の被りを構造修正、抗う/戻るが深度で結果を変える機構、曼荼羅は深度連動の手続き的 canvas。
   **depth.html（リアクティブ生成音楽）を iframe 連動し、潜行の状態が音楽へリアルタイム同期**（既定）。
   操作: 入口で「沈む」をタップ→音解禁、降下するほど音が深く暗く密に。チップで depth連動/内製音/消音を切替。
