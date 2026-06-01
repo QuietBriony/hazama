@@ -28,7 +28,11 @@
   const RESIST_STRAIN = 3; // 観測者3（深度E〜）から「抗えるが引き込まれる」
   const DEEP_LOCK = 9;     // 観測者9（深度Q・外側の外側〜）から「戻れない」
 
-  const state = { id: null, sink: 0, dread: 0, returnPaths: RETURN_PATHS_START, maxSink: 0, observer: 1, steps: 0, belowLoop: 0, resisted: 0, refused: 0, resistBeat: null, rank: 0, cycle: 0, visits: {} };
+  // legacy = 周回をまたいで持ち越す履歴（restart 以外ではリセットしない）。次周の分岐 seed に効く。
+  //   cycles=周回数, surfaceBounces=表層で弾かれた回数, detoursSeen=通った別の筋のid, maxRank=到達深度。
+  // rejoin = 寄り道(detour)から本筋へ前進合流する先（divert 時に積む）。
+  const freshLegacy = () => ({ cycles: 0, surfaceBounces: 0, detoursSeen: [], maxRank: 0 });
+  const state = { id: null, sink: 0, dread: 0, returnPaths: RETURN_PATHS_START, maxSink: 0, observer: 1, steps: 0, belowLoop: 0, resisted: 0, refused: 0, resistBeat: null, rank: 0, cycle: 0, visits: {}, rejoin: null, legacy: freshLegacy() };
   let DATA = null;
   let revealToken = 0;
   const clamp01 = (x) => Math.max(0, Math.min(1, x));
@@ -246,6 +250,63 @@
     return Object.assign({}, base, { lines });
   }
 
+  // ---------- 分岐ルーティング（狙い：周回で別の幹／弾き＝別ルートへ前進） ----------
+  // 「分岐の組み合わせ × シード手続き生成 × 状態持ち越し」で“毎回違う・尽きない”を出す（実行時LLM無し）:
+  //   - DETOURS = 分岐素材バンク（depths-shell.json の det_* 自己完結イベント）。__rejoin で本筋へ前進合流。
+  //   - 表層で読む(kind:"surface") = 知覚ゲートで弾かれる。同じ所へ戻さず、seedで選んだ別ルートへ逸れて前進。
+  //   - 周回(cycle>=1)では主要ジャンクション(A)の“構造読み(降下)”も別の寄り道を経由＝毎周回ちがう筋を通る。
+  //   - seed に cycle・前周の弾かれ履歴(surfaceBounces)・到達深度(maxRank)・訪問数を織り込む＝
+  //     状態の持ち越しが次の分岐選択を変える（det_scar は弾かれ履歴がある時だけ地形に出現する）。
+  const DETOURS = [
+    { id: "det_mirror" }, { id: "det_memory" }, { id: "det_cothink" },
+    { id: "det_otherself" }, { id: "det_scar", gate: "surfaceBounces" }
+  ];
+  const JUNCTIONS = new Set(["A"]); // 周回で“構造読み”も別の幹を通すジャンクション
+  const Route = (() => {
+    function seedFor(fromId, kind) {
+      const v = state.visits[fromId] || 0;
+      return (hashStr(fromId + ":" + kind)
+        ^ Math.imul(state.cycle + 1, 0x9e3779b9)
+        ^ Math.imul(state.legacy.surfaceBounces + 1, 0x85ebca6b)
+        ^ Math.imul(state.legacy.maxRank + 1, 0xc2b2ae35)
+        ^ Math.imul(v + 1, 0x27d4eb2f)) >>> 0;
+    }
+    function pickDetour(seed) {
+      const rng = mulberry32(seed);
+      const eligible = DETOURS.filter((d) => !d.gate || state.legacy[d.gate] > 0);
+      const unseen = eligible.filter((d) => state.legacy.detoursSeen.indexOf(d.id) < 0);
+      const pool = unseen.length ? unseen : eligible;   // 未見を優先＝毎回ちがう別の筋
+      // 状態駆動のバイアス：弾かれ履歴があり det_scar が未見なら、優先的に地形へ出す。
+      const scar = pool.filter((d) => d.id === "det_scar")[0];
+      const chosen = (scar && rng() < 0.7) ? scar : pool[Math.floor(rng() * pool.length)];
+      if (state.legacy.detoursSeen.indexOf(chosen.id) < 0) state.legacy.detoursSeen.push(chosen.id);
+      return chosen.id;
+    }
+    function divert(fromId, kind, rejoinTo, beat) {
+      state.rejoin = rejoinTo;                          // 寄り道の出口＝本筋の“前方”へ合流
+      if (beat) state.resistBeat = beat;
+      return pickDetour(seedFor(fromId, kind));
+    }
+    return {
+      // 名目上の遷移先 c.to を、分岐ルールで実際の遷移先へ読み替える。
+      resolve(fromId, c) {
+        if (c.to === "__rejoin") { const r = state.rejoin || "B"; state.rejoin = null; return r; }
+        // 表層読み＝知覚ゲートで弾かれる：同じ所へ戻さず、別ルートへ逸れて“前進”する。
+        if (c.kind === "surface") {
+          const to = divert(fromId, "surface", c.to, { who: "danger",
+            t: "——表層で読んだ。世界が、その読みをはじく。だが戻り道ではない。降下は、別の筋へ逸れていく。" });
+          state.legacy.surfaceBounces += 1;             // この弾きを履歴に刻む（pick の後＝det_scar は前回以降に出る）
+          return to;
+        }
+        // 周回(cycle>=1)：ジャンクションの“構造読み(降下)”も別の寄り道を経由してから合流＝毎周回ちがう幹。
+        if (c.kind === "descend" && JUNCTIONS.has(fromId) && state.cycle >= 1) {
+          return divert(fromId, "descend", c.to, null);
+        }
+        return c.to;
+      }
+    };
+  })();
+
   // ---------- 戻り道インジケータ ----------
   function buildReturnPaths() {
     returnPathsEl.innerHTML = "";
@@ -264,6 +325,16 @@
     observerEl.classList.toggle("deep", n > 6);
   }
 
+  // 分岐シグナル：周回・別ルート(表層弾き)・通った別の筋の数をフッタへ（分岐が起きたら表示）。
+  function renderStatus() {
+    const el = $("status");
+    if (!el) return;
+    const lg = state.legacy;
+    if (state.cycle > 0 || lg.surfaceBounces > 0 || lg.detoursSeen.length > 0) {
+      el.textContent = `周回 ${state.cycle} · 別ルート ${lg.surfaceBounces} · 分岐 ${lg.detoursSeen.length}`;
+    }
+  }
+
   // ---------- 圧/沈下を CSS と body へ ----------
   function applyAtmosphere(node) {
     const sinkNorm = Math.min(1, state.sink / SINK_SCALE);
@@ -278,6 +349,7 @@
     sinkFill.style.height = (sinkNorm * 100).toFixed(1) + "%";
     renderReturnPaths();
     renderObserver();
+    renderStatus();
     // 音は同一document の内製エンジンが鳴らす（cross-document iframe は廃止）。
     // 深さは沈下とランク(物語深度)の濃い方、密度は観測者数。沈むほど深く・暗く・密に。
     const dr = Math.min(1, state.dread);
@@ -299,8 +371,11 @@
     let node = DATA.nodes[id];
     if (!node) return;
     const firstEver = state.steps === 0;                       // 起動直後の最初の1ノードはめくらない
-    // 周回(reborn→zero)で cycle を深める＝同じ入口でも巡るほどテキストが変わる。
-    if (id === (DATA.start || "zero") && state.steps > 0) state.cycle += 1;
+    // 周回(reborn→zero)で cycle を深める＝同じ入口でも巡るほどテキストも“通る筋”も変わる。
+    if (id === (DATA.start || "zero") && state.steps > 0) {
+      state.cycle += 1;
+      state.legacy.cycles = state.cycle;   // 持ち越し（次周の分岐 seed に効く）
+    }
     state.visits[id] = (state.visits[id] || 0) + 1;
     // 深度∞: below は周回ごとに手続き生成（底なしの質感差）。audio も周回で色付け。
     if (id === "below") {
@@ -313,6 +388,7 @@
     state.id = id;
     state.steps++;
     if (typeof RANK[id] === "number") state.rank = RANK[id]; // drift/未登録は直前の深さを保つ
+    if (state.rank > state.legacy.maxRank) state.legacy.maxRank = state.rank; // 到達深度を持ち越す
     if (typeof node.observer === "number" && node.observer > 0) state.observer = Math.max(state.observer, node.observer);
     applyAtmosphere(node);
     sceneEl.innerHTML = "";
@@ -391,9 +467,10 @@
     state.sink += c.sink || 0;
     state.dread = Math.min(1, state.dread + (c.dread || 0));
     if (c.close && state.returnPaths > 0) state.returnPaths -= 1; // 戻り道は復活しない
-    Audio.pulseOnce(c.kind === "descend" ? 1 : 0.5);
-    if (c.to === "__edge") return renderEdge();
-    renderNode(c.to);
+    Audio.pulseOnce(c.kind === "descend" ? 1 : c.kind === "surface" ? 0.85 : 0.5);
+    const to = Route.resolve(state.id, c);   // 分岐ルーティング（表層弾き＝別ルート前進 / 周回＝別の幹）
+    if (to === "__edge") return renderEdge();
+    renderNode(to);
   }
 
   // 抗う/戻るの判定。尺度は観測者数＝物語深度（単調増加で、早々に飽和する沈下より安定）。
@@ -471,7 +548,7 @@
       card.className = "hz-line cold";
       card.style.cssText = "margin-top:2em;font-size:0.8rem;line-height:1.9;";
       const lit = Math.round(state.maxSink * 8);
-      card.textContent = `― 深度Ω 到達・外殻踏破 ―  到達深度: ${"▮".repeat(lit)}${"▯".repeat(8 - lit)} / 残った戻り道: ${state.returnPaths}/${RETURN_PATHS_START} / 観測者: ${state.observer} / 抗った: ${state.resisted} ・ 戻れなかった: ${state.refused}`;
+      card.textContent = `― 深度Ω 到達・外殻踏破 ―  到達深度: ${"▮".repeat(lit)}${"▯".repeat(8 - lit)} / 残った戻り道: ${state.returnPaths}/${RETURN_PATHS_START} / 観測者: ${state.observer} / 抗った: ${state.resisted} ・ 戻れなかった: ${state.refused} / 周回: ${state.cycle} ・ 表層で弾かれ: ${state.legacy.surfaceBounces} ・ 通った別の筋: ${state.legacy.detoursSeen.length}`;
       sceneEl.appendChild(card); card.classList.add("shown");
       const more = document.createElement("p");
       more.className = "hz-line"; more.style.cssText = "margin-top:0.6em;font-size:0.78rem;color:#6b7682;";
@@ -783,7 +860,7 @@
 
   // ---------- 起動 ----------
   async function loadData() {
-    const res = await fetch("depths-shell.json?v=m2-14", { cache: "no-store" });
+    const res = await fetch("depths-shell.json?v=m2-15", { cache: "no-store" });
     DATA = await res.json();
   }
   let entered = false;
@@ -801,7 +878,8 @@
   }
   function restart() {
     revealToken++;
-    state.id = null; state.sink = 0; state.dread = 0; state.returnPaths = RETURN_PATHS_START; state.maxSink = 0; state.observer = 1; state.steps = 0; state.belowLoop = 0; state.resisted = 0; state.refused = 0; state.resistBeat = null; state.rank = 0; state.cycle = 0; state.visits = {};
+    state.id = null; state.sink = 0; state.dread = 0; state.returnPaths = RETURN_PATHS_START; state.maxSink = 0; state.observer = 1; state.steps = 0; state.belowLoop = 0; state.resisted = 0; state.refused = 0; state.resistBeat = null; state.rank = 0; state.cycle = 0; state.visits = {}; state.rejoin = null; state.legacy = freshLegacy();
+    const st = $("status"); if (st) st.textContent = "preview · M2 沈下スパイン";
     $("restart").hidden = true;
     buildReturnPaths();
     renderNode(DATA.start || "zero");

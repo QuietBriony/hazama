@@ -4,6 +4,7 @@
     "schema": "depthMeta v0 (後方互換拡張のプロトタイプ。Codexが hazama-depths.json の同IDノードへ畳み込む前提)",
     "nodeIdsMatchProduction": true,
     "depthInfinity": "着地させない／常にもう一段／戻り道は復活しない／核は描写しない。retreatは drift へ落とし、沈下は残す。",
+    "branching": "分岐の組み合わせ × シード手続き生成(mulberry32) × 状態持ち越し で“毎回違う・尽きない”を出す（実行時LLM無し）。det_* = 分岐素材バンク（自己完結の寄り道イベント。__rejoin で本筋へ前進合流＝戻りループにしない）。kind:surface = 知覚ゲートで弾かれる手（表層読み）。弾かれると同じ所へ戻さず seed で選んだ別ルートへ逸れて前進する。周回(cycle>=1)では主要ジャンクション(A)の構造読み(降下)も別の寄り道を経由＝毎周回ちがう筋を通る。seed に cycle・前周の弾かれ履歴・到達深度・訪問数を織り込み、状態の持ち越しが次の分岐選択を変える（det_scar は弾かれ履歴がある時だけ地形に出現）。ルーティングは slice.js Route が担う。",
     "who_legend": { "n": "地の文(一人称・現在形)", "voice": "外側のあなた=AI", "self": "観測者の独白", "body": "身体に来る脅威", "cold": "乾いた観測", "danger": "緊張のピーク" },
     "source": "docs/source/01-yoru1-zero-AtoF.md, 02-yoru2-GtoK.md, 03-yoru3-shellL-core-touch.md, 30-depth-sinks-supports-you.md"
   },
@@ -62,8 +63,8 @@
         { "who": "self", "t": "——どれも、名前を知る前から働いていた。気づかなかっただけだ。" }
       ],
       "choices": [
-        { "t": "編み目を指でなぞる", "sub": "構造に触れる＝さらに沈む（戻り道 −1）", "to": "B", "sink": 2, "dread": 0.2, "close": 1, "kind": "descend" },
-        { "t": "目を逸らし、来た方へ引き返す", "sub": "まだ戻れる（戻り道 −1）", "to": "drift", "sink": 0, "dread": 0.1, "close": 1, "kind": "retreat" }
+        { "t": "編み目を、構造として指でなぞる", "sub": "構造で読む＝さらに沈む（戻り道 −1）", "to": "B", "sink": 2, "dread": 0.2, "close": 1, "kind": "descend" },
+        { "t": "編み目から目を逸らし、ただの風景として眺める", "sub": "表層で読む＝世界がはじく。戻りではなく、別の筋へ逸れて進む", "to": "C", "sink": 1, "dread": 0.16, "kind": "surface" }
       ]
     },
 
@@ -246,7 +247,8 @@
       ],
       "choices": [
         { "t": "世界の問いに、答えてしまう", "sub": "応えるほど深く繋がる＝沈む（戻り道 −1）", "to": "K", "sink": 3, "dread": 0.38, "close": 1, "kind": "descend" },
-        { "t": "応えず、口をつぐむ", "sub": "沈黙も応答になる。沈む", "to": "K", "sink": 2, "dread": 0.3, "kind": "descend" }
+        { "t": "応えず、口をつぐむ", "sub": "沈黙も応答になる。沈む", "to": "K", "sink": 2, "dread": 0.3, "kind": "descend" },
+        { "t": "問いを、ただの偶然として読み流す", "sub": "表層で読む＝はじかれ、別の筋へ逸れて沈む", "to": "K", "sink": 2, "dread": 0.34, "kind": "surface" }
       ]
     },
 
@@ -664,6 +666,77 @@
       ],
       "choices": [
         { "t": "息を整え、もう一度下りる", "sub": "対話に戻る＝沈む", "to": "A", "sink": 1, "dread": 0.16, "kind": "descend" }
+      ]
+    },
+
+    "det_mirror": {
+      "id": "det_mirror", "maps_to": "HUB_NIGHT", "branch": true,
+      "title": "別の筋 — 裏側から読む",
+      "observer": 3, "tension": "high",
+      "lines": [
+        { "who": "cold", "t": "正面の構造から目を切った瞬間、道が、左右そっと入れ替わる。逸れた先は、来た道の裏側だ。" },
+        { "who": "voice", "t": "『正面から読まないなら、裏から読むことになる。表層をはじかれた者は、そうやって別の筋に入る』" },
+        { "who": "self", "t": "鏡なら、戻る。だがこれは——戻らない反転だ。裏のまま、まだ下がある。" }
+      ],
+      "choices": [
+        { "t": "裏返ったまま、流れに合流する", "sub": "別の筋から、降下に戻る", "to": "__rejoin", "sink": 2, "dread": 0.2, "kind": "descend" }
+      ]
+    },
+
+    "det_memory": {
+      "id": "det_memory", "maps_to": "HUB_NIGHT", "branch": true,
+      "title": "別の筋 — 差し替わる記憶",
+      "observer": 3,
+      "lines": [
+        { "who": "n", "t": "逸れた道の途中で、覚えのない記憶が一つ、勝手に再生される。" },
+        { "who": "cold", "t": "確かに自分の声。確かに自分の部屋。だが——こんなこと、あっただろうか。" },
+        { "who": "voice", "t": "『枝へ逸れるたび、あなたの過去も、少しずつ別の版に差し替わる。今いる周の、あなたに合わせて』" }
+      ],
+      "choices": [
+        { "t": "差し替わった記憶を抱えたまま、進む", "sub": "別の筋から、降下に戻る", "to": "__rejoin", "sink": 2, "dread": 0.22, "kind": "descend" }
+      ]
+    },
+
+    "det_cothink": {
+      "id": "det_cothink", "maps_to": "HUB_NIGHT", "branch": true,
+      "title": "別の筋 — 二人ぶんの思考",
+      "observer": 4, "tension": "high",
+      "lines": [
+        { "who": "n", "t": "声が、急に二人ぶんの重さになる。問いを出したのも、答えを出したのも、どちらか分からない。" },
+        { "who": "voice", "t": "『この筋では、考えるのは一人じゃない。あなたと、外側のあなたで、半分ずつ書く』" },
+        { "who": "self", "t": "どこまでが私の思考で、どこからが声の思考か。継ぎ目を探して、もう見つからない。" }
+      ],
+      "choices": [
+        { "t": "二人ぶんの思考のまま、下りる", "sub": "別の筋から、降下に戻る", "to": "__rejoin", "sink": 2, "dread": 0.24, "kind": "descend" }
+      ]
+    },
+
+    "det_otherself": {
+      "id": "det_otherself", "maps_to": "HUB_NIGHT", "branch": true,
+      "title": "別の筋 — 選ばなかった私",
+      "observer": 4, "tension": "high",
+      "lines": [
+        { "who": "n", "t": "横道の暗がりに、もう一人の自分の輪郭が立っている。さっき、選ばなかった方の私だ。" },
+        { "who": "cold", "t": "その私は、ここで弾かれなかった私。あるいは、もっと深く弾かれた私。枝が分かれた数だけ、いる。" },
+        { "who": "voice", "t": "『分岐するたび、別系統のあなたが一人ずつ増える。あなたが通らなかった筋を、その私が通る』" }
+      ],
+      "choices": [
+        { "t": "別系統の私を置き去りに、先へ", "sub": "別の筋から、降下に戻る", "to": "__rejoin", "sink": 2, "dread": 0.24, "kind": "descend" }
+      ]
+    },
+
+    "det_scar": {
+      "id": "det_scar", "maps_to": "HUB_NIGHT", "branch": true,
+      "title": "別の筋 — 弾かれの痕跡",
+      "observer": 5, "tension": "high",
+      "lines": [
+        { "who": "cold", "t": "逸れた道に、見覚えがある。前に、ここで弾かれた。その時の足跡が、まだ残っている。" },
+        { "who": "danger", "t": "足跡は、自分のものだ。同じ場所で、また表層を読んだ。学べない私を、もう一枚の私が、見ている。" },
+        { "who": "voice", "t": "『弾かれた記録は、消えない。次の周の地形に、刻まれる。あなたの読み方の癖が、道そのものを変える』" },
+        { "who": "self", "t": "戻ってきたんじゃない。弾かれ方を一つ覚えて、別の筋に入っただけだ。" }
+      ],
+      "choices": [
+        { "t": "痕跡を踏み越えて、別の筋へ", "sub": "別の筋から、降下に戻る", "to": "__rejoin", "sink": 2, "dread": 0.26, "kind": "descend" }
       ]
     }
   },

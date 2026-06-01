@@ -280,6 +280,9 @@ body[data-tension="high"] .hz-scene { animation: hz-shudder 2.6s ease-in-out inf
 .hz-choice.retreat { background: transparent; }
 .hz-choice.retreat.heavy { opacity: 0.55; }
 .hz-choice.retreat.heavy .sub { color: var(--ink-faint); }
+/* 表層で読む＝知覚ゲートで弾かれる手。降下でも戻りでもない“逸れ”＝点線枠＋逸れマーク（生の差し色）。 */
+.hz-choice.surface { background: rgba(216,68,46,0.04); border-style: dashed; border-color: rgba(216,68,46,0.32); }
+.hz-choice.surface .sub { color: var(--hand-red); opacity: 0.85; }
 
 /* ---------- フッタ ---------- */
 .hz-footer {
@@ -453,6 +456,10 @@ body.peeling .hz-peel { visibility: visible; animation: hz-peel-sweep .62s cubic
   text-decoration: line-through;
   text-decoration-color: rgba(216,68,46,0.5);
   text-decoration-thickness: 1.5px;
+}
+.hz-choice.surface .lead::before {     /* 逸れマーク＝弾かれて別の筋へ折れる（戻りでも降下でもない） */
+  content: "⤳"; position: absolute; left: -1.45em; top: -0.04em;
+  color: var(--hand-red); font-weight: 700; opacity: 0.9;
 }
 .hz-choice.retreat.heavy .lead { color: var(--ink-dim); }
 .hz-choice:active { box-shadow: inset 0 0 0 1px rgba(216,68,46,0.25); }
