@@ -1,0 +1,243 @@
+/* Hazama M1 vertical slice — 沈下スライス
+   北極星: 進行する対話が、進むほどプレイヤーを狭間へ沈める／戻りにくくする。
+   トーン: 硬い・乾いた・サイバーパンク・威圧（沈黙＝圧）。詩性は異物感のためだけに残す。
+   data-phase: surface → drift → deep → bottom（body に付与し、色温度と圧を段階で締める） */
+
+:root {
+  --bg: #04060b;
+  --ink: #c8d2dc;
+  --ink-dim: #6b7682;
+  --ink-faint: #3a424c;
+  --accent: #7fb6c4;       /* 冷たい青緑 */
+  --warn: #c46b5a;         /* 危険・身体の脅威 */
+  --line: rgba(127, 182, 196, 0.22);
+  --reveal-ms: 46ms;       /* 1文字あたりの送り。危険局面で JS が伸ばす */
+  --press: 0;              /* 0..1 圧。JS が更新。ヴィネット/震えに使う */
+  --sink: 0;               /* 0..1 沈下。背景の暗さに使う */
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  height: 100%;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: "Hiragino Sans", "Yu Gothic", "Noto Sans JP", system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  overflow: hidden;
+}
+
+body {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ---------- 背景 ---------- */
+.hz-bg { position: fixed; inset: 0; z-index: 0; overflow: hidden; background: #02040a; }
+.hz-bg-descent {
+  position: absolute; inset: -4%;
+  width: 108%; height: 108%;
+  object-fit: cover;
+  /* 沈むほど暗く・彩度が落ち・わずかに沈降 */
+  filter: brightness(calc(0.62 - var(--sink) * 0.45)) saturate(calc(0.8 - var(--sink) * 0.5)) contrast(1.05);
+  transform: translateY(calc(var(--sink) * 2.4%)) scale(calc(1 + var(--sink) * 0.06));
+  transition: filter 1.6s ease, transform 3s ease;
+  opacity: 0.9;
+}
+.hz-bg-mandala {
+  position: absolute; left: 50%; top: 118%;
+  width: 86vmin; height: 86vmin;
+  transform: translate(-50%, -50%);
+  /* 深部に近づくほど下から迫り上がる目的地（曼荼羅ゲート） */
+  top: calc(118% - var(--sink) * 70%);
+  opacity: calc(0.08 + var(--sink) * 0.5);
+  transition: top 3s ease, opacity 3s ease;
+  mix-blend-mode: screen;
+}
+.hz-bg-mandala img {
+  width: 100%; height: 100%; object-fit: contain;
+  animation: hz-rot 80s linear infinite;
+}
+@keyframes hz-rot { to { transform: rotate(360deg); } }
+
+.hz-vignette {
+  position: absolute; inset: 0;
+  pointer-events: none;
+  background: radial-gradient(120% 100% at 50% 38%,
+    transparent 0%,
+    rgba(2,4,10,calc(0.35 + var(--press) * 0.4)) 58%,
+    rgba(2,4,10,calc(0.78 + var(--press) * 0.2)) 100%);
+  transition: background 1.2s ease;
+}
+.hz-scanline {
+  position: absolute; inset: 0;
+  pointer-events: none;
+  opacity: calc(0.05 + var(--press) * 0.14);
+  background: repeating-linear-gradient(to bottom,
+    rgba(127,182,196,0.08) 0px, rgba(127,182,196,0.08) 1px, transparent 1px, transparent 4px);
+  mix-blend-mode: overlay;
+}
+
+/* ---------- アプリ本体 ---------- */
+.hz-app {
+  position: relative; z-index: 2;
+  flex: 1;
+  display: flex; flex-direction: column;
+  max-width: 680px;
+  width: 100%;
+  margin: 0 auto;
+  padding: max(18px, env(safe-area-inset-top)) 22px 14px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+/* 沈下ゲージ：右端に細い縦線。fill が下へ伸びる＝沈んだ深さ */
+.hz-gauge {
+  position: fixed; right: 10px; top: 14vh; bottom: 16vh; z-index: 3;
+  width: 14px;
+  display: flex; flex-direction: column; align-items: center; gap: 8px;
+  pointer-events: none;
+}
+.hz-gauge-track {
+  position: relative; flex: 1; width: 2px;
+  background: linear-gradient(to bottom, transparent, var(--ink-faint), transparent);
+}
+.hz-gauge-fill {
+  position: absolute; top: 0; left: -1px; width: 4px; height: 0%;
+  background: linear-gradient(to bottom, var(--accent), var(--warn));
+  box-shadow: 0 0 8px rgba(127,182,196,0.5);
+  transition: height 1.4s cubic-bezier(.4,0,.2,1);
+}
+.hz-return-paths { display: flex; flex-direction: column; gap: 5px; }
+.hz-return-paths i {
+  width: 8px; height: 2px; background: var(--ink-dim);
+  transition: opacity .8s ease, background .8s ease;
+}
+.hz-return-paths i.spent { opacity: 0.12; background: var(--warn); }
+
+/* 観測者カウンタ：深いほど"私"が増殖する（沈下の入れ子の可視化） */
+.hz-observer {
+  font-size: 0.62rem; letter-spacing: -0.04em; line-height: 1;
+  color: var(--ink-faint); writing-mode: vertical-rl; text-orientation: upright;
+  max-height: 7em; overflow: hidden; transition: color .8s ease;
+}
+.hz-observer[data-count="3"], .hz-observer[data-count="4"] { color: var(--ink-dim); }
+.hz-observer[data-count="5"], .hz-observer[data-count="6"] { color: var(--accent); }
+
+/* シーン本文 */
+.hz-scene {
+  flex: 1;
+  display: flex; flex-direction: column; justify-content: center;
+  gap: 1.05em;
+  padding: 6vh 0 4vh;
+  min-height: 50vh;
+}
+.hz-line {
+  margin: 0;
+  font-size: clamp(1.02rem, 1rem + 0.8vw, 1.34rem);
+  line-height: 1.95;
+  letter-spacing: 0.02em;
+  color: var(--ink);
+  opacity: 0;
+}
+.hz-line.shown { opacity: 1; }
+.hz-line .ch { opacity: 0; }
+.hz-line .ch.lit { opacity: 1; transition: opacity 120ms linear; }
+.hz-line.voice { color: var(--accent); font-style: normal; padding-left: 0.8em; border-left: 2px solid var(--line); }
+.hz-line.body  { color: #d9c2bc; }          /* 身体に来る脅威 */
+.hz-line.cold  { color: var(--ink-dim); }    /* 乾いた観測 */
+.hz-line.danger { color: var(--warn); }
+.hz-line.self  { color: #b9c6d2; font-style: italic; }
+
+/* 危険局面：本文がわずかに震える（reduced-motion で無効化） */
+body[data-tension="high"] .hz-scene { animation: hz-shudder 2.6s ease-in-out infinite; }
+@keyframes hz-shudder {
+  0%,100% { transform: translateX(0); }
+  25% { transform: translateX(-0.6px); }
+  75% { transform: translateX(0.6px); }
+}
+
+/* 選択肢 */
+.hz-choices {
+  position: sticky; bottom: 0;
+  display: flex; flex-direction: column; gap: 10px;
+  padding: 10px 0 max(14px, env(safe-area-inset-bottom));
+  background: linear-gradient(to top, var(--bg) 62%, transparent);
+}
+.hz-choice {
+  appearance: none; -webkit-appearance: none;
+  text-align: left; width: 100%;
+  font: inherit; font-size: 1rem; line-height: 1.6;
+  color: var(--ink);
+  background: rgba(127,182,196,0.05);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 14px 16px;
+  cursor: pointer;
+  transition: background .25s, border-color .25s, opacity .4s, transform .4s;
+  opacity: 0; transform: translateY(8px);
+}
+.hz-choice.in { opacity: 1; transform: none; }
+.hz-choice:active { background: rgba(127,182,196,0.12); }
+.hz-choice .sub {
+  display: block; margin-top: 5px;
+  font-size: 0.78rem; color: var(--ink-dim); letter-spacing: 0.03em;
+}
+/* 進む手＝沈む。退避手＝深いほど重く・遅くなる。 */
+.hz-choice.descend { border-color: rgba(196,107,90,0.35); }
+.hz-choice.descend .sub { color: var(--warn); }
+.hz-choice.retreat { background: transparent; }
+.hz-choice.retreat.heavy { opacity: 0.55; }
+.hz-choice.retreat.heavy .sub { color: var(--ink-faint); }
+
+/* ---------- フッタ ---------- */
+.hz-footer {
+  position: relative; z-index: 2;
+  display: flex; align-items: center; gap: 10px;
+  padding: 8px 18px max(8px, env(safe-area-inset-bottom));
+  border-top: 1px solid rgba(127,182,196,0.08);
+}
+.hz-chip {
+  font: inherit; font-size: 0.82rem;
+  color: var(--ink-dim);
+  background: transparent;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 5px 12px; cursor: pointer;
+}
+.hz-chip[aria-pressed="true"] { color: var(--accent); border-color: var(--accent); }
+.hz-chip-quiet { border-color: transparent; }
+.hz-status { margin-left: auto; font-size: 0.72rem; color: var(--ink-faint); letter-spacing: 0.08em; }
+
+/* ---------- 起動ゲート ---------- */
+.hz-gate {
+  position: fixed; inset: 0; z-index: 10;
+  display: flex; align-items: center; justify-content: center;
+  background: radial-gradient(120% 120% at 50% 30%, #0a1018, #02040a 70%);
+  transition: opacity .9s ease;
+}
+.hz-gate.gone { opacity: 0; pointer-events: none; }
+.hz-gate-inner { text-align: center; padding: 24px; max-width: 420px; }
+.hz-gate-title { font-size: 2.6rem; letter-spacing: 0.5em; margin: 0 0 0.6em; color: var(--ink); text-indent: 0.5em; }
+.hz-gate-sub { color: var(--ink-dim); line-height: 2; margin: 0 0 2em; }
+.hz-gate-enter {
+  font: inherit; font-size: 1.05rem; letter-spacing: 0.4em; text-indent: 0.4em;
+  color: var(--accent);
+  background: transparent; border: 1px solid var(--accent);
+  border-radius: 999px; padding: 14px 44px; cursor: pointer;
+  transition: background .3s, color .3s;
+}
+.hz-gate-enter:active { background: var(--accent); color: #02040a; }
+.hz-gate-note { margin-top: 2.4em; font-size: 0.72rem; color: var(--ink-faint); }
+
+/* ---------- アクセシビリティ ---------- */
+@media (prefers-reduced-motion: reduce) {
+  .hz-bg-mandala img { animation: none; }
+  .hz-line .ch, .hz-line .ch.lit { opacity: 1 !important; transition: none !important; }
+  body[data-tension="high"] .hz-scene { animation: none; }
+  .hz-bg-descent, .hz-bg-mandala, .hz-vignette { transition: none; }
+  .hz-choice { transition: opacity .2s; transform: none; }
+}
