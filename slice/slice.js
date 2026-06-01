@@ -55,6 +55,34 @@
 
   const WHO_CLASS = { n: "", voice: "voice", self: "self", body: "body", cold: "cold", danger: "danger" };
 
+  // ---------- 本文オートフォロー（読めるスクロール） ----------
+  // 北極星: 本文は reveal 中も含め常に自由にスクロールできる。最新行は選択肢に被らず読める。
+  // 方式（chat/terminal式の「最下部に吸着」）:
+  //   - reveal は行を1つずつ DOM へ追加する（高さが伸びる＝最下部＝最新行）。
+  //   - ユーザーが最下部に居る間だけ、最新行を選択肢直上へ貼り付ける（追従）。
+  //   - ユーザーが上へスクロール(wheel/touch)した瞬間に追従を止める＝スクロールを奪わない。
+  //   - 自力で最下部へ戻れば追従を再開する。
+  //   - 追従の解除は実手勢イベント(wheel/touchmove)のみが行い、programmatic な scrollTop 設定
+  //     （これは scroll は撃つが wheel/touch は撃たない）と取り違えない＝カクつき/奪い合いを断つ。
+  //   - 吸着は rAF で間引く＝1フレーム複数回の scrollTop 書き込みを束ね、慣性スクロールと競合しない。
+  const Follow = (() => {
+    const NEAR = 64; // px: これ以内なら「最下部に居る」とみなす（慣性の揺れに対する許容）
+    let following = true;
+    const atBottom = () => sceneEl.scrollHeight - sceneEl.scrollTop - sceneEl.clientHeight <= NEAR;
+    // 吸着は行追加/選択肢表示の時だけ（1文字ごとではない）＝低頻度。よって同期 scrollTop で十分で、
+    // rAF に依存しない（rAF はタブ非表示やスクロール中に間引かれ、追従が止まる事故の元）。
+    function stick() { if (following) sceneEl.scrollTop = sceneEl.scrollHeight; }
+    // 新ノード開始：追従ON＋最上部から（reveal は下から積み上がる）。
+    function reset() { following = true; sceneEl.scrollTop = 0; }
+    const release = () => { following = false; };            // 実手勢＝追従を即解除
+    sceneEl.addEventListener("wheel", release, { passive: true });
+    sceneEl.addEventListener("touchmove", release, { passive: true });
+    // 最下部へ自力で戻ったら追従再開。programmatic な吸着でも near-bottom なので true を保つ
+    // ＝吸着が自分で自分を解除しない。
+    sceneEl.addEventListener("scroll", () => { if (atBottom()) following = true; }, { passive: true });
+    return { stick, reset };
+  })();
+
   // ---------- 深度∞ 手続き的断片（§4-6: UCM 9軸から決定論生成） ----------
   // below(∞) ループは固定本文を持たない。周回(loop)を seed に、UCM 八観+観測層の
   // 9軸から"沈降断片"を決定論生成し、底なしの反復に質感差を与える（新音源/依存なし）。
@@ -231,36 +259,46 @@
     applyAtmosphere(node);
     sceneEl.innerHTML = "";
     choicesEl.innerHTML = "";
+    Follow.reset();              // 新ノード：追従ON・最上部から（行は下から積み上がる）
     const myToken = ++revealToken;
     const revealMs = REDUCED ? 0 : (34 + state.dread * 64);
     let delay = 0;
 
-    // 抗い/戻りの結果ビート（あれば本文の先頭に差す。一度きり）。
+    // 抗い/戻るの結果ビート（あれば本文の先頭に差す。一度きり）。
     const lines = state.resistBeat ? [state.resistBeat].concat(node.lines || []) : (node.lines || []);
     state.resistBeat = null;
 
-    lines.forEach((line) => {
+    const mkLine = (line) => {
       const p = document.createElement("p");
       p.className = "hz-line " + (WHO_CLASS[line.who] || "");
-      sceneEl.appendChild(p);
-      if (REDUCED) { p.textContent = line.t; p.classList.add("shown"); return; }
-      [...line.t].forEach((ch) => {
-        const s = document.createElement("span");
-        s.className = "ch"; s.textContent = ch; p.appendChild(s);
-      });
+      return p;
+    };
+
+    lines.forEach((line) => {
+      const chars = [...line.t];
+      if (REDUCED) {
+        const p = mkLine(line);
+        p.textContent = line.t; p.classList.add("shown");
+        sceneEl.appendChild(p); Follow.stick();
+        return;
+      }
       window.setTimeout(() => {
         if (myToken !== revealToken) return;
+        // 行は reveal の瞬間に追加する＝高さが一度に確定（リフロー1回）し、最新行が最下部になる。
+        const p = mkLine(line);
+        chars.forEach((ch) => {
+          const s = document.createElement("span");
+          s.className = "ch"; s.textContent = ch; p.appendChild(s);
+        });
+        sceneEl.appendChild(p);
         p.classList.add("shown");
-        sceneEl.scrollTop = sceneEl.scrollHeight; // 行が現れるたび最新行を底へ追従
+        Follow.stick();          // 追従中のみ最新行を選択肢直上へ（ユーザーが上に居れば奪わない）
+        // 文字の点灯は opacity のみ＝高さ不変。スクロール追従は不要（カクつき源を断つ）。
         p.querySelectorAll(".ch").forEach((s, i) => {
-          window.setTimeout(() => {
-            if (myToken !== revealToken) return;
-            s.classList.add("lit");
-            sceneEl.scrollTop = sceneEl.scrollHeight;
-          }, i * revealMs);
+          window.setTimeout(() => { if (myToken === revealToken) s.classList.add("lit"); }, i * revealMs);
         });
       }, delay);
-      delay += [...line.t].length * revealMs + 360 + (line.gap || 0);
+      delay += chars.length * revealMs + 360 + (line.gap || 0);
     });
 
     const choiceDelay = REDUCED ? 150 : delay + 220;
@@ -283,8 +321,8 @@
       window.setTimeout(() => btn.classList.add("in"), appear);
     });
     // ボタンを積んで scene が縮んだ“後”に最新行を底へ。重なりはレイアウトで防止済み、
-    // ここは「最後の行を選択肢の真上に見せる」ためのスクロール追従。
-    sceneEl.scrollTop = sceneEl.scrollHeight;
+    // ここは「最後の行を選択肢の真上に見せる」ための追従（ユーザーが上に居れば奪わない）。
+    Follow.stick();
   }
 
   function sinkNorm() { return Math.min(1, state.sink / SINK_SCALE); }
@@ -344,18 +382,28 @@
     state.dread = 1;
     applyAtmosphere({ tension: "high" });
     sceneEl.innerHTML = ""; choicesEl.innerHTML = "";
+    Follow.reset();
     const sank = state.returnPaths <= 1;
     const lines = sank ? DATA.edge.sankLines : DATA.edge.heldLines;
     let delay = 0;
     const revealMs = REDUCED ? 0 : 52;
     (lines || []).forEach((line) => {
-      const p = document.createElement("p");
-      p.className = "hz-line " + (WHO_CLASS[line.who] || "");
-      p.textContent = line.t;
-      sceneEl.appendChild(p);
-      if (REDUCED) { p.classList.add("shown"); return; }
-      p.style.opacity = "0";
-      window.setTimeout(() => { if (myToken === revealToken) { p.style.transition = "opacity 1.5s ease"; p.classList.add("shown"); p.style.opacity = "1"; } }, delay);
+      if (REDUCED) {
+        const p = document.createElement("p");
+        p.className = "hz-line " + (WHO_CLASS[line.who] || "");
+        p.textContent = line.t; p.classList.add("shown");
+        sceneEl.appendChild(p); Follow.stick();
+        return;
+      }
+      window.setTimeout(() => {
+        if (myToken !== revealToken) return;
+        const p = document.createElement("p");
+        p.className = "hz-line " + (WHO_CLASS[line.who] || "");
+        p.textContent = line.t; p.style.opacity = "0";
+        sceneEl.appendChild(p);
+        p.style.transition = "opacity 1.5s ease"; p.classList.add("shown"); p.style.opacity = "1";
+        Follow.stick();
+      }, delay);
       delay += line.t.length * revealMs + 520 + (line.gap || 0);
     });
     window.setTimeout(() => {
@@ -370,6 +418,7 @@
       more.className = "hz-line"; more.style.cssText = "margin-top:0.6em;font-size:0.78rem;color:#6b7682;";
       more.textContent = "観測OSは終わらない。再起動すれば、また零章から——だが、底は最後まで無い。";
       sceneEl.appendChild(more); more.classList.add("shown");
+      Follow.stick();
       $("restart").hidden = false;
     }, delay + 400);
   }
@@ -713,7 +762,7 @@
 
   // ---------- 起動 ----------
   async function loadData() {
-    const res = await fetch("depths-shell.json?v=m2-11", { cache: "no-store" });
+    const res = await fetch("depths-shell.json?v=m2-12", { cache: "no-store" });
     DATA = await res.json();
   }
   let entered = false;
