@@ -164,11 +164,11 @@
       card.className = "hz-line cold";
       card.style.cssText = "margin-top:2em;font-size:0.8rem;line-height:1.9;";
       const lit = Math.round(state.maxSink * 8);
-      card.textContent = `― 冒頭アーク 終了 ―  到達深度: ${"▮".repeat(lit)}${"▯".repeat(8 - lit)} / 残った戻り道: ${state.returnPaths}/${RETURN_PATHS_START} / 観測者: ${state.observer}`;
+      card.textContent = `― 深度Ω 到達・外殻踏破 ―  到達深度: ${"▮".repeat(lit)}${"▯".repeat(8 - lit)} / 残った戻り道: ${state.returnPaths}/${RETURN_PATHS_START} / 観測者: ${state.observer}`;
       sceneEl.appendChild(card); card.classList.add("shown");
       const more = document.createElement("p");
       more.className = "hz-line"; more.style.cssText = "margin-top:0.6em;font-size:0.78rem;color:#6b7682;";
-      more.textContent = "続きは次の増分で。底は、まだずっと下にある。";
+      more.textContent = "観測OSは終わらない。再起動すれば、また零章から——だが、底は最後まで無い。";
       sceneEl.appendChild(more); more.classList.add("shown");
       $("restart").hidden = false;
     }, delay + 400);
@@ -234,7 +234,7 @@
 
   // ---------- 起動 ----------
   async function loadData() {
-    const res = await fetch("depths-shell.json?v=m2-04", { cache: "no-store" });
+    const res = await fetch("depths-shell.json?v=m2-05", { cache: "no-store" });
     DATA = await res.json();
   }
   function enter() {
