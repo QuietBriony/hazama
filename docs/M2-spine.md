@@ -226,7 +226,21 @@ note原典(1〜7)から確定レジスターで本文化され、∞の作法（
   - **磨き込み1（音）**：深度で開花する倍音／共有LFOのうねり／合成IR残響／沈む鼓動。
     below(∞)を UCM 9軸から決定論生成する沈降断片に（周回ごとに別の質感・核は歪みで示唆）。
   - **磨き込み2（視覚）**：フィルムグレイン／暗転パレット洗練／観測者の呼吸／文字の浮上。
-    reduced-motion尊重。grain は blend面積を 116% に抑えモバイル負荷軽減。← 最新
+    reduced-motion尊重。grain は blend面積を 116% に抑えモバイル負荷軽減。
+  - **磨き込み3（被り修正・ゲーム性・曼荼羅）** `4f9959c`（cache-bust v=m2-07）← 最新:
+    - **バグ修正**：降下後半で本文が選択肢に被る問題を解消。`#scene` を内部スクロール領域、
+      `#choices` を別 flex トラック（`flex:0 0 auto`）に分離し**構造的に重ならない**設計へ。
+      choices は不透明背景＋上端フェード。リビール完了時に最新行を選択肢の真上へ底寄せ追従。
+    - **抗う/戻る機構**：観測者数（物語深度）で結果が変わる。浅い(obs<3)=少し戻れる(back で一段上)・
+      戻り道−1／中盤(3..8)=抗えるが世界が引き込む(_hold・沈下+1)・戻り道−1／深部(obs>=9)=戻れない
+      (戻り道が残っても無効、failTo へ落ち dread 跳ねる)。結果ビートを次ノード冒頭へ差す。選択肢増量
+      (C に shallow back、Q/U/Y/Z に deep 失敗する抗い)。reborn 停止は `terminal` で常に終端。終端
+      カードに「抗った/戻れなかった」回数。`resisted`/`refused` を state に追加。
+    - **手続き的曼荼羅**：プレースホルダ webp を canvas へ置換。八観=8回対称、観測者数で層/スポーク
+      増殖、沈むほど暗く彩度↓・最外リング迫り上がり・高dreadで warn 不協和リング。中心の核は描かず、
+      沈むほど void が退いて広がる（深部のみ縁が白く灼ける）。reduced-motion 静止1枚・タブ非表示で
+      rAF 停止・状態変化時は即時1枚再描画。
+    - dev フック `window.__hz`（任意ノードへ go／state 読み）を slice.js に追加（本体統合時は外す）。
 - `docs/M2-spine.md`（本書）/ `docs/source/`（30記事）/ `slice/`（プレビュー実体）/ `.claude/launch.json`（slice配信）。
 
 ### スパイン全景（37ノード）
@@ -254,8 +268,9 @@ AIの声＝外側の私／いまこの行を読んでいる私）が一列に並
 ### プレビュー（別repo・本番無干渉）
 
 - URL: **https://quietbriony.github.io/hazama-preview/**（repo `QuietBriony/hazama-preview`、`main`）。
-- 現在ライブ＝**磨き込み2**（零章→Ω→∞→周回、37ノード、cache-bust `v=m2-06`）。
-  音は深度連動で進化し、below(∞)は周回ごとに手続き生成。視覚はグレイン＋暗転パレット＋観測者の呼吸。
+- 現在ライブ＝**磨き込み3**（零章→Ω→∞→周回、37ノード、cache-bust `v=m2-07`、CDN実体確認済み）。
+  本文/選択肢の被りを構造修正、抗う/戻るが深度で結果を変える機構、曼荼羅は深度連動の手続き的 canvas。
+  音は深度連動で進化し、below(∞)は周回ごとに手続き生成。
 - デプロイ手順: `slice/depths-shell.json` と `slice.js`（必要なら index.html/slice.css/assets）を
   `hazama-preview` の root へコピー → commit → `git push https://x-access-token:$(gh auth token)@github.com/QuietBriony/hazama-preview.git main`。
   反映確認は `curl ".../depths-shell.json?cb=$RANDOM"` で cache-bust 実体チェック。
