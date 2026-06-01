@@ -138,6 +138,7 @@
     const n = Math.max(1, state.observer);
     observerEl.textContent = "私".repeat(Math.min(n, 6)) + (n > 6 ? "…" : "");
     observerEl.dataset.count = String(n);
+    observerEl.classList.toggle("deep", n > 6);
   }
 
   // ---------- 圧/沈下を CSS と body へ ----------

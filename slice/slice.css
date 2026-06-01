@@ -33,7 +33,13 @@ body {
   inset: 0;
   display: flex;
   flex-direction: column;
+  transition: background-color 2.6s ease, color 2.6s ease;
 }
+
+/* data-phase 連動の暗転パレット：潜るほど地色が沈み、インクと差し色が冷えて翳る。 */
+body[data-phase="drift"]  { --bg: #03050a; --ink: #c1cbd5; }
+body[data-phase="deep"]   { --bg: #03040a; --ink: #b6c0cb; --accent: #79a9b6; --line: rgba(127,182,196,0.18); }
+body[data-phase="bottom"] { --bg: #020308; --ink: #aab4bf; --accent: #8aa6ac; --ink-dim: #5c6671; --line: rgba(127,182,196,0.14); }
 
 /* ---------- 背景 ---------- */
 .hz-bg { position: fixed; inset: 0; z-index: 0; overflow: hidden; background: #02040a; }
@@ -81,6 +87,25 @@ body {
   mix-blend-mode: overlay;
 }
 
+/* フィルムグレイン：合成ノイズ（SVG feTurbulence）を細かく振る。圧で濃くなる。 */
+.hz-grain {
+  position: absolute; inset: -50%;
+  width: 200%; height: 200%;
+  pointer-events: none; z-index: 1;
+  opacity: calc(0.035 + var(--press) * 0.07);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size: 170px 170px;
+  mix-blend-mode: overlay;
+  transition: opacity 1.4s ease;
+  animation: hz-grain-shift 0.55s steps(3) infinite;
+}
+@keyframes hz-grain-shift {
+  0%   { transform: translate(0, 0); }
+  33%  { transform: translate(-3%, 2%); }
+  66%  { transform: translate(2%, -3%); }
+  100% { transform: translate(0, 0); }
+}
+
 /* ---------- アプリ本体 ---------- */
 .hz-app {
   position: relative; z-index: 2;
@@ -126,6 +151,16 @@ body {
 }
 .hz-observer[data-count="3"], .hz-observer[data-count="4"] { color: var(--ink-dim); }
 .hz-observer[data-count="5"], .hz-observer[data-count="6"] { color: var(--accent); }
+/* 観測者が増殖した深部（∞の周回）：滲んで呼吸する＝"私"が群れる */
+.hz-observer.deep {
+  color: var(--accent);
+  text-shadow: 0 0 6px rgba(127,182,196,0.45);
+  animation: hz-obs-breath 4.2s ease-in-out infinite;
+}
+@keyframes hz-obs-breath {
+  0%, 100% { opacity: 0.55; text-shadow: 0 0 4px rgba(127,182,196,0.3); }
+  50%      { opacity: 1; text-shadow: 0 0 9px rgba(127,182,196,0.6); }
+}
 
 /* シーン本文 */
 .hz-scene {
@@ -144,8 +179,8 @@ body {
   opacity: 0;
 }
 .hz-line.shown { opacity: 1; }
-.hz-line .ch { opacity: 0; }
-.hz-line .ch.lit { opacity: 1; transition: opacity 120ms linear; }
+.hz-line .ch { opacity: 0; filter: blur(2px); }
+.hz-line .ch.lit { opacity: 1; filter: blur(0); transition: opacity 180ms ease, filter 280ms ease; }
 .hz-line.voice { color: var(--accent); font-style: normal; padding-left: 0.8em; border-left: 2px solid var(--line); }
 .hz-line.body  { color: #d9c2bc; }          /* 身体に来る脅威 */
 .hz-line.cold  { color: var(--ink-dim); }    /* 乾いた観測 */
@@ -236,8 +271,11 @@ body[data-tension="high"] .hz-scene { animation: hz-shudder 2.6s ease-in-out inf
 /* ---------- アクセシビリティ ---------- */
 @media (prefers-reduced-motion: reduce) {
   .hz-bg-mandala img { animation: none; }
-  .hz-line .ch, .hz-line .ch.lit { opacity: 1 !important; transition: none !important; }
+  .hz-line .ch, .hz-line .ch.lit { opacity: 1 !important; filter: none !important; transition: none !important; }
   body[data-tension="high"] .hz-scene { animation: none; }
   .hz-bg-descent, .hz-bg-mandala, .hz-vignette { transition: none; }
   .hz-choice { transition: opacity .2s; transform: none; }
+  /* グレインは静止（消さずに質感だけ残す）。観測者の呼吸は止める。 */
+  .hz-grain { animation: none; opacity: 0.03; }
+  .hz-observer.deep { animation: none; }
 }
