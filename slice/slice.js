@@ -234,7 +234,7 @@
 
   // ---------- 起動 ----------
   async function loadData() {
-    const res = await fetch("depths-shell.json?v=m2-03", { cache: "no-store" });
+    const res = await fetch("depths-shell.json?v=m2-04", { cache: "no-store" });
     DATA = await res.json();
   }
   function enter() {
