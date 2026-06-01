@@ -2,16 +2,16 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8" />
-  <title>Hazama — 沈下スライス (M1 preview)</title>
+  <title>Hazama — 沈下スパイン (M2 preview)</title>
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#04060b" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Hazama" />
   <meta name="robots" content="noindex" />
-  <link rel="stylesheet" href="slice.css?v=m1-01" />
+  <link rel="stylesheet" href="slice.css?v=m2-01" />
 </head>
 <body data-phase="surface">
-  <!-- 背景：降りるほど暗く沈む。圧（dread）でヴィネットが締まる。 -->
   <div class="hz-bg" aria-hidden="true">
     <img class="hz-bg-descent" src="assets/hazama-descent-key.webp" alt="" decoding="async" fetchpriority="high" />
     <div class="hz-bg-mandala"><img src="assets/hazama-goal-mandala.webp" alt="" decoding="async" /></div>
@@ -20,8 +20,9 @@
   </div>
 
   <main id="app" class="hz-app">
-    <!-- 沈下インジケータ：数値は出さない。線が下へ伸び、戻り道が一本ずつ消える。 -->
+    <!-- 沈下インジケータ：数値は出さない。線が下へ伸び、戻り道が一本ずつ消え、観測者が増える。 -->
     <div class="hz-gauge" aria-hidden="true">
+      <div class="hz-observer" id="observer-count" data-count="1">私</div>
       <div class="hz-gauge-track"><div id="sink-fill" class="hz-gauge-fill"></div></div>
       <div id="return-paths" class="hz-return-paths"></div>
     </div>
@@ -33,19 +34,18 @@
   <footer class="hz-footer">
     <button id="audio-toggle" class="hz-chip" type="button" hidden>♪ 鳴らす</button>
     <button id="restart" class="hz-chip hz-chip-quiet" type="button" hidden>最初へ</button>
-    <span id="status" class="hz-status">preview · M1</span>
+    <span id="status" class="hz-status">preview · M2 沈下スパイン</span>
   </footer>
 
-  <!-- 起動オーバーレイ：最初のタップで没入開始＋AudioContext解錠 -->
   <div id="gate" class="hz-gate">
     <div class="hz-gate-inner">
       <h1 class="hz-gate-title">Hazama</h1>
       <p class="hz-gate-sub">狭間（あわい）。<br>進むほど、戻り道は細くなる。</p>
-      <button id="gate-enter" class="hz-gate-enter" type="button">沈む</button>
-      <p class="hz-gate-note">音あり推奨・片手で読める縦長 / preview build</p>
+      <button id="gate-enter" class="hz-gate-enter" type="button" disabled>沈む</button>
+      <p class="hz-gate-note">音あり推奨・片手で読める縦長 / preview build (M2)</p>
     </div>
   </div>
 
-  <script src="slice.js?v=m1-01"></script>
+  <script src="slice.js?v=m2-01"></script>
 </body>
 </html>
