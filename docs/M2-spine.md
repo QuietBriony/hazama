@@ -301,6 +301,29 @@ note原典(1〜7)から確定レジスターで本文化され、∞の作法（
       深度A が12行＝八観全点灯で描画、`calc(var(--sink)*…)` が `transition:none` 下で deep≈0.31/shallow≈0
       と正しく解決（実機では遷移）、曼荼羅 canvas のリング帯にピクセル描画＝回帰なし、enter フロー健全、
       コンソールエラー無し。視覚の最終確認は実機モバイルに委ねる。
+  - **R5（アート＆表現ラウンド：バスキア × 沈下サイバーパンク）** `v=m2-14`（`index.html`/`slice.css`/`slice.js`）← 最新:
+    - **意味づけ（装飾でなく意味）**: 冷たい構造＝「描画された塗装」。バスキア的な生の手の痕跡＝
+      観測者の内面吐露／タガが外れた声が、塗装の剥がれた隙間から冷たい構造へ書き込まれる。
+    - **(1) グリッジ（深度連動）** `slice.js Glitch` + CSS: 短いバースト(<360ms)で `body.glitch-soft/hard`
+      を付け、RGBずれ(descent画像の赤/青緑ゴースト・screen blend)＋走査線の裂け(`hz-tear` clip-path)＋
+      データモッシュ(grain/scanline 増光)を一瞬走らせる。`--gi`＝深度*0.85+圧*0.28 で強度、頻度も深いほど
+      高い(mean gap 8.6s→0.9s)。タブ非表示で停止。**reduced-motion は薄い静止RGBフリンジのみ**(バースト無)。
+      検証: `--gi` が zero0.0→M0.40→Z0.79→below0.85 と単調、`glitch-hard` で `.hz-glitch` 可視・::before
+      opacity=0.18+0.34*gi。
+    - **(2) 巡回で変わるテキスト** `slice.js applyCycle`: below の「seed＋手続き再結合」を主要ノード/周回へ拡張。
+      `state.cycle`(reborn→zero で+1)・`state.visits` を seed に mulberry32 で決定論生成（実行時LLM無し）。
+      二層: **(A) NODE_VARIANTS**＝zero/A/Omega/reborn の特定行を原文＋言い換えから選び直し正典が微妙に変異／
+      **(B) scrawl 割り込み**＝周回が深いほど多く・断片化する“手の声”(SCRAWL_TIERS: 気づき→構造へ書込み→
+      タガが外れ)を本文間へ挿入。**初回通過(cycle0)は不変**＝作り込んだ導入を壊さない。検証: cycle3 の zero で
+      正典行が変異＋tier2 scrawl 2本("もう一段…","私 私 私—どれだ")挿入を確認。
+    - **(3) アート＆タイポ刷新（本丸）**: **タイトル再構築**＝inline SVG で王冠(戴冠)・HAZAMA の RGBずれ三層
+      (cyan/red/bone＝グリッジ＆オイルスティックの刷り重ね)・走り書きの狭間＋打ち消し線(核は描かれない＝手が
+      消し込む否定)・荒い下線/跳ね。**選択肢の手マーク**＝descend に王冠ビュレット＋生の手下線／retreat は
+      line-through で「消し込まれた戻り道」。**scrawl 行スタイル**(骨白・微傾き・マーカー滲み、ただし可読)。
+      **塗装剥がれ/めくれ遷移** `Peel`＝各遷移でぎざ縁の層が一枚めくれて降りる。**本文（物語テキスト）の可読性は
+      不変**（R4 のスクロール/可読は無改変、荒々しさは枠/タイトル/差し色/背景/遷移/scrawl で出す）。
+    - **本体コア・本番/master 無変更**。検証はヘッドレスの eval/computed-style/DOM（screenshot は当環境で不安定）
+      ＋ live curl。視覚の最終確認は実機モバイルに委ねる。コンソールエラー無し。
 - `docs/M2-spine.md`（本書）/ `docs/source/`（30記事）/ `slice/`（プレビュー実体）/ `.claude/launch.json`（slice配信）。
 
 ### スパイン全景（37ノード）

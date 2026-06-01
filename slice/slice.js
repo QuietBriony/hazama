@@ -28,7 +28,7 @@
   const RESIST_STRAIN = 3; // 観測者3（深度E〜）から「抗えるが引き込まれる」
   const DEEP_LOCK = 9;     // 観測者9（深度Q・外側の外側〜）から「戻れない」
 
-  const state = { id: null, sink: 0, dread: 0, returnPaths: RETURN_PATHS_START, maxSink: 0, observer: 1, steps: 0, belowLoop: 0, resisted: 0, refused: 0, resistBeat: null, rank: 0 };
+  const state = { id: null, sink: 0, dread: 0, returnPaths: RETURN_PATHS_START, maxSink: 0, observer: 1, steps: 0, belowLoop: 0, resisted: 0, refused: 0, resistBeat: null, rank: 0, cycle: 0, visits: {} };
   let DATA = null;
   let revealToken = 0;
   const clamp01 = (x) => Math.max(0, Math.min(1, x));
@@ -53,7 +53,7 @@
   const observerEl = $("observer-count");
   const gateEl = $("gate");
 
-  const WHO_CLASS = { n: "", voice: "voice", self: "self", body: "body", cold: "cold", danger: "danger" };
+  const WHO_CLASS = { n: "", voice: "voice", self: "self", body: "body", cold: "cold", danger: "danger", scrawl: "scrawl" };
 
   // ---------- 本文オートフォロー（読めるスクロール） ----------
   // 北極星: 本文は reveal 中も含め常に自由にスクロールできる。最新行は選択肢に被らず読める。
@@ -171,6 +171,81 @@
     return Object.assign({}, base, { lines, observer: 18 + loop, _color: loop });
   }
 
+  // ---------- 巡回で変わるテキスト（§2 × バスキア §3：手が冷たい構造へ書き込む） ----------
+  // below の「seed＋手続き再結合」を主要ノード/周回へ拡張。実行時LLMは使わない＝静的に成立。
+  // 二層で「同じでも巡るほど変わる」を出す:
+  //   (A) NODE_VARIANTS: 既定本文の特定行を、原文＋言い換えからseedで選び直す＝正典が微妙に変異。
+  //   (B) scrawl 割り込み: 周回(cycle)が深いほど、タガが外れた“手の声”が増え・断片化して書き込まれる。
+  //       これは装飾でなく意味＝観測者が「巡っている」ことに気づき、冷たい構造へ吐露を殴り書きする。
+  function hashStr(s) { let h = 2166136261; for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); } return h >>> 0; }
+  const pickR = (rng, arr) => arr[Math.floor(rng() * arr.length)];
+
+  // 原文の特定行に対する言い換え（原文も常に選択肢に含む＝周回でたまに元へ戻る）。
+  const NODE_VARIANTS = {
+    zero: {
+      0: ["世界が静かになる瞬間が、また来る。前にも、こうして始まった。",
+          "静寂が戻る。これで何度目の、最初の夜だろう。"],
+      1: ["ただ、思考のノイズが引く。理由は——もう、知っている。",
+          "ノイズが引く。予兆はある。前の周が、その予兆だった。"]
+    },
+    A: {
+      0: ["答えはない。代わりに、世界の表皮が——また、同じ縁から剥がれはじめる。視界の縁でピクセルが浮き、鉄錆色の配線が露出する。",
+          "答えはない。表皮が剥がれる。何度見ても、その下は同じ配線だ——世界は塗装だった。"]
+    },
+    Omega: {
+      1: ["Ωは“核そのもの”ではない。核の外周を、物語の外から見つめる記号だ。「これ以上モデル化しない」という、観測者側の合意——巡るたびに、その合意だけが残る。"]
+    },
+    reborn: {
+      0: ["スクリーンを閉じる。世界は、また同じように動きはじめる。",
+          "閉じる。だが、閉じるたびに、入口が一段、深くなっている。"]
+    }
+  };
+
+  // 手の声（scrawl）。周回が深いほど下のティアへ＝言葉になる→構造へ書き込む→タガが外れる。
+  const SCRAWL_TIERS = [
+    [ // 周回1相当：まだ言葉になる。気づきの吐露。
+      "（これ、まえも読んだ）", "ここ、まえと同じ継ぎ目だ。", "また、ここに立っている。",
+      "知っている。この声を、知っている。", "戻ったんじゃない。置き直されただけ。" ],
+    [ // 周回2相当：構造へ書き込む。否定が混じる。
+      "ぜんぶ塗装だ。剥がせ。", "核は——ここには無い。何度見ても。", "私を、数えるな。",
+      "下りるたび、私が増える。やめろ。", "この行を、誰が書いている？" ],
+    [ // 周回3+：タガが外れる。断片・反復・叫び。
+      "もう一段　もう一段　もう一段", "私　私　私　——どれだ", "底は無い　知ってる　知ってて下りてる",
+      "消せない。書いたものは、消えない。", "■■■——ここに、何か書いた。" ]
+  ];
+  function scrawlTier() { const c = state.cycle; return c >= 3 ? 2 : c >= 2 ? 1 : 0; }
+
+  // 周回/再訪で本文を変異させる（cycle 0 の初回は不変＝作り込んだ導入を壊さない）。
+  function applyCycle(id, base) {
+    const visits = state.visits[id] || 1;
+    if (state.cycle < 1 && visits < 2) return base;           // 初回通過は原文そのまま
+    const seed = (hashStr(id) ^ Math.imul(state.cycle + 1, 0x9e3779b9) ^ Math.imul(visits, 0x85ebca6b)) >>> 0;
+    const rng = mulberry32(seed);
+    let lines = (base.lines || []).map((l) => l);
+    // (A) 正典行の言い換え（原文も候補に含める）
+    const vbank = NODE_VARIANTS[id];
+    if (vbank) Object.keys(vbank).forEach((k) => {
+      const idx = +k; if (idx >= lines.length) return;
+      const opts = [lines[idx].t].concat(vbank[k]);
+      lines[idx] = Object.assign({}, lines[idx], { t: pickR(rng, opts) });
+    });
+    // (B) scrawl 割り込み（周回が深いほど多く・断片的に）
+    const tier = scrawlTier();
+    let count = 0;
+    const maxIntr = state.cycle >= 3 ? 2 : 1;
+    if ((state.cycle >= 1 || visits >= 2) && rng() < 0.85) count = 1;
+    if (maxIntr > 1 && rng() < 0.6) count = 2;
+    const used = new Set();
+    for (let i = 0; i < count; i++) {
+      const t = pickR(rng, SCRAWL_TIERS[tier]);
+      if (used.has(t)) continue; used.add(t);
+      const cross = rng() < 0.42;
+      const at = 1 + Math.floor(rng() * Math.max(1, lines.length - 1));
+      lines.splice(at, 0, { who: "scrawl", t, cross });
+    }
+    return Object.assign({}, base, { lines });
+  }
+
   // ---------- 戻り道インジケータ ----------
   function buildReturnPaths() {
     returnPathsEl.innerHTML = "";
@@ -210,6 +285,7 @@
     const densityN = clamp01((state.observer - 1) / 18);
     Audio.update(depthN, dr, densityN);
     Mandala.update(sinkNorm, state.observer, dr);
+    Glitch.update(depthN, dr);   // 深いほどグリッジが高頻度・高強度
   }
 
   // 注: 以前ここにあった buildProfile()（depth.html へ postMessage する hazama-profile v1 wire
@@ -222,11 +298,17 @@
   function renderNode(id) {
     let node = DATA.nodes[id];
     if (!node) return;
+    const firstEver = state.steps === 0;                       // 起動直後の最初の1ノードはめくらない
+    // 周回(reborn→zero)で cycle を深める＝同じ入口でも巡るほどテキストが変わる。
+    if (id === (DATA.start || "zero") && state.steps > 0) state.cycle += 1;
+    state.visits[id] = (state.visits[id] || 0) + 1;
     // 深度∞: below は周回ごとに手続き生成（底なしの質感差）。audio も周回で色付け。
     if (id === "below") {
       state.belowLoop += 1;
       node = genBelowNode(state.belowLoop);
       Audio.setColor(state.belowLoop);
+    } else {
+      node = applyCycle(id, node);                             // 主要ノードも巡回/再訪で変異
     }
     state.id = id;
     state.steps++;
@@ -236,6 +318,7 @@
     sceneEl.innerHTML = "";
     choicesEl.innerHTML = "";
     Follow.reset();              // 新ノード：追従ON・最上部から（行は下から積み上がる）
+    if (!firstEver) Peel.play(); // 塗装剥がれ：各遷移で層が一枚めくれて降りる
     const myToken = ++revealToken;
     const revealMs = REDUCED ? 0 : (34 + state.dread * 64);
     let delay = 0;
@@ -246,7 +329,7 @@
 
     const mkLine = (line) => {
       const p = document.createElement("p");
-      p.className = "hz-line " + (WHO_CLASS[line.who] || "");
+      p.className = "hz-line " + (WHO_CLASS[line.who] || "") + (line.cross ? " cross" : "");
       return p;
     };
 
@@ -626,6 +709,51 @@
     };
   })();
 
+  // ---------- グリッジ（深度連動・描画の乱れ＝塗装が剥がれる） ----------
+  // 短いバーストで body に .glitch-soft/.glitch-hard を付け、CSS が RGBずれ/走査線の裂け/
+  // データモッシュを一瞬走らせる。深いほど高頻度・高強度（--gi）。バーストは <360ms・低頻度・
+  // タブ非表示で停止＝モバイル軽量。reduced-motion は start を no-op（CSSが薄い静止フリンジ）。
+  const Glitch = (() => {
+    const root = document.documentElement.style;
+    let depth = 0, dread = 0, timer = 0, started = false, paused = false;
+    const clearBurst = () => document.body.classList.remove("glitch-soft", "glitch-hard");
+    function setGi() { root.setProperty("--gi", Math.min(1, depth * 0.85 + dread * 0.28).toFixed(3)); }
+    function burst() {
+      const hard = Math.random() < (0.12 + depth * 0.55 + dread * 0.15);
+      document.body.classList.add(hard ? "glitch-hard" : "glitch-soft");
+      const dur = hard ? 130 + Math.random() * 210 : 80 + Math.random() * 110;
+      window.setTimeout(clearBurst, dur);
+    }
+    function schedule() {
+      if (paused) return;
+      const mean = Math.max(900, 8600 - depth * 5800 - dread * 1600); // 浅＝稀 / 深＝頻繁
+      timer = window.setTimeout(() => { burst(); schedule(); }, mean * (0.45 + Math.random()));
+    }
+    function start() {
+      if (started || REDUCED) return; started = true;
+      document.addEventListener("visibilitychange", () => {
+        paused = document.hidden;
+        if (paused) { clearTimeout(timer); clearBurst(); } else schedule();
+      });
+      schedule();
+    }
+    return { start, update: (d, dr) => { depth = clamp01(d); dread = clamp01(dr); setGi(); } };
+  })();
+
+  // ---------- 塗装剥がれ／めくれ遷移（各遷移で層が一枚めくれて降りる） ----------
+  const Peel = (() => {
+    let t = 0;
+    function play() {
+      if (REDUCED) return;
+      document.body.classList.remove("peeling");
+      void document.body.offsetWidth;        // リフロー強制＝アニメ再起動
+      document.body.classList.add("peeling");
+      clearTimeout(t);
+      t = window.setTimeout(() => document.body.classList.remove("peeling"), 700);
+    }
+    return { play };
+  })();
+
   // ---------- 音楽コントローラ（同一document・実手勢で解禁する内製エンジン） ----------
   // 旧方式（depth.html を不可視 iframe に埋め、START を親から click して解禁）は廃止した:
   //   ・AudioContext.resume()/Tone.start() は「その context を持つ document の window」が
@@ -655,7 +783,7 @@
 
   // ---------- 起動 ----------
   async function loadData() {
-    const res = await fetch("depths-shell.json?v=m2-13", { cache: "no-store" });
+    const res = await fetch("depths-shell.json?v=m2-14", { cache: "no-store" });
     DATA = await res.json();
   }
   let entered = false;
@@ -668,11 +796,12 @@
     //   この手勢の中で AudioContext を生成＆resume するので、モバイルでも音が鳴り始める。
     Music.startPrimary();
     Mandala.start();
+    Glitch.start();
     renderNode(DATA.start || "zero");
   }
   function restart() {
     revealToken++;
-    state.id = null; state.sink = 0; state.dread = 0; state.returnPaths = RETURN_PATHS_START; state.maxSink = 0; state.observer = 1; state.steps = 0; state.belowLoop = 0; state.resisted = 0; state.refused = 0; state.resistBeat = null; state.rank = 0;
+    state.id = null; state.sink = 0; state.dread = 0; state.returnPaths = RETURN_PATHS_START; state.maxSink = 0; state.observer = 1; state.steps = 0; state.belowLoop = 0; state.resisted = 0; state.refused = 0; state.resistBeat = null; state.rank = 0; state.cycle = 0; state.visits = {};
     $("restart").hidden = true;
     buildReturnPaths();
     renderNode(DATA.start || "zero");
