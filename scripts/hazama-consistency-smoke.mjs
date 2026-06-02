@@ -134,7 +134,11 @@ assert(hasOption(depths, "Ω", "A_reborn"), "Ω must route to A_reborn");
 assert(hasOption(depths, "A_reborn", "HUB_NIGHT"), "A_reborn must return to HUB_NIGHT");
 
 assertIncludes(main, 'function canEnterOmega(state = getRunState())', "hazama-main.js");
-assertIncludes(main, 'return state.gateRunStatus === "won";', "hazama-main.js");
+// 認識ゲート(統合): Ωは omegaUnlocked(won かつ attuned) で解放。資源だけでは開かない。
+assertIncludes(main, 'GateRunModel.omegaUnlocked', "hazama-main.js");
+assertIncludes(main, 'GateRunModel.applyRecognition', "hazama-main.js");
+assertIncludes(main, 'renderDepthBodyMarkup', "hazama-main.js");
+assertIncludes(main, 'renderDepthMetaChoices', "hazama-main.js");
 assertIncludes(main, "次周回開始 / Ωは閉じた", "hazama-main.js");
 assertIncludes(main, "次周回: HUBへ戻るとΩは閉じる", "hazama-main.js");
 assertIncludes(main, "次にやること", "hazama-main.js");

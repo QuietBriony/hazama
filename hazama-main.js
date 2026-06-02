@@ -278,6 +278,7 @@ function createRunState() {
     gateRunStatus: "running",
     gateRunTurns: 0,
     gateRunCharge: 0,
+    attunement: 0,
     collapseCount: 0,
     breathStreak: 0,
     lastBreathDepthId: "",
@@ -305,6 +306,7 @@ function normalizeRunState(data) {
     gateRunStatus: ["running", "won", "lost"].includes(src.gateRunStatus) ? src.gateRunStatus : base.gateRunStatus,
     gateRunTurns: Math.max(0, Number(src.gateRunTurns) || 0),
     gateRunCharge: clampNumber(src.gateRunCharge ?? base.gateRunCharge, 0, GATE_RUN_MAX_CHARGE),
+    attunement: clampNumber(src.attunement ?? base.attunement, 0, 99),
     collapseCount: clampNumber(src.collapseCount ?? base.collapseCount, 0, 99),
     breathStreak: Math.max(0, Number(src.breathStreak) || 0),
     lastBreathDepthId: typeof src.lastBreathDepthId === "string" ? src.lastBreathDepthId.slice(0, 80) : base.lastBreathDepthId,
@@ -350,6 +352,9 @@ function countMilestonesCrossed(previousRank, nextRank) {
 }
 
 function canEnterOmega(state = getRunState()) {
+  // 認識ゲート(資格ゲート): Ωは「扉(charge=won)が開く」かつ「構造読みで認識(attunement)が合う」時だけ。
+  // 反射・資源ゴリ押し・表層多用では開かない(INTEGRATION.md §5)。難易度は HazamaGateRun.tuning で可変。
+  if (GateRunModel.omegaUnlocked) return GateRunModel.omegaUnlocked(state);
   return state.gateRunStatus === "won";
 }
 
@@ -489,6 +494,16 @@ function gateForOption(fromId, toId, option = {}) {
   if (toId === OMEGA_DEPTH) {
     if (!canEnterOmega()) {
       const charge = Math.round(state.gateRunCharge);
+      const won = state.gateRunStatus === "won";
+      const attuned = GateRunModel.isAttuned ? GateRunModel.isAttuned(state) : true;
+      if (won && !attuned) {
+        return {
+          allowed: false,
+          moveType: "sync",
+          label: "まだ入れない / 認識が要る",
+          title: "扉は開いた。だが構造を読んで認識が合っていない。降下で構造（八観）を読み、認識を育ててから来い。"
+        };
+      }
       return {
         allowed: false,
         moveType: "sync",
@@ -3316,7 +3331,94 @@ function renderControls(optionsEl) {
   optionsEl.appendChild(controls);
 }
 
+// 降下本文。depthMeta.voice があれば who 別クラスの多声で描画（深層 deep は attuned のみ可視）。
+// 無ければ従来 story[] にフォールバック（後方互換）。INTEGRATION.md §6。
+function renderDepthBodyMarkup(depth, paragraphs) {
+  const meta = depth && depth.depthMeta;
+  if (meta && Array.isArray(meta.voice) && meta.voice.length) {
+    const lines = meta.voice.map((l) => {
+      const who = typeof l?.who === "string" ? l.who : "n";
+      return `<p class="hz-voice hz-voice-${escapeHtml(who)}">${escapeHtml(String(l?.text ?? ""))}</p>`;
+    });
+    const attuned = GateRunModel.isAttuned ? GateRunModel.isAttuned(getRunState()) : false;
+    if (attuned && Array.isArray(meta.deep) && meta.deep.length) {
+      lines.push(
+        `<div class="hz-deep" aria-label="深層：認識が合う者だけに視える">`
+        + meta.deep.map((t) => `<p class="hz-voice hz-voice-deep">${escapeHtml(String(t))}</p>`).join("")
+        + `</div>`
+      );
+    }
+    return lines.join("");
+  }
+  return (Array.isArray(paragraphs) ? paragraphs : []).map((p) => `<p>${escapeHtml(p)}</p>`).join("");
+}
+
+// depthMeta.choices の next を実ノードへ解決。仮想/遅延ターゲットは暫定フォールバック
+// （below=手続き的∞は増分Cで procedural 移植予定。__edge=終端→HUB）。
+function resolveChoiceTarget(next) {
+  if (!next) return null;
+  if (depths[next]) return next;
+  const fallback = {
+    below: depths.A_reborn ? "A_reborn" : HUB_DEPTH,
+    __edge: HUB_DEPTH,
+    __rejoin: HUB_DEPTH,
+    __divert: HUB_DEPTH
+  };
+  const mapped = fallback[next];
+  return mapped && depths[mapped] ? mapped : null;
+}
+
+// 認識ゲートの主導線。kind 別（descend/surface/retreat）に描画し、選択で認識(attunement)を更新。
+function renderDepthMetaChoices(depth, choices, optionsEl) {
+  const heading = document.createElement("div");
+  heading.className = "hz-options-heading";
+  heading.textContent = "道を選ぶ";
+  optionsEl.appendChild(heading);
+
+  for (const c of choices) {
+    const kind = typeof c?.kind === "string" ? c.kind : "descend";
+    const target = resolveChoiceTarget(c?.next);
+    const label = String(c?.text ?? "…");
+    const sub = typeof c?.sub === "string" ? c.sub : "";
+    const isOmega = target === OMEGA_DEPTH;
+
+    const btn = addButton(optionsEl, label, () => {
+      if (navigationLocked || !target) return;
+      clearPause();
+      // 構造読み(descend)で認識が育つ／表層(surface)は中立／退避(retreat)は育てない
+      if (GateRunModel.applyRecognition) {
+        const st = getRunState();
+        const res = GateRunModel.applyRecognition(st, kind);
+        st.attunement = res.state.attunement;
+        saveRunState();
+      }
+      if (isOmega && canEnterOmega()) {
+        enterOmegaDepth();
+        return;
+      }
+      const moveType = kind === "descend" ? "dive" : kind === "surface" ? "observe" : "retreat";
+      renderDepth(target, { moveKind: "choice", moveType });
+    }, "hz-btn hz-depth-option");
+
+    btn.classList.add("hz-choice-button", `hz-choice-${escapeHtml(kind)}`);
+    btn.innerHTML = `
+      <span class="hz-choice-main">${escapeHtml(label)}</span>
+      ${sub ? `<span class="hz-choice-meta">${escapeHtml(sub)}</span>` : ""}
+    `;
+    btn.disabled = navigationLocked || !target;
+    if (isOmega && !canEnterOmega()) {
+      btn.disabled = true;
+      btn.classList.add("hz-locked-option");
+    }
+  }
+}
+
 function renderOptions(depth, optionsEl) {
+  const meta = depth && depth.depthMeta;
+  if (meta && Array.isArray(meta.choices) && meta.choices.length) {
+    renderDepthMetaChoices(depth, meta.choices, optionsEl);
+    return;
+  }
   const opts = Array.isArray(depth.options) ? depth.options : [];
   if (opts.length === 0) {
     addButton(optionsEl, "最初へ戻る", () => {
@@ -3438,7 +3540,7 @@ function renderDepth(depthId, opts = {}) {
       ${theme ? `<div class="hz-depth-theme">${escapeHtml(theme)}</div>` : ""}
     </div>
     <div class="hz-block">
-      ${paragraphs.map((p) => `<p>${escapeHtml(p)}</p>`).join("")}
+      ${renderDepthBodyMarkup(depth, paragraphs)}
     </div>
   `;
 

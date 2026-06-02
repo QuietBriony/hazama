@@ -2718,3 +2718,25 @@ body {
     animation: none;
   }
 }
+
+/* ===== 統合: 認識ゲート / depthMeta 降下描画 (INTEGRATION.md §5/§6) ===== */
+.hz-voice { margin: 0 0 .62em; line-height: 1.85; }
+.hz-voice-n { color: var(--hz-ink, #e9eef7); }
+.hz-voice-voice { color: #9fd2ff; font-style: italic; }      /* AI=外側のあなた */
+.hz-voice-self { color: #cdb7ff; }                            /* 内的独白 */
+.hz-voice-cold { color: #9fb3c8; }                            /* 観測の冷たさ */
+.hz-voice-body { color: #ffd9a8; }                            /* 体観・触覚 */
+.hz-voice-danger { color: #ff9a8a; font-weight: 600; }        /* 峠・危険 */
+.hz-voice-scrawl { color: #f4ead2; transform: rotate(-.4deg); opacity: .92; }
+.hz-deep {
+  margin-top: 1em; padding: .7em .9em;
+  border-left: 2px solid rgba(159,210,255,.5);
+  background: rgba(120,150,210,.06);
+}
+.hz-voice-deep { color: #bfe0ff; font-style: italic; }        /* attuned のみ可視 */
+
+/* kind 別 choice の手触り */
+.hz-choice-descend .hz-choice-main::before { content: "≀ "; color: #9fd2ff; }   /* 砂紋＝降下 */
+.hz-choice-surface { border-style: dashed; }
+.hz-choice-surface .hz-choice-main::before { content: "⤳ "; color: #cdb7ff; }   /* 逸れ＝表層 */
+.hz-choice-retreat .hz-choice-main { text-decoration: line-through; opacity: .82; } /* 消し込み＝退避 */

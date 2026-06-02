@@ -6,6 +6,12 @@
       "runtimeExecutable": "python",
       "runtimeArgs": ["-m", "http.server", "8731", "--directory", "slice"],
       "port": 8731
+    },
+    {
+      "name": "hazama-integration",
+      "runtimeExecutable": "python",
+      "runtimeArgs": ["-m", "http.server", "8740", "--directory", "."],
+      "port": 8740
     }
   ]
 }
