@@ -18,6 +18,13 @@
 | 3 | zero+A→A_start 二段マージ＋B〜F（導入ユーザー承認） | 62e6153 |
 | 4 | det_* を八観ルートの環（連環）化＋hold 6ノード＋`scripts/route-smoke.mjs` | bfc8fd2 |
 | 5a | 認識(attunement)モデルを `hazama-gate-run.js` へ＋balance-smoke 検証 | 6350784 |
+| 5b | **コア移植キーストーン**：engine が depthMeta を読んで降下描画＋認識ゲート（プレビュー実検証済み） | 0af1274 |
+
+> **増分5b で「engine が depthMeta を描画」＝コア移植のキーストーンが landing 済み**（A/B 完了）。
+> `renderDepthBodyMarkup`（多声 voice／深層 deep は attuned のみ）/`renderDepthMetaChoices`（kind別choice＋
+> `applyRecognition` で attunement 更新）/`canEnterOmega`→`omegaUnlocked`。プレビュー(127.0.0.1:8740 = launch.json
+> `hazama-integration`)で A_start 18行多声＋kind別3択、構造読み→attunement+1→B、表層読み→八観ルート(体観)前進
+> (中立0)、コンソールエラー無しを確認。**残りは C(アート/音)→D(タイトル/HUD)→E(version bump)→F(別プレビュー)**。
 
 **現状の到達点**:
 - `hazama-depths.json` = 43ノード。29本筋（A_start…Z,Ω,A_reborn,HUB_NIGHT）の **options[] は完全不変**（後方互換）。
@@ -37,7 +44,13 @@
 > ここから初めて `hazama-main.js`/`hazama-style.css`/`index.html`/`sw.js` に触れる＝**version bump 必須**（§9）。
 > 各段で `node scripts/hazama-check.mjs` の node 系を緑に保ち、ブラウザ観測変更は preview で検証（preview_*）。
 
-### A. depthMeta 駆動の降下描画（キーストーン）
+### A. depthMeta 駆動の降下描画（キーストーン）— ✅ 完了（増分5b）
+### B. 認識ゲート UI 配線 — ✅ 完了（増分5b。深層 deep 可視・Ω=omegaUnlocked・attunement 配線済み）
+
+> 以下 A/B は参照用に残す（実装済み）。**次セッションは C から**。残る配線の細部：J ゲートの det 入口割当・
+> below(∞) の procedural 移植（現状 below→A_reborn 仮フォールバック）・終端カードへの周回/別ルート数表示。
+
+### A.（参考・実装済み）depthMeta 駆動の降下描画
 `hazama-main.js`:
 - `renderDepth(depthId, opts)` **L3389**。本文描画 **L3434-3443** が `depth.story[]` を平坦に出している。
   → `depth.depthMeta?.voice[]` があれば **who 別クラス**（n/voice/self/cold/danger/body/scrawl）で出す。
@@ -87,10 +100,13 @@ bump 時に全部同値: `hazama-main.js`(`APP_VERSION`＋`Hazama main.js vX.YZ`
 - 完成（遊べる統合版が別プレビューに乗る）でユーザーへ URL 報告。
 
 ## 次セッションの推奨着手順
-1. 本書＋INTEGRATION.md §5/§6/§8/§9 を読む。`hazama-gate-run.js` の新 API（tuning/applyRecognition/omegaUnlocked）確認。
-2. **A（depthMeta 描画）→ B（認識UI/Ω）** をまず緑で landing（version bump 同時）。preview で降下を視覚確認。
-3. **C（アート/音）** を段階移植（Garden→Glitch→Audio→Mandala→Peel→applyCycle 順が安全）。
-4. **D（タイトル/HUD）→ E（smoke 仕上げ）→ F（別プレビュー）**。
+1. 本書＋INTEGRATION.md §5/§6/§8/§9 を読む。`hazama-gate-run.js` の新 API（tuning/applyRecognition/omegaUnlocked）と
+   `hazama-main.js` の `renderDepthBodyMarkup`/`renderDepthMetaChoices`/`canEnterOmega`（実装済み）を確認。
+2. **A/B は完了済み**（増分5b）。preview `hazama-integration`(8740) で降下を再確認してから C へ。
+3. **C（アート/音）** を段階移植（Garden→Glitch→Audio→Mandala→Peel→applyCycle 順が安全）。`renderDepth` 末尾に
+   `applyAtmosphere` 相当フックを足し、共有信号(sink/dread/observer/rank/worldSeed)を CSS変数＋各モジュールへ。
+   canvas 要素は `index.html`＝`hazama-index.html` に追加（両者 identical）。
+4. **D（タイトル/HUD）→ E（version bump §9 一括）→ F（別プレビュー）**。
 5. 各段 node 系 smoke 緑＆コミット。トークン上限が近ければ本書を更新して引き継ぐ。
 
 ## 難易度チューニング（実機調整）
