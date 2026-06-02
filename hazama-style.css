@@ -50,21 +50,62 @@ body {
   z-index: 2;
 }
 
+/* 増分D: かすれた・構造的な文字タイトル（赤線廃止）＋荒い下線＋RGBずれ。
+   本文可読性(R4)は不変＝荒々しさはタイトルと差し色だけに留める。 */
 .hz-header {
+  position: relative;
   margin-bottom: 1rem;
-  border-bottom: 1px solid #263142;
-  padding-bottom: 0.75rem;
+  padding-bottom: 0.85rem;
+  border-bottom: 0;
+  /* 荒い下線＝不均一なセグメントの「かすれた構造線」 */
+  background:
+    repeating-linear-gradient(
+      90deg,
+      rgba(159, 210, 255, 0.34) 0 14px,
+      transparent 14px 22px,
+      rgba(205, 183, 255, 0.22) 22px 30px,
+      transparent 30px 46px) bottom left / 100% 1px no-repeat;
 }
 
 .hz-title {
-  margin: 0 0 0.25rem;
-  font-size: 1.5rem;
+  position: relative;
+  margin: 0 0 0.3rem;
+  font-size: 1.7rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  color: #e9eef7;
+  font-family: ui-monospace, "SFMono-Regular", Menlo, Consolas, "Courier New", monospace;
+  transform: skewX(-3deg);
+  text-shadow:
+    0 0 1px rgba(159, 210, 255, 0.5),
+    1px 0 0 rgba(216, 68, 46, 0.18),
+    -1px 0 0 rgba(56, 189, 248, 0.18);
+}
+
+/* かすれ：印刷のムラ＝細い横マスクで一部が欠ける重ね描き（核は描かない＝白を足さない） */
+.hz-title::after {
+  content: attr(data-text);
+  position: absolute;
+  left: 0;
+  top: 0;
+  color: rgba(244, 234, 210, 0.55);
+  -webkit-mask-image: repeating-linear-gradient(0deg, #000 0 2px, transparent 2px 3px);
+  mask-image: repeating-linear-gradient(0deg, #000 0 2px, transparent 2px 3px);
+  mix-blend-mode: screen;
+  pointer-events: none;
 }
 
 .hz-subtitle {
   margin: 0;
-  font-size: 0.9rem;
+  font-size: 0.86rem;
+  letter-spacing: 0.04em;
   color: #9ca3af;
+}
+
+/* glitch バースト中はタイトルも一瞬だけ RGB が割れる（共有信号・本文には及ばない） */
+body.glitch-hard .hz-title { transform: skewX(-3deg) translateX(0.5px); }
+@media (prefers-reduced-motion: reduce) {
+  body.glitch-hard .hz-title { transform: skewX(-3deg); }
 }
 
 .hz-visual {

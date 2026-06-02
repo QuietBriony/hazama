@@ -3387,6 +3387,8 @@ function renderControls(optionsEl) {
 // rAFなし(Garden)/state変化時のみ/タブ非表示で停止/reduced-motion尊重＝モバイル軽量。
 // 本文可読性(R4)は不変＝荒々しさは背景/差し色/遷移のみ。
 // ====================================================================
+// 動く表紙の per-load seed（毎回ちがう構図＝生きた庭。ロードごとに固定）。
+const ATMOS_LOAD_SEED = (((Date.now() & 0xffffffff) ^ Math.floor((typeof performance !== "undefined" ? performance.now() : 0) * 1000)) >>> 0) || 1;
 const HazamaAtmos = (() => {
   const REDUCED = !!(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches);
   const clamp01 = (x) => Math.max(0, Math.min(1, x));
@@ -3653,18 +3655,21 @@ const HazamaAtmos = (() => {
     document.documentElement.classList.add("hz-atmos");
     Garden.start(); Mandala.start(); Glitch.start();
   }
-  // sig: { depthN, dread, observer, seed }
+  // sig: { depthN, dread, observer, seed, gardenDepthN?, glitchDepthN? }
+  // gardenDepthN/glitchDepthN を分けると、浅い表紙(anchor)でも背景が薄く生きる「動く表紙」になる。
   function apply(sig) {
     start();
     const root = document.documentElement.style;
     const depthN = clamp01(sig.depthN || 0);
     const dread = clamp01(sig.dread || 0);
     const observer = Math.max(1, sig.observer || 1);
+    const gardenDepthN = clamp01(sig.gardenDepthN != null ? sig.gardenDepthN : depthN);
+    const glitchDepthN = clamp01(sig.glitchDepthN != null ? sig.glitchDepthN : depthN);
     root.setProperty("--sink", depthN.toFixed(3));
     root.setProperty("--press", dread.toFixed(3));
     Mandala.update(depthN, observer, dread);
-    Glitch.update(depthN, dread);
-    Garden.update(depthN, dread, sig.seed >>> 0);
+    Glitch.update(glitchDepthN, dread);
+    Garden.update(gardenDepthN, dread, sig.seed >>> 0);
   }
   return { apply, peel: () => Peel.play(), setAudioGlitch: (fn) => { onGlitch = fn; }, reduced: REDUCED };
 })();
@@ -3738,7 +3743,12 @@ function applyAtmosphere(depthId) {
   // 観測者: depthMeta優先、無ければ深度から（深いほど"私"が増える）。
   const observer = Math.max(1, Number(meta.observer) || (1 + Math.floor(rank / 3)));
   const seed = atmosWorldSeed(state, rank);
-  HazamaAtmos.apply({ depthN, dread, observer, seed });
+  // 動く表紙: anchor(表紙=A_start/HUB)でも背景の反転ガーデン/グリッジを薄く生かす(per-load seed)。
+  const isAnchor = rank === 0;
+  const gardenDepthN = isAnchor ? Math.max(depthN, 0.26) : depthN;
+  const glitchDepthN = isAnchor ? Math.max(depthN, 0.30) : depthN;
+  const titleSeed = isAnchor ? ((seed ^ ATMOS_LOAD_SEED) >>> 0) : seed;
+  HazamaAtmos.apply({ depthN, dread, observer, seed: titleSeed, gardenDepthN, glitchDepthN });
 }
 
 function renderDepthBodyMarkup(depth, paragraphs) {
