@@ -130,7 +130,7 @@ async function pwaState(page) {
       appleIcon,
       themeColor,
       manifest,
-      swHasVersion: swText.includes("hazama-pwa-v2.39"),
+      swHasVersion: swText.includes("hazama-pwa-v2.40"),
       serviceWorkerState,
       cacheNames,
       cachedShell
@@ -200,7 +200,7 @@ try {
   assert(Array.isArray(pwa.manifest?.icons) && pwa.manifest.icons.some((icon) => icon.sizes === "512x512" && icon.purpose === "maskable"), "PWA manifest maskable icon is missing");
   assert(pwa.swHasVersion, "PWA service worker version is missing");
   assert(pwa.serviceWorkerState === "activated", `PWA service worker did not activate: ${pwa.serviceWorkerState}`);
-  assert(pwa.cacheNames.some((name) => name.startsWith("hazama-pwa-v2.39")), "PWA cache was not created");
+  assert(pwa.cacheNames.some((name) => name.startsWith("hazama-pwa-v2.40")), "PWA cache was not created");
   assert(pwa.cachedShell, "PWA shell was not cached");
 
   await page.locator("#bgm-stop-provider").click({ timeout: 5000 });

@@ -164,6 +164,23 @@ assertIncludes(playtestSlices, "Ω on the next loop", "docs/hazama-playtest-slic
 assertIncludes(readme, `hazama-main.js?v=${appVersion}`, "README.md");
 assertIncludes(readme, `## ${appVersionLabel}`, "README.md");
 
+// v2.40 統合サーフェス(アート/音/タイトル/沈下HUD)が実体として在ることを検証(INTEGRATION.md §8-3)。
+// 1信号で絵・音・テキストを駆動する applyAtmosphere フックと、各 canvas/HUD 要素・CSS規則。
+assertIncludes(main, "const HazamaAtmos", "hazama-main.js atmosphere module");
+assertIncludes(main, "function applyAtmosphere", "hazama-main.js atmosphere hook");
+assertIncludes(main, "inlineBgmGlitchHit", "hazama-main.js glitch-synced BGM tear");
+assertIncludes(main, "function updateSinkHud", "hazama-main.js sink HUD");
+assertIncludes(main, "applyVoiceCycle", "hazama-main.js cycle text mutation");
+for (const html of [indexHtml, altHtml]) {
+  assertIncludes(html, 'id="hz-garden"', "html inverted-garden canvas");
+  assertIncludes(html, 'id="hz-mandala"', "html mandala canvas");
+  assertIncludes(html, 'id="hz-sink-hud"', "html sink HUD surface");
+  assertIncludes(html, 'data-text="Hazama"', "html distressed structural title");
+}
+assertIncludes(style, ".hz-garden", "hazama-style.css garden layer");
+assertIncludes(style, ".hz-sink-fill", "hazama-style.css sink gauge");
+assertIncludes(style, "hzPeel", "hazama-style.css peel transition");
+
 if (failures.length > 0) {
   console.error("hazama-consistency smoke FAIL");
   for (const failure of failures) console.error(`- ${failure}`);

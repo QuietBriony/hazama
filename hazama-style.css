@@ -2889,3 +2889,46 @@ body.peeling::after {
   body.glitch-hard .hz-visual-depth { filter: none; transform: none; }
   body.peeling::after { animation: none; opacity: 0; }
 }
+
+/* 増分D: 沈下HUD — 沈下ゲージ＋観測者カウンタ＋認識(Ωの資格)。--sink/--press 連動。
+   ローグライク計器の「沈下/認識」語彙への作り替え。常時表示・軽量(テキスト/グラデのみ)。 */
+.hz-sink-hud {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin-top: 0.55rem;
+  font-size: 0.74rem;
+  letter-spacing: 0.06em;
+  color: #9fb3c8;
+}
+.hz-sink-gauge {
+  position: relative;
+  flex: 1 1 auto;
+  height: 4px;
+  min-width: 5rem;
+  border-radius: 2px;
+  background: linear-gradient(90deg, rgba(159, 210, 255, 0.14), rgba(205, 183, 255, 0.10));
+  overflow: hidden;
+}
+.hz-sink-fill {
+  display: block;
+  height: 100%;
+  width: 0;                      /* JS が updateSinkHud で inline width px（沈下）を設定 */
+  background: linear-gradient(90deg, #9fd2ff, #cdb7ff 60%, #ff9a8a);
+  box-shadow: 0 0 6px rgba(159, 210, 255, calc(0.2 + var(--press, 0) * 0.5));
+}
+.hz-sink-read {
+  display: flex;
+  gap: 0.55rem;
+  flex: 0 0 auto;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+.hz-observer { color: #cdb7ff; }
+.hz-observer.deep { color: #ff9a8a; font-weight: 600; }      /* 観測者が増える＝深部 */
+.hz-attune { color: #9fd2ff; }
+.hz-attune.attuned { color: #bfe0ff; font-weight: 600; text-shadow: 0 0 6px rgba(159, 210, 255, 0.5); }
+@media (prefers-reduced-motion: reduce) {
+  .hz-sink-fill { transition: none; }
+  .hz-title::after { mask-image: none; -webkit-mask-image: none; opacity: .5; }
+}

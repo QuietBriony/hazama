@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <title>Hazama</title>
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <link rel="stylesheet" href="hazama-style.css?v=2.39" />
+  <link rel="stylesheet" href="hazama-style.css?v=2.40" />
   <link rel="manifest" href="manifest.webmanifest" />
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png" />
   <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png" />
@@ -20,6 +20,14 @@
     <header class="hz-header">
       <h1 class="hz-title" data-text="Hazama">Hazama</h1>
       <p class="hz-subtitle">沈むほど戻りにくい。認識が合う者だけがΩへ潜る。</p>
+      <div id="hz-sink-hud" class="hz-sink-hud" aria-label="沈下と観測者の計器">
+        <div class="hz-sink-gauge" role="img" aria-label="沈下ゲージ"><span id="hz-sink-fill" class="hz-sink-fill"></span></div>
+        <div class="hz-sink-read">
+          <span id="hz-sink-depth" class="hz-sink-depth">深度 —</span>
+          <span id="hz-observer" class="hz-observer" title="観測者（沈むほど私が増える）">私</span>
+          <span id="hz-attune" class="hz-attune" title="認識：構造を読むほど合う／Ωの資格">認識 0</span>
+        </div>
+      </div>
     </header>
 
     <figure class="hz-visual" aria-label="深度に応じた探索者または曼荼羅ゲート">
@@ -49,9 +57,9 @@
     </div>
   </footer>
 
-  <script src="hazama-seed.js?v=2.39"></script>
-  <script src="hazama-state.js?v=2.39"></script>
-  <script src="hazama-gate-run.js?v=2.39"></script>
-  <script src="hazama-main.js?v=2.39"></script>
+  <script src="hazama-seed.js?v=2.40"></script>
+  <script src="hazama-state.js?v=2.40"></script>
+  <script src="hazama-gate-run.js?v=2.40"></script>
+  <script src="hazama-main.js?v=2.40"></script>
 </body>
 </html>

@@ -1,4 +1,4 @@
-// Hazama main.js v2.39
+// Hazama main.js v2.40
 // Minimal, robust loader + renderer for GitHub Pages / Codespaces.
 // v2.3 adds a lightweight deterministic game layer around depth pressure.
 // v2.5 animates the descent key visual and mandala goal gate.
@@ -37,7 +37,7 @@
 // v2.38 keeps the post-story flow focused with an always-visible next-action guide.
 // v2.39 makes Gate Run feel more playful with a live pulse cue and recommended action highlight.
 
-const APP_VERSION = "v2.39";
+const APP_VERSION = "v2.40";
 const GateRunModel = globalThis.HazamaGateRun || {};
 const GATE_CONSTANTS = GateRunModel.constants || {};
 
@@ -3749,6 +3749,32 @@ function applyAtmosphere(depthId) {
   const glitchDepthN = isAnchor ? Math.max(depthN, 0.30) : depthN;
   const titleSeed = isAnchor ? ((seed ^ ATMOS_LOAD_SEED) >>> 0) : seed;
   HazamaAtmos.apply({ depthN, dread, observer, seed: titleSeed, gardenDepthN, glitchDepthN });
+  updateSinkHud(depthId, rank, observer, depthN, state);
+}
+
+// 沈下HUD（沈下ゲージ＋観測者カウンタ＋認識）。ゲージ充填は inline transform（var-in-transform 回避）。
+function updateSinkHud(depthId, rank, observer, depthN, state = getRunState()) {
+  const fillEl = $("hz-sink-fill");
+  if (fillEl && fillEl.parentElement) {
+    const track = fillEl.parentElement.clientWidth || 0;
+    fillEl.style.width = `${Math.round(track * clampNumber(depthN, 0, 1))}px`;
+  }
+  const depthEl = $("hz-sink-depth");
+  if (depthEl) depthEl.textContent = `深度 ${depthRankLabel(rank)}`;
+  const obsEl = $("hz-observer");
+  if (obsEl) {
+    const n = Math.max(1, observer);
+    obsEl.textContent = "私".repeat(Math.min(n, 6)) + (n > 6 ? "…" : "");
+    obsEl.classList.toggle("deep", n > 6);
+  }
+  const atEl = $("hz-attune");
+  if (atEl) {
+    const at = Math.round(clampNumber(state.attunement || 0, 0, 99));
+    const attuned = GateRunModel.isAttuned ? GateRunModel.isAttuned(state) : false;
+    const need = (GateRunModel.tuning && GateRunModel.tuning.attuneOmegaThreshold) || 0;
+    atEl.textContent = attuned ? `認識 合致(${at})` : (need ? `認識 ${at}/${need}` : `認識 ${at}`);
+    atEl.classList.toggle("attuned", attuned);
+  }
 }
 
 function renderDepthBodyMarkup(depth, paragraphs) {
