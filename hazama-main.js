@@ -3752,7 +3752,21 @@ function applyAtmosphere(depthId) {
   const glitchDepthN = isAnchor ? Math.max(depthN, 0.30) : depthN;
   const titleSeed = isAnchor ? ((seed ^ ATMOS_LOAD_SEED) >>> 0) : seed;
   HazamaAtmos.apply({ depthN, dread, observer, seed: titleSeed, gardenDepthN, glitchDepthN });
+  updateBackdrop(depthN);
   updateSinkHud(depthId, rank, observer, depthN, state);
+}
+
+// G3: descent写真の退場。浅(--sink小)では写真が残り、降下に従って opacity↓・滲み↑で
+// 反転ガーデン(canvas)へクロスフェードし、外殻以降(depthN≳0.76)は写真 0＝完全にガーデンへ。
+function updateBackdrop(depthN) {
+  const img = document.querySelector(".hz-visual-depth");
+  if (!img) return;
+  const s = clampNumber(depthN, 0, 1);
+  const op = Math.max(0, 0.5 - s * 0.66);          // sink 0→0.5 / 0.76→0 / 以降は0
+  img.style.opacity = op.toFixed(3);
+  img.style.filter =
+    `saturate(${(0.86 - s * 0.34).toFixed(3)}) contrast(${(1.12 + s * 0.12).toFixed(3)})`
+    + ` brightness(${(0.8 - s * 0.26).toFixed(3)}) blur(${(s * 1.2).toFixed(2)}px)`;
 }
 
 // 沈下HUD（沈下ゲージ＋観測者カウンタ＋認識）。ゲージ充填は inline transform（var-in-transform 回避）。

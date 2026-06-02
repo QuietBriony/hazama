@@ -286,6 +286,11 @@ body.glitch-hard .hz-title { transform: skewX(-3deg) translateX(0.5px); }
   filter: saturate(1.12) contrast(1.06);
 }
 
+/* G3: 背景の置換 — descent写真は沈下(--sink)に従って退場する。opacity/filter は JS(applyAtmosphere)
+   が inline で設定する（Garden canvas と同じ方式＝計算値の互換問題を避ける）。ここでは退場を
+   なめらかにする transition だけ持たせ、深部(外殻以降)は写真 0＝完全に反転ガーデンへ置き換わる。 */
+.hz-visual-depth { transition: opacity 360ms ease, filter 360ms ease, transform 260ms ease; }
+
 :root[data-hz-run-status="won"] .hz-visual::after {
   background:
     radial-gradient(circle at 50% 50%, rgba(250, 204, 21, 0.36), transparent 24%),
