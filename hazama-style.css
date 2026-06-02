@@ -2740,3 +2740,111 @@ body {
 .hz-choice-surface { border-style: dashed; }
 .hz-choice-surface .hz-choice-main::before { content: "⤳ "; color: #cdb7ff; }   /* 逸れ＝表層 */
 .hz-choice-retreat .hz-choice-main { text-decoration: line-through; opacity: .82; } /* 消し込み＝退避 */
+
+/* ===== 増分C: アート/音の移植 — 反転ガーデン/手続き曼荼羅/グリッジ/原色leak/peel ===== */
+/* 共有"深度信号": --sink(沈下0..1)/--press(圧0..1)/--gi(グリッジ強度)/--leak-rgb(漏れる原色)。
+   テキストを分岐させているのと同じ state が、背景アートと音を一緒に組み直す（R7の核）。
+   本文(#app のテキスト)は一切いじらない＝R4 可読性は不変。荒々しさは背景/差し色/遷移で。 */
+
+/* 反転重森ガーデン: 砂紋/石組/市松苔を色相180°反転。descent写真の上へ screen blend で
+   焼き込み、深いほど opacity↑で世界が剥き出しに（JS が --sink から不透明度を設定）。 */
+.hz-garden {
+  position: absolute;
+  inset: 0;
+  z-index: 2;            /* depth img(1) の上 / grid(::before 4)・gate(::after 5) の下 */
+  display: block;
+  width: 100%;
+  height: 100%;
+  opacity: 0;            /* JS（Garden.draw）が深度で上げる */
+  mix-blend-mode: screen;
+  pointer-events: none;
+}
+
+/* 手続き曼荼羅: 八観幾何を canvas で生成し深度に呼応。静的 mandala 画像へ重ね、
+   atmos 有効時は静止画を譲って canvas が主になる（核は描かない＝void 拡大）。 */
+.hz-mandala {
+  position: absolute;
+  width: min(44%, 22rem);
+  height: auto;
+  aspect-ratio: 1;
+  display: block;
+  pointer-events: none;
+  mix-blend-mode: screen;
+}
+:root.hz-atmos .hz-gate-orb img { opacity: 0; }
+
+/* グリッジ: 短バーストで背景層が裂ける（走査線/データモッシュ/原色leak）。
+   オーバーレイは z-index 0（#app content=z2 の下）＝本文に被らず読める。 */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0;
+  background-image: repeating-linear-gradient(
+    0deg, rgba(226, 232, 240, 0.05) 0 1px, transparent 1px 3px);
+  mix-blend-mode: screen;
+  transition: opacity 120ms ease;
+}
+body.glitch-soft::before { opacity: calc(0.14 + var(--gi, 0) * 0.28); }
+body.glitch-hard::before {
+  opacity: calc(0.30 + var(--gi, 0) * 0.5);
+  background-image:
+    repeating-linear-gradient(0deg, rgba(226, 232, 240, 0.08) 0 1px, transparent 1px 3px),
+    repeating-linear-gradient(0deg, rgba(56, 189, 248, 0.05) 0 2px, rgba(248, 113, 113, 0.05) 2px 4px);
+  transform: translateY(0.06%);
+}
+/* バースト中は背景アート（ガーデン/降下写真）が一瞬デチューン＝データモッシュ的に割れる。 */
+body.glitch-soft .hz-garden,
+body.glitch-hard .hz-garden,
+body.glitch-soft .hz-visual-depth,
+body.glitch-hard .hz-visual-depth {
+  filter: saturate(1.15) hue-rotate(6deg) contrast(1.08);
+}
+body.glitch-hard .hz-visual-depth { transform: translateX(0.4%) scale(1.004); }
+
+/* 原色 leak（あわいから漏れる色）: バーストに同調して一瞬だけ点く。常時は出さない。 */
+body.leak-on::before {
+  background-image:
+    radial-gradient(circle at 28% 22%, rgba(var(--leak-rgb, 10, 186, 181), 0.22), transparent 42%),
+    radial-gradient(circle at 76% 74%, rgba(var(--leak-rgb, 10, 186, 181), 0.16), transparent 46%),
+    repeating-linear-gradient(0deg, rgba(226, 232, 240, 0.06) 0 1px, transparent 1px 3px);
+  opacity: calc(0.26 + var(--gi, 0) * 0.4);
+}
+
+/* 塗装めくれ遷移: 各深度遷移で層が一枚めくれて降りる（本文可読性は不変）。 */
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 6;            /* 遷移の一瞬だけ前面・pointer-events none */
+  pointer-events: none;
+  opacity: 0;
+  background: linear-gradient(
+    175deg,
+    rgba(7, 11, 19, 0.0) 0%,
+    rgba(10, 16, 26, 0.55) 46%,
+    rgba(20, 28, 42, 0.0) 54%);
+  transform: translateY(-104%);
+}
+body.peeling::after {
+  animation: hzPeel 0.7s cubic-bezier(0.5, 0, 0.2, 1) both;
+}
+@keyframes hzPeel {
+  0%   { opacity: 0;   transform: translateY(-104%) skewY(-2deg); }
+  18%  { opacity: 0.9; }
+  100% { opacity: 0;   transform: translateY(104%)  skewY(2deg); }
+}
+
+/* reduced-motion: 動かない。グリッジは薄い静止フリンジのみ・peel/leak の派手な動きは消す。 */
+@media (prefers-reduced-motion: reduce) {
+  body::before { opacity: 0.06; }
+  body.glitch-soft::before,
+  body.glitch-hard::before { opacity: 0.08; transform: none; }
+  body.glitch-soft .hz-garden,
+  body.glitch-hard .hz-garden,
+  body.glitch-soft .hz-visual-depth,
+  body.glitch-hard .hz-visual-depth { filter: none; transform: none; }
+  body.peeling::after { animation: none; opacity: 0; }
+}

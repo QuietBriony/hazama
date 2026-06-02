@@ -3333,6 +3333,322 @@ function renderControls(optionsEl) {
 
 // 降下本文。depthMeta.voice があれば who 別クラスの多声で描画（深層 deep は attuned のみ可視）。
 // 無ければ従来 story[] にフォールバック（後方互換）。INTEGRATION.md §6。
+// ====================================================================
+// 増分C: アート/音の移植（slice.js → engine）。1本の深度/state信号で
+// 絵(Garden/Mandala/Glitch/Peel)・音(Audio)・テキストを一緒に駆動する。
+// 信号は applyAtmosphere(depthId) が engine state から組み、HazamaAtmos.apply へ。
+// rAFなし(Garden)/state変化時のみ/タブ非表示で停止/reduced-motion尊重＝モバイル軽量。
+// 本文可読性(R4)は不変＝荒々しさは背景/差し色/遷移のみ。
+// ====================================================================
+const HazamaAtmos = (() => {
+  const REDUCED = !!(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches);
+  const clamp01 = (x) => Math.max(0, Math.min(1, x));
+  const $id = (id) => document.getElementById(id);
+
+  // 決定論PRNG（mulberry32）。worldSeed → 同じstateは同じ構図、stateが動くと別の構図。
+  function mulberry32(a) {
+    return function () {
+      a |= 0; a = (a + 0x6D2B79F5) | 0;
+      let t = Math.imul(a ^ (a >>> 15), 1 | a);
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+
+  // 音フック（Audioモジュールが later sub-step で差し込む。未配線なら no-op）。
+  let onGlitch = null;
+
+  // ---------- 手続き的曼荼羅（Ω/到達点の reactive ビジュアル：八観幾何・核は描かない） ----------
+  const Mandala = (() => {
+    let cv = null, g = null;
+    let raf = 0, last = 0, lastT = 0, size = 0, dpr = 1, started = false;
+    let cur = { sink: 0, observer: 1, dread: 0 };
+    function resize() {
+      if (!cv) return;
+      const r = cv.getBoundingClientRect();
+      dpr = Math.min(window.devicePixelRatio || 1, 2);
+      size = Math.max(120, Math.floor(Math.min(r.width || 300, r.height || 300)));
+      cv.width = Math.floor(size * dpr); cv.height = Math.floor(size * dpr);
+      draw(lastT);
+    }
+    function draw(time) {
+      if (!cv || !cv.width) return;
+      const s = cur.sink, obs = cur.observer, d = cur.dread;
+      const W = cv.width, H = cv.height, cx = W / 2, cy = H / 2, R = W * 0.46;
+      g.clearRect(0, 0, W, H);
+      g.globalCompositeOperation = "lighter";
+      const rot = REDUCED ? 0.3 : time * 0.00002;
+      const spokes = 8 * (1 + Math.floor(obs / 7));
+      const rings = Math.min(16, 3 + Math.floor(obs / 1.5));
+      const voidR = R * (0.10 + s * 0.32);
+      const baseA = 0.045 + s * 0.05;
+      for (let i = 0; i < rings; i++) {
+        const f = (rings > 1) ? i / (rings - 1) : 0;
+        const rr = voidR + (R - voidR) * f;
+        if (rr <= voidR) continue;
+        const dir = (i % 2) ? -1 : 1;
+        const a = rot * (1 + i * 0.18) * dir + i * 0.2;
+        const warn = (d > 0.6 && i >= rings - 1);
+        const alpha = Math.min(0.5, baseA * (0.5 + f) * (0.7 + s * 0.7));
+        g.beginPath();
+        for (let k = 0; k <= spokes; k++) {
+          const ang = a + (k / spokes) * Math.PI * 2;
+          const wob = 1 + Math.sin(ang * 3 + i) * 0.014 * (1 + d);
+          const x = cx + Math.cos(ang) * rr * wob, y = cy + Math.sin(ang) * rr * wob;
+          k ? g.lineTo(x, y) : g.moveTo(x, y);
+        }
+        g.closePath();
+        g.lineWidth = Math.max(1, dpr * (warn ? 1.3 : 0.7));
+        g.strokeStyle = warn
+          ? "rgba(196,107,90," + (alpha * 1.5).toFixed(3) + ")"
+          : "rgba(" + Math.round(127 - s * 34) + "," + Math.round(182 - s * 44) + "," + Math.round(196 - s * 30) + "," + alpha.toFixed(3) + ")";
+        g.stroke();
+      }
+      g.lineWidth = Math.max(1, dpr * 0.55);
+      g.strokeStyle = "rgba(127,182,196," + (0.03 + s * 0.05).toFixed(3) + ")";
+      for (let k = 0; k < spokes; k++) {
+        const ang = rot * 0.6 + (k / spokes) * Math.PI * 2;
+        const inner = voidR * 1.05, outer = R * (0.6 + s * 0.36);
+        g.beginPath();
+        g.moveTo(cx + Math.cos(ang) * inner, cy + Math.sin(ang) * inner);
+        g.lineTo(cx + Math.cos(ang) * outer, cy + Math.sin(ang) * outer);
+        g.stroke();
+      }
+      g.globalCompositeOperation = "source-over";
+      const vg = g.createRadialGradient(cx, cy, 0, cx, cy, voidR);
+      vg.addColorStop(0, "rgba(0,0,0,1)");
+      vg.addColorStop(0.72, "rgba(1,3,8,0.96)");
+      vg.addColorStop(1, "rgba(2,4,10,0)");
+      g.fillStyle = vg; g.beginPath(); g.arc(cx, cy, voidR, 0, Math.PI * 2); g.fill();
+      if (s > 0.7) {
+        const flick = REDUCED ? 0.45 : (0.5 + 0.5 * Math.sin(time * 0.004));
+        g.globalCompositeOperation = "lighter";
+        g.lineWidth = Math.max(1, dpr * 0.8);
+        g.strokeStyle = "rgba(222,233,238," + (0.06 * ((s - 0.7) / 0.3) * flick).toFixed(3) + ")";
+        g.beginPath(); g.arc(cx, cy, voidR * 0.99, 0, Math.PI * 2); g.stroke();
+      }
+    }
+    function loop(time) {
+      if (time - last >= 33) { last = time; lastT = time; draw(time); }
+      raf = requestAnimationFrame(loop);
+    }
+    function start() {
+      cv = $id("hz-mandala");
+      if (!cv || !cv.getContext) return;
+      g = cv.getContext("2d");
+      if (started) return; started = true;
+      resize();
+      window.addEventListener("resize", resize);
+      if (REDUCED) return;
+      document.addEventListener("visibilitychange", () => {
+        if (document.hidden) { cancelAnimationFrame(raf); raf = 0; }
+        else if (!raf) { last = 0; raf = requestAnimationFrame(loop); }
+      });
+      raf = requestAnimationFrame(loop);
+    }
+    return { start, update: (sink, observer, dread) => { cur = { sink, observer, dread }; draw(lastT); } };
+  })();
+
+  // ---------- 反転重森ガーデン（深度ゲートの背景ブレイクダウン・rAFなし＝state変化時のみ） ----------
+  const Garden = (() => {
+    let cv = null, g = null, W = 0, H = 0, dpr = 1, started = false;
+    let cur = { depth: 0, dread: 0, seed: 0 };
+    function resize() {
+      if (!cv) return;
+      dpr = Math.min(window.devicePixelRatio || 1, 2);
+      W = Math.max(1, Math.floor((window.innerWidth || 360) * dpr));
+      H = Math.max(1, Math.floor((window.innerHeight || 640) * dpr));
+      cv.width = W; cv.height = H;
+      draw();
+    }
+    function draw() {
+      if (!cv || !W) return;
+      g.clearRect(0, 0, W, H);
+      const s = cur.depth, d = cur.dread;
+      const vis = Math.max(0, (s - 0.12) / 0.88);
+      cv.style.opacity = (vis * 0.92).toFixed(3);
+      if (vis <= 0.003) return;
+      const rng = mulberry32((cur.seed >>> 0) || 1);
+      const R = (n) => rng() * (n == null ? 1 : n);
+      const bright = 0.5 + s * 0.5;
+      const mosh = s * 0.6 + d * 0.4;
+      const minWH = Math.min(W, H);
+      g.lineCap = "round";
+      const rows = 22;
+      const amp = H * 0.013 * (1 + s);
+      const step = Math.max(8, Math.floor(12 * dpr));
+      for (let i = 0; i < rows; i++) {
+        const y = H * (i + 0.5) / rows;
+        const a = (0.05 + s * 0.15) * bright;
+        g.strokeStyle = "hsla(216," + (28 + s * 30).toFixed(0) + "%," + (46 + s * 16).toFixed(0) + "%," + a.toFixed(3) + ")";
+        g.lineWidth = Math.max(1, dpr * 0.8);
+        const band = (rng() < mosh * 0.55) ? (R(2) - 1) * W * 0.14 * mosh : 0;
+        const freq = 2 + (i % 3);
+        g.beginPath();
+        for (let x = 0; x <= W; x += step) {
+          const yy = y + Math.sin((x / W) * Math.PI * 2 * freq + i) * amp;
+          const xx = x + (x > W * 0.5 ? band : 0);
+          x === 0 ? g.moveTo(xx, yy) : g.lineTo(xx, yy);
+        }
+        g.stroke();
+      }
+      const stones = 2 + Math.floor(R(2.4));
+      for (let n = 0; n < stones; n++) {
+        const cx = W * (0.14 + R(0.72)), cy = H * (0.16 + R(0.66));
+        const rings = 4 + Math.floor(R(4));
+        for (let r = 1; r <= rings; r++) {
+          const rr = r * (minWH * 0.022) * (1 + s * 0.5);
+          const a = (0.08 + s * 0.13) * bright / Math.sqrt(r);
+          g.strokeStyle = "hsla(210," + (30 + s * 24).toFixed(0) + "%," + (52 + s * 12).toFixed(0) + "%," + a.toFixed(3) + ")";
+          g.lineWidth = Math.max(1, dpr * 0.7);
+          g.beginPath();
+          for (let k = 0; k <= 40; k++) {
+            const ang = (k / 40) * Math.PI * 2;
+            const wob = 1 + Math.sin(ang * 5 + r) * 0.045 * (1 + d);
+            const x = cx + Math.cos(ang) * rr * wob, y = cy + Math.sin(ang) * rr * wob * 0.72;
+            k ? g.lineTo(x, y) : g.moveTo(x, y);
+          }
+          g.closePath(); g.stroke();
+        }
+        const verts = 5 + Math.floor(R(3)), sr = minWH * (0.028 + R(0.03));
+        g.strokeStyle = "hsla(190," + (40 + s * 20).toFixed(0) + "%," + (58 + s * 14).toFixed(0) + "%," + ((0.28 + s * 0.3) * bright).toFixed(3) + ")";
+        g.lineWidth = Math.max(1, dpr * 1.1);
+        g.beginPath();
+        for (let k = 0; k <= verts; k++) {
+          const ang = (k / verts) * Math.PI * 2 + R(0.3);
+          const rad = sr * (0.7 + R(0.5));
+          const x = cx + Math.cos(ang) * rad, y = cy + Math.sin(ang) * rad;
+          k ? g.lineTo(x, y) : g.moveTo(x, y);
+        }
+        g.closePath(); g.stroke();
+      }
+      const cols = 6, rowsC = 5, cell = minWH * 0.058 * (1 + s * 0.3);
+      const ox = W * (0.04 + R(0.40)), oy = H * (0.50 + R(0.32));
+      for (let yy = 0; yy < rowsC; yy++) for (let xx = 0; xx < cols; xx++) {
+        if ((xx + yy) % 2) continue;
+        const fade = 1 - (yy / rowsC) * 0.7;
+        let gx = ox + xx * cell, gy = oy + yy * cell;
+        const glitched = rng() < mosh * 0.4;
+        if (glitched) gx += (R(2) - 1) * cell * 0.5 * mosh;
+        const a = (0.10 + s * 0.20) * fade * bright;
+        g.fillStyle = glitched
+          ? "hsla(170,70%,60%," + (a * 0.9).toFixed(3) + ")"
+          : "hsla(300," + (34 + s * 26).toFixed(0) + "%," + (30 + s * 16).toFixed(0) + "%," + a.toFixed(3) + ")";
+        g.fillRect(gx, gy, cell * 0.92, cell * 0.92);
+      }
+    }
+    return {
+      start() {
+        cv = $id("hz-garden");
+        if (!cv || !cv.getContext) return;
+        g = cv.getContext("2d");
+        if (started) return; started = true;
+        resize();
+        window.addEventListener("resize", resize);
+      },
+      update: (depth, dread, seed) => { cur = { depth, dread, seed }; draw(); }
+    };
+  })();
+
+  // ---------- グリッジ（深度連動・短バースト＝塗装が剥がれる。原色leak同調・音も裂ける） ----------
+  const Glitch = (() => {
+    const root = document.documentElement.style;
+    let depth = 0, dread = 0, timer = 0, started = false, paused = false, leakTimer = 0;
+    const LEAK = ["10,186,181", "216,68,46", "224,168,60", "46,168,96"];
+    const clearBurst = () => document.body.classList.remove("glitch-soft", "glitch-hard");
+    function setGi() { root.setProperty("--gi", Math.min(1, depth * 0.85 + dread * 0.28).toFixed(3)); }
+    function burst() {
+      const hard = Math.random() < (0.12 + depth * 0.55 + dread * 0.15);
+      document.body.classList.add(hard ? "glitch-hard" : "glitch-soft");
+      const dur = hard ? 130 + Math.random() * 210 : 80 + Math.random() * 110;
+      if (Math.random() < (0.16 + depth * 0.5)) {
+        root.setProperty("--leak-rgb", LEAK[Math.floor(Math.random() * LEAK.length)]);
+        document.body.classList.add("leak-on");
+        clearTimeout(leakTimer);
+        leakTimer = window.setTimeout(() => document.body.classList.remove("leak-on"), Math.round(dur * 0.8));
+      }
+      if (typeof onGlitch === "function") onGlitch(hard ? (0.55 + depth * 0.5) : (0.28 + depth * 0.32));
+      window.setTimeout(clearBurst, dur);
+    }
+    function schedule() {
+      if (paused) return;
+      const mean = Math.max(900, 8600 - depth * 5800 - dread * 1600);
+      timer = window.setTimeout(() => { burst(); schedule(); }, mean * (0.45 + Math.random()));
+    }
+    function start() {
+      if (started || REDUCED) return; started = true;
+      document.addEventListener("visibilitychange", () => {
+        paused = document.hidden;
+        if (paused) { clearTimeout(timer); clearBurst(); } else schedule();
+      });
+      schedule();
+    }
+    return { start, update: (d, dr) => { depth = clamp01(d); dread = clamp01(dr); setGi(); } };
+  })();
+
+  // ---------- 塗装剥がれ／めくれ遷移（各遷移で層が一枚めくれて降りる） ----------
+  const Peel = (() => {
+    let t = 0;
+    function play() {
+      if (REDUCED) return;
+      document.body.classList.remove("peeling");
+      void document.body.offsetWidth;
+      document.body.classList.add("peeling");
+      clearTimeout(t);
+      t = window.setTimeout(() => document.body.classList.remove("peeling"), 700);
+    }
+    return { play };
+  })();
+
+  let started = false;
+  function start() {
+    if (started) return; started = true;
+    document.documentElement.classList.add("hz-atmos");
+    Garden.start(); Mandala.start(); Glitch.start();
+  }
+  // sig: { depthN, dread, observer, seed }
+  function apply(sig) {
+    start();
+    const root = document.documentElement.style;
+    const depthN = clamp01(sig.depthN || 0);
+    const dread = clamp01(sig.dread || 0);
+    const observer = Math.max(1, sig.observer || 1);
+    root.setProperty("--sink", depthN.toFixed(3));
+    root.setProperty("--press", dread.toFixed(3));
+    Mandala.update(depthN, observer, dread);
+    Glitch.update(depthN, dread);
+    Garden.update(depthN, dread, sig.seed >>> 0);
+  }
+  return { apply, peel: () => Peel.play(), setAudioGlitch: (fn) => { onGlitch = fn; }, reduced: REDUCED };
+})();
+
+// engine state → 共有"深度信号"。テキストを分岐させているのと同じstateが背景/音も組み直す。
+function atmosWorldSeed(state, rank) {
+  const numericHashLocal = (s) => { let h = 2166136261; const str = String(s); for (let i = 0; i < str.length; i++) { h ^= str.charCodeAt(i); h = Math.imul(h, 16777619); } return h >>> 0; };
+  return (numericHashLocal("hazama:world")
+    ^ Math.imul((state.entries || 0) + 1, 0x9e3779b9)
+    ^ Math.imul((state.bestRank || 0) + 1, 0x85ebca6b)
+    ^ Math.imul((state.attunement || 0) + 1, 0xc2b2ae35)
+    ^ Math.imul((rank || 0) + 1, 0x27d4eb2f)) >>> 0;
+}
+
+// renderDepth 末尾フック（slice applyAtmosphere 相当）。深度/圧/観測者/worldSeed を一括配布。
+function applyAtmosphere(depthId) {
+  if (typeof HazamaAtmos === "undefined") return;
+  const depth = depths[depthId] || {};
+  const meta = (depth && depth.depthMeta) || {};
+  const state = getRunState();
+  const gi = buildGateIntelligence(depthId);
+  const rank = depthRank(depthId);
+  const depthN = clampNumber(rank / 28, 0, 1);
+  // 圧(dread): 境界圧(gi.risk)＋深度。表層中立の方針に合わせ深度寄与は控えめ。
+  const dread = clampNumber(gi.risk / 135 + depthN * 0.22, 0, 1);
+  // 観測者: depthMeta優先、無ければ深度から（深いほど"私"が増える）。
+  const observer = Math.max(1, Number(meta.observer) || (1 + Math.floor(rank / 3)));
+  const seed = atmosWorldSeed(state, rank);
+  HazamaAtmos.apply({ depthN, dread, observer, seed });
+}
+
 function renderDepthBodyMarkup(depth, paragraphs) {
   const meta = depth && depth.depthMeta;
   if (meta && Array.isArray(meta.voice) && meta.voice.length) {
@@ -3515,8 +3831,10 @@ function renderDepth(depthId, opts = {}) {
   if (shouldRecord && currentDepthId && currentDepthId !== targetDepthId && depths[currentDepthId]) {
     historyStack.push(currentDepthId);
   }
+  const depthChanged = previousDepthId && previousDepthId !== targetDepthId;
   currentDepthId = targetDepthId;
   syncVisualMotion(currentDepthId);
+  if (depthChanged && typeof HazamaAtmos !== "undefined") HazamaAtmos.peel(); // 遷移で塗装が一枚めくれる
   saveProgress();
 
   const storyEl = $("story");
@@ -3571,6 +3889,7 @@ function renderDepth(depthId, opts = {}) {
   syncMusicBridge();
   installMusicAutoStart();
   syncViewportAfterRender(previousDepthId, targetDepthId, opts);
+  applyAtmosphere(currentDepthId); // 1信号で背景(Garden/Mandala/Glitch)を駆動＝テキストと一緒に壊れていく
 
   setStatus(`OK: ${targetDepthId}`);
 }
