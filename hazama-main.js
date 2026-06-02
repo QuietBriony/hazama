@@ -3513,81 +3513,191 @@ const HazamaAtmos = (() => {
       cv.width = W; cv.height = H;
       draw();
     }
+    // G4: 反転重森ガーデンに立体感を — 地平線＋消失点の遠近、奥行3層(遠/中/近)を奥から手前へ、
+    // パララックス(seedでカメラを横へ振る)、緻密なディテール(ネオン縁/微光/走査)で精緻なサイバーパンク世界へ。
+    // rAFなし＝state変化時のみ描画＝モバイル軽量を維持。色相180°反転(緑→マゼンタ/シアン)の砂紋/石組/重森。
     function draw() {
       if (!cv || !W) return;
       g.clearRect(0, 0, W, H);
       const s = cur.depth, d = cur.dread;
       const vis = Math.max(0, (s - 0.12) / 0.88);
-      cv.style.opacity = (vis * 0.92).toFixed(3);
+      cv.style.opacity = (vis * 0.94).toFixed(3);
       if (vis <= 0.003) return;
       const rng = mulberry32((cur.seed >>> 0) || 1);
       const R = (n) => rng() * (n == null ? 1 : n);
-      const bright = 0.5 + s * 0.5;
-      const mosh = s * 0.6 + d * 0.4;
-      const minWH = Math.min(W, H);
-      g.lineCap = "round";
-      const rows = 22;
-      const amp = H * 0.013 * (1 + s);
-      const step = Math.max(8, Math.floor(12 * dpr));
-      for (let i = 0; i < rows; i++) {
-        const y = H * (i + 0.5) / rows;
-        const a = (0.05 + s * 0.15) * bright;
-        g.strokeStyle = "hsla(216," + (28 + s * 30).toFixed(0) + "%," + (46 + s * 16).toFixed(0) + "%," + a.toFixed(3) + ")";
-        g.lineWidth = Math.max(1, dpr * 0.8);
-        const band = (rng() < mosh * 0.55) ? (R(2) - 1) * W * 0.14 * mosh : 0;
-        const freq = 2 + (i % 3);
+      const bright = 0.45 + s * 0.55;
+      const mosh = s * 0.55 + d * 0.45;
+      const px = dpr;
+
+      // --- カメラ / 投影（消失点・地平線・パララックス） ---
+      const horizon = H * (0.30 + R(0.08));         // 地平線（上1/3付近・seedで微動）
+      const camX = W * (0.5 + (R(1) - 0.5) * 0.22);  // パララックス: 消失点を横へ振る＝深度移動で世界がずれる
+      const floorH = H - horizon;
+      // 床上の点を投影: u∈[-1,1]=横, t∈[0,1]=奥(0)→手前(1)
+      const projY = (t) => horizon + floorH * Math.pow(t, 1.55);
+      const projX = (u, t) => camX + u * (W * 0.05 + W * 0.70 * t);
+      const projScale = (t) => 0.10 + t * 1.0;
+
+      // --- 空/虚空（地平線の上）＋ 遠景のネオン光柱（サイバーパンクの奥行） ---
+      const sky = g.createLinearGradient(0, 0, 0, horizon);
+      sky.addColorStop(0, "rgba(4,8,16,0)");
+      sky.addColorStop(1, "hsla(205," + (24 + s * 22).toFixed(0) + "%," + (10 + s * 8).toFixed(0) + "%," + (0.18 + s * 0.22).toFixed(3) + ")");
+      g.fillStyle = sky; g.fillRect(0, 0, W, horizon);
+      g.globalCompositeOperation = "lighter";
+      const columns = 5 + Math.floor(s * 5);
+      for (let i = 0; i < columns; i++) {
+        const cx = W * R(1), cw = px * (1 + R(2));
+        const ch = horizon * (0.3 + R(0.7));
+        const a = (0.015 + s * 0.05) * (0.5 + R(0.5));
+        g.fillStyle = "hsla(" + (188 + R(40)).toFixed(0) + ",80%,62%," + a.toFixed(3) + ")";
+        g.fillRect(cx, horizon - ch, cw, ch);
+      }
+      // 遠景スカイライン（反転重森のシルエット＝奥行の壁）
+      g.lineWidth = px * 0.8;
+      g.strokeStyle = "hsla(200," + (30 + s * 24).toFixed(0) + "%," + (40 + s * 14).toFixed(0) + "%," + (0.1 + s * 0.16).toFixed(3) + ")";
+      g.beginPath();
+      let firstSky = true;
+      for (let x = 0; x <= W; x += Math.max(6, W / 60)) {
+        const n = Math.sin(x * 0.013 + 1) * 0.5 + Math.sin(x * 0.041 + 3) * 0.3 + Math.sin(x * 0.11) * 0.2;
+        const y = horizon - (0.04 + (n * 0.5 + 0.5) * 0.14) * H * (0.5 + s * 0.5);
+        firstSky ? (g.moveTo(x, y), firstSky = false) : g.lineTo(x, y);
+      }
+      g.stroke();
+
+      // --- 遠近の床（raked sand）: 奥行ライン(間隔が地平線へ詰まる)＋消失点へ収束するrakeライン ---
+      const depthLines = 14;
+      for (let i = 1; i <= depthLines; i++) {
+        const t = i / depthLines;
+        const y = projY(t);
+        const a = (0.04 + s * 0.13) * bright * (0.4 + t * 0.6);
+        const band = (rng() < mosh * 0.4) ? (R(2) - 1) * W * 0.05 * mosh * t : 0;
+        g.strokeStyle = "hsla(192," + (34 + s * 26).toFixed(0) + "%," + (50 + s * 16).toFixed(0) + "%," + a.toFixed(3) + ")";
+        g.lineWidth = Math.max(1, px * (0.5 + t));
+        const amp = H * 0.004 * (1 + s) * t;
         g.beginPath();
-        for (let x = 0; x <= W; x += step) {
-          const yy = y + Math.sin((x / W) * Math.PI * 2 * freq + i) * amp;
-          const xx = x + (x > W * 0.5 ? band : 0);
-          x === 0 ? g.moveTo(xx, yy) : g.lineTo(xx, yy);
+        const stepX = Math.max(8, Math.floor(14 * dpr));
+        for (let x = 0; x <= W; x += stepX) {
+          const yy = y + Math.sin((x / W) * Math.PI * 4 + i) * amp + band;
+          x === 0 ? g.moveTo(x, yy) : g.lineTo(x, yy);
         }
         g.stroke();
       }
-      const stones = 2 + Math.floor(R(2.4));
-      for (let n = 0; n < stones; n++) {
-        const cx = W * (0.14 + R(0.72)), cy = H * (0.16 + R(0.66));
-        const rings = 4 + Math.floor(R(4));
-        for (let r = 1; r <= rings; r++) {
-          const rr = r * (minWH * 0.022) * (1 + s * 0.5);
-          const a = (0.08 + s * 0.13) * bright / Math.sqrt(r);
-          g.strokeStyle = "hsla(210," + (30 + s * 24).toFixed(0) + "%," + (52 + s * 12).toFixed(0) + "%," + a.toFixed(3) + ")";
-          g.lineWidth = Math.max(1, dpr * 0.7);
-          g.beginPath();
-          for (let k = 0; k <= 40; k++) {
-            const ang = (k / 40) * Math.PI * 2;
-            const wob = 1 + Math.sin(ang * 5 + r) * 0.045 * (1 + d);
-            const x = cx + Math.cos(ang) * rr * wob, y = cy + Math.sin(ang) * rr * wob * 0.72;
-            k ? g.lineTo(x, y) : g.moveTo(x, y);
-          }
-          g.closePath(); g.stroke();
-        }
-        const verts = 5 + Math.floor(R(3)), sr = minWH * (0.028 + R(0.03));
-        g.strokeStyle = "hsla(190," + (40 + s * 20).toFixed(0) + "%," + (58 + s * 14).toFixed(0) + "%," + ((0.28 + s * 0.3) * bright).toFixed(3) + ")";
-        g.lineWidth = Math.max(1, dpr * 1.1);
+      const rake = 13;
+      g.lineWidth = Math.max(1, px * 0.5);
+      for (let i = 0; i <= rake; i++) {
+        const u = (i / rake) * 2 - 1;
+        const a = (0.03 + s * 0.09) * bright;
+        g.strokeStyle = "hsla(196," + (30 + s * 22).toFixed(0) + "%," + (52 + s * 14).toFixed(0) + "%," + a.toFixed(3) + ")";
         g.beginPath();
-        for (let k = 0; k <= verts; k++) {
-          const ang = (k / verts) * Math.PI * 2 + R(0.3);
-          const rad = sr * (0.7 + R(0.5));
-          const x = cx + Math.cos(ang) * rad, y = cy + Math.sin(ang) * rad;
-          k ? g.lineTo(x, y) : g.moveTo(x, y);
+        g.moveTo(projX(u * 0.04, 0), projY(0.001));
+        g.lineTo(projX(u, 1), projY(1));
+        g.stroke();
+      }
+      g.globalCompositeOperation = "source-over";
+
+      // --- 反転重森: 奥行3層の構造体(monolith＋格子の枝)を奥→手前で描く（遠=小/暗/寒・近=大/明/ネオン縁） ---
+      const tiers = [
+        { t: 0.16, n: 4 + Math.floor(s * 3), neon: false },
+        { t: 0.46, n: 3 + Math.floor(s * 3), neon: s > 0.4 },
+        { t: 0.82, n: 2 + Math.floor(s * 2), neon: true }
+      ];
+      for (const tier of tiers) {
+        for (let n = 0; n < tier.n; n++) {
+          const u = (R(2) - 1) * 0.96;
+          const t = clamp01(tier.t + (R(0.18) - 0.09));
+          const sc = projScale(t);
+          const baseX = projX(u, t);
+          const baseY = projY(t);
+          const colW = Math.max(1, W * 0.026 * sc);
+          const colH = H * (0.18 + R(0.26)) * sc * (0.7 + s * 0.6);
+          const topY = baseY - colH;
+          const fade = 0.22 + t * 0.78;                 // 大気遠近: 奥ほど淡い
+          const a = (0.10 + s * 0.20) * bright * fade;
+          const warp = (1 + d * 0.5);
+          // 幹（縦のモノリス）
+          g.strokeStyle = "hsla(" + (208 - t * 18).toFixed(0) + "," + (26 + s * 26).toFixed(0) + "%," + (44 + t * 16 + s * 10).toFixed(0) + "%," + a.toFixed(3) + ")";
+          g.lineWidth = Math.max(1, colW * 0.5);
+          g.beginPath(); g.moveTo(baseX, baseY); g.lineTo(baseX + Math.sin(t * 9) * colW * 0.4 * warp, topY); g.stroke();
+          // 格子の横桟（密なディテール）
+          const rungs = 4 + Math.floor((4 + s * 5) * t);
+          g.lineWidth = Math.max(1, px * 0.6 * sc);
+          for (let r = 1; r <= rungs; r++) {
+            const ry = baseY - (colH * r) / rungs;
+            const rw = colW * (1.6 - (r / rungs) * 1.1);
+            g.strokeStyle = "hsla(196," + (40 + s * 24).toFixed(0) + "%," + (54 + s * 14).toFixed(0) + "%," + (a * 0.8).toFixed(3) + ")";
+            g.beginPath(); g.moveTo(baseX - rw, ry); g.lineTo(baseX + rw, ry); g.stroke();
+          }
+          // 反転した枝（上方へ開く重森のキャノピー）
+          const branches = 3 + Math.floor(R(3));
+          g.strokeStyle = "hsla(204," + (30 + s * 22).toFixed(0) + "%," + (50 + s * 12).toFixed(0) + "%," + (a * 0.9).toFixed(3) + ")";
+          g.lineWidth = Math.max(1, px * 0.7 * sc);
+          for (let b = 0; b < branches; b++) {
+            const ang = -Math.PI / 2 + (b - (branches - 1) / 2) * 0.42 + (R(0.2) - 0.1);
+            const len = colH * (0.3 + R(0.4));
+            g.beginPath(); g.moveTo(baseX, topY);
+            g.lineTo(baseX + Math.cos(ang) * len * warp, topY + Math.sin(ang) * len); g.stroke();
+          }
+          // ネオン縁（近景のみ・サイバーパンクの差し色＝マゼンタ/アシッド）
+          if (tier.neon) {
+            g.globalCompositeOperation = "lighter";
+            g.strokeStyle = "hsla(" + (R(1) < 0.5 ? 300 : 162).toFixed(0) + ",90%,64%," + (0.10 + s * 0.18).toFixed(3) + ")";
+            g.lineWidth = Math.max(1, px * 0.7);
+            g.beginPath(); g.moveTo(baseX - colW, baseY); g.lineTo(baseX - colW * 0.5, topY); g.stroke();
+            g.globalCompositeOperation = "source-over";
+          }
+          // 石組（足元の同心リング＝枯山水の波紋・遠近で扁平）
+          if (t > 0.3 && R(1) < 0.6) {
+            const ringN = 2 + Math.floor(R(3));
+            for (let r = 1; r <= ringN; r++) {
+              const rr = r * (W * 0.012) * sc * (1 + s * 0.4);
+              g.strokeStyle = "hsla(210," + (28 + s * 22).toFixed(0) + "%," + (52 + s * 12).toFixed(0) + "%," + ((a * 0.7) / Math.sqrt(r)).toFixed(3) + ")";
+              g.lineWidth = Math.max(1, px * 0.5 * sc);
+              g.beginPath();
+              for (let k = 0; k <= 28; k++) {
+                const ang = (k / 28) * Math.PI * 2;
+                const x = baseX + Math.cos(ang) * rr, y = baseY + Math.sin(ang) * rr * 0.34;
+                k ? g.lineTo(x, y) : g.moveTo(x, y);
+              }
+              g.closePath(); g.stroke();
+            }
+          }
         }
-        g.closePath(); g.stroke();
       }
-      const cols = 6, rowsC = 5, cell = minWH * 0.058 * (1 + s * 0.3);
-      const ox = W * (0.04 + R(0.40)), oy = H * (0.50 + R(0.32));
-      for (let yy = 0; yy < rowsC; yy++) for (let xx = 0; xx < cols; xx++) {
-        if ((xx + yy) % 2) continue;
-        const fade = 1 - (yy / rowsC) * 0.7;
-        let gx = ox + xx * cell, gy = oy + yy * cell;
-        const glitched = rng() < mosh * 0.4;
-        if (glitched) gx += (R(2) - 1) * cell * 0.5 * mosh;
-        const a = (0.10 + s * 0.20) * fade * bright;
-        g.fillStyle = glitched
-          ? "hsla(170,70%,60%," + (a * 0.9).toFixed(3) + ")"
-          : "hsla(300," + (34 + s * 26).toFixed(0) + "%," + (30 + s * 16).toFixed(0) + "%," + a.toFixed(3) + ")";
-        g.fillRect(gx, gy, cell * 0.92, cell * 0.92);
+
+      // --- 前景の市松苔（遠近のトラペゾイドでタイル＝床の手前・原色leak同調のアシッド差し色） ---
+      const tileRows = 5;
+      for (let ry = 0; ry < tileRows; ry++) {
+        const t0 = 0.55 + (ry / tileRows) * 0.45;
+        const t1 = 0.55 + ((ry + 1) / tileRows) * 0.45;
+        const cols = 8;
+        for (let cxi = 0; cxi < cols; cxi++) {
+          if ((cxi + ry) % 2) continue;
+          const u0 = (cxi / cols) * 2 - 1, u1 = ((cxi + 1) / cols) * 2 - 1;
+          const glitched = rng() < mosh * 0.35;
+          const a = (0.05 + s * 0.16) * bright * (0.4 + (ry / tileRows) * 0.6);
+          g.fillStyle = glitched
+            ? "hsla(162,75%,58%," + (a * 0.9).toFixed(3) + ")"
+            : "hsla(300," + (32 + s * 26).toFixed(0) + "%," + (30 + s * 16).toFixed(0) + "%," + a.toFixed(3) + ")";
+          const jit = glitched ? (R(2) - 1) * W * 0.02 * mosh : 0;
+          g.beginPath();
+          g.moveTo(projX(u0, t0) + jit, projY(t0));
+          g.lineTo(projX(u1, t0) + jit, projY(t0));
+          g.lineTo(projX(u1, t1) + jit, projY(t1));
+          g.lineTo(projX(u0, t1) + jit, projY(t1));
+          g.closePath(); g.fill();
+        }
       }
+
+      // --- 微光の粒子（浮遊するデータの塵＝緻密さと空気感） ---
+      g.globalCompositeOperation = "lighter";
+      const motes = 16 + Math.floor(s * 28);
+      for (let i = 0; i < motes; i++) {
+        const t = R(1), x = projX((R(2) - 1) * 0.9, t), y = horizon + R(floorH);
+        const a = (0.05 + s * 0.12) * R(1) * (0.3 + t);
+        g.fillStyle = "hsla(" + (190 + R(30)).toFixed(0) + ",90%,72%," + a.toFixed(3) + ")";
+        g.fillRect(x, y, px * (0.6 + t), px * (0.6 + t));
+      }
+      g.globalCompositeOperation = "source-over";
     }
     return {
       start() {
