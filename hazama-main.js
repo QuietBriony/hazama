@@ -3679,6 +3679,51 @@ function atmosWorldSeed(state, rank) {
     ^ Math.imul((rank || 0) + 1, 0x27d4eb2f)) >>> 0;
 }
 
+// 周回/再訪で本文が変異する（slice applyCycle 相当）。初回通過は不変＝作り込んだ導入を壊さない。
+// 巡る(再訪)ほど"手の声"(scrawl)が増え・断片化して冷たい構造へ書き込まれる＝「巡っている」気づき。
+const atmosNodeVisits = Object.create(null);
+const ATMOS_SCRAWL_TIERS = [
+  ["（これ、まえも読んだ）", "ここ、まえと同じ継ぎ目だ。", "また、ここに立っている。",
+   "知っている。この声を、知っている。", "戻ったんじゃない。置き直されただけ。"],
+  ["ぜんぶ塗装だ。剥がせ。", "核は——ここには無い。何度見ても。", "私を、数えるな。",
+   "下りるたび、私が増える。やめろ。", "この行を、誰が書いている？"],
+  ["もう一段　もう一段　もう一段", "私　私　私　——どれだ", "底は無い　知ってる　知ってて下りてる",
+   "消せない。書いたものは、消えない。", "■■■——ここに、何か書いた。"]
+];
+function atmosHashStr(s) { let h = 2166136261; const str = String(s); for (let i = 0; i < str.length; i++) { h ^= str.charCodeAt(i); h = Math.imul(h, 16777619); } return h >>> 0; }
+function atmosMulberry32(a) {
+  return function () {
+    a |= 0; a = (a + 0x6D2B79F5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+// voice[] を再訪回数で変異させて返す（新配列）。reduced-motion でも内容変化は出す（動きでなく語）。
+function applyVoiceCycle(depthId, voice) {
+  const lines = Array.isArray(voice) ? voice.slice() : [];
+  const visits = (atmosNodeVisits[depthId] = (atmosNodeVisits[depthId] || 0) + 1);
+  const state = getRunState();
+  const cycle = Math.max(0, (state.entries || 0)) + Math.max(0, visits - 1);
+  if (visits < 2 && cycle < 1) return lines;                 // 初回通過は原文そのまま
+  const seed = (atmosHashStr(depthId) ^ Math.imul(cycle + 1, 0x9e3779b9) ^ Math.imul(visits, 0x85ebca6b)) >>> 0;
+  const rng = atmosMulberry32(seed);
+  const tier = cycle >= 3 ? 2 : cycle >= 2 ? 1 : 0;
+  const maxIntr = cycle >= 3 ? 2 : 1;
+  let count = 0;
+  if (rng() < 0.85) count = 1;
+  if (maxIntr > 1 && rng() < 0.6) count = 2;
+  const used = new Set();
+  for (let i = 0; i < count; i++) {
+    const bank = ATMOS_SCRAWL_TIERS[tier];
+    const t = bank[Math.floor(rng() * bank.length)];
+    if (used.has(t)) continue; used.add(t);
+    const at = 1 + Math.floor(rng() * Math.max(1, lines.length - 1));
+    lines.splice(at, 0, { who: "scrawl", text: t });
+  }
+  return lines;
+}
+
 // renderDepth 末尾フック（slice applyAtmosphere 相当）。深度/圧/観測者/worldSeed を一括配布。
 function applyAtmosphere(depthId) {
   if (typeof HazamaAtmos === "undefined") return;
@@ -3699,7 +3744,8 @@ function applyAtmosphere(depthId) {
 function renderDepthBodyMarkup(depth, paragraphs) {
   const meta = depth && depth.depthMeta;
   if (meta && Array.isArray(meta.voice) && meta.voice.length) {
-    const lines = meta.voice.map((l) => {
+    const cycled = applyVoiceCycle(depth.id || currentDepthId, meta.voice); // 巡回/再訪で scrawl 割り込み
+    const lines = cycled.map((l) => {
       const who = typeof l?.who === "string" ? l.who : "n";
       return `<p class="hz-voice hz-voice-${escapeHtml(who)}">${escapeHtml(String(l?.text ?? ""))}</p>`;
     });
