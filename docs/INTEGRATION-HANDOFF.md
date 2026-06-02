@@ -1,5 +1,46 @@
 # INTEGRATION-HANDOFF.md — コア移植の引き継ぎ（次セッション用）
 
+統合フェーズ（slice→本体エンジン畳み込み）の作業引き継ぎ。
+**増分0〜5b＋C（アート/音）＋D（タイトル/沈下HUD）＋E（version bump v2.40＋smoke新サーフェス移行）まで完了・
+node smoke 7本緑（startup は既知の /tmp 環境 FAIL）・全コミット push 済み（claude/integration）。**
+残りは **F（統合専用の別プレビュー配信）のみ＝公開先 repo のユーザー承認待ち**。下記「F の状態」参照。
+
+## C/D/E で landing 済み（コミット）
+| 増分 | 内容 | commit |
+|---|---|---|
+| C-1 | アート移植(視覚): HazamaAtmos(Garden/Mandala/Glitch/Peel)＋applyAtmosphere 1信号駆動 | dbcd09f |
+| C-2 | 音の統合: グリッジ・バーストに BGM 破断同期(inlineBgmGlitchHit・単一context・二重鳴り無し) | 29ad579 |
+| C-3 | 周回テキスト変異: applyVoiceCycle(再訪で scrawl 割り込み・初回不変) | bcfa2a7 |
+| D-1 | タイトル作り替え: かすれ構造文字＋荒い下線＋動く表紙(anchor garden floor/per-load seed) | ad8d094 |
+| D-2＋E | 沈下HUD(沈下ゲージ＋観測者＋認識)＋version v2.40 一括bump＋smoke新サーフェス移行 | 301c9ec |
+
+> **遊べる統合版がローカル検証済み**（preview 8740, v2.40）: かすれ等幅タイトル／動く表紙／降下で
+> 反転ガーデン opacity↑・沈下ゲージ(rank19→0.70)・観測者 私×6・認識「合致(6)」(attuned)・多声本文・
+> グリッジ＋原色 leak・peel 遷移・グリッジ同期の BGM 破断。コンソールエラー無し。
+
+### F の状態（残り・ユーザー承認待ち）
+- 配信先＝**新規 public repo**（案: `QuietBriony/hazama-integration-preview`）→ GitHub Pages
+  `https://quietbriony.github.io/hazama-integration-preview/`。**本番 hazama/master・現Codex公開・
+  既存 hazama-preview(slice) は無変更**。配信物は **本体ルートの runtime 一式**（index.html=hazama-index.html・
+  hazama-main.js・hazama-style.css・hazama-gate-run.js・hazama-seed.js・hazama-state.js・hazama-depths.json・
+  sw.js・manifest.webmanifest・icons/・assets/。.nojekyll 推奨）。全パス相対＝project Pages サブパスで動く。
+- **自動モードが public repo 作成を拒否**（公開サーフェス作成はユーザー明示承認が要る）。
+  → ユーザーが (a) repo 作成を許可、または (b) 自分で `gh repo create QuietBriony/hazama-integration-preview --public`
+  すれば、`git archive` でルート runtime を temp へ展開→push→Pages 有効化(main/root)→cache-bust curl 検証→
+  スマホ URL 報告、で完了。memory [hazama-preview-deploy] の https トークン push 手順に準拠。
+
+### 残課題（F とは別・任意）
+- **ローグライク HUD の完全撤去**: D は沈下HUD(沈下/観測者/認識)を**主計器サーフェスとして追加**し、
+  既存 rogue HUD(FLOOR/CALM/SYNC/GATE/RISK・DEPTH MAP・RUN LOG)は **live のまま温存**した（配線・ゲーム手応え・
+  startup smoke 文字列を壊さない実利優先の判断）。§8 の「stale markup 温存しない＝完全作り替え」を厳密に満たすには、
+  rogue HUD markup を撤去し startup-smoke.sh の python 該当アサーション(`hz-rogue-hud`/`DEPTH MAP`/`RUN LOG`/
+  `hz-rogue-map` 等 L77-78)を新サーフェスへ置換する作業が残る。現状は rogue HUD が機能しているので smoke は緑。
+- 旧 below(∞) procedural 移植・終端カードへの周回/別ルート数表示（5b からの繰越・任意）。
+
+---
+
+## （以下は 5b 時点の引き継ぎ・参照用に保持）
+
 統合フェーズ（slice→本体エンジン畳み込み）の作業引き継ぎ。**データ層＋認識ゲートのモデルまで完了・全 smoke 緑**。
 残りは **engine のコア移植（depthMeta 描画／アート・音／認識UI）＋ version bump＋startup smoke 移行＋別プレビュー**。
 
