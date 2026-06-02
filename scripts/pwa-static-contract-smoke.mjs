@@ -5,7 +5,7 @@ import path from "node:path";
 
 const root = process.cwd();
 const failures = [];
-const APP_VERSION = "2.40";
+const APP_VERSION = "2.41";
 const CACHE_VERSION = `hazama-pwa-v${APP_VERSION}`;
 
 function repoPath(relativePath) {

@@ -1,4 +1,4 @@
-// Hazama main.js v2.40
+// Hazama main.js v2.41
 // Minimal, robust loader + renderer for GitHub Pages / Codespaces.
 // v2.3 adds a lightweight deterministic game layer around depth pressure.
 // v2.5 animates the descent key visual and mandala goal gate.
@@ -37,7 +37,7 @@
 // v2.38 keeps the post-story flow focused with an always-visible next-action guide.
 // v2.39 makes Gate Run feel more playful with a live pulse cue and recommended action highlight.
 
-const APP_VERSION = "v2.40";
+const APP_VERSION = "v2.41";
 const GateRunModel = globalThis.HazamaGateRun || {};
 const GATE_CONSTANTS = GateRunModel.constants || {};
 
