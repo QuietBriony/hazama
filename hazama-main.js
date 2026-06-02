@@ -1326,6 +1326,53 @@ function scheduleInlineBgmPulse() {
   playInlineBgmPulse();
 }
 
+// 増分C-2: グリッジ・バーストに同期して BGM が一瞬"裂ける"（共有信号＝視覚と一緒に壊れていく）。
+// 既存 inline BGM の単一 AudioContext を再利用＝二重鳴り無し・iOS bridge 経路も不変。
+//  - drone を一瞬デチューン（音程が割れる）→ 0 へ復帰
+//  - filter cutoff を一瞬跳ねさせる（デジタルな破断）→ 元へ復帰
+//  - 短いノイズ・バースト（バンドパス）でデータモッシュ的な"ザッ"。intensity は深いほど大きい。
+function inlineBgmGlitchHit(intensity) {
+  if (!inlineBgmIsPlaying()) return;
+  const ctx = InlineBgmState.audioCtx;
+  if (!ctx || ctx.state !== "running") return;
+  const t = ctx.currentTime;
+  const amt = clampNumber(Number(intensity) || 0, 0, 1.2);
+  if (amt <= 0) return;
+  try {
+    for (const voice of InlineBgmState.drone) {
+      const det = voice.osc && voice.osc.detune;
+      if (!det) continue;
+      det.cancelScheduledValues(t);
+      det.setValueAtTime((Math.random() * 2 - 1) * 55 * amt, t);
+      det.setTargetAtTime(0, t + 0.03, 0.10);
+    }
+    const filter = InlineBgmState.filter;
+    if (filter) {
+      const f0 = filter.frequency.value;
+      filter.frequency.cancelScheduledValues(t);
+      filter.frequency.setValueAtTime(Math.max(90, f0 * (1 + (Math.random() - 0.5) * 0.7 * amt)), t);
+      filter.frequency.setTargetAtTime(f0, t + 0.04, 0.12);
+    }
+    const len = Math.floor(ctx.sampleRate * 0.05);
+    const buf = ctx.createBuffer(1, len, ctx.sampleRate);
+    const ch = buf.getChannelData(0);
+    for (let i = 0; i < len; i++) ch[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 2);
+    const src = ctx.createBufferSource(); src.buffer = buf;
+    const bp = ctx.createBiquadFilter(); bp.type = "bandpass";
+    bp.frequency.value = 800 + Math.random() * 2600; bp.Q.value = 0.7;
+    const ng = ctx.createGain(); ng.gain.value = 0.0001;
+    ng.gain.setValueAtTime(0.016 * amt, t);
+    ng.gain.exponentialRampToValueAtTime(0.0001, t + 0.05);
+    src.connect(bp); bp.connect(ng); ng.connect(InlineBgmState.master || ctx.destination);
+    src.start(t); src.stop(t + 0.06);
+    window.setTimeout(() => {
+      try { src.disconnect(); } catch (_) {}
+      try { bp.disconnect(); } catch (_) {}
+      try { ng.disconnect(); } catch (_) {}
+    }, 120);
+  } catch (_) {}
+}
+
 function updateInlineMediaSession(params, playing = inlineBgmIsPlaying()) {
   if (!("mediaSession" in navigator)) return;
   try {
@@ -4052,6 +4099,8 @@ document.addEventListener("DOMContentLoaded", () => {
   if (v) v.textContent = APP_VERSION;
   setupMusicFeedbackReceiver();
   installInlineBgmResumeHooks();
+  // グリッジ・バーストと BGM の破断を同期（共有信号）。BGM 未解禁時は no-op。
+  if (typeof HazamaAtmos !== "undefined") HazamaAtmos.setAudioGlitch(inlineBgmGlitchHit);
   applyMusicFeedbackVisual();
   setupPwaInstallPrompt();
   setupServiceWorker();
