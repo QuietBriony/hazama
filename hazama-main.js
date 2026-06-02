@@ -59,6 +59,9 @@ const DEPTH_GATE_STABILITY_RANK = 8;
 const DEPTH_GATE_STABILITY_REQUIRED = 42;
 const DEPTH_GATE_RESONANCE_RANK = 14;
 const DEPTH_GATE_RESONANCE_REQUIRED = 8;
+// 外殻ランク: ここを越えると「核へ降りる(没入)」⇄「浮上して帰る(帰還)」の二極が立ち上がる。
+// G2(浮上ポール常設)・G5(サイレン的圧のclimax)・G3/G4(背景置換の深部)で共有する深度境界。
+const OUTER_SHELL_RANK = 21;
 const BREATH_HUB_STABILITY_CAP = GATE_CONSTANTS.BREATH_HUB_STABILITY_CAP || 94;
 const BREATH_FIELD_STABILITY_CAP = GATE_CONSTANTS.BREATH_FIELD_STABILITY_CAP || 86;
 const MILESTONE_RANKS = [8, 14, 20, 27];
@@ -2043,7 +2046,7 @@ function applyRunTransition(fromId, toId, moveKind = "choice", explicitType = ""
     state.stability = 24;
     state.resonance = clampNumber(state.resonance - 6, 0, RESONANCE_MAX);
     state.gateRunCharge = clampNumber(Math.min(state.gateRunCharge, 72), 0, GATE_RUN_MAX_CHARGE);
-    notes.push("立て直し中: 夜のハブへ戻った");
+    notes.push("浮上して立て直す: 夜のハブへ戻った");
   } else if (state.gateRunStatus === "running" && state.gateRunCharge >= GATE_RUN_MAX_CHARGE) {
     state.gateRunStatus = "won";
     state.gateRunOutcomeAt = Date.now();
@@ -3821,10 +3824,13 @@ function renderDepthMetaChoices(depth, choices, optionsEl) {
   heading.textContent = "どう読む";
   optionsEl.appendChild(heading);
 
+  let hasSurfacePole = false;
   for (const c of choices) {
     const kind = typeof c?.kind === "string" ? c.kind : "descend";
-    const target = resolveChoiceTarget(c?.next);
     const label = String(c?.text ?? "…");
+    const isSurfacePole = c?.next === "__surface";
+    if (isSurfacePole) hasSurfacePole = true;
+    const target = isSurfacePole ? "__surface" : resolveChoiceTarget(c?.next);
     const isOmega = target === OMEGA_DEPTH;
 
     const btn = addButton(optionsEl, label, () => {
@@ -3839,6 +3845,11 @@ function renderDepthMetaChoices(depth, choices, optionsEl) {
         st.attunement = res.state.attunement;
         saveRunState();
       }
+      if (isSurfacePole) {
+        flashChoiceReaction("ascend", res);
+        renderSurfaceReturn("choice");
+        return;
+      }
       flashChoiceReaction(kind, res);
       if (isOmega && canEnterOmega()) {
         enterOmegaDepth();
@@ -3849,7 +3860,7 @@ function renderDepthMetaChoices(depth, choices, optionsEl) {
     }, "hz-btn hz-depth-option");
 
     // kind クラスは保持（遷移種の配線用）だが、CSS では視覚差を付けない＝等価。
-    btn.classList.add("hz-choice-button", "hz-choice-open", `hz-choice-${escapeHtml(kind)}`);
+    btn.classList.add("hz-choice-button", "hz-choice-open", `hz-choice-${escapeHtml(isSurfacePole ? "ascend" : kind)}`);
     btn.innerHTML = `<span class="hz-choice-main">${escapeHtml(label)}</span>`;
     btn.disabled = navigationLocked || !target;
     if (isOmega && !canEnterOmega()) {
@@ -3858,6 +3869,67 @@ function renderDepthMetaChoices(depth, choices, optionsEl) {
       btn.classList.add("hz-veiled-option");
     }
   }
+
+  // G2: 外殻を越えた深部では「核へ降りる(没入)」⇄「浮上して帰る(帰還)」の二極を必ず開く。
+  // 浮上ポールは常に有効＝Ω が伏せられていても行き止まりにならず、帰還が"有効な結末"になる。
+  const rank = depthRank(depth?.id || currentDepthId);
+  if (!hasSurfacePole && rank >= OUTER_SHELL_RANK && currentDepthId !== OMEGA_DEPTH && currentDepthId !== "A_reborn") {
+    const btn = addButton(optionsEl, "光のほうへ、浮上して帰る", () => {
+      if (navigationLocked) return;
+      clearPause();
+      flashChoiceReaction("ascend", null);
+      renderSurfaceReturn("choice");
+    }, "hz-btn hz-depth-option");
+    btn.classList.add("hz-choice-button", "hz-choice-open", "hz-choice-ascend");
+    btn.innerHTML = `<span class="hz-choice-main">光のほうへ、浮上して帰る</span>`;
+  }
+}
+
+// G2: 終端の二極（帰還の極）。Ω(没入)へ降りられない／降りないとき、"死/GAME OVER"ではなく
+// 「正気のほうへ浮上して帰る」有効な結末として描く。失敗演出にせず、見たものを抱えて表層へ戻す。
+function renderSurfaceReturn(reason = "lock") {
+  clearPause();
+  document.body.classList.add("hz-surfaced");
+  const storyEl = $("story");
+  const optionsEl = $("options");
+  if (!storyEl || !optionsEl) return;
+  const state = getRunState();
+  const attune = Math.round(clampNumber(state.attunement || 0, 0, 99));
+  const need = (GateRunModel.tuning && GateRunModel.tuning.attuneOmegaThreshold) || 6;
+  const lines = reason === "lock"
+    ? ["核へは、まだ降りられない。", "認識が満ちていない——けれど、それは失敗じゃない。",
+       "あなたは光のほうへ浮上する。視たものを、抱えたまま。"]
+    : ["降りるのを、ここでやめる。", "正気のほうへ、ゆっくり浮上していく。",
+       "戻れた——それも、ひとつの結末だ。"];
+  storyEl.innerHTML = `
+    <div class="hz-block hz-surface-card">
+      <div class="hz-depth-title">浮上 — 表層へ帰る</div>
+      ${lines.map((l) => `<p class="hz-voice hz-voice-self">${escapeHtml(l)}</p>`).join("")}
+      <p class="hz-surface-meta">認識 ${attune} / ${need}（構造を読むほど、核へ降りられる）</p>
+    </div>`;
+  optionsEl.innerHTML = `
+    <section class="hz-decision-panel" aria-label="浮上">
+      <div class="hz-options-heading">どう帰る</div>
+      <div id="hz-surface-actions" class="hz-route-options"></div>
+    </section>`;
+  const host = $("hz-surface-actions") || optionsEl;
+  const leave = () => document.body.classList.remove("hz-surfaced");
+  const reDive = addButton(host, "もう一度、入口から沈む", () => {
+    leave();
+    renderDepth(DEFAULT_START, { moveKind: "home" });
+  }, "hz-btn hz-depth-option hz-choice-button hz-choice-open hz-choice-descend");
+  reDive.innerHTML = `<span class="hz-choice-main">もう一度、入口から沈む</span>`;
+  const close = addButton(host, "ここで閉じて、戻る", () => {
+    leave();
+    const home = depths[HUB_DEPTH] ? HUB_DEPTH : DEFAULT_START;
+    renderDepth(home, { moveKind: "home" });
+  }, "hz-btn hz-depth-option hz-choice-button hz-choice-open hz-choice-ascend");
+  close.innerHTML = `<span class="hz-choice-main">ここで閉じて、戻る</span>`;
+  // 浮上＝背景を表層へ戻す（ガーデン退場・グリッジ鎮静）。HUD はそのまま意味を保つ。
+  if (typeof HazamaAtmos !== "undefined") {
+    HazamaAtmos.apply({ depthN: 0.06, dread: 0.04, observer: 1, seed: atmosWorldSeed(state, 0) });
+  }
+  setStatus("浮上 / 表層へ帰った");
 }
 
 // 選んだ"後"に立ち上がる認識の手応え（事前 telegraph しないための post-choice reaction）。
@@ -3873,6 +3945,9 @@ function flashChoiceReaction(kind, res) {
   } else if (kind === "surface") {
     text = "表層を受け流し、別の筋へ逸れる。";
     tone = "surface";
+  } else if (kind === "ascend") {
+    text = "光のほうへ、浮上していく。";
+    tone = "calm";
   } else {
     text = "ひと呼吸おいて、退く。";
     tone = "calm";
@@ -3972,8 +4047,9 @@ function renderDepth(depthId, opts = {}) {
   const previousDepthId = currentDepthId;
   let targetDepthId = depthId;
   if (targetDepthId === OMEGA_DEPTH && !canEnterOmega()) {
-    runLog = `Ω LOCK: Gate Runを${GATE_RUN_MAX_CHARGE}%まで開くと入れます。`;
-    targetDepthId = depths[HUB_DEPTH] ? HUB_DEPTH : DEFAULT_START;
+    // G2: Ω(没入)へ降りられない時は失敗バウンスでなく「浮上して帰る」二極の結末へ。
+    renderSurfaceReturn("lock");
+    return;
   }
   let depth = depths[targetDepthId];
   if (!depth) {
