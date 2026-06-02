@@ -1,12 +1,37 @@
 # INTEGRATION-HANDOFF.md — コア移植の引き継ぎ（次セッション用）
 
 統合フェーズ（slice→本体エンジン畳み込み）の作業引き継ぎ。
-**増分0〜5b＋C（アート/音）＋D（タイトル/沈下HUD）＋E（version bump v2.40＋smoke新サーフェス移行）まで完了・
+**増分0〜5b＋C〜F＋【G1〜G6＋H＝本番化前ポリッシュ(実機FB6点・v2.41)】まで完了・
 node smoke 7本緑（startup は既知の /tmp 環境 FAIL）・全コミット push 済み（claude/integration）。**
-**F（統合専用の別プレビュー配信）も完了** → スマホ確認URL: **https://quietbriony.github.io/hazama-integration-preview/** （v2.40・cache-bust 実体検証済み）。下記「F の状態」参照。
+**統合専用の別プレビュー配信済み** → スマホ確認URL: **https://quietbriony.github.io/hazama-integration-preview/** （**v2.41**・cache-bust 実体検証済み）。
+
+> **master/本番Pages/現Codex公開/既存hazama-preview(slice) は無変更。master merge・本番入れ替えはユーザーの明示号令まで禁止のまま。**
+
+## 本番化前ポリッシュ（実機FB6点・v2.41・✅完了）— landing 済み
+| 増分 | 実機FB | 内容 | commit |
+|---|---|---|---|
+| G-1 | 1 選択肢の自由度 | kind別マーク(≀/⤳点線/打消)＋機械的sub撤去＝視覚的に等価・可読。判定は選択後 reaction(flashChoiceReaction)。Ωは赤failでなく hz-veiled-option | 2e5b3df |
+| G-2 | 2 終端の二極化 | renderSurfaceReturn=没入(核へ)⇄帰還(浮上)。Ωロックを失敗バウンスから「浮上」へ。外殻(OUTER_SHELL_RANK=21)以降 浮上ポール常設。lost赤→浮上トーン | 5cbffd1 |
+| G-3 | 3 背景の置換 | updateBackdrop: descent写真をsinkでopacity/filter退場(深部0)→反転ガーデンへクロスフェード | 96921b4 |
+| G-4 | 4 ガーデン立体感 | Garden.draw全面作替: 地平線+消失点の遠近・奥行3層・パララックス・緻密ディテール(rAFなし維持) | 07d519d |
+| G-5 | 5 サイレン圧 | inline BGM に sirenPressure(浅0→Ω1・ease-in)＋createInlineSirenVoice(鋸波LFO+bandpass)。master/Q で圧 | 46ad616 |
+| G-6 | 6 HUD集約 | 旧rogue HUD(FLOOR/CALM/SYNC/DEPTH MAP/RUN LOG)撤去→沈下HUDへ扉(GATE%)集約。smoke新サーフェス移行 | 8d05d40 |
+| H | — | version bump v2.40→v2.41(§9一括)＋README/docs＋startup-smoke新アサーション確定 | 845819c |
+
+> **G2 補足（次セッション任意）**: Ω到達は attuned のみ(ハード維持)。「分岐の自由度UP」は外殻以降の浮上ポール常設で達成したが、
+> 浅〜中の各ノードの選択肢数自体は据置（さらに増やすなら depthMeta.choices をノード単位で拡張＝コンテンツ作業）。
+> **G6 補足**: Gate Run 資源パネル(操作)は温存。HUDは「沈下HUD(深度/観測者/認識/扉)＋Gate Runパネル」の2面に集約。
+> 旧rogue CSS も撤去済み。startup-smoke は /tmp 環境で実行不可だが python 手動検証で新アサーション全OK。
+
+---
+
+## （以下は C〜F 時点の引き継ぎ・参照用に保持）
+
+統合フェーズ（slice→本体エンジン畳み込み）の作業引き継ぎ。
+**増分0〜5b＋C（アート/音）＋D（タイトル/沈下HUD）＋E（version bump v2.40＋smoke新サーフェス移行）まで完了。**
+**F（統合専用の別プレビュー配信）も完了**（当時 v2.40）。下記「F の状態」参照。
 
 > **増分C〜F 全完了。遊べる統合版が別プレビュー（本番・現Codex公開・既存hazama-preview とは別口）に配信済み。**
-> master/本番Pages/現Codex公開/既存hazama-preview(slice) は無変更。master merge・本番入れ替えはユーザーの明示号令まで禁止のまま。
 
 ## C/D/E で landing 済み（コミット）
 | 増分 | 内容 | commit |
