@@ -22,6 +22,10 @@ function assertIncludes(text, needle, label) {
   assert(text.includes(needle), `${label} missing: ${needle}`);
 }
 
+function assertExcludes(text, needle, label) {
+  assert(!text.includes(needle), `${label} still present: ${needle}`);
+}
+
 function appVersionFromMain(main) {
   const match = main.match(/const APP_VERSION = "v([^"]+)";/);
   assert(Boolean(match), "hazama-main.js APP_VERSION not found");
@@ -171,14 +175,23 @@ assertIncludes(main, "function applyAtmosphere", "hazama-main.js atmosphere hook
 assertIncludes(main, "inlineBgmGlitchHit", "hazama-main.js glitch-synced BGM tear");
 assertIncludes(main, "function updateSinkHud", "hazama-main.js sink HUD");
 assertIncludes(main, "applyVoiceCycle", "hazama-main.js cycle text mutation");
+// v2.41 HUD集約: 旧rogue HUD(FLOOR/CALM/SYNC/DEPTH MAP/RUN LOG)を撤去し沈下HUDへ計器を一本化。
+// startup-smoke の旧アサーション(hz-rogue-hud/DEPTH MAP/RUN LOG)はこの新サーフェスへ移行済み。
+assertExcludes(main, "hz-rogue-hud", "hazama-main.js rogue HUD removed");
+assertExcludes(main, "DEPTH MAP", "hazama-main.js rogue depth map removed");
+assertExcludes(main, "RUN LOG", "hazama-main.js rogue run log removed");
+assertIncludes(main, "function renderSurfaceReturn", "hazama-main.js surfacing terminal (two-pole ending)");
 for (const html of [indexHtml, altHtml]) {
   assertIncludes(html, 'id="hz-garden"', "html inverted-garden canvas");
   assertIncludes(html, 'id="hz-mandala"', "html mandala canvas");
   assertIncludes(html, 'id="hz-sink-hud"', "html sink HUD surface");
+  assertIncludes(html, 'id="hz-gate"', "html sink HUD door readout (migrated GATE%)");
   assertIncludes(html, 'data-text="Hazama"', "html distressed structural title");
 }
 assertIncludes(style, ".hz-garden", "hazama-style.css garden layer");
 assertIncludes(style, ".hz-sink-fill", "hazama-style.css sink gauge");
+assertIncludes(style, ".hz-gate ", "hazama-style.css sink HUD door chip");
+assertExcludes(style, ".hz-rogue-hud", "hazama-style.css rogue HUD CSS removed");
 assertIncludes(style, "hzPeel", "hazama-style.css peel transition");
 
 if (failures.length > 0) {

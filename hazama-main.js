@@ -3065,112 +3065,9 @@ function renderResourceRolesMarkup() {
   `;
 }
 
-function rogueTileLabel(rank) {
-  if (rank <= 0) return "HUB";
-  if (rank >= 28) return "A'";
-  return depthRankLabel(rank);
-}
-
-function rogueTileGlyph(rank, currentRank) {
-  if (rank === currentRank) return "@";
-  if (rank <= 0) return "H";
-  if (rank >= 28) return "A'";
-  if (rank >= 27) return "Ω";
-  return depthRankLabel(rank);
-}
-
-function renderRogueMapMarkup(state, gi) {
-  const currentRank = depthRank(currentDepthId);
-  const bestRank = Math.max(state.bestRank, currentRank);
-  const gateWon = state.gateRunStatus === "won";
-  const mapGatePercent = Math.max(0, Math.min(100, Math.round(gi.gateCharge)));
-  const tiles = Array.from({ length: 29 }, (_, rank) => {
-    const current = rank === currentRank;
-    const startCurrent = current && currentDepthId === DEFAULT_START;
-    const seen = rank <= bestRank || current || (rank === 27 && gateWon);
-    const locked = rank >= 27 && !gateWon && !seen;
-    const fog = !seen && !locked;
-    const classes = [
-      "hz-map-tile",
-      current ? "is-current" : "",
-      seen ? "is-seen" : "",
-      locked ? "is-locked" : "",
-      fog ? "is-fog" : "",
-      rank === 0 ? "is-hub" : "",
-      rank === 27 ? "is-omega" : "",
-      rank === 28 ? "is-reborn" : "",
-      startCurrent ? "is-start" : ""
-    ].filter(Boolean).join(" ");
-    const label = startCurrent ? "START" : rogueTileLabel(rank);
-    const glyph = locked ? "X" : fog ? "." : startCurrent ? "@" : rogueTileGlyph(rank, currentRank);
-    return `
-      <span class="${classes}" role="listitem" title="${escapeHtml(label)}" aria-label="${escapeHtml(`${label}${current ? " current" : locked ? " locked" : fog ? " unknown" : " seen"}`)}">
-        <b>${escapeHtml(glyph)}</b>
-        <small>${escapeHtml(label)}</small>
-      </span>
-    `;
-  }).join("");
-
-  return `
-    <section class="hz-rogue-map-panel" aria-label="Depth map">
-      <div class="hz-rogue-section-head">
-        <span>DEPTH MAP</span>
-        <b>${escapeHtml(currentDepthId === DEFAULT_START ? "START" : rogueTileLabel(currentRank))} / BEST ${escapeHtml(rogueTileLabel(bestRank))}</b>
-      </div>
-      <div class="hz-rogue-map" style="--hz-map-gate: ${mapGatePercent}%" role="list">
-        ${tiles}
-      </div>
-    </section>
-  `;
-}
-
-function renderRogueLogMarkup(state, gi) {
-  const depth = depths[currentDepthId] || {};
-  const entries = [
-    `${depthRankLabel(depthRank(currentDepthId))}: ${depth.title || currentDepthId}`,
-    state.lastGateResult || runLog || "run initialized",
-    gi.route,
-    state.gateRunStatus === "won"
-      ? "Ω unlocked: reward route ready"
-      : state.gateRunStatus === "lost"
-        ? "soft failure: return to HUB and retry"
-        : `gate ${Math.round(state.gateRunCharge)} / ${GATE_RUN_MAX_CHARGE}`
-  ];
-
-  return `
-    <section class="hz-rogue-log" aria-label="Run log">
-      <div class="hz-rogue-section-head">
-        <span>RUN LOG</span>
-        <b>${escapeHtml(gateRunStatusLabel(state))}</b>
-      </div>
-      <ol>
-        ${entries.map((entry) => `<li>${escapeHtml(entry)}</li>`).join("")}
-      </ol>
-    </section>
-  `;
-}
-
-function renderRoguelikeHudMarkup(state) {
-  const gi = buildGateIntelligence(currentDepthId);
-  const remainingTurns = state.gateRunStatus === "running"
-    ? Math.max(0, GATE_RUN_TURN_LIMIT - state.gateRunTurns)
-    : state.gateRunStatus === "won" ? "OPEN" : "RETRY";
-  const floorLabel = currentDepthId === DEFAULT_START ? "START" : depthRankLabel(depthRank(currentDepthId));
-  return `
-    <section class="hz-rogue-hud" aria-label="Roguelike run HUD">
-      <div class="hz-rogue-topline">
-        <span><b>FLOOR</b>${escapeHtml(floorLabel)}</span>
-        <span><b>TURN</b>${escapeHtml(String(remainingTurns))}</span>
-        <span><b>CALM</b>${Math.round(state.stability)}</span>
-        <span><b>SYNC</b>${Math.round(state.resonance)}</span>
-        <span><b>GATE</b>${Math.round(state.gateRunCharge)}%</span>
-        <span><b>RISK</b>${Math.round(gi.risk)}</span>
-      </div>
-      ${renderRogueMapMarkup(state, gi)}
-      ${renderRogueLogMarkup(state, gi)}
-    </section>
-  `;
-}
+// G6: 旧ローグライクHUD(階層計器の併走表示・深層マップ・走行ログ)は撤去。
+// 沈下HUD(深度/観測者/認識/扉)へ意味ある計器を集約し、進行は Gate Run パネル＋沈下HUDの2面に一本化。
+// 旧 render*Markup 群（rogue系）とタイル整形ヘルパはここから削除（stale markup 温存しない）。
 
 function renderRunPanelMarkup() {
   const state = getRunState();
@@ -3184,7 +3081,6 @@ function renderRunPanelMarkup() {
         <span>step ${state.steps}</span>
       </div>
       ${renderGateRunPanelMarkup()}
-      ${renderRoguelikeHudMarkup(state)}
       ${renderBgmCompanionMarkup(profile, launchUrl, localLaunchUrl)}
     </aside>
   `;
@@ -3956,6 +3852,14 @@ function updateSinkHud(depthId, rank, observer, depthN, state = getRunState()) {
     const need = (GateRunModel.tuning && GateRunModel.tuning.attuneOmegaThreshold) || 0;
     atEl.textContent = attuned ? `認識 合致(${at})` : (need ? `認識 ${at}/${need}` : `認識 ${at}`);
     atEl.classList.toggle("attuned", attuned);
+  }
+  // G6: 旧rogue HUDのGATE%を沈下HUDへ集約。扉(Gate Run charge)＝Ωのもう一つの資格。
+  const gateEl = $("hz-gate");
+  if (gateEl) {
+    const charge = Math.round(clampNumber(state.gateRunCharge || 0, 0, GATE_RUN_MAX_CHARGE));
+    const open = state.gateRunStatus === "won" || charge >= GATE_RUN_MAX_CHARGE;
+    gateEl.textContent = open ? "扉 開" : `扉 ${charge}%`;
+    gateEl.classList.toggle("open", open);
   }
 }
 
