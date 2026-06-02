@@ -17,6 +17,40 @@
     BREATH_FIELD_STABILITY_CAP: 86
   });
 
+  // 認識ゲート(資格ゲート)の可変パラメータ。実機で難易度調整するため frozen にしない。
+  // 設計(INTEGRATION.md §5): 構造読み(descend)で attunement が育つ／表層読み(surface)は中立(0)。
+  // Ω解放 = gateRun won(資源=扉charge) かつ attuned(構造で育った認識)。反射・表層多用では開かない。
+  const tuning = {
+    attuneOmegaThreshold: 6, // Ω解放に必要な認識(構造読み回数の目安)
+    attuneStructuralGain: 1, // 構造読み(descend)1回の認識増
+    attuneSurfaceGain: 0, // 表層読み(surface)=中立(八観ルート自体が報酬)
+    attuneRetreatGain: 0, // 退避=認識を育てない
+    attuneMax: 99
+  };
+
+  function recognitionGain(kind) {
+    if (kind === "descend") return tuning.attuneStructuralGain;
+    if (kind === "surface") return tuning.attuneSurfaceGain;
+    return tuning.attuneRetreatGain;
+  }
+
+  // 降下の一手ごとに認識を更新。kind = descend / surface / retreat。
+  function applyRecognition(state, kind) {
+    const next = cloneState(state);
+    const gain = recognitionGain(kind);
+    next.attunement = clampNumber((Number(next.attunement) || 0) + gain, 0, tuning.attuneMax);
+    return { state: next, gain, attuned: (Number(next.attunement) || 0) >= tuning.attuneOmegaThreshold };
+  }
+
+  function isAttuned(state) {
+    return (Number(state && state.attunement) || 0) >= tuning.attuneOmegaThreshold;
+  }
+
+  // Ωのハードな最終関門: 扉(charge=won)が開き、かつ構造で認識が合っている時だけ。
+  function omegaUnlocked(state) {
+    return Boolean(state) && state.gateRunStatus === "won" && isAttuned(state);
+  }
+
   function clampNumber(value, min, max) {
     const n = Number(value);
     if (!Number.isFinite(n)) return min;
@@ -330,6 +364,7 @@
 
   return Object.freeze({
     constants,
+    tuning,
     clampNumber,
     hashText,
     numericHash,
@@ -339,6 +374,10 @@
     previewGateAction,
     applyGateAction,
     applyBreathReward,
-    resolveGateOutcome
+    resolveGateOutcome,
+    recognitionGain,
+    applyRecognition,
+    isAttuned,
+    omegaUnlocked
   });
 }));

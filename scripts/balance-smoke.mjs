@@ -267,6 +267,35 @@ if (wonRetreat.gateRunStatus !== "running" || wonRetreat.gateRunCharge !== 0 || 
 
 if (wonRetreatResult.events.resetWon !== true) failures.push("won retreat did not report resetWon");
 
+// --- 認識ゲート(attunement)＝Ωのハードな最終関門。資源(charge=won)だけでは開かない ---
+// 設計: 構造読み(descend)で認識が育つ／表層読み(surface)は中立(0)／Ω = won かつ attuned。
+const T = GateRun.tuning;
+// 表層読みは中立(0)＝八観ルートは報酬だが認識は育たない
+if (GateRun.recognitionGain("surface") !== 0) failures.push("surface read should be neutral (0 attunement)");
+if (GateRun.recognitionGain("descend") <= 0) failures.push("structural read (descend) should grow attunement");
+
+// won でも未 attuned なら Ω は開かない（反射・資源ゴリ押しでは抜けられない）
+const wonNoAttune = createState({ gateRunStatus: "won", gateRunCharge: 100, attunement: 0 });
+if (GateRun.omegaUnlocked(wonNoAttune)) failures.push("Ω opened on won without attunement (reflex/resource brute-force should not pass)");
+
+// 構造読みを閾値ぶん積むと attuned になり、won と合わせて Ω が開く
+let recog = createState({ gateRunStatus: "won", gateRunCharge: 100, attunement: 0 });
+for (let i = 0; i < T.attuneOmegaThreshold; i += 1) {
+  const r = GateRun.applyRecognition(recog, "descend");
+  Object.assign(recog, r.state);
+}
+if (!GateRun.isAttuned(recog)) failures.push("structural reads up to threshold did not reach attuned");
+if (!GateRun.omegaUnlocked(recog)) failures.push("won + attuned did not unlock Ω");
+
+// 表層読みだけでは閾値に届かない（中立なので認識は伸びない）
+let surfOnly = createState({ gateRunStatus: "won", gateRunCharge: 100, attunement: 0 });
+for (let i = 0; i < T.attuneOmegaThreshold + 4; i += 1) {
+  const r = GateRun.applyRecognition(surfOnly, "surface");
+  Object.assign(surfOnly, r.state);
+}
+if (GateRun.isAttuned(surfOnly)) failures.push("surface-only reading reached attuned (should stay neutral)");
+if (GateRun.omegaUnlocked(surfOnly)) failures.push("surface-only reading opened Ω (should require structural reads)");
+
 if (failures.length) {
   console.error(`Balance smoke failed:\n- ${failures.join("\n- ")}`);
   process.exit(1);
