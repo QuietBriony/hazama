@@ -2776,11 +2776,75 @@ body.glitch-hard .hz-title { transform: skewX(-3deg) translateX(0.5px); }
 }
 .hz-voice-deep { color: #bfe0ff; font-style: italic; }        /* attuned のみ可視 */
 
-/* kind 別 choice の手触り */
-.hz-choice-descend .hz-choice-main::before { content: "≀ "; color: #9fd2ff; }   /* 砂紋＝降下 */
-.hz-choice-surface { border-style: dashed; }
-.hz-choice-surface .hz-choice-main::before { content: "⤳ "; color: #cdb7ff; }   /* 逸れ＝表層 */
-.hz-choice-retreat .hz-choice-main { text-decoration: line-through; opacity: .82; } /* 消し込み＝退避 */
+/* R1: 選択肢は視覚的に等価・読みやすく・誘導的でなく。kind 別マーク（砂紋/逸れ/打ち消し）は撤去。
+   どれを選ばせたいかを事前に透けさせない＝自由に選んでいる手応え。判定は選んだ後の reaction で返す。 */
+.hz-choice-open {
+  border-color: rgba(125, 165, 210, 0.42);
+  background: linear-gradient(180deg, rgba(23, 33, 52, 0.94), rgba(15, 23, 42, 0.94));
+  box-shadow: inset 0 1px 0 rgba(190, 215, 245, 0.05);
+}
+.hz-choice-open .hz-choice-main {
+  color: #eef4fc;                 /* 全選択肢を等しく明るく＝読みやすい */
+  font-weight: 500;
+  letter-spacing: 0.01em;
+}
+.hz-choice-open::before {
+  content: "";                    /* 全 kind 共通の中立ビュレット（誘導しない） */
+  flex: 0 0 auto;
+  align-self: flex-start;
+  margin: 0.45em 0.6em 0 0;
+  width: 0.42rem;
+  height: 0.42rem;
+  border: 1px solid rgba(150, 185, 225, 0.7);
+  border-radius: 50%;
+  background: rgba(150, 185, 225, 0.14);
+}
+.hz-choice-open { flex-direction: row; align-items: stretch; }
+.hz-choice-open:hover {
+  border-color: rgba(160, 200, 245, 0.78);
+  background: linear-gradient(180deg, rgba(31, 44, 68, 0.96), rgba(19, 28, 48, 0.96));
+}
+
+/* Ω は資格（認識）が要るが、閉じている時も赤い"失敗"として見せない＝静かに伏せる（G2 帰還の二極）。 */
+.hz-options button.hz-veiled-option {
+  border-color: rgba(120, 140, 170, 0.34);
+  background: rgba(15, 22, 38, 0.7);
+  opacity: 0.74;
+}
+.hz-options button.hz-veiled-option .hz-choice-main {
+  color: #aab6c8;
+  font-style: italic;
+}
+
+/* R1: 選んだ"後"に立ち上がる認識の手応え（事前 telegraph しないための post-choice reaction）。 */
+.hz-reaction {
+  position: fixed;
+  left: 50%;
+  bottom: clamp(4.5rem, 16vh, 8rem);
+  transform: translate(-50%, 0.5rem);
+  z-index: 60;
+  max-width: min(90vw, 26rem);
+  padding: 0.5rem 1rem;
+  border-radius: 999px;
+  border: 1px solid rgba(150, 185, 225, 0.32);
+  background: rgba(9, 13, 22, 0.86);
+  backdrop-filter: blur(3px);
+  color: #dce6f4;
+  font-size: 0.9rem;
+  line-height: 1.4;
+  text-align: center;
+  letter-spacing: 0.02em;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 260ms ease, transform 260ms ease;
+}
+.hz-reaction.show { opacity: 1; transform: translate(-50%, 0); }
+.hz-reaction-deep { border-color: rgba(159, 210, 255, 0.5); color: #cfeaff; }
+.hz-reaction-surface { border-color: rgba(205, 183, 255, 0.4); color: #e6dcff; }
+.hz-reaction-calm { border-color: rgba(150, 200, 175, 0.36); color: #d6efe1; }
+@media (prefers-reduced-motion: reduce) {
+  .hz-reaction { transition: opacity 120ms ease; transform: translate(-50%, 0); }
+}
 
 /* ===== 増分C: アート/音の移植 — 反転ガーデン/手続き曼荼羅/グリッジ/原色leak/peel ===== */
 /* 共有"深度信号": --sink(沈下0..1)/--press(圧0..1)/--gi(グリッジ強度)/--leak-rgb(漏れる原色)。

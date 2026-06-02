@@ -3813,30 +3813,33 @@ function resolveChoiceTarget(next) {
   return mapped && depths[mapped] ? mapped : null;
 }
 
-// 認識ゲートの主導線。kind 別（descend/surface/retreat）に描画し、選択で認識(attunement)を更新。
+// 認識ゲートの主導線。R1: 選択肢は視覚的に等価・読みやすく描画し、"正解/はじかれ"を事前に
+// telegraph しない（kind 別マーク・機械的 sub は出さない）。判定は選んだ"後"に reaction として立ち上がる。
 function renderDepthMetaChoices(depth, choices, optionsEl) {
   const heading = document.createElement("div");
   heading.className = "hz-options-heading";
-  heading.textContent = "道を選ぶ";
+  heading.textContent = "どう読む";
   optionsEl.appendChild(heading);
 
   for (const c of choices) {
     const kind = typeof c?.kind === "string" ? c.kind : "descend";
     const target = resolveChoiceTarget(c?.next);
     const label = String(c?.text ?? "…");
-    const sub = typeof c?.sub === "string" ? c.sub : "";
     const isOmega = target === OMEGA_DEPTH;
 
     const btn = addButton(optionsEl, label, () => {
       if (navigationLocked || !target) return;
       clearPause();
-      // 構造読み(descend)で認識が育つ／表層(surface)は中立／退避(retreat)は育てない
+      // 構造読み(descend)で認識が育つ／表層(surface)は中立／退避(retreat)は育てない。
+      // 判定は"選んだ後"に立ち上がる（事前 telegraph 無し）＝認識の手応えはこの reaction で返す。
+      let res = null;
       if (GateRunModel.applyRecognition) {
         const st = getRunState();
-        const res = GateRunModel.applyRecognition(st, kind);
+        res = GateRunModel.applyRecognition(st, kind);
         st.attunement = res.state.attunement;
         saveRunState();
       }
+      flashChoiceReaction(kind, res);
       if (isOmega && canEnterOmega()) {
         enterOmegaDepth();
         return;
@@ -3845,17 +3848,49 @@ function renderDepthMetaChoices(depth, choices, optionsEl) {
       renderDepth(target, { moveKind: "choice", moveType });
     }, "hz-btn hz-depth-option");
 
-    btn.classList.add("hz-choice-button", `hz-choice-${escapeHtml(kind)}`);
-    btn.innerHTML = `
-      <span class="hz-choice-main">${escapeHtml(label)}</span>
-      ${sub ? `<span class="hz-choice-meta">${escapeHtml(sub)}</span>` : ""}
-    `;
+    // kind クラスは保持（遷移種の配線用）だが、CSS では視覚差を付けない＝等価。
+    btn.classList.add("hz-choice-button", "hz-choice-open", `hz-choice-${escapeHtml(kind)}`);
+    btn.innerHTML = `<span class="hz-choice-main">${escapeHtml(label)}</span>`;
     btn.disabled = navigationLocked || !target;
     if (isOmega && !canEnterOmega()) {
+      // Ω は資格（認識）が要るが、ここでは"閉じている"を赤い失敗として見せない（G2: 二極の帰還）。
       btn.disabled = true;
-      btn.classList.add("hz-locked-option");
+      btn.classList.add("hz-veiled-option");
     }
   }
+}
+
+// 選んだ"後"に立ち上がる認識の手応え（事前 telegraph しないための post-choice reaction）。
+// descend=認識が深まる／surface=表層で受け流し別の筋へ／retreat=ひと呼吸おいて退く。失敗演出にはしない。
+let hzReactionTimer = 0;
+function flashChoiceReaction(kind, res) {
+  let text = "";
+  let tone = "";
+  const gain = res ? res.gain : 0;
+  if (kind === "descend") {
+    text = gain > 0 ? "——構造が、すこし視えた。" : "深く、指でなぞった。";
+    tone = "deep";
+  } else if (kind === "surface") {
+    text = "表層を受け流し、別の筋へ逸れる。";
+    tone = "surface";
+  } else {
+    text = "ひと呼吸おいて、退く。";
+    tone = "calm";
+  }
+  let el = document.getElementById("hz-reaction");
+  if (!el) {
+    el = document.createElement("div");
+    el.id = "hz-reaction";
+    el.setAttribute("role", "status");
+    el.setAttribute("aria-live", "polite");
+    document.body.appendChild(el);
+  }
+  el.textContent = text;
+  el.className = "hz-reaction" + (tone ? ` hz-reaction-${tone}` : "");
+  void el.offsetWidth; // restart fade
+  el.classList.add("show");
+  window.clearTimeout(hzReactionTimer);
+  hzReactionTimer = window.setTimeout(() => el.classList.remove("show"), 1700);
 }
 
 function renderOptions(depth, optionsEl) {
