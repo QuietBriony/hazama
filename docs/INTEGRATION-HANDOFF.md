@@ -3,7 +3,10 @@
 統合フェーズ（slice→本体エンジン畳み込み）の作業引き継ぎ。
 **増分0〜5b＋C（アート/音）＋D（タイトル/沈下HUD）＋E（version bump v2.40＋smoke新サーフェス移行）まで完了・
 node smoke 7本緑（startup は既知の /tmp 環境 FAIL）・全コミット push 済み（claude/integration）。**
-残りは **F（統合専用の別プレビュー配信）のみ＝公開先 repo のユーザー承認待ち**。下記「F の状態」参照。
+**F（統合専用の別プレビュー配信）も完了** → スマホ確認URL: **https://quietbriony.github.io/hazama-integration-preview/** （v2.40・cache-bust 実体検証済み）。下記「F の状態」参照。
+
+> **増分C〜F 全完了。遊べる統合版が別プレビュー（本番・現Codex公開・既存hazama-preview とは別口）に配信済み。**
+> master/本番Pages/現Codex公開/既存hazama-preview(slice) は無変更。master merge・本番入れ替えはユーザーの明示号令まで禁止のまま。
 
 ## C/D/E で landing 済み（コミット）
 | 増分 | 内容 | commit |
@@ -18,16 +21,21 @@ node smoke 7本緑（startup は既知の /tmp 環境 FAIL）・全コミット 
 > 反転ガーデン opacity↑・沈下ゲージ(rank19→0.70)・観測者 私×6・認識「合致(6)」(attuned)・多声本文・
 > グリッジ＋原色 leak・peel 遷移・グリッジ同期の BGM 破断。コンソールエラー無し。
 
-### F の状態（残り・ユーザー承認待ち）
-- 配信先＝**新規 public repo**（案: `QuietBriony/hazama-integration-preview`）→ GitHub Pages
-  `https://quietbriony.github.io/hazama-integration-preview/`。**本番 hazama/master・現Codex公開・
-  既存 hazama-preview(slice) は無変更**。配信物は **本体ルートの runtime 一式**（index.html=hazama-index.html・
-  hazama-main.js・hazama-style.css・hazama-gate-run.js・hazama-seed.js・hazama-state.js・hazama-depths.json・
-  sw.js・manifest.webmanifest・icons/・assets/。.nojekyll 推奨）。全パス相対＝project Pages サブパスで動く。
-- **自動モードが public repo 作成を拒否**（公開サーフェス作成はユーザー明示承認が要る）。
-  → ユーザーが (a) repo 作成を許可、または (b) 自分で `gh repo create QuietBriony/hazama-integration-preview --public`
-  すれば、`git archive` でルート runtime を temp へ展開→push→Pages 有効化(main/root)→cache-bust curl 検証→
-  スマホ URL 報告、で完了。memory [hazama-preview-deploy] の https トークン push 手順に準拠。
+### F の状態（✅完了 2026-06-02）
+- 配信先＝**新規 public repo `QuietBriony/hazama-integration-preview`**（main/root）→ GitHub Pages
+  **https://quietbriony.github.io/hazama-integration-preview/** で公開（build status=built）。
+  **本番 hazama/master・現Codex公開・既存 hazama-preview(slice) は無変更**。
+- 配信物＝本体ルートの runtime 一式（index.html=hazama-index.html・hazama-main.js・hazama-style.css・
+  hazama-gate-run.js・hazama-seed.js・hazama-state.js・hazama-depths.json・sw.js・manifest.webmanifest・
+  icons/・assets/・.nojekyll）。全パス相対＝project Pages サブパスで動作。
+- 手順: `git archive claude/integration <runtime paths> | tar -x -C tmp` → `git init -b main`/commit →
+  `git push https://x-access-token:$(gh auth token)@github.com/QuietBriony/hazama-integration-preview.git main` →
+  `gh api -X POST repos/.../pages --input -`（source main/「/」）。
+- cache-bust 実体検証済み(`?cb=$RANDOM`): 全アセット 200・APP_VERSION v2.40・HazamaAtmos 在・
+  CSS に hz-sink-fill/hz-garden/hzPeel・index に data-text="Hazama"/hz-sink-hud/hz-garden・
+  sw hazama-pwa-v2.40・depths 43 nodes。
+- **更新デプロイ手順**: claude/integration に変更を重ねたら、同じ `git archive`→temp→`push --force`(or 履歴を作る)で
+  preview repo の main を更新。version(?v=)/sw VERSION を bump 済みなら端末側 SW も更新される（cache-bust で確認）。
 
 ### 残課題（F とは別・任意）
 - **ローグライク HUD の完全撤去**: D は沈下HUD(沈下/観測者/認識)を**主計器サーフェスとして追加**し、
