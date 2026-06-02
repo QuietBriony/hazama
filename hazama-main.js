@@ -126,6 +126,7 @@ const InlineBgmState = {
   master: null,
   filter: null,
   drone: [],
+  siren: null,
   pulseTimer: null,
   bridgeDestination: null,
   bridgeAudio: null,
@@ -1180,6 +1181,11 @@ function inlineBgmProfileParams(profile = buildMusicProfile(currentDepthId)) {
   const stageHash = numericHash(`${stage}|${profile?.name || ""}|${rank}`);
   const baseMidi = 38 + (stageHash % 7) + Math.floor(rank / 5);
   const baseFreq = 440 * Math.pow(2, (baseMidi - 69) / 12);
+  // G5: サイレン的"圧"のカーブ。浅は0(今のまま馴染む)、外殻(OUTER_SHELL_RANK)手前から立ち上がり
+  // Ω付近でピーク。ease-in(二乗)で静→急＝「外殻を抜けた後に圧が立つ」。balance重視で控えめ係数。
+  const shellStart = OUTER_SHELL_RANK - 2;
+  const shellN = clampNumber((rank - shellStart) / (27 - shellStart), 0, 1);
+  const sirenPressure = Number((shellN * shellN).toFixed(3));
   const scale = stage === "exhale"
     ? [0, 2, 5, 7, 9, 12]
     : stage === "root"
@@ -1198,6 +1204,7 @@ function inlineBgmProfileParams(profile = buildMusicProfile(currentDepthId)) {
     baseFreq,
     scale,
     seed: stageHash,
+    sirenPressure,
     droneGain: 0.018 + bassWeight * 0.028,
     pulseGain: 0.016 + density * 0.026,
     filterFreq: 360 + brightness * 1900 + circle * 5,
@@ -1232,6 +1239,16 @@ function resetInlineBgmGraph() {
     try { voice.gain?.disconnect(); } catch (_) {}
   }
   InlineBgmState.drone = [];
+  if (InlineBgmState.siren) {
+    const sv = InlineBgmState.siren;
+    try { sv.gain?.gain?.setTargetAtTime(0.0001, ctx?.currentTime || 0, 0.04); } catch (_) {}
+    try { sv.osc?.stop((ctx?.currentTime || 0) + 0.08); } catch (_) {}
+    try { sv.lfo?.stop((ctx?.currentTime || 0) + 0.08); } catch (_) {}
+    for (const k of ["osc", "lfo", "lfoGain", "bp", "gain"]) {
+      try { sv[k]?.disconnect(); } catch (_) {}
+    }
+    InlineBgmState.siren = null;
+  }
   try { InlineBgmState.filter?.disconnect(); } catch (_) {}
   try { InlineBgmState.master?.disconnect(); } catch (_) {}
   try { InlineBgmState.bridgeDestination?.disconnect(); } catch (_) {}
@@ -1258,6 +1275,30 @@ function createInlineDroneVoice(ctx, freq, type, gainValue) {
   gain.connect(InlineBgmState.filter);
   osc.start();
   return { osc, gain };
+}
+
+// G5: サイレン的"圧"の声。鋸波を遅いLFOで上下に煽る(サイレンのうねり)＋帯域を絞って圧を作る。
+// gain は sirenPressure で駆動(updateInlineBgmで更新)＝外殻〜Ωのclimax。lowpassを通さず master直結で抜ける。
+function createInlineSirenVoice(ctx) {
+  const baseHz = clampNumber((InlineBgmState.params?.baseFreq || 110) * 2.2, 90, 760);
+  const osc = ctx.createOscillator();
+  osc.type = "sawtooth";
+  osc.frequency.setValueAtTime(baseHz, ctx.currentTime);
+  const lfo = ctx.createOscillator();
+  lfo.type = "sine";
+  lfo.frequency.setValueAtTime(0.16, ctx.currentTime);
+  const lfoGain = ctx.createGain();
+  lfoGain.gain.setValueAtTime(baseHz * 0.2, ctx.currentTime);
+  lfo.connect(lfoGain); lfoGain.connect(osc.frequency);
+  const bp = ctx.createBiquadFilter();
+  bp.type = "bandpass";
+  bp.frequency.setValueAtTime(baseHz * 1.4, ctx.currentTime);
+  bp.Q.setValueAtTime(3.2, ctx.currentTime);
+  const gain = ctx.createGain();
+  gain.gain.setValueAtTime(0.0001, ctx.currentTime);
+  osc.connect(bp); bp.connect(gain); gain.connect(InlineBgmState.master);
+  osc.start(); lfo.start();
+  return { osc, lfo, lfoGain, bp, gain, baseHz };
 }
 
 async function connectInlineBgmOutput(ctx, master) {
@@ -1402,12 +1443,15 @@ function updateInlineBgm(profile = buildMusicProfile(currentDepthId)) {
   const ctx = InlineBgmState.audioCtx;
   const now = ctx.currentTime;
   InlineBgmState.params = next;
+  const siren = clampNumber(next.sirenPressure || 0, 0, 1);
   if (InlineBgmState.master) {
-    InlineBgmState.master.gain.setTargetAtTime(0.18 + next.energy * 0.0013, now, 0.35);
+    // 外殻越えで master を少しだけ持ち上げる＝"圧"のピーク（balance: +0.05まで）。
+    InlineBgmState.master.gain.setTargetAtTime(0.18 + next.energy * 0.0013 + siren * 0.05, now, 0.35);
   }
   if (InlineBgmState.filter) {
     InlineBgmState.filter.frequency.setTargetAtTime(next.filterFreq, now, 0.5);
-    InlineBgmState.filter.Q.setTargetAtTime(0.6 + next.brightness * 1.4, now, 0.5);
+    // 深部で共鳴Qを立てて圧を作る。
+    InlineBgmState.filter.Q.setTargetAtTime(0.6 + next.brightness * 1.4 + siren * 1.3, now, 0.5);
   }
   InlineBgmState.drone.forEach((voice, index) => {
     const ratio = index === 0 ? 1 : index === 1 ? 1.5 : 2;
@@ -1415,6 +1459,14 @@ function updateInlineBgm(profile = buildMusicProfile(currentDepthId)) {
     voice.osc.frequency.setTargetAtTime(next.baseFreq * ratio, now, 0.6);
     voice.gain.gain.setTargetAtTime(gain, now, 0.7);
   });
+  // G5: サイレンのうねりを sirenPressure で煽る。外殻手前=ほぼ無音、Ω付近でピーク（wail速度/深さ/音量↑）。
+  if (InlineBgmState.siren) {
+    const sv = InlineBgmState.siren;
+    sv.gain.gain.setTargetAtTime(siren * 0.05, now, 0.8);
+    sv.lfo.frequency.setTargetAtTime(0.16 + siren * 0.5, now, 0.6);
+    sv.lfoGain.gain.setTargetAtTime(sv.baseHz * (0.18 + siren * 0.45), now, 0.6);
+    sv.bp.frequency.setTargetAtTime(sv.baseHz * (1.2 + siren * 1.1), now, 0.6);
+  }
   if (Math.abs(prevInterval - next.intervalMs) > 24) scheduleInlineBgmPulse();
   updateInlineMediaSession(next, true);
   if (Date.now() - InlineBgmState.lastStatusAt > 1100) {
@@ -1462,6 +1514,9 @@ async function startInlineBgm(profile = buildMusicProfile(currentDepthId)) {
     createInlineDroneVoice(ctx, params.baseFreq, "sine", params.droneGain),
     createInlineDroneVoice(ctx, params.baseFreq * 1.5, params.brightness > 0.55 ? "triangle" : "sine", params.droneGain * 0.48)
   ];
+  // G5: サイレン声を常設し gain=0 から開始。深度で sirenPressure が上がると updateInlineBgm が煽る。
+  InlineBgmState.siren = createInlineSirenVoice(ctx);
+  InlineBgmState.siren.gain.gain.setTargetAtTime((params.sirenPressure || 0) * 0.05, ctx.currentTime + 0.05, 0.9);
   InlineBgmState.playing = true;
   scheduleInlineBgmPulse();
   updateInlineMediaSession(params, true);
