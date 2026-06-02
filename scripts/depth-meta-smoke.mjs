@@ -24,7 +24,9 @@ const depths = JSON.parse(read("hazama-depths.json"));
 
 const WHO = new Set(["n", "voice", "self", "cold", "danger", "body", "scrawl"]);
 const KIND = new Set(["descend", "surface", "retreat", "rejoin", "edge"]);
-const REGISTER = new Set(["descent", "anchor", "hub", "omega", "reborn", "procedural"]);
+const REGISTER = new Set(["descent", "anchor", "hub", "omega", "reborn", "procedural", "detour", "hold"]);
+// 八観（INTEGRATION.md §6 / source 八観）。detour ルートの質感タグ。
+const KAN = new Set(["体観", "波観", "思観", "財観", "創観", "観察者観", "空観", "円観"]);
 
 let metaCount = 0;
 
@@ -41,6 +43,12 @@ for (const [id, node] of Object.entries(depths)) {
   }
   if ("maps_from" in meta) {
     assert(typeof meta.maps_from === "string" && meta.maps_from.length > 0, `${id}: depthMeta.maps_from must be a non-empty string`);
+  }
+  if ("kan" in meta) {
+    assert(KAN.has(meta.kan), `${id}: depthMeta.kan invalid (八観): ${meta.kan}`);
+  }
+  if ("branch" in meta) {
+    assert(typeof meta.branch === "boolean", `${id}: depthMeta.branch must be a boolean`);
   }
   if ("observer" in meta) {
     assert(Number.isFinite(meta.observer) && meta.observer >= 0, `${id}: depthMeta.observer must be a non-negative number`);

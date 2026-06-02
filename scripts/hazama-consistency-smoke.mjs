@@ -101,14 +101,27 @@ for (const [id, depth] of Object.entries(depths)) {
 }
 assert(missingEdges.length === 0, `depth graph has missing next targets: ${missingEdges.join(", ")}`);
 
+// 到達性は旧サーフェス(options[])と新サーフェス(depthMeta.choices)の和で辿る
+// （統合で det_*(八観ルート)/hold は depthMeta.choices からのみ到達するため。INTEGRATION.md §8）。
+function outgoingTargets(node) {
+  const targets = [];
+  for (const option of node?.options || []) {
+    if (option?.next) targets.push(option.next);
+  }
+  for (const choice of node?.depthMeta?.choices || []) {
+    // 仮想ターゲット(__rejoin 等)は除外。実在ノードのみ辿る
+    if (choice?.next && !choice.next.startsWith("__")) targets.push(choice.next);
+  }
+  return targets;
+}
 const reachable = new Set(["A_start"]);
 const queue = ["A_start"];
 while (queue.length) {
   const id = queue.shift();
-  for (const option of depths[id]?.options || []) {
-    if (!reachable.has(option.next)) {
-      reachable.add(option.next);
-      queue.push(option.next);
+  for (const next of outgoingTargets(depths[id])) {
+    if (depths[next] && !reachable.has(next)) {
+      reachable.add(next);
+      queue.push(next);
     }
   }
 }

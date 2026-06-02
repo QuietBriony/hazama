@@ -77,6 +77,11 @@ const steps = [
     args: ["scripts/depth-meta-smoke.mjs"]
   },
   {
+    name: "route",
+    command: "node",
+    args: ["scripts/route-smoke.mjs"]
+  },
+  {
     name: "balance",
     command: "node",
     args: ["scripts/balance-smoke.mjs"]
