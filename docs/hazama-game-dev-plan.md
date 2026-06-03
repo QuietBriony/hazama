@@ -2,7 +2,7 @@
 
 ## Current playable loop summary
 
-Hazama v2.42 is a browser-based static first playable slice that loads `hazama-depths.json` from `index.html` / `hazama-index.html` and renders a text-first depth navigator with a simplified roguelike-style run HUD. The current loop starts at `A_start`, lets the player enter `HUB_NIGHT` or move into the depth chain, and keeps persistent local run state for progress, seed, stability, resonance, marks, best depth, Gate Run progress, Breath Gate streak counters, and a small collapse count for run-result feedback.
+Hazama v2.43 is a browser-based static first playable slice that loads `hazama-depths.json` from `index.html` / `hazama-index.html` and renders a text-first depth navigator with a simplified roguelike-style run HUD. The current loop starts at `A_start`, lets the player enter `HUB_NIGHT` or move into the depth chain, and keeps persistent local run state for progress, seed, stability, resonance, marks, best depth, Gate Run progress, Breath Gate streak counters, and a small collapse count for run-result feedback.
 
 The playable systems already present are:
 
@@ -75,7 +75,7 @@ Breath Gate means the existing short text rest mechanic, now framed as `休む /
 The top-level goal is not to add more systems. The top-level goal is to make the existing first playable readable enough that a new player can complete one intended loop without outside explanation.
 
 - North Star: a first-time player can understand the one-loop intent without audio or external docs, and can reach `A_reborn` in roughly 5-8 minutes.
-- Next merge goal: verify the v2.42 post-story flow, Gate Run pulse cues, and same-screen BGM in a real browser/device pass, especially next-action clarity, mobile touch hierarchy, install/offline reload, Breath Gate hierarchy, outcome panels, and the `A_reborn` run record.
+- Next merge goal: verify the v2.43 post-story flow, Gate Run pulse cues, and same-screen BGM in a real browser/device pass, especially next-action clarity, mobile touch hierarchy, install/offline reload, Breath Gate hierarchy, outcome panels, and the `A_reborn` run record.
 - Next playtest goal: keep verifying Gate Run as a small decision game built around attacking, stabilizing, and syncing rather than as five equivalent buttons.
 - v2.21 goal: keep Hazama first playable while making Gate Run and Breath Gate balance resistant to simple recovery/sync spam.
 

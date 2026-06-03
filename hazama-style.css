@@ -2762,32 +2762,39 @@ body.peeling::after {
 
 /* 本文・各パネルをガラス調(半透明＋blur)に＝背景アートが透けて没入。テキストは dark glass で可読維持。 */
 .hz-story {
-  background: rgba(7, 11, 19, 0.52);
-  border-color: rgba(125, 165, 210, 0.22);
-  -webkit-backdrop-filter: blur(11px) saturate(1.08);
-  backdrop-filter: blur(11px) saturate(1.08);
-  box-shadow: 0 1rem 2.4rem rgba(0, 0, 0, 0.32);
+  background: rgba(7, 11, 19, 0.34);
+  border-color: rgba(140, 180, 225, 0.28);
+  -webkit-backdrop-filter: blur(6px) saturate(1.12);
+  backdrop-filter: blur(6px) saturate(1.12);
+  box-shadow: 0 1rem 2.4rem rgba(0, 0, 0, 0.3);
 }
 .hz-decision-panel {
-  background: rgba(9, 14, 24, 0.5) !important;
-  border-color: rgba(125, 165, 210, 0.2);
-  -webkit-backdrop-filter: blur(11px) saturate(1.06);
-  backdrop-filter: blur(11px) saturate(1.06);
+  background: rgba(9, 14, 24, 0.34) !important;
+  border-color: rgba(140, 180, 225, 0.24);
+  -webkit-backdrop-filter: blur(6px) saturate(1.1);
+  backdrop-filter: blur(6px) saturate(1.1);
 }
 .hz-run-panel {
-  background: rgba(10, 15, 26, 0.46) !important;
-  -webkit-backdrop-filter: blur(10px);
-  backdrop-filter: blur(10px);
+  background: rgba(10, 15, 26, 0.3) !important;
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
 }
 .hz-gate-run-panel {
-  background: rgba(12, 16, 28, 0.5) !important;
-  -webkit-backdrop-filter: blur(10px);
-  backdrop-filter: blur(10px);
+  background: rgba(12, 16, 28, 0.34) !important;
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
 }
 .hz-rest-panel {
-  background: rgba(10, 15, 26, 0.46) !important;
-  -webkit-backdrop-filter: blur(9px);
-  backdrop-filter: blur(9px);
+  background: rgba(10, 15, 26, 0.3) !important;
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+}
+/* ライトなガラスでも本文がにじまないよう、本文テキストに薄い影を敷いて可読性を担保 */
+.hz-story .hz-voice,
+.hz-story .hz-block p,
+.hz-depth-title,
+.hz-choice-main {
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.85), 0 0 1px rgba(0, 0, 0, 0.9);
 }
 /* 選択肢ボタンも少しだけ透かして背景と地続きに（可読は本文色で確保） */
 .hz-options button.hz-choice-open {

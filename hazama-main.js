@@ -1,4 +1,4 @@
-// Hazama main.js v2.42
+// Hazama main.js v2.43
 // Minimal, robust loader + renderer for GitHub Pages / Codespaces.
 // v2.3 adds a lightweight deterministic game layer around depth pressure.
 // v2.5 animates the descent key visual and mandala goal gate.
@@ -37,7 +37,7 @@
 // v2.38 keeps the post-story flow focused with an always-visible next-action guide.
 // v2.39 makes Gate Run feel more playful with a live pulse cue and recommended action highlight.
 
-const APP_VERSION = "v2.42";
+const APP_VERSION = "v2.43";
 const GateRunModel = globalThis.HazamaGateRun || {};
 const GATE_CONSTANTS = GateRunModel.constants || {};
 
@@ -3473,13 +3473,21 @@ const HazamaAtmos = (() => {
       const s = cur.depth, d = cur.dread;
       // G7: 浅でもアートが立つように可視フロアを上げる（埋もれ防止）。深部はほぼ全面ガーデン。
       const vis = Math.max(0, (s - 0.04) / 0.96);
-      cv.style.opacity = Math.min(0.98, 0.16 + vis * 0.82).toFixed(3);
+      cv.style.opacity = Math.min(1, 0.32 + vis * 0.68).toFixed(3); // G7.1: アートを確実に立たせる(床上げ)
       if (s <= 0.02) { cv.style.opacity = "0"; return; }
       const rng = mulberry32((cur.seed >>> 0) || 1);
       const R = (n) => rng() * (n == null ? 1 : n);
-      const bright = 0.45 + s * 0.55;
+      const bright = 0.6 + s * 0.5;
       const mosh = s * 0.55 + d * 0.45;
       const px = dpr;
+
+      // G7.1: ベースの大気ウォッシュ — シアン→紫→マゼンタの色面で背景が常に"アートとして立つ"。
+      // mix-blend:screen 前提で明度を高めに（screen で映える）。ガラスパネル越しでも色が透ける。
+      const wash = g.createLinearGradient(0, 0, 0, H);
+      wash.addColorStop(0, "hsla(198,75%," + (26 + s * 20).toFixed(0) + "%," + (0.30 + s * 0.30).toFixed(3) + ")");
+      wash.addColorStop(0.5, "hsla(248,60%," + (20 + s * 16).toFixed(0) + "%," + (0.22 + s * 0.26).toFixed(3) + ")");
+      wash.addColorStop(1, "hsla(305,68%," + (24 + s * 20).toFixed(0) + "%," + (0.30 + s * 0.32).toFixed(3) + ")");
+      g.fillStyle = wash; g.fillRect(0, 0, W, H);
 
       // --- カメラ / 投影（消失点・地平線・パララックス） ---
       const horizon = H * (0.30 + R(0.08));         // 地平線（上1/3付近・seedで微動）

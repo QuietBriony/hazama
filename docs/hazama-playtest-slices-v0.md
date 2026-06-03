@@ -2,7 +2,7 @@
 
 ## Current Goal
 
-Make the v2.42 first playable readable as a small roguelike decision loop:
+Make the v2.43 first playable readable as a small roguelike decision loop:
 
 `A_start -> HUB_NIGHT -> Gate Run -> Ω unlock -> Ω -> A_reborn`
 
