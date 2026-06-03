@@ -1,4 +1,4 @@
-// Hazama main.js v2.44
+// Hazama main.js v2.45
 // Minimal, robust loader + renderer for GitHub Pages / Codespaces.
 // v2.3 adds a lightweight deterministic game layer around depth pressure.
 // v2.5 animates the descent key visual and mandala goal gate.
@@ -37,7 +37,7 @@
 // v2.38 keeps the post-story flow focused with an always-visible next-action guide.
 // v2.39 makes Gate Run feel more playful with a live pulse cue and recommended action highlight.
 
-const APP_VERSION = "v2.44";
+const APP_VERSION = "v2.45";
 const GateRunModel = globalThis.HazamaGateRun || {};
 const GATE_CONSTANTS = GateRunModel.constants || {};
 
@@ -4195,21 +4195,33 @@ function renderDepth(depthId, opts = {}) {
     </div>
   `;
 
+  // G8: 没入の既定ビュー — 本文の直下に「どう読む」選択肢だけを主役で出し、
+  // 説明/操作の足場(最初にやること・初回ループguide・Gate Run・BGM・セッション・Breath)は
+  // 折りたたみドロワーに退避（既定で閉）。"機能説明画面"をやめ、本文＋アート＋選択に絞る。
+  // 全要素はDOMに残す（id配線・smoke文字列を壊さない）。
   optionsEl.innerHTML = "";
   optionsEl.innerHTML = `
     <section class="hz-decision-panel" aria-label="展開">
-      ${renderStartGuideMarkup()}
       <div class="hz-decision-head">
         <span>展開</span>
         <b>本文を読んでから選ぶ</b>
       </div>
-      ${renderFirstPlayableGuideMarkup()}
-      <div id="run-panel-host">
-        ${renderRunPanelMarkup()}
-      </div>
       <div id="route-options-host" class="hz-route-options"></div>
-      <div id="session-controls-host"></div>
-      ${renderBreathRestMarkup(question)}
+      <details class="hz-tools" id="hz-tools">
+        <summary class="hz-tools-summary">
+          <span class="hz-tools-title">操作・ゲート・BGM</span>
+          <span class="hz-tools-hint">開く</span>
+        </summary>
+        <div class="hz-tools-body">
+          ${renderStartGuideMarkup()}
+          ${renderFirstPlayableGuideMarkup()}
+          <div id="run-panel-host">
+            ${renderRunPanelMarkup()}
+          </div>
+          <div id="session-controls-host"></div>
+          ${renderBreathRestMarkup(question)}
+        </div>
+      </details>
     </section>
   `;
   const routeHost = $("route-options-host") || optionsEl;

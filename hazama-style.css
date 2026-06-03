@@ -2814,3 +2814,60 @@ body.peeling::after {
   .hz-gate-run-panel { background: rgba(12, 16, 28, 0.92) !important; }
   .hz-rest-panel { background: rgba(10, 15, 26, 0.92) !important; }
 }
+
+/* ===== G8: 没入の既定ビュー — 操作/説明の足場を折りたたみドロワーへ ===== */
+/* 本文直下は「どう読む」選択肢が主役。足場(最初にやること/Gate Run/BGM/セッション/Breath)は既定で閉。 */
+.hz-tools {
+  margin-top: 1rem;
+  border: 1px solid rgba(125, 165, 210, 0.18);
+  border-radius: 0.6rem;
+  background: rgba(8, 12, 20, 0.28);
+  -webkit-backdrop-filter: blur(5px);
+  backdrop-filter: blur(5px);
+}
+.hz-tools-summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+  padding: 0.6rem 0.9rem;
+  cursor: pointer;
+  list-style: none;
+  color: #aebfd4;
+  font-size: 0.82rem;
+  letter-spacing: 0.04em;
+  user-select: none;
+}
+.hz-tools-summary::-webkit-details-marker { display: none; }
+.hz-tools-title { font-weight: 700; }
+.hz-tools-hint {
+  font-size: 0.72rem;
+  color: #7f93ab;
+  border: 1px solid rgba(125, 165, 210, 0.28);
+  border-radius: 999px;
+  padding: 0.1rem 0.55rem;
+}
+.hz-tools[open] .hz-tools-hint::after { content: ""; }
+.hz-tools-summary::before {
+  content: "▸";
+  color: #7fb0d6;
+  transition: transform 0.18s ease;
+}
+.hz-tools[open] .hz-tools-summary::before { transform: rotate(90deg); }
+.hz-tools[open] .hz-tools-hint { color: #aebfd4; }
+.hz-tools-body {
+  padding: 0 0.7rem 0.7rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+/* ドロワー内のパネルは枠を弱めて入れ子の重さを減らす */
+.hz-tools-body .hz-start-guide,
+.hz-tools-body .hz-run-panel,
+.hz-tools-body .hz-rest-panel { margin: 0; }
+/* 主役の選択肢は少し大きく・余白広めにして読書から地続きに */
+#route-options-host { gap: 0.6rem; }
+#route-options-host .hz-choice-open { min-height: 3.4rem; }
+@media (prefers-reduced-motion: reduce) {
+  .hz-tools-summary::before { transition: none; }
+}
