@@ -1,4 +1,4 @@
-// Hazama main.js v2.41
+// Hazama main.js v2.42
 // Minimal, robust loader + renderer for GitHub Pages / Codespaces.
 // v2.3 adds a lightweight deterministic game layer around depth pressure.
 // v2.5 animates the descent key visual and mandala goal gate.
@@ -37,7 +37,7 @@
 // v2.38 keeps the post-story flow focused with an always-visible next-action guide.
 // v2.39 makes Gate Run feel more playful with a live pulse cue and recommended action highlight.
 
-const APP_VERSION = "v2.41";
+const APP_VERSION = "v2.42";
 const GateRunModel = globalThis.HazamaGateRun || {};
 const GATE_CONSTANTS = GateRunModel.constants || {};
 
@@ -3471,9 +3471,10 @@ const HazamaAtmos = (() => {
       if (!cv || !W) return;
       g.clearRect(0, 0, W, H);
       const s = cur.depth, d = cur.dread;
-      const vis = Math.max(0, (s - 0.12) / 0.88);
-      cv.style.opacity = (vis * 0.94).toFixed(3);
-      if (vis <= 0.003) return;
+      // G7: 浅でもアートが立つように可視フロアを上げる（埋もれ防止）。深部はほぼ全面ガーデン。
+      const vis = Math.max(0, (s - 0.04) / 0.96);
+      cv.style.opacity = Math.min(0.98, 0.16 + vis * 0.82).toFixed(3);
+      if (s <= 0.02) { cv.style.opacity = "0"; return; }
       const rng = mulberry32((cur.seed >>> 0) || 1);
       const R = (n) => rng() * (n == null ? 1 : n);
       const bright = 0.45 + s * 0.55;
@@ -3807,10 +3808,11 @@ function applyAtmosphere(depthId) {
   // 観測者: depthMeta優先、無ければ深度から（深いほど"私"が増える）。
   const observer = Math.max(1, Number(meta.observer) || (1 + Math.floor(rank / 3)));
   const seed = atmosWorldSeed(state, rank);
-  // 動く表紙: anchor(表紙=A_start/HUB)でも背景の反転ガーデン/グリッジを薄く生かす(per-load seed)。
+  // 動く表紙: anchor(表紙=A_start/HUB)でも背景の反転ガーデン/グリッジをしっかり生かす(per-load seed)。
+  // G7: 没入のため浅/表紙でもアートを立てる（埋もれ防止）。全画面背景＋ガラス調パネルと合わせて効く。
   const isAnchor = rank === 0;
-  const gardenDepthN = isAnchor ? Math.max(depthN, 0.26) : depthN;
-  const glitchDepthN = isAnchor ? Math.max(depthN, 0.30) : depthN;
+  const gardenDepthN = isAnchor ? Math.max(depthN, 0.42) : Math.max(depthN, 0.2);
+  const glitchDepthN = isAnchor ? Math.max(depthN, 0.38) : depthN;
   const titleSeed = isAnchor ? ((seed ^ ATMOS_LOAD_SEED) >>> 0) : seed;
   HazamaAtmos.apply({ depthN, dread, observer, seed: titleSeed, gardenDepthN, glitchDepthN });
   updateBackdrop(depthN);

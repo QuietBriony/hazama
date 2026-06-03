@@ -2723,3 +2723,87 @@ body.peeling::after {
   .hz-sink-fill { transition: none; }
   .hz-title::after { mask-image: none; -webkit-mask-image: none; opacity: .5; }
 }
+
+/* ===== G7: 没入アート前面化 — 全画面アート＋ガラス調パネル(slice級の没入回復) =====
+   実機FB「アートが消えている／codex的」への対応。背景アート(descent写真/反転ガーデン/曼荼羅/グリッジ)を
+   表紙(anchor)含め全状態で全画面化し、本文/パネルは半透明ガラス(backdrop-blur)にしてアートを透かす。
+   本文可読性(R4)は dark glass + blur で維持。荒々しさ/没入は背景アートが担う。 */
+
+/* 表紙(anchor=A_start/HUB)も全画面背景アートに（小バナーをやめ、動く表紙＝生きた庭の上にタイトル） */
+:root[data-hz-visual="anchor"] .hz-visual {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  width: 100vw;
+  height: 100vh;
+  max-height: none;
+  aspect-ratio: auto;
+  margin: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  pointer-events: none;
+  opacity: 1;
+}
+:root[data-hz-visual="anchor"] .hz-visual::before {
+  opacity: calc(0.18 + var(--sink, 0) * 0.2);
+}
+:root[data-hz-visual="anchor"] .hz-visual::after {
+  background:
+    radial-gradient(circle at 50% 40%, rgba(7, 10, 18, 0), rgba(7, 10, 18, 0.42) 58%, rgba(7, 10, 18, 0.8) 100%),
+    linear-gradient(180deg, rgba(7, 10, 18, 0.26), rgba(7, 10, 18, 0.64));
+}
+:root[data-hz-visual="anchor"] .hz-gate-orb {
+  opacity: clamp(0.12, calc(var(--hz-gate-opacity) * 0.5), 0.34);
+}
+:root[data-hz-visual="anchor"] .hz-gate-orb img {
+  width: min(120vmin, 70rem);
+}
+
+/* 本文・各パネルをガラス調(半透明＋blur)に＝背景アートが透けて没入。テキストは dark glass で可読維持。 */
+.hz-story {
+  background: rgba(7, 11, 19, 0.52);
+  border-color: rgba(125, 165, 210, 0.22);
+  -webkit-backdrop-filter: blur(11px) saturate(1.08);
+  backdrop-filter: blur(11px) saturate(1.08);
+  box-shadow: 0 1rem 2.4rem rgba(0, 0, 0, 0.32);
+}
+.hz-decision-panel {
+  background: rgba(9, 14, 24, 0.5) !important;
+  border-color: rgba(125, 165, 210, 0.2);
+  -webkit-backdrop-filter: blur(11px) saturate(1.06);
+  backdrop-filter: blur(11px) saturate(1.06);
+}
+.hz-run-panel {
+  background: rgba(10, 15, 26, 0.46) !important;
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+}
+.hz-gate-run-panel {
+  background: rgba(12, 16, 28, 0.5) !important;
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+}
+.hz-rest-panel {
+  background: rgba(10, 15, 26, 0.46) !important;
+  -webkit-backdrop-filter: blur(9px);
+  backdrop-filter: blur(9px);
+}
+/* 選択肢ボタンも少しだけ透かして背景と地続きに（可読は本文色で確保） */
+.hz-options button.hz-choice-open {
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+}
+/* ヘッダ(タイトル/サブ/沈下HUD)は全画面アートの上に乗るので軽い scrim で可読確保 */
+.hz-header {
+  position: relative;
+  z-index: 3;
+}
+/* backdrop-filter 非対応環境ではガラスが効かないため、その時だけ不透明寄りに戻す(可読フォールバック) */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .hz-story { background: rgba(7, 11, 19, 0.9); }
+  .hz-decision-panel { background: rgba(9, 14, 24, 0.92) !important; }
+  .hz-run-panel { background: rgba(10, 15, 26, 0.92) !important; }
+  .hz-gate-run-panel { background: rgba(12, 16, 28, 0.92) !important; }
+  .hz-rest-panel { background: rgba(10, 15, 26, 0.92) !important; }
+}
