@@ -39,7 +39,7 @@ body {
 #app {
   position: relative;
   z-index: 1;
-  max-width: 960px;
+  max-width: 640px;            /* G7.2: PCでも没入の読書カラムに。全画面アートが左右に呼吸する（スマホ=claude版の見えに統一） */
   margin: 0 auto;
   padding: 1.5rem 1rem 3rem;
 }
@@ -2198,7 +2198,7 @@ body.glitch-hard .hz-title { transform: skewX(-3deg) translateX(0.5px); }
 }
 
 .hz-footer {
-  max-width: 960px;
+  max-width: 640px;
   margin: 0 auto;
   padding: 0.75rem 1rem 1.5rem;
   font-size: 0.75rem;
