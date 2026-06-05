@@ -1,12 +1,12 @@
 /* =========================================================
-   Hazama — Service Worker
-   - Precaches the static first playable shell.
-   - Network-first for HTML and depth data so deploys propagate quickly.
-   - Cache-first for same-origin static assets, ignoring version query strings.
-   - Keeps cache cleanup scoped to Hazama-owned cache names.
+   Hazama 狭間 (root = 没入版/逆統合) — Service Worker
+   - root スコープ /hazama/ で動作（相対パスのみ）。
+   - HTML と depths-shell.json は network-first（デプロイ伝播を速く）。
+   - 同一オリジン静的アセットは cache-first（version query は無視）。
+   - cache prefix=hazama-pwa- ＝旧 forward 版 cache(hazama-pwa-v2.45 等)を activate で掃除し更新。
 ========================================================= */
 
-const VERSION = "hazama-pwa-v2.45";
+const VERSION = "hazama-pwa-r5";
 const CACHE_PREFIX = "hazama-pwa-";
 const STATIC_CACHE = `${VERSION}-static`;
 const RUNTIME_CACHE = `${VERSION}-runtime`;
@@ -14,23 +14,16 @@ const RUNTIME_CACHE = `${VERSION}-runtime`;
 const PRECACHE_URLS = [
   "./",
   "index.html",
-  "hazama-index.html",
-  "hazama-depths.json",
-  "hazama-style.css",
-  "hazama-seed.js",
-  "hazama-state.js",
-  "hazama-gate-run.js",
-  "hazama-main.js",
+  "slice.css",
+  "slice.js",
+  "depths-shell.json",
   "manifest.webmanifest",
   "icons/icon-96.png",
   "icons/icon-192.png",
   "icons/icon-512.png",
   "icons/icon-512-maskable.png",
   "icons/apple-touch-icon.png",
-  "assets/hazama-descent-key.webp",
-  "assets/hazama-goal-mandala.webp",
-  "assets/hazama-descent-key.png",
-  "assets/hazama-goal-mandala.png"
+  "assets/hazama-descent-key.webp"
 ];
 
 self.addEventListener("install", (event) => {
@@ -40,7 +33,7 @@ self.addEventListener("install", (event) => {
         Promise.all(
           PRECACHE_URLS.map((url) =>
             cache.add(url).catch((err) => {
-              console.warn("[Hazama SW] precache miss:", url, err);
+              console.warn("[Hazama slice SW] precache miss:", url, err);
             })
           )
         )
@@ -64,9 +57,7 @@ self.addEventListener("activate", (event) => {
 });
 
 self.addEventListener("message", (event) => {
-  if (event.data?.type === "SKIP_WAITING") {
-    self.skipWaiting();
-  }
+  if (event.data?.type === "SKIP_WAITING") self.skipWaiting();
 });
 
 function isHtmlRequest(request) {
@@ -75,7 +66,7 @@ function isHtmlRequest(request) {
 }
 
 function isDepthData(url) {
-  return url.origin === self.location.origin && url.pathname.endsWith("/hazama-depths.json");
+  return url.origin === self.location.origin && url.pathname.endsWith("/depths-shell.json");
 }
 
 function matchCachedRequest(request, options = {}) {
@@ -90,9 +81,7 @@ function putIfOk(cacheName, request, response) {
   const copy = response.clone();
   caches.open(cacheName)
     .then((cache) => cache.put(request, copy))
-    .catch((err) => {
-      console.warn("[Hazama SW] cache put failed:", request.url, err);
-    });
+    .catch((err) => console.warn("[Hazama slice SW] cache put failed:", request.url, err));
   return response;
 }
 

@@ -1,56 +1,20 @@
 {
-  "name": "Hazama",
+  "name": "Hazama 狭間",
   "short_name": "Hazama",
-  "description": "扉を100%まで開き、Ωへ潜る短い深度ローグ。",
-  "start_url": "index.html",
+  "description": "沈むほど戻りにくい。認識が合う者だけがΩへ潜る、没入の降下対話。",
+  "start_url": ".",
   "scope": "./",
   "display": "standalone",
   "display_override": ["standalone", "minimal-ui"],
-  "orientation": "any",
-  "background_color": "#070a12",
-  "theme_color": "#070a12",
+  "orientation": "portrait",
+  "background_color": "#04060b",
+  "theme_color": "#04060b",
   "lang": "ja",
   "categories": ["games", "entertainment"],
   "icons": [
-    {
-      "src": "icons/icon-96.png",
-      "sizes": "96x96",
-      "type": "image/png",
-      "purpose": "any"
-    },
-    {
-      "src": "icons/icon-192.png",
-      "sizes": "192x192",
-      "type": "image/png",
-      "purpose": "any"
-    },
-    {
-      "src": "icons/icon-512.png",
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "any"
-    },
-    {
-      "src": "icons/icon-512-maskable.png",
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "maskable"
-    }
-  ],
-  "shortcuts": [
-    {
-      "name": "Hazamaを開く",
-      "short_name": "Hazama",
-      "description": "Hazamaの入口から再開する",
-      "url": "index.html",
-      "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png" }]
-    },
-    {
-      "name": "別入口で開く",
-      "short_name": "Alt",
-      "description": "hazama-index.htmlからHazamaを開く",
-      "url": "hazama-index.html",
-      "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png" }]
-    }
+    { "src": "icons/icon-96.png", "sizes": "96x96", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512-maskable.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
   ]
 }

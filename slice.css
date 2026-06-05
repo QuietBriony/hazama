@@ -1,0 +1,563 @@
+/* Hazama M1 vertical slice — 沈下スライス
+   北極星: 進行する対話が、進むほどプレイヤーを狭間へ沈める／戻りにくくする。
+   トーン: 硬い・乾いた・サイバーパンク・威圧（沈黙＝圧）。詩性は異物感のためだけに残す。
+   data-phase: surface → drift → deep → bottom（body に付与し、色温度と圧を段階で締める） */
+
+:root {
+  --bg: #04060b;
+  --ink: #c8d2dc;
+  --ink-dim: #6b7682;
+  --ink-faint: #3a424c;
+  --accent: #7fb6c4;       /* 冷たい青緑 */
+  --warn: #c46b5a;         /* 危険・身体の脅威 */
+  --line: rgba(127, 182, 196, 0.22);
+  --reveal-ms: 46ms;       /* 1文字あたりの送り。危険局面で JS が伸ばす */
+  --press: 0;              /* 0..1 圧。JS が更新。ヴィネット/震えに使う */
+  --sink: 0;               /* 0..1 沈下。背景の暗さに使う */
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  height: 100%;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: "Hiragino Sans", "Yu Gothic", "Noto Sans JP", system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  overflow: hidden;
+}
+
+body {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  transition: background-color 2.6s ease, color 2.6s ease;
+}
+
+/* data-phase 連動の暗転パレット：潜るほど地色が沈み、インクと差し色が冷えて翳る。 */
+body[data-phase="drift"]  { --bg: #03050a; --ink: #c1cbd5; }
+body[data-phase="deep"]   { --bg: #03040a; --ink: #b6c0cb; --accent: #79a9b6; --line: rgba(127,182,196,0.18); }
+body[data-phase="bottom"] { --bg: #020308; --ink: #aab4bf; --accent: #8aa6ac; --ink-dim: #5c6671; --line: rgba(127,182,196,0.14); }
+
+/* ---------- 背景 ---------- */
+/* 奈落のドーム：上端がわずかに醒め、下へ向けて漆黒へ沈む。硬く乾いた沈下の地。 */
+.hz-bg {
+  position: fixed; inset: 0; z-index: 0; overflow: hidden;
+  background:
+    radial-gradient(150% 95% at 50% -12%,
+      #0a131d 0%, #060c15 34%, #03060e 68%, #010206 100%);
+}
+.hz-bg-descent {
+  position: absolute; inset: -4%;
+  width: 108%; height: 108%;
+  object-fit: cover;
+  /* 沈むほど暗く・彩度が落ち・わずかに沈降。深部はやや締めて硬く（contrast↑・寒色へ）。 */
+  filter:
+    brightness(calc(0.6 - var(--sink) * 0.46))
+    saturate(calc(0.78 - var(--sink) * 0.5))
+    contrast(calc(1.05 + var(--sink) * 0.12))
+    hue-rotate(calc(var(--sink) * -8deg));
+  transform: translateY(calc(var(--sink) * 2.4%)) scale(calc(1 + var(--sink) * 0.06));
+  transition: filter 1.6s ease, transform 3s ease, opacity 2.2s ease;
+  /* R6: 深く潜るほど"世界の輪郭が溶ける"＝写真が退き、下から反転ガーデンが露出して取って代わる。 */
+  opacity: calc(0.88 - var(--sink) * 0.52);
+}
+
+/* 反転重森ガーデン（R6）：canvas は slice.js が描く。ここでは載せ方だけ規定する。
+   screen blend＝冷たいワイヤーフレームの掻き目/石組/市松が地に焼き込まれて浮く。
+   opacity は JS が深度で開く（cv.style.opacity）。浅はクリーン（≒0）。 */
+.hz-bg-garden {
+  position: absolute; inset: 0;
+  width: 100%; height: 100%;
+  z-index: 0; pointer-events: none;
+  mix-blend-mode: screen;
+  opacity: 0;
+  filter: contrast(1.12) saturate(0.92);
+}
+
+/* 沈降グロー：底中央から立ち上る冷たい淵。沈むほど増光し、わずかに迫り上がる。
+   mandala（同じく下から迫り上がる）がこの光の底から現れる＝目的地への奥行き。 */
+.hz-bg-abyss {
+  position: absolute; inset: 0; pointer-events: none;
+  background:
+    radial-gradient(78% 56% at 50% 116%,
+      rgba(74, 142, 162, calc(0.10 + var(--sink) * 0.30)) 0%,
+      rgba(34, 78, 96,  calc(0.05 + var(--sink) * 0.14)) 36%,
+      transparent 70%);
+  transform: translateY(calc(var(--sink) * -9%));
+  mix-blend-mode: screen;
+  transition: background 1.8s ease, transform 3s ease;
+}
+
+/* 配線グリッド：浅では無、沈むほど露出する縦の導線（鉄錆の編み目／世界の裏側）。
+   下方ほど明るく密に見えるよう mask で沈降の遠近を作る。静止＝モバイル軽量・reduced 安全。 */
+.hz-bg-grid {
+  position: absolute; inset: 0; pointer-events: none;
+  opacity: calc(var(--sink) * 0.5);
+  background-image:
+    repeating-linear-gradient(90deg,
+      rgba(127, 182, 196, 0.055) 0px, rgba(127, 182, 196, 0.055) 1px,
+      transparent 1px, transparent 44px),
+    repeating-linear-gradient(90deg,
+      rgba(127, 182, 196, 0.10) 0px, rgba(127, 182, 196, 0.10) 1px,
+      transparent 1px, transparent 132px);
+  -webkit-mask-image: linear-gradient(to bottom, transparent 6%, rgba(0,0,0,0.45) 46%, #000 100%);
+          mask-image: linear-gradient(to bottom, transparent 6%, rgba(0,0,0,0.45) 46%, #000 100%);
+  mix-blend-mode: screen;
+  transition: opacity 1.8s ease;
+}
+.hz-bg-mandala {
+  position: absolute; left: 50%; top: 118%;
+  width: 86vmin; height: 86vmin;
+  transform: translate(-50%, -50%);
+  /* 深部に近づくほど下から迫り上がる目的地（曼荼羅ゲート） */
+  top: calc(118% - var(--sink) * 70%);
+  opacity: calc(0.08 + var(--sink) * 0.5);
+  transition: top 3s ease, opacity 3s ease;
+  mix-blend-mode: screen;
+}
+/* 手続き的曼荼羅（canvas）。回転・層・色は JS が深度/観測者に連動させる。
+   中心は決して描かない＝核（§4-1）。沈むほど中心の空白が“退いて”広がる。 */
+.hz-bg-mandala canvas { width: 100%; height: 100%; display: block; }
+
+/* 原色 leak（R6）：基本ダークトーンの世界の"隙間（あわい）"から、原色（ティファニーブルー／
+   ラスタ＝赤・金・緑）が細い亀裂となって"ちらちら"漏れる。常時は不可視（opacity 0）。
+   slice.js のグリッジ・バーストに同調して body.leak-on が付き、一瞬だけ点く＝抑えるほど効く。
+   色は JS が --leak-rgb に注ぐ（バーストごとに別の原色）。深いほど（--gi）明るく漏れる。 */
+.hz-bg-leak {
+  position: absolute; inset: 0; z-index: 1; pointer-events: none;
+  --leak-rgb: 10, 186, 181;
+  opacity: 0;
+  mix-blend-mode: screen;
+  background:
+    linear-gradient(101deg, transparent 0 37.6%, rgba(var(--leak-rgb), 0.55) 37.9% 38.4%, transparent 38.7% 100%),
+    linear-gradient(96deg, transparent 0 63.4%, rgba(var(--leak-rgb), 0.42) 63.7% 64.1%, transparent 64.4% 100%),
+    linear-gradient(88deg, transparent 0 81.2%, rgba(var(--leak-rgb), 0.34) 81.5% 81.9%, transparent 82.2% 100%),
+    radial-gradient(62% 7% at 50% 90%, rgba(var(--leak-rgb), 0.4), transparent 72%);
+  transition: opacity .16s steps(2, end);
+}
+body.leak-on .hz-bg-leak { opacity: calc(0.22 + 0.5 * var(--gi)); }
+
+.hz-vignette {
+  position: absolute; inset: 0;
+  pointer-events: none;
+  background: radial-gradient(120% 100% at 50% 38%,
+    transparent 0%,
+    rgba(2,4,10,calc(0.35 + var(--press) * 0.4)) 58%,
+    rgba(2,4,10,calc(0.78 + var(--press) * 0.2)) 100%);
+  transition: background 1.2s ease;
+}
+.hz-scanline {
+  position: absolute; inset: 0;
+  pointer-events: none;
+  opacity: calc(0.05 + var(--press) * 0.14);
+  background: repeating-linear-gradient(to bottom,
+    rgba(127,182,196,0.08) 0px, rgba(127,182,196,0.08) 1px, transparent 1px, transparent 4px);
+  mix-blend-mode: overlay;
+}
+
+/* フィルムグレイン：合成ノイズ（SVG feTurbulence）を細かく振る。圧で濃くなる。 */
+.hz-grain {
+  position: absolute; inset: -8%;
+  width: 116%; height: 116%;   /* translate ±3% を覆う最小限。blend面積を抑えモバイル負荷を軽減 */
+  pointer-events: none; z-index: 1;
+  opacity: calc(0.035 + var(--press) * 0.07);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size: 170px 170px;
+  mix-blend-mode: overlay;
+  transition: opacity 1.4s ease;
+  animation: hz-grain-shift 0.55s steps(3) infinite;
+}
+@keyframes hz-grain-shift {
+  0%   { transform: translate(0, 0); }
+  33%  { transform: translate(-3%, 2%); }
+  66%  { transform: translate(2%, -3%); }
+  100% { transform: translate(0, 0); }
+}
+
+/* ---------- アプリ本体 ---------- */
+.hz-app {
+  position: relative; z-index: 2;
+  flex: 1;
+  display: flex; flex-direction: column;
+  max-width: 680px;
+  width: 100%;
+  margin: 0 auto;
+  padding: max(18px, env(safe-area-inset-top)) 22px 0;
+  min-height: 0;
+  overflow: hidden;            /* スクロールは #scene が内部で持つ。choices と本文は別トラックで絶対に重ならない */
+}
+
+/* 沈下ゲージ：右端に細い縦線。fill が下へ伸びる＝沈んだ深さ */
+.hz-gauge {
+  position: fixed; right: 10px; top: 14vh; bottom: 16vh; z-index: 3;
+  width: 14px;
+  display: flex; flex-direction: column; align-items: center; gap: 8px;
+  pointer-events: none;
+}
+.hz-gauge-track {
+  position: relative; flex: 1; width: 2px;
+  background: linear-gradient(to bottom, transparent, var(--ink-faint), transparent);
+}
+.hz-gauge-fill {
+  position: absolute; top: 0; left: -1px; width: 4px; height: 0%;
+  background: linear-gradient(to bottom, var(--accent), var(--warn));
+  box-shadow: 0 0 8px rgba(127,182,196,0.5);
+  transition: height 1.4s cubic-bezier(.4,0,.2,1);
+}
+.hz-return-paths { display: flex; flex-direction: column; gap: 5px; }
+.hz-return-paths i {
+  width: 8px; height: 2px; background: var(--ink-dim);
+  transition: opacity .8s ease, background .8s ease;
+}
+.hz-return-paths i.spent { opacity: 0.12; background: var(--warn); }
+
+/* 観測者カウンタ：深いほど"私"が増殖する（沈下の入れ子の可視化） */
+.hz-observer {
+  font-size: 0.62rem; letter-spacing: -0.04em; line-height: 1;
+  color: var(--ink-faint); writing-mode: vertical-rl; text-orientation: upright;
+  max-height: 7em; overflow: hidden; transition: color .8s ease;
+}
+.hz-observer[data-count="3"], .hz-observer[data-count="4"] { color: var(--ink-dim); }
+.hz-observer[data-count="5"], .hz-observer[data-count="6"] { color: var(--accent); }
+/* 観測者が増殖した深部（∞の周回）：滲んで呼吸する＝"私"が群れる */
+.hz-observer.deep {
+  color: var(--accent);
+  text-shadow: 0 0 6px rgba(127,182,196,0.45);
+  animation: hz-obs-breath 4.2s ease-in-out infinite;
+}
+@keyframes hz-obs-breath {
+  0%, 100% { opacity: 0.55; text-shadow: 0 0 4px rgba(127,182,196,0.3); }
+  50%      { opacity: 1; text-shadow: 0 0 9px rgba(127,182,196,0.6); }
+}
+/* R3: 認識インジケータ — 構造を読むほど ◆ が灯る（Ωの資格が育つのを感じる・資源UIではない） */
+.hz-attune {
+  font-size: 0.56rem; letter-spacing: -0.02em; line-height: 1;
+  color: var(--ink-faint); writing-mode: vertical-rl; text-orientation: upright;
+  max-height: 9em; overflow: hidden; transition: color .8s ease; opacity: 0.85;
+}
+.hz-attune.attuned { color: var(--accent); opacity: 1; text-shadow: 0 0 7px rgba(127,182,196,0.55); }
+
+/* シーン本文：ここが内部スクロール領域。choices とは別トラックなので本文がボタンに被らない。
+   ::before の margin-top:auto で「本文が短い時は下寄せ（沈下の手触り）／長い時は上から素直にスクロール」
+   を両立する（flex+overflow の“上端が掴めない”バグを回避する定番手法）。 */
+.hz-scene {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  display: flex; flex-direction: column; justify-content: flex-start;
+  gap: 1.05em;
+  padding: 5vh 2px 3vh;
+  -webkit-overflow-scrolling: touch;
+}
+.hz-scene::before { content: ""; margin-top: auto; }
+.hz-line {
+  margin: 0;
+  font-size: clamp(1.02rem, 1rem + 0.8vw, 1.34rem);
+  line-height: 1.95;
+  letter-spacing: 0.02em;
+  color: var(--ink);
+  opacity: 0;
+}
+.hz-line.shown { opacity: 1; }
+.hz-line .ch { opacity: 0; filter: blur(2px); }
+.hz-line .ch.lit { opacity: 1; filter: blur(0); transition: opacity 180ms ease, filter 280ms ease; }
+.hz-line.voice { color: var(--accent); font-style: normal; padding-left: 0.8em; border-left: 2px solid var(--line); }
+.hz-line.body  { color: #d9c2bc; }          /* 身体に来る脅威 */
+.hz-line.cold  { color: var(--ink-dim); }    /* 乾いた観測 */
+.hz-line.danger { color: var(--warn); }
+.hz-line.self  { color: #b9c6d2; font-style: italic; }
+
+/* 危険局面：本文がわずかに震える（reduced-motion で無効化） */
+body[data-tension="high"] .hz-scene { animation: hz-shudder 2.6s ease-in-out infinite; }
+@keyframes hz-shudder {
+  0%,100% { transform: translateX(0); }
+  25% { transform: translateX(-0.6px); }
+  75% { transform: translateX(0.6px); }
+}
+
+/* 選択肢：scene の下に固定された別トラック（flex:0 0 auto）。本文と重ならない。
+   上端に短いフェードを置き、スクロールする本文がボタンへ溶け込むように消える。 */
+.hz-choices {
+  position: relative;
+  flex: 0 0 auto;
+  display: flex; flex-direction: column; gap: 10px;
+  padding: 12px 0 max(14px, env(safe-area-inset-bottom));
+  background: var(--bg);
+}
+.hz-choices::before {
+  content: ""; position: absolute; left: 0; right: 0; top: -34px; height: 34px;
+  pointer-events: none;
+  background: linear-gradient(to top, var(--bg), transparent);
+}
+.hz-choice {
+  appearance: none; -webkit-appearance: none;
+  text-align: left; width: 100%;
+  font: inherit; font-size: 1rem; line-height: 1.6;
+  color: var(--ink);
+  background: rgba(127,182,196,0.05);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 14px 16px;
+  cursor: pointer;
+  transition: background .25s, border-color .25s, opacity .4s, transform .4s;
+  opacity: 0; transform: translateY(8px);
+}
+.hz-choice.in { opacity: 1; transform: none; }
+.hz-choice:active { background: rgba(127,182,196,0.12); }
+.hz-choice .sub {
+  display: block; margin-top: 5px;
+  font-size: 0.78rem; color: var(--ink-dim); letter-spacing: 0.03em;
+}
+/* 進む手＝沈む。退避手＝深いほど重く・遅くなる。 */
+.hz-choice.descend { border-color: rgba(196,107,90,0.35); }
+.hz-choice.descend .sub { color: var(--warn); }
+.hz-choice.retreat { background: transparent; }
+.hz-choice.retreat.heavy { opacity: 0.55; }
+.hz-choice.retreat.heavy .sub { color: var(--ink-faint); }
+/* 表層で読む＝知覚ゲートで弾かれる手。降下でも戻りでもない“逸れ”＝点線枠＋逸れマーク（生の差し色）。 */
+.hz-choice.surface { background: rgba(216,68,46,0.04); border-style: dashed; border-color: rgba(216,68,46,0.32); }
+.hz-choice.surface .sub { color: var(--hand-red); opacity: 0.85; }
+
+/* ---------- フッタ ---------- */
+.hz-footer {
+  position: relative; z-index: 2;
+  display: flex; align-items: center; gap: 10px;
+  padding: 8px 18px max(8px, env(safe-area-inset-bottom));
+  border-top: 1px solid rgba(127,182,196,0.08);
+}
+.hz-chip {
+  font: inherit; font-size: 0.82rem;
+  color: var(--ink-dim);
+  background: transparent;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 5px 12px; cursor: pointer;
+}
+.hz-chip[aria-pressed="true"] { color: var(--accent); border-color: var(--accent); }
+.hz-chip-quiet { border-color: transparent; }
+.hz-status { margin-left: auto; font-size: 0.72rem; color: var(--ink-faint); letter-spacing: 0.08em; }
+
+/* ---------- 起動ゲート ---------- */
+.hz-gate {
+  position: fixed; inset: 0; z-index: 10;
+  display: flex; align-items: center; justify-content: center;
+  /* R6: 表紙を"動く"ものに。背景は半透明にして、背後の反転ガーデン＋グリッジ＋原色 leak が
+     薄く滲んで見える＝静止でない生きた表紙。中央は読みやすさのため濃いまま。 */
+  background: radial-gradient(135% 125% at 50% 32%,
+    rgba(10, 16, 24, 0.80) 0%, rgba(4, 8, 15, 0.86) 46%, rgba(2, 4, 10, 0.93) 100%);
+  transition: opacity .9s ease;
+}
+.hz-gate.gone { opacity: 0; pointer-events: none; }
+.hz-gate-inner { text-align: center; padding: 24px; max-width: 420px; }
+.hz-gate-title { font-size: 2.6rem; letter-spacing: 0.5em; margin: 0 0 0.6em; color: var(--ink); text-indent: 0.5em; }
+.hz-gate-sub { color: var(--ink-dim); line-height: 2; margin: 0 0 2em; }
+.hz-gate-enter {
+  font: inherit; font-size: 1.05rem; letter-spacing: 0.4em; text-indent: 0.4em;
+  color: var(--accent);
+  background: transparent; border: 1px solid var(--accent);
+  border-radius: 999px; padding: 14px 44px; cursor: pointer;
+  transition: background .3s, color .3s;
+}
+.hz-gate-enter:active { background: var(--accent); color: #02040a; }
+.hz-gate-note { margin-top: 2.4em; font-size: 0.72rem; color: var(--ink-faint); }
+
+/* ============================================================================
+   R5 — バスキア × 沈下サイバーパンク（生の手の痕跡が冷たい構造を突き破る）
+   意味づけ: 冷たい構造＝「描画された塗装」。手描きの生マーク＝観測者の内面吐露／
+   タガが外れた声が、塗装の剥がれた隙間から世界へ書き込まれる。装飾でなく意味として。
+   本文（物語テキスト）の可読性は不変。荒々しさは枠・タイトル・差し色・背景・遷移・
+   割り込み(scrawl)で出す。全て reduced-motion 安全・モバイル軽量。
+   ============================================================================ */
+:root {
+  --hand-bone: #ece6d6;     /* オイルスティックの骨白＝手の主筆 */
+  --hand-red:  #d8442e;     /* 生のカドミウム／オックスブラッド＝吐露・否定 */
+  --hand-gold: #e0a83c;     /* 王冠・戴冠＝降下を冠する */
+  --gi: 0;                  /* グリッジ強度 0..1（JS が深度連動で更新） */
+}
+
+.hz-sr-only {
+  position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+  overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0;
+}
+
+/* ---------- グリッジ（深度連動・描画の乱れ＝塗装が剥がれる） ----------
+   既定は visibility:hidden＝idleコスト無し。JS が短いバーストで body に
+   .glitch-soft/.glitch-hard を付け、深いほど高頻度・高強度。RGBずれは descent
+   画像のゴースト(::before赤/::after青緑, screen blend)で表現＝画像複製は同一URL
+   キャッシュ流用。tear/mosh は hard のみ。reduced は静止の薄いRGBフリンジ。 */
+.hz-glitch {
+  position: absolute; inset: -4%; z-index: 1; pointer-events: none;
+  visibility: hidden; opacity: 0; mix-blend-mode: screen;
+  overflow: hidden;
+}
+.hz-glitch::before, .hz-glitch::after {
+  content: ""; position: absolute; inset: 0;
+  background: url("assets/hazama-descent-key.webp") center/cover no-repeat;
+  opacity: 0; will-change: transform, opacity;
+}
+.hz-glitch::before { filter: brightness(1.05) contrast(1.15) sepia(1) saturate(7) hue-rotate(-22deg); } /* 赤ゴースト */
+.hz-glitch::after  { filter: brightness(1.05) contrast(1.15) sepia(1) saturate(6) hue-rotate(150deg); } /* 青緑ゴースト */
+
+body.glitch-soft .hz-glitch, body.glitch-hard .hz-glitch { visibility: visible; opacity: 1; }
+body.glitch-soft .hz-glitch::before { opacity: calc(0.10 + 0.22 * var(--gi)); animation: hz-rgb-l .14s steps(2,end) 1; }
+body.glitch-soft .hz-glitch::after  { opacity: calc(0.10 + 0.22 * var(--gi)); animation: hz-rgb-r .14s steps(2,end) 1; }
+body.glitch-hard .hz-glitch::before { opacity: calc(0.18 + 0.34 * var(--gi)); animation: hz-rgb-l .2s steps(3,end) 1; }
+body.glitch-hard .hz-glitch::after  { opacity: calc(0.18 + 0.34 * var(--gi)); animation: hz-rgb-r .2s steps(3,end) 1; }
+
+@keyframes hz-rgb-l {
+  0%   { transform: translate3d(0,0,0); }
+  35%  { transform: translate3d(calc(-3px - 7px * var(--gi)), 1px, 0); }
+  70%  { transform: translate3d(calc(2px + 3px * var(--gi)), -1px, 0); }
+  100% { transform: translate3d(0,0,0); }
+}
+@keyframes hz-rgb-r {
+  0%   { transform: translate3d(0,0,0); }
+  35%  { transform: translate3d(calc(3px + 7px * var(--gi)), -1px, 0); }
+  70%  { transform: translate3d(calc(-2px - 3px * var(--gi)), 1px, 0); }
+  100% { transform: translate3d(0,0,0); }
+}
+
+/* 走査線の裂け＋データモッシュ：hard のみ。背景全体を一瞬ずらし、明るい裂けの帯が走る。 */
+body.glitch-hard .hz-bg { animation: hz-tear .2s steps(3,end) 1; }
+@keyframes hz-tear {
+  0%   { transform: translate3d(0,0,0); clip-path: inset(0); }
+  20%  { transform: translate3d(calc(4px * var(--gi)),0,0); clip-path: inset(18% 0 64% 0); }
+  21%  { transform: translate3d(calc(-6px * var(--gi)),0,0); clip-path: inset(48% 0 14% 0); }
+  45%  { transform: translate3d(0,0,0); clip-path: inset(0); }
+  46%  { transform: translate3d(calc(-3px * var(--gi)),0,0); clip-path: inset(72% 0 6% 0); }
+  100% { transform: translate3d(0,0,0); clip-path: inset(0); }
+}
+/* スキャンライン増光＋明滅（圧の上にグリッジが乗る） */
+body.glitch-soft .hz-scanline, body.glitch-hard .hz-scanline { opacity: calc(0.14 + 0.5 * var(--gi)); }
+body.glitch-hard .hz-grain { opacity: calc(0.10 + 0.16 * var(--gi)); animation-duration: 0.12s; }
+
+/* ---------- 塗装剥がれ／めくれ遷移 ----------
+   ノード遷移で一度だけ、ぎざついた縁の帯（塗装片）がめくれて画面を降りる。
+   「世界＝塗装が剥がれる／層がめくれる」を遷移として。reduced で無効。 */
+.hz-peel {
+  position: fixed; inset: 0; z-index: 4; pointer-events: none;
+  visibility: hidden;
+  background:
+    linear-gradient(180deg,
+      rgba(236,230,214,0.0) 0%,
+      rgba(196,81,58,0.10) 30%,
+      rgba(236,230,214,0.16) 52%,
+      rgba(20,26,34,0.55) 64%,
+      rgba(2,4,10,0.0) 78%);
+}
+body.peeling .hz-peel { visibility: visible; animation: hz-peel-sweep .62s cubic-bezier(.45,0,.2,1) 1; }
+@keyframes hz-peel-sweep {
+  0%   { transform: translateY(-118%); clip-path: polygon(0 0,8% 4%,20% 0,34% 5%,50% 1%,66% 6%,80% 1%,92% 5%,100% 0,100% 100%,0 100%); opacity: 0; }
+  12%  { opacity: 1; }
+  100% { transform: translateY(118%); opacity: 0;
+         clip-path: polygon(0 0,8% 4%,20% 0,34% 5%,50% 1%,66% 6%,80% 1%,92% 5%,100% 0,100% 100%,0 100%); }
+}
+
+/* ---------- 割り込み行 scrawl（タガが外れた手の声が冷たい構造へ書き込まれる） ----------
+   §2/§3融合: 周回(cycle)ごとに変わる手描き割り込み。本文より「生」で、わずかに傾き、
+   マーカーの滲みと荒い下線を持つ。が、読めること優先（傾き<1deg・高コントラスト）。 */
+.hz-line.scrawl {
+  color: var(--hand-bone);
+  font-family: "Hiragino Maru Gothic ProN", "Yu Gothic", "Comic Sans MS", system-ui, sans-serif;
+  letter-spacing: 0.04em;
+  transform: rotate(-0.7deg);
+  padding-left: 1.4em;
+  text-shadow: 0 0 1px rgba(216,68,46,0.35), 0.4px 0.4px 0 rgba(0,0,0,0.4);
+  position: relative;
+}
+.hz-line.scrawl::before {              /* オイルスティックの跳ね（手の起点） */
+  content: ""; position: absolute; left: 0.1em; top: 0.55em; width: 0.9em; height: 0.9em;
+  background: no-repeat center/contain url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='20'%20height='20'%20viewBox='0%200%2020%2020'%3E%3Cpath%20d='M3%2016%20C7%204%2013%2014%2017%203'%20fill='none'%20stroke='%23d8442e'%20stroke-width='2.4'%20stroke-linecap='round'/%3E%3C/svg%3E");
+  opacity: 0.8;
+}
+.hz-line.scrawl .ch.lit { transition: opacity 90ms ease, filter 120ms ease; } /* 手は速く書きつける */
+.hz-line.scrawl.cross {                /* 打ち消し（否定の吐露） */
+  background: no-repeat left center/100% 0.5em
+    url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='160'%20height='10'%20viewBox='0%200%20160%2010'%20preserveAspectRatio='none'%3E%3Cpath%20d='M2%206%20C40%202%2080%208%20120%204%20C140%202%20150%207%20158%205'%20fill='none'%20stroke='%23d8442e'%20stroke-width='2'/%3E%3C/svg%3E");
+}
+
+/* ---------- 選択肢の手マーク（descend＝戴冠の沈降 / retreat＝消し込まれた戻り道） ---------- */
+.hz-choice { position: relative; }
+.hz-choice .lead { position: relative; display: inline-block; }
+.hz-choice.descend .lead::before {     /* R6: 王冠を廃し、下方へ沈む砂紋（渦の縁）に。冠さず、ただ降りる。 */
+  content: ""; position: absolute; left: -1.55em; top: 0.12em; width: 1.2em; height: 0.82em;
+  background: no-repeat center/contain url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='24'%20height='16'%20viewBox='0%200%2024%2016'%3E%3Cg%20fill='none'%20stroke='%237fb6c4'%20stroke-width='1.8'%20stroke-linecap='round'%3E%3Cpath%20d='M2%203%20Q12%208%2022%203'/%3E%3Cpath%20d='M5%208%20Q12%2012%2019%208'/%3E%3Cpath%20d='M9%2013%20Q12%2014.5%2015%2013'/%3E%3C/g%3E%3C/svg%3E");
+}
+.hz-choice.descend .lead::after {      /* 生の手の下線（沈むほど効く差し色） */
+  content: ""; position: absolute; left: 0; right: -4px; bottom: -3px; height: 6px;
+  background: no-repeat center/100% 100%
+    url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='120'%20height='8'%20viewBox='0%200%20120%208'%20preserveAspectRatio='none'%3E%3Cpath%20d='M0%205%20C20%201%2040%207%2060%204%20C80%201%20100%207%20120%204'%20fill='none'%20stroke='%23d8442e'%20stroke-width='2'/%3E%3C/svg%3E");
+  opacity: 0.7;
+}
+.hz-choice.retreat .lead {             /* 戻り道は手で消し込まれている＝「もう細い」 */
+  text-decoration: line-through;
+  text-decoration-color: rgba(216,68,46,0.5);
+  text-decoration-thickness: 1.5px;
+}
+.hz-choice.surface .lead::before {     /* 逸れマーク＝弾かれて別の筋へ折れる（戻りでも降下でもない） */
+  content: "⤳"; position: absolute; left: -1.45em; top: -0.04em;
+  color: var(--hand-red); font-weight: 700; opacity: 0.9;
+}
+.hz-choice.retreat.heavy .lead { color: var(--ink-dim); }
+.hz-choice:active { box-shadow: inset 0 0 0 1px rgba(216,68,46,0.25); }
+
+/* ---------- タイトル（バスキア的・RGBずれ＝グリッジ＆刷り重ね） ---------- */
+.hz-gate-art {
+  display: block; width: min(86vw, 360px); height: auto; margin: 0 auto 1.6em;
+  filter: drop-shadow(0 6px 18px rgba(0,0,0,0.55));
+}
+/* RGBずれ層の僅かな呼吸（生きた刷り）。reduced で静止。 */
+.hz-tl-c { animation: hz-tl-c 5.5s ease-in-out infinite; }
+.hz-tl-r { animation: hz-tl-r 5.5s ease-in-out infinite; }
+@keyframes hz-tl-c { 0%,100%{transform:translate(-3px,-2px)} 50%{transform:translate(-5px,-1px)} }
+@keyframes hz-tl-r { 0%,100%{transform:translate(3px,2px)} 50%{transform:translate(5px,1px)} }
+/* グリッジバースト中はタイトルも裂ける */
+body.glitch-hard .hz-tl-c { animation: hz-tl-c-glitch .18s steps(2) 1; }
+body.glitch-hard .hz-tl-r { animation: hz-tl-r-glitch .18s steps(2) 1; }
+@keyframes hz-tl-c-glitch { 0%{transform:translate(-3px,-2px)} 50%{transform:translate(-11px,2px)} 100%{transform:translate(-3px,-2px)} }
+@keyframes hz-tl-r-glitch { 0%{transform:translate(3px,2px)} 50%{transform:translate(12px,-3px)} 100%{transform:translate(3px,2px)} }
+
+/* サブ：手で引いた打ち消し線（「戻り道は細くなる」を予兆として消し込む） */
+.hz-strike { position: relative; }
+.hz-strike::after {
+  content: ""; position: absolute; left: -2%; right: -2%; top: 52%; height: 0.55em;
+  background: no-repeat center/100% 100%
+    url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='200'%20height='10'%20viewBox='0%200%20200%2010'%20preserveAspectRatio='none'%3E%3Cpath%20d='M2%206%20C60%202%20120%208%20198%204'%20fill='none'%20stroke='%23d8442e'%20stroke-width='2.2'/%3E%3C/svg%3E");
+  opacity: 0.7; transform: rotate(-1deg);
+}
+/* 入口ボタン：スタンプ／殴り書きの枠。読める。沈むの語に手の重み。 */
+.hz-gate-enter {
+  position: relative; font-weight: 800; letter-spacing: 0.5em; text-indent: 0.5em;
+  border-width: 2px; box-shadow: 3px 3px 0 rgba(216,68,46,0.35);
+  transition: background .3s, color .3s, box-shadow .2s, transform .12s;
+}
+.hz-gate-enter:active { transform: translate(2px,2px); box-shadow: 1px 1px 0 rgba(216,68,46,0.3); }
+.hz-gate-sub { font-size: 0.96rem; }
+.hz-gate-note { letter-spacing: 0.06em; }
+
+/* ---------- アクセシビリティ ---------- */
+@media (prefers-reduced-motion: reduce) {
+  .hz-line .ch, .hz-line .ch.lit { opacity: 1 !important; filter: none !important; transition: none !important; }
+  body[data-tension="high"] .hz-scene { animation: none; }
+  .hz-bg-descent, .hz-bg-mandala, .hz-vignette, .hz-bg-abyss, .hz-bg-grid { transition: none; }
+  .hz-choice { transition: opacity .2s; transform: none; }
+  /* グレインは静止（消さずに質感だけ残す）。観測者の呼吸は止める。 */
+  .hz-grain { animation: none; opacity: 0.03; }
+  .hz-observer.deep { animation: none; }
+  /* R5: グリッジ／めくれ／タイトル呼吸は全停止。質感だけ薄く静止で残す。 */
+  .hz-tl-c, .hz-tl-r { animation: none; }
+  .hz-glitch { visibility: visible; opacity: 0.5; mix-blend-mode: screen; }
+  .hz-glitch::before { opacity: 0.06; transform: translate(-2px,0); animation: none; }
+  .hz-glitch::after  { opacity: 0.06; transform: translate(2px,0); animation: none; }
+  body.glitch-soft .hz-bg, body.glitch-hard .hz-bg { animation: none; }
+  body.peeling .hz-peel { animation: none; visibility: hidden; }
+  .hz-line.scrawl { transform: none; }
+  /* R6: 反転ガーデンは生成art＝静止1枚で残す（slice.js が深度で1回描く）。原色 leak の明滅は
+     グリッジ・バーストに紐づくため reduced では発火せず＝事実上 off（保険で薄い静止に固定）。 */
+  .hz-bg-descent { transition: none; }
+  body.leak-on .hz-bg-leak { opacity: 0.08; transition: none; }
+}
