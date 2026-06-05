@@ -232,6 +232,13 @@ body.leak-on .hz-bg-leak { opacity: calc(0.22 + 0.5 * var(--gi)); }
   0%, 100% { opacity: 0.55; text-shadow: 0 0 4px rgba(127,182,196,0.3); }
   50%      { opacity: 1; text-shadow: 0 0 9px rgba(127,182,196,0.6); }
 }
+/* R3: 認識インジケータ — 構造を読むほど ◆ が灯る（Ωの資格が育つのを感じる・資源UIではない） */
+.hz-attune {
+  font-size: 0.56rem; letter-spacing: -0.02em; line-height: 1;
+  color: var(--ink-faint); writing-mode: vertical-rl; text-orientation: upright;
+  max-height: 9em; overflow: hidden; transition: color .8s ease; opacity: 0.85;
+}
+.hz-attune.attuned { color: var(--accent); opacity: 1; text-shadow: 0 0 7px rgba(127,182,196,0.55); }
 
 /* シーン本文：ここが内部スクロール領域。choices とは別トラックなので本文がボタンに被らない。
    ::before の margin-top:auto で「本文が短い時は下寄せ（沈下の手触り）／長い時は上から素直にスクロール」

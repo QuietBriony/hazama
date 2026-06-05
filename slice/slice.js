@@ -350,6 +350,19 @@
     observerEl.classList.toggle("deep", n > 6);
   }
 
+  // R3: 認識インジケータ（構造を読むほど点が灯る＝Ωの資格が育つのを"感じる"。資源ゲームUIではない）。
+  function renderAttune() {
+    const el = $("attune");
+    if (!el) return;
+    const a = Math.round(state.attunement || 0);
+    if (a <= 0) { el.hidden = true; return; }
+    el.hidden = false;
+    const need = ATTUNE.omegaThreshold;
+    const lit = Math.min(a, need);
+    el.textContent = "認識 " + "◆".repeat(lit) + "◇".repeat(Math.max(0, need - lit)) + (isAttuned() ? " 合致" : "");
+    el.classList.toggle("attuned", isAttuned());
+  }
+
   // 分岐シグナル：周回・別ルート(表層弾き)・通った別の筋の数をフッタへ（分岐が起きたら表示）。
   function renderStatus() {
     const el = $("status");
@@ -374,6 +387,7 @@
     sinkFill.style.height = (sinkNorm * 100).toFixed(1) + "%";
     renderReturnPaths();
     renderObserver();
+    renderAttune();
     renderStatus();
     // 音は同一document の内製エンジンが鳴らす（cross-document iframe は廃止）。
     // 深さは沈下とランク(物語深度)の濃い方、密度は観測者数。沈むほど深く・暗く・密に。
@@ -1064,7 +1078,7 @@
 
   // ---------- 起動 ----------
   async function loadData() {
-    const res = await fetch("depths-shell.json?v=r2", { cache: "no-store" });
+    const res = await fetch("depths-shell.json?v=r3", { cache: "no-store" });
     DATA = await res.json();
   }
   // ---------- 動く表紙（R6：タイトルも state/seed に応じて動く・静止でない） ----------
