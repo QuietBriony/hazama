@@ -28,11 +28,21 @@
   const RESIST_STRAIN = 3; // 観測者3（深度E〜）から「抗えるが引き込まれる」
   const DEEP_LOCK = 9;     // 観測者9（深度Q・外側の外側〜）から「戻れない」
 
+  // R2(逆統合): 認識/Ωゲート。構造読み(descend)で attunement が育ち、Ωは attuned のみ到達できる(ハード)。
+  // 未達は"失敗"でなく「浮上して帰る」二極の結末（renderEdge で分岐）。codex hazama-gate-run.js の移植。
+  const ATTUNE = { omegaThreshold: 6, structuralGain: 1, surfaceGain: 0, retreatGain: 0 };
+  const isAttuned = () => (state.attunement || 0) >= ATTUNE.omegaThreshold;
+  function gainRecognition(kind) {
+    const g = kind === "descend" ? ATTUNE.structuralGain
+      : kind === "surface" ? ATTUNE.surfaceGain : ATTUNE.retreatGain;
+    state.attunement = Math.min(99, (state.attunement || 0) + g);
+  }
+
   // legacy = 周回をまたいで持ち越す履歴（restart 以外ではリセットしない）。次周の分岐 seed に効く。
   //   cycles=周回数, surfaceBounces=表層で弾かれた回数, detoursSeen=通った別の筋のid, maxRank=到達深度。
   // rejoin = 寄り道(detour)から本筋へ前進合流する先（divert 時に積む）。
   const freshLegacy = () => ({ cycles: 0, surfaceBounces: 0, detoursSeen: [], maxRank: 0 });
-  const state = { id: null, sink: 0, dread: 0, returnPaths: RETURN_PATHS_START, maxSink: 0, observer: 1, steps: 0, belowLoop: 0, resisted: 0, refused: 0, resistBeat: null, rank: 0, cycle: 0, visits: {}, rejoin: null, legacy: freshLegacy() };
+  const state = { id: null, sink: 0, dread: 0, returnPaths: RETURN_PATHS_START, maxSink: 0, observer: 1, steps: 0, belowLoop: 0, resisted: 0, refused: 0, resistBeat: null, rank: 0, cycle: 0, visits: {}, rejoin: null, attunement: 0, legacy: freshLegacy() };
   let DATA = null;
   let revealToken = 0;
   const clamp01 = (x) => Math.max(0, Math.min(1, x));
@@ -482,6 +492,7 @@
 
   function choose(c) {
     if (c.kind === "retreat" && !c.terminal) return resolveResist(c);
+    gainRecognition(c.kind);  // R2: 構造読み(descend)で認識が育つ／表層(surface)は中立
     state.sink += c.sink || 0;
     state.dread = Math.min(1, state.dread + (c.dread || 0));
     if (c.close && state.returnPaths > 0) state.returnPaths -= 1; // 戻り道は復活しない
@@ -533,12 +544,20 @@
   // ---------- 縁（増分の終わり。沈みきり/辛うじて で分岐） ----------
   function renderEdge() {
     const myToken = ++revealToken;
-    state.dread = 1;
-    applyAtmosphere({ tension: "high" });
+    const attuned = isAttuned();   // R2: Ω(没入)は attuned のみ。未達は浮上/帰還の極へ。
+    state.dread = attuned ? 1 : 0.4;
+    applyAtmosphere({ tension: attuned ? "high" : "low" });
+    if (!attuned) document.body && document.body.classList && document.body.classList.add("surfaced");
     sceneEl.innerHTML = ""; choicesEl.innerHTML = "";
     Follow.reset();
     const sank = state.returnPaths <= 1;
-    const lines = sank ? DATA.edge.sankLines : DATA.edge.heldLines;
+    // 帰還の極（未達）＝失敗演出にしない。光のほうへ浮上して帰る、視たものを抱えたまま。
+    const SURFACE_LINES = [
+      { who: "cold", t: "核へは、まだ降りられない。" },
+      { who: "n", t: "認識が満ちていない——けれど、それは失敗じゃない。" },
+      { who: "self", t: "あなたは光のほうへ浮上する。視たものを、抱えたまま。" }
+    ];
+    const lines = attuned ? (sank ? DATA.edge.sankLines : DATA.edge.heldLines) : SURFACE_LINES;
     let delay = 0;
     const revealMs = REDUCED ? 0 : 52;
     (lines || []).forEach((line) => {
@@ -566,11 +585,14 @@
       card.className = "hz-line cold";
       card.style.cssText = "margin-top:2em;font-size:0.8rem;line-height:1.9;";
       const lit = Math.round(state.maxSink * 8);
-      card.textContent = `― 深度Ω 到達・外殻踏破 ―  到達深度: ${"▮".repeat(lit)}${"▯".repeat(8 - lit)} / 残った戻り道: ${state.returnPaths}/${RETURN_PATHS_START} / 観測者: ${state.observer} / 抗った: ${state.resisted} ・ 戻れなかった: ${state.refused} / 周回: ${state.cycle} ・ 表層で弾かれ: ${state.legacy.surfaceBounces} ・ 通った別の筋: ${state.legacy.detoursSeen.length}`;
+      const head = attuned ? "― 深度Ω 到達・外殻踏破 ―" : "― 浮上 — 表層へ帰る ―";
+      card.textContent = `${head}  認識: ${Math.round(state.attunement || 0)}/${ATTUNE.omegaThreshold}${attuned ? "（合致）" : "（構造を読むほど核へ降りられる）"} / 到達深度: ${"▮".repeat(lit)}${"▯".repeat(8 - lit)} / 残った戻り道: ${state.returnPaths}/${RETURN_PATHS_START} / 観測者: ${state.observer} / 抗った: ${state.resisted} ・ 戻れなかった: ${state.refused} / 周回: ${state.cycle}`;
       sceneEl.appendChild(card); card.classList.add("shown");
       const more = document.createElement("p");
       more.className = "hz-line"; more.style.cssText = "margin-top:0.6em;font-size:0.78rem;color:#6b7682;";
-      more.textContent = "観測OSは終わらない。再起動すれば、また零章から——だが、底は最後まで無い。";
+      more.textContent = attuned
+        ? "観測OSは終わらない。再起動すれば、また零章から——だが、底は最後まで無い。"
+        : "戻れた——それも、ひとつの結末だ。再起動すれば、また零章から潜れる。";
       sceneEl.appendChild(more); more.classList.add("shown");
       Follow.stick();
       $("restart").hidden = false;
@@ -1080,7 +1102,8 @@
   }
   function restart() {
     revealToken++;
-    state.id = null; state.sink = 0; state.dread = 0; state.returnPaths = RETURN_PATHS_START; state.maxSink = 0; state.observer = 1; state.steps = 0; state.belowLoop = 0; state.resisted = 0; state.refused = 0; state.resistBeat = null; state.rank = 0; state.cycle = 0; state.visits = {}; state.rejoin = null; state.legacy = freshLegacy();
+    state.id = null; state.sink = 0; state.dread = 0; state.returnPaths = RETURN_PATHS_START; state.maxSink = 0; state.observer = 1; state.steps = 0; state.belowLoop = 0; state.resisted = 0; state.refused = 0; state.resistBeat = null; state.rank = 0; state.cycle = 0; state.visits = {}; state.rejoin = null; state.attunement = 0; state.legacy = freshLegacy();
+    if (document.body && document.body.classList) document.body.classList.remove("surfaced");
     const st = $("status"); if (st) st.textContent = "preview · M2 沈下スパイン";
     $("restart").hidden = true;
     buildReturnPaths();
@@ -1091,7 +1114,7 @@
   $("restart").addEventListener("click", restart);
 
   // 開発用フック（プレビュー検証専用・本体統合時は外す）: 任意ノードへ跳ぶ／状態を読む。
-  window.__hz = { go: renderNode, choose, state, get sink() { return sinkNorm(); } };
+  window.__hz = { go: renderNode, choose, state, isAttuned, get sink() { return sinkNorm(); }, get attunement() { return state.attunement; } };
 
   loadData().then(() => {
     const gb = $("gate-enter");
