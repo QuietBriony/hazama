@@ -72,6 +72,11 @@ const steps = [
     args: ["scripts/hazama-consistency-smoke.mjs"]
   },
   {
+    name: "slice-consistency",
+    command: "node",
+    args: ["scripts/slice-consistency-smoke.mjs"]
+  },
+  {
     name: "depth-meta",
     command: "node",
     args: ["scripts/depth-meta-smoke.mjs"]
