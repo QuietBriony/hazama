@@ -1078,7 +1078,7 @@
 
   // ---------- 起動 ----------
   async function loadData() {
-    const res = await fetch("depths-shell.json?v=r3", { cache: "no-store" });
+    const res = await fetch("depths-shell.json?v=r4", { cache: "no-store" });
     DATA = await res.json();
   }
   // ---------- 動く表紙（R6：タイトルも state/seed に応じて動く・静止でない） ----------
@@ -1129,6 +1129,17 @@
 
   // 開発用フック（プレビュー検証専用・本体統合時は外す）: 任意ノードへ跳ぶ／状態を読む。
   window.__hz = { go: renderNode, choose, state, isAttuned, get sink() { return sinkNorm(); }, get attunement() { return state.attunement; } };
+
+  // R4: PWA — slice をインストール/オフライン対応に。サブパス /hazama/slice/ スコープ（相対 sw.js）。
+  function registerSlicePWA() {
+    if (!("serviceWorker" in navigator)) return;
+    window.addEventListener("load", () => {
+      navigator.serviceWorker.register("sw.js").then((reg) => {
+        if (typeof reg.update === "function") reg.update().catch(() => {});
+      }).catch((err) => console.warn("[Hazama slice] SW register failed:", err));
+    });
+  }
+  registerSlicePWA();
 
   loadData().then(() => {
     const gb = $("gate-enter");
