@@ -654,9 +654,9 @@
       const C = window.AudioContext || window.webkitAudioContext;
       ctx = new C();
       master = ctx.createGain(); master.gain.value = 0.0001;
-      master.gain.setTargetAtTime(0.16, ctx.currentTime + 0.05, 0.8);
+      master.gain.setTargetAtTime(0.26, ctx.currentTime + 0.05, 0.8);
       master.connect(ctx.destination);
-      filter = ctx.createBiquadFilter(); filter.type = "lowpass"; filter.frequency.value = 1000; filter.Q.value = 0.8;
+      filter = ctx.createBiquadFilter(); filter.type = "lowpass"; filter.frequency.value = 1700; filter.Q.value = 0.8;
       dryGain = ctx.createGain(); dryGain.gain.value = 0.85;
       filter.connect(dryGain); dryGain.connect(master);
       // 合成IR の残響（"空間"）。wet は深いほど増える。
@@ -688,8 +688,8 @@
       if (!on || !ctx) return;
       const t = ctx.currentTime;
       const s = cur.depth, d = cur.dread, dens = cur.density;
-      const base = 70 - s * 44;                          // 沈むほど低く（70→26Hz）
-      const cutoff = 1150 - s * 860 - d * 220;           // 沈むほど暗く（深さ＋圧で翳る）
+      const base = 116 - s * 40;                         // 沈むほど低く（116→76Hz）。端末スピーカーで可聴な音域へ底上げ
+      const cutoff = 1900 - s * 1000 - d * 250;          // 沈むほど暗く（深さ＋圧で翳る）。中倍音が通るよう上げる
       const bloomCurve = Math.max(0, s - 0.10) / 0.90;   // 浅では開かない／深で倍音が開花
       const menace = d * (0.30 + 0.70 * s);              // 不協和は浅は馴染み・深で威圧（menaceカーブ）
       baseCents = (((colorSeed * 37) % 25) - 12) * 0.6; // 周回ごとの微デチューン（glitchHit の復帰先）
@@ -702,8 +702,8 @@
         dr.osc.frequency.setTargetAtTime(base * sp.ratio, t, slow);
         dr.osc.detune.setTargetAtTime(baseCents, t, 1.8);
       });
-      filter.frequency.setTargetAtTime(Math.max(105, cutoff), t, slow);
-      master.gain.setTargetAtTime(0.13 + d * 0.05, t, 0.8);
+      filter.frequency.setTargetAtTime(Math.max(280, cutoff), t, slow);
+      master.gain.setTargetAtTime(0.24 + d * 0.06, t, 0.8);
       wetGain.gain.setTargetAtTime(0.1 + s * 0.34, t, 1.8);            // 深いほど広い残響
       lfo.frequency.setTargetAtTime(0.05 + s * 0.1, t, 1.8);
       lfoGain.gain.setTargetAtTime(3 + s * 10 + dens * 4 + (colorSeed % 5), t, 1.8); // うねり幅（cents）
@@ -716,10 +716,10 @@
       if (!on || !ctx || ctx.state !== "running") return;
       const t = ctx.currentTime;
       const osc = ctx.createOscillator(), g = ctx.createGain();
-      osc.type = "sine"; osc.frequency.value = 44 - cur.depth * 16;
-      osc.frequency.setTargetAtTime((44 - cur.depth * 16) * 0.7, t, 0.18); // 鼓動の沈み込み
+      osc.type = "sine"; osc.frequency.value = 98 - cur.depth * 30;
+      osc.frequency.setTargetAtTime((98 - cur.depth * 30) * 0.72, t, 0.18); // 鼓動の沈み込み（可聴域へ底上げ）
       g.gain.value = 0.0001;
-      g.gain.exponentialRampToValueAtTime(0.05 * amp + cur.dread * 0.045, t + 0.02);
+      g.gain.exponentialRampToValueAtTime(0.06 * amp + cur.dread * 0.05, t + 0.02);
       g.gain.exponentialRampToValueAtTime(0.0001, t + 0.55);
       osc.connect(g); g.connect(filter); osc.start(t); osc.stop(t + 0.6); // 鼓動も残響を通す
     }
@@ -1078,7 +1078,7 @@
 
   // ---------- 起動 ----------
   async function loadData() {
-    const res = await fetch("depths-shell.json?v=r6", { cache: "no-store" });
+    const res = await fetch("depths-shell.json?v=r7", { cache: "no-store" });
     DATA = await res.json();
   }
   // ---------- 動く表紙（R6：タイトルも state/seed に応じて動く・静止でない） ----------

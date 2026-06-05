@@ -6,7 +6,7 @@
    - cache 名は slice 専用 prefix＝root の hazama-pwa- とは別空間（互いを消さない）。
 ========================================================= */
 
-const VERSION = "hazama-slice-pwa-r6";
+const VERSION = "hazama-slice-pwa-r7";
 const CACHE_PREFIX = "hazama-slice-pwa-";
 const STATIC_CACHE = `${VERSION}-static`;
 const RUNTIME_CACHE = `${VERSION}-runtime`;
