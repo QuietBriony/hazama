@@ -722,6 +722,19 @@
       g.gain.exponentialRampToValueAtTime(0.06 * amp + cur.dread * 0.05, t + 0.02);
       g.gain.exponentialRampToValueAtTime(0.0001, t + 0.55);
       osc.connect(g); g.connect(filter); osc.start(t); osc.stop(t + 0.6); // 鼓動も残響を通す
+      // 仕上げ: 選択時(amp>=0.8)だけ、やわらかい音色を一音添える＝可聴で音楽的なアクセント。
+      // 鼓動(自動 beat=0.5)には付けない＝うるさくしない。沈むほど低い音度＋短い余韻。
+      if (amp >= 0.8) {
+        const scale = [0, 3, 7, 10, 12];                          // 短調寄りの度数
+        const deg = scale[Math.min(scale.length - 1, Math.floor(cur.depth * scale.length))];
+        const f = (176 - cur.depth * 42) * Math.pow(2, deg / 12); // 中域＝端末スピーカーで明瞭
+        const o2 = ctx.createOscillator(), g2 = ctx.createGain();
+        o2.type = "triangle"; o2.frequency.value = f;
+        g2.gain.value = 0.0001;
+        g2.gain.exponentialRampToValueAtTime(0.055, t + 0.03);
+        g2.gain.exponentialRampToValueAtTime(0.0001, t + 0.95);
+        o2.connect(g2); g2.connect(filter); o2.start(t); o2.stop(t + 1.0);
+      }
     }
     // グリッジ・バーストと同期して音も一瞬"裂ける"（共有信号＝視覚と一緒に壊れていく）。
     //  - drone を一瞬デチューン（音程が割れる）→ baseCents へ復帰
@@ -1078,7 +1091,7 @@
 
   // ---------- 起動 ----------
   async function loadData() {
-    const res = await fetch("depths-shell.json?v=r7", { cache: "no-store" });
+    const res = await fetch("depths-shell.json?v=r8", { cache: "no-store" });
     DATA = await res.json();
   }
   // ---------- 動く表紙（R6：タイトルも state/seed に応じて動く・静止でない） ----------

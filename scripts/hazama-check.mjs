@@ -96,11 +96,9 @@ const steps = [
     command: "node",
     args: ["scripts/first-playable-smoke.mjs"]
   },
-  {
-    name: "startup",
-    command: "bash",
-    args: ["scripts/startup-smoke.sh", String(startupPort)]
-  },
+  // 逆統合(root=slice)で startup-smoke.sh は forward サーフェス専用＝退役。
+  // root/slice の実体検証は pwa-static-contract / hazama-consistency / slice-consistency(全 node)が担う。
+  // ファイルは履歴のため残置。本環境では /tmp パスでも実行不可だった。
   {
     name: "localstorage-migration",
     command: "node",
