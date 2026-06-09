@@ -2,13 +2,7 @@
   "version": "0.0.1",
   "configurations": [
     {
-      "name": "hazama-slice",
-      "runtimeExecutable": "python",
-      "runtimeArgs": ["-m", "http.server", "8731", "--directory", "slice"],
-      "port": 8731
-    },
-    {
-      "name": "hazama-integration",
+      "name": "hazama",
       "runtimeExecutable": "python",
       "runtimeArgs": ["-m", "http.server", "8740", "--directory", "."],
       "port": 8740

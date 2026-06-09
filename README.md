@@ -1,22 +1,22 @@
-# Hazama
+# Hazama 狭間
 
-Hazama は、深度データ (`hazama-depths.json`) を読み込み、選択肢と短い問いを辿ってストーリー深度を移動する静的 Web アプリです。
+Hazama は、沈むほど戻りにくい「降下する対話」の没入型静的 Web アプリです。本文を読み、どう読むかを選び、
+構造を読むほど認識が育ち、認識が合う者だけが Ω へ潜れる。未達は失敗でなく「浮上して帰る」二極の結末。
+**本番 = この単一ビルド（没入版・逆統合 slice エンジン）**。https://quietbriony.github.io/hazama/
 
-## 現在の構成
+## 現在の構成（単一ビルド）
 
-- `index.html` / `hazama-index.html` : エントリーポイント
-- `hazama-main.js` : 画面描画、深度データ読み込み、core loop、ゲーム状態
-- `hazama-gate-run.js` : Gate Run / Breath Gate の依存なし共有モデル
-- `hazama-seed.js` : 派生 seed の補助ロジック
-- `hazama-state.js` : 派生 seed / 進行位置の保存補助
-- `hazama-style.css` : スタイル
-- `manifest.webmanifest` / `sw.js` / `icons/` : PWA install / offline shell
-- `hazama-depths.json` : 深度定義データ
-- `assets/hazama-descent-key.png` : 潜行探索のキービジュアル
-- `assets/hazama-goal-mandala.png` : 目的ゲート用の曼荼羅ビジュアル
-- `assets/hazama-descent-key.webp` / `assets/hazama-goal-mandala.webp` : 軽量配信用ビジュアル
+- `index.html` : エントリーポイント（没入シェル＝9層アート＋本文＋選択＋認識インジケータ）
+- `slice.js` : エンジン（reveal 本文・沈下/認識/Ωゲート・二極終端・反転ガーデン/曼荼羅/グリッジ・内製Audio・below∞生成）
+- `slice.css` : スタイル
+- `depths-shell.json` : 深度本文データ（depthMeta v0 スキーマ・沈下スパイン）
+- `manifest.webmanifest` / `sw.js` / `icons/` : PWA install / offline shell（cache prefix `hazama-pwa-`）
+- `assets/hazama-descent-key.webp` : キービジュアル
+- 検証: `scripts/hazama-check.mjs`（`autonomy-docs` ＋ `build-consistency` の2本）
 
-`index.html` と `hazama-index.html` は `hazama-seed.js?v=2.45`、`hazama-state.js?v=2.45`、`hazama-gate-run.js?v=2.45`、`hazama-main.js?v=2.45` の順に読み込みます。
+> 旧 forward 実装（`hazama-main.js`/`hazama-gate-run.js`/`hazama-depths.json` 等）と `slice/` 重複・
+> 別プレビュー repo は整理・撤去済み。リポジトリは**没入版の単一ビルド**のみ。履歴は git に保全
+> （ロールバック: `f8763f2` 没入初版 / `7d5def9` forward v2.45 / `acba549` 旧codex）。
 
 ## v2.45 Immersive Default View (説明UI畳み込み・本文+選択を主役)
 

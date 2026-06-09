@@ -54,7 +54,8 @@ function runStep(step) {
   });
 }
 
-const startupPort = await freePort();
+// 1リポジトリ=1ビルド(没入版)に整理。検証は docs と build-consistency の2本に集約。
+// forward 専用 smoke(depth-meta/route/balance/first-playable/startup/browser/localstorage)は forward 撤去に伴い退役。
 const steps = [
   {
     name: "autonomy-docs",
@@ -62,54 +63,9 @@ const steps = [
     args: ["scripts/autonomy-docs-smoke.mjs"]
   },
   {
-    name: "pwa-static-contract",
+    name: "build-consistency",
     command: "node",
-    args: ["scripts/pwa-static-contract-smoke.mjs"]
-  },
-  {
-    name: "hazama-consistency",
-    command: "node",
-    args: ["scripts/hazama-consistency-smoke.mjs"]
-  },
-  {
-    name: "slice-consistency",
-    command: "node",
-    args: ["scripts/slice-consistency-smoke.mjs"]
-  },
-  {
-    name: "depth-meta",
-    command: "node",
-    args: ["scripts/depth-meta-smoke.mjs"]
-  },
-  {
-    name: "route",
-    command: "node",
-    args: ["scripts/route-smoke.mjs"]
-  },
-  {
-    name: "balance",
-    command: "node",
-    args: ["scripts/balance-smoke.mjs"]
-  },
-  {
-    name: "first-playable",
-    command: "node",
-    args: ["scripts/first-playable-smoke.mjs"]
-  },
-  // 逆統合(root=slice)で startup-smoke.sh は forward サーフェス専用＝退役。
-  // root/slice の実体検証は pwa-static-contract / hazama-consistency / slice-consistency(全 node)が担う。
-  // ファイルは履歴のため残置。本環境では /tmp パスでも実行不可だった。
-  {
-    name: "localstorage-migration",
-    command: "node",
-    args: ["scripts/localstorage-migration-smoke.mjs"],
-    optionalSkip: true
-  },
-  {
-    name: "browser-first-playable",
-    command: "node",
-    args: ["scripts/browser-first-playable-smoke.mjs"],
-    optionalSkip: true
+    args: ["scripts/build-consistency-smoke.mjs"]
   }
 ];
 
