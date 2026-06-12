@@ -64,26 +64,6 @@ Hazama 自律開発の作業待ち行列。
   `slice.js` の ATTUNE / RESIST_STRAIN / DEEP_LOCK 定数＋manual play note で行う
   （HZ-BL-002 のメモが前提）。
 
-### HZ-BL-009 — E2 原典給餌（variants/detours/below/scrawl/echo-bank/deep-tags）
-- priority : P1
-- scope    : runtime / data
-- agent    : claude
-- human-gate: no
-- status   : wip — claude (Fable=管理, sonnet=採掘, opus=執筆) 2026-06-12
-- source   : `docs/evolution/E2-E3-SPEC.md` §2
-- detail   : 原典30本をカタログ化→草稿→レビュー→適用。NODE_VARIANTS 15ノード・detour +5・
-  below 各軸+2・scrawl 各tier+3・ECHO_BANK 新設・deep タグ 12〜16。適用時 `?v=e2`。
-
-### HZ-BL-010 — E3 認識2.0（deep gain・表層侵食・エコー門）
-- priority : P1
-- scope    : runtime
-- agent    : claude
-- human-gate: no（手触りの最終判断は HZ-BL-002 タッチパスで）
-- status   : wip — claude (Fable=仕様/レビュー, opus=実装) 2026-06-12
-- source   : `docs/evolution/E2-E3-SPEC.md` §3
-- detail   : descend は `deep:true` のみ +1・surface −1(floor0)・エコー門 Q/Z（真+2/偽−1/逸らし0・
-  周回毎一度・worldSeed 決定論）。ATTUNE 定数集約・smoke 追加。完了時 `?v=e3`。
-
 ## P2
 
 ### HZ-BL-011 — spiral 記憶のエッジ堅牢化
@@ -128,6 +108,18 @@ handoff 前の確認は `docs/autonomy/closeout-checklist.md` を使います。
 ---
 
 ## Done
+
+### HZ-BL-009 — E2 原典給餌 ✅ 2026-06-12 (commit cc89b72)
+- scope: runtime / data
+- 原典30本→sonnet カタログ→opus 草稿→Fable レビュー→適用。NODE_VARIANTS 19キー・
+  detour +5（DETOURS 登録込み）・below 9軸+2/SELVES・VOICES+4/scrawl 各+3・
+  ECHO_BANK 24・deep:true 14。surface+__rejoin の罠は descend 化で回避。`?v=e2`。
+
+### HZ-BL-010 — E3 認識2.0 ✅ 2026-06-12 (commit 2a8db3f)
+- scope: runtime
+- deep gain / 表層侵食(floor0) / エコー門 Q・Z（真+2/偽−1+dread/逸らし0・周回毎一度・
+  決定論・echoDone は spiral 非保存）。smoke 契約追加。実ブラウザ全経路検証済み。
+  手触りの最終判断は HZ-BL-002 タッチパスへ。`?v=e3`。
 
 ### HZ-BL-008 — E1: spiral 記憶・縁カード・docs 逆統合完遂 ✅ 2026-06-12
 - scope: runtime / smoke / docs

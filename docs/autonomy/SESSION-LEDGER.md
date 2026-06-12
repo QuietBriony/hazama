@@ -19,6 +19,21 @@ Hazama 自律開発 session の追記専用ログ。
 
 ---
 
+## 2026-06-12 — 進化 E2/E3: 原典給餌＋認識2.0（マルチエージェント分業）
+- agent      : Fable(管理/仕様/レビュー/検証) + sonnet(原典マイニング・docs現行化) + opus(草稿/適用/実装)
+- goal       : Tier2 — 原典30本の給餌（E2）と認識の読解試験化（E3）。branch `claude/evolve-e1`・master 無変更
+- shipped    :
+  - E2 (cc89b72): NODE_VARIANTS 19キー・detour+5（DETOURS 登録）・below/scrawl 増量・
+    ECHO_BANK 24・deep:true 14（`?v=e2`）。発注書= `docs/evolution/E2-E3-SPEC.md`
+  - E3 (2a8db3f): gainRecognition= deep のみ+1 / surface −1 floor0・エコー門 Q/Z
+    （真+2/偽−1+dread/逸らし0・周回毎一度・worldSeed 決定論・echoDone 非保存）・smoke 契約追加（`?v=e3`）
+  - 準備 (e6b0a96): playtest/PWA docs 4本を没入版へ現行化・BACKLOG 009-012・Codex 用 Spiral Hardening prompt
+- checks     : `node scripts/hazama-check.mjs` 2 PASS / 0 FAIL（各コミット時）＋実ブラウザ:
+  無印0/deep+1/surface−1floor0・Q門 真+2→抑止・Z門 偽−1+dread・新detour 6種 divert→__rejoin・console error 0
+- backlog    : HZ-BL-009/010 done。HZ-BL-011(Codex・E3後着手)/012(音・human-gate) open。HZ-BL-002 が次の人間ゲート
+- next       : 人間タッチパス（HZ-BL-002・エコー門/侵食の手触り）→ ユーザー号令で master 反映。Codex は next-agent-prompts の Spiral Hardening
+- blockers   : master 反映はユーザー号令待ち。音(012)は人間の耳待ち
+
 ## 2026-06-12 — 進化 E1: spiral 記憶・縁カード・docs 逆統合完遂
 - agent      : Claude Code (Fable 5)
 - goal       : Tier1 推奨3点 — 記憶の永続化 / 縁の共有カード / docs 整合（branch `claude/evolve-e1`・master 無変更）
