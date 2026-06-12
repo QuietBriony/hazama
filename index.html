@@ -9,10 +9,19 @@
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="Hazama" />
+  <!-- E4: リンク共有プレビュー（OG/Twitter）。og:image は絶対URL必須＝本番 Pages を指す。
+       webp 非対応のパーサ向けに png（icon-512）を二枚目として併記（先頭が優先される）。 -->
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="Hazama 狭間" />
+  <meta property="og:description" content="沈むほど戻りにくい。認識が合う者だけがΩへ潜る、没入の降下対話。" />
+  <meta property="og:url" content="https://quietbriony.github.io/hazama/" />
+  <meta property="og:image" content="https://quietbriony.github.io/hazama/assets/hazama-descent-key.webp" />
+  <meta property="og:image" content="https://quietbriony.github.io/hazama/icons/icon-512.png" />
+  <meta name="twitter:card" content="summary_large_image" />
   <link rel="manifest" href="manifest.webmanifest" />
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png" />
   <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png" />
-  <link rel="stylesheet" href="slice.css?v=e3" />
+  <link rel="stylesheet" href="slice.css?v=e4" />
 </head>
 <body data-phase="surface">
   <div class="hz-bg" aria-hidden="true">
@@ -70,6 +79,6 @@
     </div>
   </div>
 
-  <script src="slice.js?v=e3"></script>
+  <script src="slice.js?v=e4"></script>
 </body>
 </html>

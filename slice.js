@@ -72,11 +72,19 @@
     function load() {
       try {
         const d = JSON.parse(localStorage.getItem(KEY) || "null");
-        if (!d || d.v !== 1) return false;
-        state.cycle = Math.max(0, d.cycle | 0);
+        if (!d || d.v !== 1) return false;   // 旧 forward キー(hazama_state_v2 等)は別キー＝読まない・消さない
+        state.cycle = Math.min(9999, Math.max(0, d.cycle | 0));
         state.attunement = Math.min(99, Math.max(0, +d.attunement || 0));
-        state.visits = (d.visits && typeof d.visits === "object") ? d.visits : {};
-        state.belowLoop = Math.max(0, d.belowLoop | 0);
+        // visits は値も浄化する: 数値以外/負値/Infinity を弾く（"3"+1 が "31" になる型穴を塞ぐ）。
+        const cleanVisits = {};
+        if (d.visits && typeof d.visits === "object" && !Array.isArray(d.visits)) {
+          for (const k of Object.keys(d.visits)) {
+            const n = Math.floor(+d.visits[k]);
+            if (Number.isFinite(n) && n > 0) cleanVisits[k] = Math.min(n, 999);
+          }
+        }
+        state.visits = cleanVisits;
+        state.belowLoop = Math.min(9999, Math.max(0, d.belowLoop | 0));
         const lg = d.legacy || {};
         state.legacy = {
           cycles: Math.max(0, lg.cycles | 0),
@@ -954,7 +962,7 @@
       card.style.cssText = "margin-top:2em;font-size:0.8rem;line-height:1.9;";
       const lit = Math.round(state.maxSink * 8);
       const head = attuned ? "― 深度Ω 到達・外殻踏破 ―" : "― 浮上 — 表層へ帰る ―";
-      card.textContent = `${head}  認識: ${Math.round(state.attunement || 0)}/${ATTUNE.omegaThreshold}${attuned ? "（合致）" : "（構造を読むほど核へ降りられる）"} / 到達深度: ${"▮".repeat(lit)}${"▯".repeat(8 - lit)} / 残った戻り道: ${state.returnPaths}/${RETURN_PATHS_START} / 観測者: ${state.observer} / 抗った: ${state.resisted} ・ 戻れなかった: ${state.refused} / 周回: ${state.cycle}`;
+      card.textContent = `${head}  認識: ${Math.round(state.attunement || 0)}/${ATTUNE.omegaThreshold}${attuned ? "（合致）" : "（深く読み、視たものを覚えているほど降りられる）"} / 到達深度: ${"▮".repeat(lit)}${"▯".repeat(8 - lit)} / 残った戻り道: ${state.returnPaths}/${RETURN_PATHS_START} / 観測者: ${state.observer} / 抗った: ${state.resisted} ・ 戻れなかった: ${state.refused} / 周回: ${state.cycle}`;
       sceneEl.appendChild(card); card.classList.add("shown");
       const more = document.createElement("p");
       more.className = "hz-line"; more.style.cssText = "margin-top:0.6em;font-size:0.78rem;color:#6b7682;";
@@ -1605,7 +1613,7 @@
 
   // ---------- 起動 ----------
   async function loadData() {
-    const res = await fetch("depths-shell.json?v=e3", { cache: "no-store" });
+    const res = await fetch("depths-shell.json?v=e4", { cache: "no-store" });
     DATA = await res.json();
   }
   // ---------- 動く表紙（R6：タイトルも state/seed に応じて動く・静止でない） ----------

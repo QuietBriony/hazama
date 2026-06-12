@@ -24,6 +24,8 @@ Hazama を触る agent が最初に読む構造マップ。
 `zero → …（構造読みで認識◆が育つ）… → Z → Omega → below(∞) / reborn → 縁（二極: 深度Ω 到達 ⇄ 浮上して帰る）→ もう一度沈む（周回+1）/ すべて忘れる`
 
 - 認識 attunement ≥ 6（`ATTUNE.omegaThreshold`）で Ω の極へ。未達は浮上の極＝有効な結末
+- 認識2.0（E3）: `deep:true` の構造読みのみ +1／表層読み −1（floor 0）／エコー門 Q・Z で
+  視た断片の真偽（真+2・偽−1・逸らし0・周回毎一度・worldSeed 決定論）
 - spiral 記憶（localStorage `hazama_spiral_v1`）: 周回/認識/痕跡は閉じても残る。
   transient（沈下/圧/戻り道/観測者）は残らない
 

@@ -71,12 +71,12 @@ Hazama 自律開発の作業待ち行列。
 - scope    : smoke / runtime(narrow)
 - agent    : codex
 - human-gate: no
-- status   : open（**E3 完了後に着手** — slice.js の同時編集を避ける）
+- status   : open（縮小 — ガード本体は E4 で実装済み。残りは独立検証パスのみ）
 - source   : E1 spiral 永続化（`hazama_spiral_v1`）
-- detail   : 壊れた JSON・型異常・旧 forward キー（`hazama_state_v2` / `hazama_run_v1`）残存・
-  localStorage quota 例外で `Spiral.load/save` が安全に既定状態へ落ちることの検証と、
-  必要最小のガード追加＋`build-consistency` への契約追加。コピペ用プロンプトは
-  `docs/autonomy/next-agent-prompts.md` に準備済み。
+- detail   : **E4 で実装済み**: visits 値の数値浄化（型穴）・cycle/belowLoop クランプ・
+  壊れた JSON/型異常の fail-safe・quota 例外 no-op・旧 forward キーは読まない/消さない。
+  残タスク＝Codex による**独立検証**（壊しデータ matrix の実ブラウザ再現と、見落としガードの指摘）。
+  コピペ用プロンプトは `docs/autonomy/next-agent-prompts.md`（検証中心に読み替え可）。
 
 ### HZ-BL-012 — 音の軸色＋浮上/reborn の「呼気」
 - priority : P2

@@ -65,8 +65,8 @@ for (const transient of ["returnPaths", "dread", "observer", "echoDone"]) {
 
 // E3: 認識2.0（読解の試験化）＝深い構造読み＋エコー門。原典給餌(E2)の燃料が揃っていること。
 has(js, "const ECHO_BANK", "E3 echo bank");
-const echoEntries = (js.match(/^\s{4}[A-Za-z_]+: "/gm) || []).length;
-assert(echoEntries >= 15, `E3 echo bank entries: ${echoEntries} (need >=15)`);
+const echoKeys = [...js.matchAll(/^\s{4}([A-Za-z_]+): "/gm)].map((m) => m[1]);
+assert(echoKeys.length >= 15, `E3 echo bank entries: ${echoKeys.length} (need >=15)`);
 const deepTags = (read("depths-shell.json").match(/"deep":\s*true/g) || []).length;
 assert(deepTags >= 10, `E3 deep descend tags: ${deepTags} (need >=10)`);
 has(js, "surfaceErosion", "E3 surface erosion (recognition strips)");
@@ -115,6 +115,8 @@ if (depths) {
     }
   }
   assert(missing.length === 0, `depths missing choice targets: ${missing.join(", ")}`);
+  // E4: ECHO_BANK の全キーが実在ノードを指す（タイポした id の断片は永遠に真にならない＝ここで止める）
+  for (const k of echoKeys) assert(depths.nodes[k], `ECHO_BANK key not in depths nodes: ${k}`);
 }
 
 if (failures.length) {
