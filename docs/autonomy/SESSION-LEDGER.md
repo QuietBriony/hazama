@@ -19,6 +19,19 @@ Hazama 自律開発 session の追記専用ログ。
 
 ---
 
+## 2026-06-13 — 進化 E4: 仕上げ（堅牢化・整合・配布面）
+- agent      : Fable（少量・精密のため外注なし）
+- goal       : E1〜E3 後の残磨き。human-gate（音/タッチパス）には踏み込まない
+- shipped    : (9cdc1b0) Spiral.load 入力浄化（visits 型穴・クランプ・旧キー不干渉）／
+  ECHO_BANK 全キー実在 smoke／OG・Twitter メタ／縁サマリ文言の認識2.0 整合／
+  README・STACK-INDEX 反映＋沿革 E2〜E4／原典カタログ保全 `docs/research/source-catalog-e2.md`／
+  BACKLOG 011 縮小（残=Codex 独立検証）。`?v=e4`
+- checks     : hazama-check 2 PASS / 0 FAIL＋実ブラウザ壊しデータ matrix（破損JSON/型異常/過大値/旧キー）・
+  OG メタ DOM・console error 0
+- backlog    : 011 detail 更新。次の human-gate = HZ-BL-002（タッチパス）/ HZ-BL-001（PWA）
+- next       : 人間タッチパス → ユーザー号令で master 反映（E1〜E4 一括）
+- blockers   : master 反映は号令待ち／音(012)は人間の耳待ち
+
 ## 2026-06-12 — 進化 E2/E3: 原典給餌＋認識2.0（マルチエージェント分業）
 - agent      : Fable(管理/仕様/レビュー/検証) + sonnet(原典マイニング・docs現行化) + opus(草稿/適用/実装)
 - goal       : Tier2 — 原典30本の給餌（E2）と認識の読解試験化（E3）。branch `claude/evolve-e1`・master 無変更
