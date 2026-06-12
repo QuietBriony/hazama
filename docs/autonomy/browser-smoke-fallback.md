@@ -1,38 +1,74 @@
-# Browser Smoke Fallback — Hazama
+# 手動ブラウザ確認チェックリスト — Hazama
 
-Hazama keeps browser verification lightweight. The automated browser smoke is useful when
-Playwright is already available, but it is not a required dependency for this static Web
-first playable.
+Hazama のブラウザ検証は依存なしの静的チェック（`scripts/hazama-check.mjs`）が主軸です。
+Playwright は本リポジトリの必須依存ではなく、このファイルはその代わりに
+**手動ブラウザで行う動作確認**の手順を定義します。
 
-## Optional Playwright Smoke
+## 前提
 
-`node scripts/browser-first-playable-smoke.mjs` starts from a static-served Hazama page
-and checks the core DOM loop:
+- 静的サーバを起動して `http://localhost:8765/`（または任意のポート）を開く。
+- `node scripts/hazama-check.mjs` が 2 PASS / 0 FAIL であることを確認してから実施する。
+- プライベートウィンドウ、または Hazama のサイトデータをクリアした状態（fresh start）で始める。
 
-- the app shell renders without a startup error
-- first playable navigation reaches the HUB
-- the locked Omega route state is visible before Gate Run completion
-- Gate Run can complete and unlock Omega
-- the reborn/completion path can return to the HUB
+## 手動確認ステップ
 
-The script is intentionally optional. If Playwright is missing, `SKIP` with exit code 0 is
-acceptable because `hazama-check` still runs the dependency-free model, story, and startup
-smokes. Missing Playwright means "browser automation unavailable in this session", not
-"Hazama passed all browser/manual checks".
+### 1. Fresh Start → 沈む → 零章
 
-## In-App Browser Manual Fallback
+- [ ] 表紙が表示され、「沈む」ボタンが押せる。
+- [ ] 「沈む」タップで内製 Web Audio が解禁され、零章へ降下する。
+- [ ] コンソールにエラーが出ない。
 
-When Playwright skips and a browser is available, verify the same first playable path in
-the in-app browser:
+### 2. 構造読みと認識 ◆ の育ち
 
-1. Serve the repo as a static site and open `hazama-index.html` or `index.html`.
-2. Fresh start reaches `HUB_NIGHT` without console-visible startup failure.
-3. Confirm Omega is locked before Gate Run completion.
-4. Complete a Gate Run win and confirm Omega unlocks.
-5. Enter Omega, reach `A_reborn`, then use the completion CTA back to the HUB.
-6. Recheck the path with Music unopened; BGM/stop controls must be harmless.
-7. At mobile width, repeat the HUB -> Gate Run -> completion path and look for horizontal
-   overflow, clipped controls, or blocked progression.
+- [ ] 「構造で読む（descend）」を選ぶたびに右端の認識 ◆ インジケータが成長する。
+- [ ] 「表層で読む（surface）」を選ぶと別の筋へ逸れて前進する。
+- [ ] 「戻ろうとする（retreat）」が浅い深度では機能し、深い深度（観測者 9〜）では引き込まれる。
+- [ ] 選択肢のたびに音色アクセントが鳴り、ハングや無音ループがない。
 
-Record manual browser/mobile-width notes in `docs/autonomy/SESSION-LEDGER.md` only when
-that file is in the active write scope for the session.
+### 3. 縁の二極と二択
+
+- [ ] 認識 ≥ 6 で深度 Ω に到達し、深度 Ω 到達の結末（縁）へ進める。
+- [ ] 認識未達の場合は浮上の結末（縁）へ進む。いずれも有効な終端として機能する。
+- [ ] 縁で「縁から、もう一度沈む」と「すべて忘れる」の二択が表示される。
+- [ ] 「もう一度沈む」で spiral 層を保持したまま零章へ戻る（周回が深まる）。
+- [ ] 「すべて忘れる」で spiral 層が消去され、表紙が初期状態に戻る。
+- [ ] 「縁を画像で残す」chip で結末カード PNG が出力される。
+
+### 4. リロードによる spiral 記憶復元
+
+- [ ] 途中でブラウザを閉じ、再度開いたとき表紙の言葉が変化している（「また、来た。」等）。
+- [ ] `localStorage` key `hazama_spiral_v1` に周回・認識・痕跡が残っている。
+- [ ] transient（沈下 / 戻り道 / 観測者）は `hazama_spiral_v1` に保存されていない。
+
+### 5. Mobile width
+
+- [ ] 320〜390 px 幅で横方向 overflow がない。
+- [ ] 「沈む」・各選択肢・計器が欠けずに表示され押せる。
+- [ ] 縦方向スクロールで本文が読める。
+
+### 6. ♪ chip の一時停止・再開
+
+- [ ] `♪` chip で内製 BGM が一時停止する。
+- [ ] 再度タップで再開する。
+- [ ] 一時停止・再開後もゲームの進行に支障がない（無害）。
+
+## 記録
+
+手動確認の結果は session 内で `docs/autonomy/SESSION-LEDGER.md` への書き込みが
+スコープに入っている場合のみ追記する（agent が自動記録しない）。
+
+記録すべき内容:
+
+- date / tester / browser / device
+- 各ステップの Pass / Fail と具体的な挙動メモ
+- mobile overflow の有無（viewport とデバイス名）
+- コンソールエラーがあった場合はメッセージと発生箇所
+
+## 退役済みスクリプト
+
+旧 forward 実装時代の browser smoke スクリプトは逆統合 R9 で撤去済みです。
+このリポジトリで参照できる script は以下のみです:
+
+- `scripts/hazama-check.mjs`
+- `scripts/autonomy-docs-smoke.mjs`
+- `scripts/build-consistency-smoke.mjs`

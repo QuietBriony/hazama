@@ -1,78 +1,76 @@
-# HZ-BL-002 Human Playtest Template
+# Human Playtest Template — Hazama 没入版
 
-Use this for one 5-8 minute first playable pass. Keep notes short enough to paste into
-`docs/autonomy/SESSION-LEDGER.md`.
-
-Do not record, paste, save, or send raw Breath Gate input. If Breath Gate is tested,
-summarize only the feeling or aggregate result.
+5〜8 分の taste pass 用テンプレート。
+記入後 `docs/autonomy/SESSION-LEDGER.md` に貼り付ける（ledger が scope に入っている場合のみ）。
 
 ```md
-## YYYY-MM-DD - HZ-BL-002 Human First Playable Pass
+## YYYY-MM-DD — Human Taste Pass
 
-- player    :
-- device    :
-- browser   :
-- mode      : desktop / mobile browser / installed PWA / other:
-- duration  : __ minutes
-- route     : A_start -> HUB_NIGHT -> Gate Run -> Ω -> A_reborn / stopped at:
-- Music     : unopened / opened but optional / felt required:
+- player   :
+- device   :
+- browser  :
+- mode     : desktop browser / mobile browser / installed PWA / other:
+- duration : __ 分
+- route    : 表紙 → 零章 → （構造読み / 表層読み） → 縁 到達 / stopped at: depth__
 
-### First-Minute Route Clarity
+### 没入読書の手触り
 
-- Could you tell the first goal within 60 seconds? yes / partly / no
-- Did `夜のハブへ入る`, locked Ω, and Gate Run purpose make sense? yes / partly / no
-- Note:
+- 表紙「沈む」から零章降下までの流れは自然だったか: yes / partly / no
+- 本文のテキストを「読む」感覚があったか（情報処理でなく体験として）: yes / partly / no
+- 内製 BGM と選択音のトーンは没入を助けていたか: yes / partly / no / ♪ chip で停止した
+- メモ:
 
-### Gate Run Decision Feel
+### 認識 ◆ の伝わり方
 
-- Did the actions feel different enough? yes / partly / no
-- Risk/recovery/sync roles were clear? yes / partly / no
-- Turns to Ω unlock felt: too fast / about right / too slow / did not unlock
-- Note:
+- 「構造で読む」で認識 ◆ が育つことに気づいたか: yes / partly / no
+- 「表層で読む」と世界に弾かれ別の筋へ逸れる感覚があったか: yes / partly / no
+- 右端計器（沈下ゲージ・戻り道・観測者・認識 ◆）の意味は自然に伝わったか: yes / partly / no
+- メモ:
 
-### Breath Gate Optional Feel
+### 二極終端の納得感（縁）
 
-- Tested `休む / 整える`? yes / no
-- Felt optional recovery, not a required route? yes / partly / no
-- Did anything imply raw text would be stored or shared? yes / no
-- Raw input handling note: do not paste the raw input here; summarize only:
+- 縁（結末）へ到達したか: yes / no（stopped at depth __）
+- 到達した結末: 深度 Ω 到達 / 浮上して帰る
+- 結末の終わり方に納得感があったか: yes / partly / no
+- 未到達（浮上）でも「失敗でなく一つの結末」と感じられたか: yes / partly / no / N/A
+- メモ:
 
-### Completion Feel
+### 縁の二択
 
-- Reached `A_reborn`? yes / no
-- Did `扉が開いた`, Ω entry, and `一周完了` feel like a clear completion? yes / partly / no
-- Did the run record make another loop tempting? yes / partly / no
-- Note:
+- 「縁から、もう一度沈む」と「すべて忘れる」の二択が提示されたか: yes / no / N/A
+- どちらを選んだか、またその動機:
+- 「もう一度沈む」で周回が深まった実感があったか: yes / no / N/A
+- メモ:
 
-### Companion Boundary
+### 縁カードの体感
 
-- Could Hazama progress without Music/audio/external tab? yes / partly / no
-- Did BGM/Music read as companion instead of dependency? yes / partly / no
-- Note:
+- 「縁を画像で残す」chip に気づいたか: yes / no / N/A
+- カード（PNG）は結末サマリとして意味があったか: yes / partly / no / 試さなかった
+- Web Share または保存の動作に問題はなかったか: 問題なし / 問題あり / 試さなかった
+- メモ:
 
-### PWA / Device Notes
+### 戸惑い・引っかかり
 
-- Installed PWA tested? yes / no
-- Offline or reload tested? yes / no
-- Mobile/touch layout issues? none / minor / blocking
-- Note:
+- 場面 1:
+- 場面 2:
+- 場面 3:
 
-### Confusing Moments
+### PWA / デバイス
 
-- Moment 1:
-- Moment 2:
-- Moment 3:
+- installed PWA でテストしたか: yes / no
+- オフラインまたはリロードをテストしたか: yes / no
+- spiral 記憶（再訪時の表紙応答）を確認したか: yes / no
+- mobile / touch のレイアウト問題: なし / 軽微 / ブロッキング
+- メモ:
 
-### HZ-BL-003 Balance Tuning Signal
+### 自由記述
 
-- Is balance tuning justified from this pass? yes / no / unsure
-- If yes, concrete reason:
-- Suggested focus: turns to 100% / Breath Gate usefulness / `合わせる` payoff / loss recovery / retry pressure / other:
+（全体を通じた感想・提案・気になった点など）
 
-### Ledger Summary
+### Ledger 要約
 
-- result     :
-- evidence   :
-- blocker    :
-- next       :
+- result  :
+- evidence:
+- blocker :
+- next    :
 ```

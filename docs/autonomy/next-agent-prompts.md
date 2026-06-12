@@ -29,6 +29,35 @@ Required checks:
 - Final response must summarize human result, changed files, check output, and blockers.
 ```
 
+## Spiral Hardening (HZ-BL-011, for Codex — start AFTER E3 lands)
+
+```text
+You are working in C:\workspace\hazama. The worktree may be dirty from other agents;
+do not revert or overwrite changes you did not make. Confirm in
+docs/autonomy/BACKLOG.md that HZ-BL-010 (E3) is done before touching slice.js.
+
+Task: HZ-BL-011 — harden the spiral persistence (localStorage key hazama_spiral_v1)
+against corrupt/legacy data, and encode the contract in smoke.
+
+Scope boundaries:
+- Read: AGENTS.md, docs/autonomy/STACK-INDEX.md, slice.js (Spiral module),
+  scripts/build-consistency-smoke.mjs.
+- Write scope: slice.js (Spiral load/save guards only), scripts/build-consistency-smoke.mjs.
+- Cases to verify (manual browser + code reading): corrupt JSON string; wrong types
+  (visits as array, legacy as string); leftover forward keys hazama_state_v2 / hazama_run_v1
+  (must be ignored, NOT deleted); localStorage quota / SecurityError on save (must no-op).
+- Behavior on any bad data: fall back to a fresh state, never throw, never block boot.
+- Do not change the saved schema, the storage key, or what is persisted
+  (no transients: sink/dread/returnPaths/observer stay unsaved).
+
+Required checks:
+- Run git status --short --branch before editing.
+- node --check slice.js, then node scripts/hazama-check.mjs (2 PASS / 0 FAIL).
+- If slice.js changed, bump ?v= in index.html (css+js), slice.js depths fetch, and
+  sw.js VERSION together (build-consistency enforces sync).
+- Final response: changed files, guards added, check output, and a SESSION-LEDGER entry draft.
+```
+
 ## Immersive Taste-Pass Synthesis
 
 ```text

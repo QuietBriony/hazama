@@ -1,102 +1,103 @@
 # PWA Install / Offline Human Checklist — Hazama
 
-This checklist advances `HZ-BL-001` only to a ready-for-human state. It is
-human-gated: completing this document, or running automated smokes, does not mark
-the backlog item done. A person with a real browser/device must perform the pass
-and record results when `SESSION-LEDGER.md` is in scope.
+この checklist は human-gated です。自動 smoke の通過だけではクローズできません。
+実機を持つ人間が通した結果を `docs/autonomy/SESSION-LEDGER.md` に記録することが条件です。
 
-## Prerequisites
+## 前提
 
-- Use a real desktop browser and at least one real mobile device or mobile PWA
-  install environment.
-- Start from the repo root and serve Hazama as a static site. Example:
+- 実機デスクトップブラウザ＋実機モバイル端末（または PWA install 可能な環境）を用意する。
+- repo root で静的サーバを起動してから開く:
 
 ```bash
 python -m http.server 8765
 ```
 
-- Open `http://localhost:8765/` or `http://localhost:8765/hazama-index.html`.
-- Confirm `node scripts/hazama-check.mjs` is already green or that any failure is
-  unrelated and explicitly known.
-- Use a fresh profile, private window, or clear existing Hazama site data before
-  the main pass.
-- Keep Music unopened for the primary pass. Hazama must progress without Music,
-  BGM playback, or an external tab.
+- `http://localhost:8765/` をブラウザで開く（エントリポイントは `index.html`）。
+- `node scripts/hazama-check.mjs` が 2 PASS / 0 FAIL であることを確認する。
+- 新しいプロファイル・プライベートウィンドウ、またはサイトデータをクリアして開始する。
 
-## Desktop Install Steps
+## Desktop — Install 手順
 
-1. Visit Hazama while online.
-2. Confirm the app starts without a visible startup error.
-3. Move from `A_start` to `HUB_NIGHT`.
-4. Trigger the browser install flow from the address bar or browser menu.
-5. Launch the installed app in standalone/app-window mode.
-6. Confirm it opens to Hazama, not a blank page or server directory listing.
-7. Use reset once, then confirm the app can reach `A_start -> HUB_NIGHT` again.
+1. オンラインで Hazama を開く。
+2. エラーなく表紙（「沈む」ボタン）が表示されることを確認する。
+3. アドレスバーまたはブラウザメニューから install（アプリをインストール）フローを起動する。
+4. standalone / app-window モードでインストール済みアプリを起動する。
+5. 空白ページやディレクトリリストでなく Hazama 表紙が開くことを確認する。
 
-## Mobile Install Steps
+## Desktop — 初回プレイ動線確認
 
-1. Visit the same static Hazama URL while online.
-2. Add/install Hazama to the home screen using the platform browser flow.
-3. Launch from the home-screen icon.
-4. Confirm standalone display if the platform supports it.
-5. Confirm `A_start -> HUB_NIGHT` works after launch.
-6. Check that the first playable controls fit at mobile width with no blocking
-   horizontal overflow or clipped progression buttons.
+1. 表紙で「沈む」をタップし（内製 Web Audio が解禁される）、零章へ降下する。
+2. 最初の選択肢（構造で読む / 表層で読む / 戻ろうとする）を 2〜3 手進める。
+3. 右端計器（認識 ◆ インジケータ）が「構造で読む」で育つことを目視確認する。
+4. エラーや UI 崩れがないことを確認する。
 
-## Offline Reload Checks
+## Mobile — Install 手順
 
-Perform these after one successful online visit, so the service worker has a
-chance to cache the shell.
+1. 同じ静的 URL をモバイルブラウザで開く。
+2. プラットフォームのブラウザフロー（「ホーム画面に追加」等）でインストールする。
+3. ホーム画面アイコンから起動する。
+4. standalone 表示（ブラウザ UI が消える）を確認する（プラットフォームが対応している場合）。
+5. 「沈む」→ 零章 → 数手の選択 を mobile width で実施する。
+6. ボタン・選択肢が横方向に溢れず、正しく押せることを確認する。
 
-1. Close all Hazama tabs/app windows.
-2. Disable network access for the browser/device.
-3. Reopen the installed Hazama app or reload the existing Hazama URL.
-4. Confirm the app shell loads offline.
-5. Confirm reset is available and harmless offline.
-6. Confirm `A_start -> HUB_NIGHT` works offline.
-7. Re-enable network and reload once more to confirm the app still starts.
+## Offline リロード確認
 
-## Expected Pass Signals
+オンライン初回 visit が完了し、service worker がキャッシュした後に実施する。
 
-- Install prompt or add-to-home-screen path is available on at least one target
-  platform.
-- Installed launch opens Hazama in an app-like window or platform equivalent.
-- First online visit reaches `HUB_NIGHT`.
-- Offline reload loads the Hazama shell instead of a browser network error.
-- Reset does not strand the app in a blank or locked state.
-- `A_start -> HUB_NIGHT` works after reset and during the offline pass.
-- Music remains optional; Hazama progress does not depend on Music START.HZM,
-  audio playback, or an external Music tab.
+1. Hazama のタブ／アプリウィンドウをすべて閉じる。
+2. ブラウザ／端末のネットワークを無効にする。
+3. インストール済みアプリを再起動、またはブラウザで Hazama URL をリロードする。
+4. アプリシェルがオフラインでも表示されることを確認する（ブラウザのネットワークエラー画面でないこと）。
+5. 「沈む」→ 零章 の降下がオフラインで動作することを確認する。
+6. ネットワークを再有効化し、もう一度リロードして正常に起動することを確認する。
 
-## What To Record
+## spiral 記憶の復元確認
 
-When ledger edits are in scope, record:
+1. 零章から数手進んだ後にブラウザを閉じる。
+2. 再度 Hazama を開く。
+3. 表紙の言葉が「また、来た。」等、戻ってきた応答に変わっていることを確認する。
+4. 次の「沈む」で周回が一つ深まることを確認する。
+5. `localStorage` key `hazama_spiral_v1` に周回・認識・痕跡が残り、transient（沈下/戻り道等）は残らないことを確認する。
 
-- date, tester, device, OS, and browser
-- served URL and entry file used
-- whether install was prompted, menu-driven, or unavailable
-- standalone launch result
-- online `A_start -> HUB_NIGHT` result
-- offline reload result
-- reset result
-- mobile layout notes, especially overflow or clipped controls
-- screenshots only if useful for a failure; do not store raw Breath Gate input
+## 縁（結末）動線確認
+
+十分に降下した後、縁へ到達した場合:
+
+1. 「縁から、もう一度沈む」または「すべて忘れる」の二択が表示されることを確認する。
+2. 「もう一度沈む」で spiral 層を保持したまま零章へ戻ることを確認する。
+3. 「すべて忘れる」で spiral 層が消去され、表紙が初期状態に戻ることを確認する。
+4. 「縁を画像で残す」chip が結末カードを PNG 出力することを確認する。
+
+## Pass 条件（期待する結果）
+
+- install prompt またはホーム画面追加フローが少なくとも 1 プラットフォームで使用できる。
+- インストール済みアプリ起動時に Hazama 表紙が表示される。
+- オフラインリロード後もアプリシェルが表示される（ネットワークエラーにならない）。
+- 「沈む」→ 零章 → 選択数手 がオンライン・オフライン両方で動作する。
+- spiral 記憶が閉じて戻っても保持される（表紙の応答が変わる）。
+- 縁の二択（もう一度沈む / すべて忘れる）が機能する。
+- mobile width でボタン・選択肢が欠けず押せる。
+
+## 記録すべき事項
+
+- date / tester / device / OS / browser
+- 使用した served URL
+- install フローの方法（prompt / メニュー / 不可）
+- standalone 起動の結果
+- オフラインリロードの結果
+- spiral 記憶復元の結果（表紙の応答変化）
+- 縁の二択動作確認結果
+- mobile レイアウトメモ（overflow / ボタン欠け等）
 
 ## Failure Triage
 
-- Install unavailable: note browser/platform, manifest visibility, and whether
-  the page was served over an install-eligible origin.
-- Offline reload fails: check service worker registration, cache version, and
-  whether the first online visit completed before going offline.
-- Blank or stale app after launch: compare `index.html`, `hazama-index.html`,
-  `sw.js`, and startup-smoke expected version only in a runtime-scoped session.
-- Reset breaks progression: record the exact state before reset and the visible
-  route after reload; do not change storage contracts without explicit scope.
-- Mobile controls blocked: record viewport/device and the blocked action.
-- Music-related issue: confirm the same path with Music unopened. Hazama should
-  treat Music as a companion, not a dependency.
+- install 不可: ブラウザ・プラットフォーム・manifest の可視性・origin を記録する。
+- オフラインリロード失敗: service worker 登録・cache version・初回 visit の完了有無を確認する。
+- アプリシェル空白: `index.html` / `sw.js` の version 同期を確認する。
+- spiral 記憶が保持されない: `localStorage` key `hazama_spiral_v1` の内容をコンソールで確認する。
+- mobile 操作不可: viewport・端末・ブロックされた操作を記録する。
 
 ## Closeout Rule
 
-Do not move `HZ-BL-001` to Done from this checklist alone. The item closes only
-after a human records a real install/offline pass result.
+実機で通した人間が結果を記録して初めて human-gate をクローズできます。
+自動 smoke 通過・このチェックリストの記入だけではクローズしないでください。

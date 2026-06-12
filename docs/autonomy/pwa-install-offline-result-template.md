@@ -1,94 +1,98 @@
-# PWA Install / Offline Human Result Template - Hazama
+# PWA Install / Offline Human Result Template — Hazama
 
-Use this note after completing `docs/autonomy/pwa-install-offline-checklist.md`
-for `HZ-BL-001`. This is a human-gated result: automated smokes or a filled
-template do not close the item unless a human performed the real install/offline
-pass. Keep Music unopened for the primary pass; Hazama must remain playable
-without Music START.HZM, audio playback, or an external Music tab.
+`docs/autonomy/pwa-install-offline-checklist.md` を実施した後にこのテンプレートを記入する。
+human-gated: 自動 smoke 通過またはテンプレート記入のみでは item をクローズしない。
 
-## Test Context
+## テスト概要
 
 - Date:
 - Tester:
 - Served URL:
-- Entry file (`/`, `index.html`, or `hazama-index.html`):
-- Commit / branch observed:
-- `node scripts/hazama-check.mjs` status before pass:
+- Entry file（`/` または `index.html`）:
+- Commit / branch:
+- `node scripts/hazama-check.mjs` ステータス（pass 前）:
 
-## Environment
+## 環境
 
-- Desktop device / OS:
-- Desktop browser / version:
-- Mobile device / OS:
-- Mobile browser / version:
-- Network/offline method used:
-- Fresh profile or cleared Hazama site data?:
+- Desktop デバイス / OS:
+- Desktop ブラウザ / バージョン:
+- Mobile デバイス / OS:
+- Mobile ブラウザ / バージョン:
+- ネットワーク無効化の方法:
+- 新規プロファイル or サイトデータクリア済み?:
 
-## Results
+## 結果
 
 ### Install
 
-- Desktop install prompt/menu result:
-- Mobile add-to-home-screen/install result:
-- Pass / fail:
-- Notes:
+- Desktop install prompt / メニュー結果:
+- Mobile ホーム画面追加 / install 結果:
+- Pass / Fail:
+- メモ:
 
-### Standalone Launch
+### Standalone 起動
 
-- Installed launch opens Hazama shell?:
-- App-like/standalone display observed?:
-- Pass / fail:
-- Notes:
+- インストール済みアプリが Hazama 表紙を開いたか:
+- standalone / app-window 表示を確認したか:
+- Pass / Fail:
+- メモ:
 
-### Offline Reload
+### 初回プレイ動線（「沈む」→ 零章 → 選択数手）
 
-- First online visit completed before offline?:
-- Offline reload or installed app launch result:
-- Hazama shell loads instead of browser network error?:
-- Pass / fail:
-- Notes:
+- オンラインで「沈む」→ 零章降下を確認したか:
+- 構造で読む / 表層で読む / 戻ろうとする の選択が 2〜3 手動作したか:
+- 認識 ◆ インジケータが育つことを確認したか:
+- Pass / Fail:
+- メモ:
 
-### Reset
+### Offline リロード
 
-- Reset available?:
-- Reset result online:
-- Reset result offline:
-- Pass / fail:
-- Notes:
+- 初回 online visit を完了した後にオフラインへ移行したか:
+- オフラインリロード / インストール済みアプリ起動結果:
+- アプリシェルがネットワークエラーでなく表示されたか:
+- オフラインで「沈む」→ 零章 が動作したか:
+- Pass / Fail:
+- メモ:
 
-### A_start -> HUB_NIGHT
+### spiral 記憶の復元
 
-- Online progression result:
-- After reset progression result:
-- Offline progression result:
-- Pass / fail:
-- Notes:
+- 零章から数手進んでブラウザを閉じ、再度開いたか:
+- 表紙の言葉が戻ってきた応答（「また、来た。」等）に変わったか:
+- 次の「沈む」で周回が深まることを確認したか:
+- Pass / Fail:
+- メモ:
 
-### Mobile Layout
+### 縁の二択
 
-- Viewport / orientation checked:
-- Controls fit without blocking horizontal overflow?:
-- Progression buttons visible and usable?:
-- Pass / fail:
-- Notes:
+- 縁（結末）まで到達できたか（到達できなかった場合は N/A）:
+- 「縁から、もう一度沈む」が spiral 層を保持したまま零章へ戻ったか:
+- 「すべて忘れる」で spiral 層が消去され表紙が初期化されたか:
+- 「縁を画像で残す」chip で PNG カードが出力されたか:
+- Pass / Fail / N/A:
+- メモ:
+
+### Mobile レイアウト
+
+- チェックした viewport / orientation:
+- ボタン・選択肢が横溢れなく表示されたか:
+- 「沈む」・各選択肢が押せたか:
+- Pass / Fail:
+- メモ:
 
 ## Failures
 
-- Failure summary:
-- Reproduction steps:
-- Expected:
-- Actual:
-- Music unopened during primary reproduction?:
-- Raw Breath Gate input avoided in notes/screenshots?:
+- 失敗の概要:
+- 再現手順:
+- 期待動作:
+- 実際の動作:
 
 ## Screenshots
 
-- Screenshot paths or links:
-- Reason captured:
+- スクリーンショットのパス / リンク:
+- 撮影理由:
 
-## Closeout Recommendation
+## Closeout
 
-- Recommended status for `HZ-BL-001`: keep open / ready for review / done
-- Human-gate rationale:
-- Follow-up tasks needed:
-- Music optionality confirmed?:
+- 推奨ステータス: open のまま / review ready / done
+- human-gate の根拠:
+- フォローアップタスク:
