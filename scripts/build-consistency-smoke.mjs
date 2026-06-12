@@ -56,12 +56,22 @@ has(js, "function descendAgain", "descend-again (cycle deepen)");
 has(js, "縁から、もう一度沈む", "edge re-descend label");
 has(js, "すべて忘れる", "edge forget label");
 has(js, "const EdgeCard", "edge share card");
-// transient（戻り道/圧/観測者）は保存しない＝spiral 層の save に紛れ込んだら fail
+// transient（戻り道/圧/観測者/エコー門発火）は保存しない＝spiral 層の save に紛れ込んだら fail
 const saveBody = (js.match(/function save\(\) \{[\s\S]*?\n    \}/) || [""])[0];
 assert(saveBody.includes("localStorage.setItem"), "spiral save writes localStorage");
-for (const transient of ["returnPaths", "dread", "observer"]) {
+for (const transient of ["returnPaths", "dread", "observer", "echoDone"]) {
   assert(!saveBody.includes(transient), `spiral save must not persist transient: ${transient}`);
 }
+
+// E3: 認識2.0（読解の試験化）＝深い構造読み＋エコー門。原典給餌(E2)の燃料が揃っていること。
+has(js, "const ECHO_BANK", "E3 echo bank");
+const echoEntries = (js.match(/^\s{4}[A-Za-z_]+: "/gm) || []).length;
+assert(echoEntries >= 15, `E3 echo bank entries: ${echoEntries} (need >=15)`);
+const deepTags = (read("depths-shell.json").match(/"deep":\s*true/g) || []).length;
+assert(deepTags >= 10, `E3 deep descend tags: ${deepTags} (need >=10)`);
+has(js, "surfaceErosion", "E3 surface erosion (recognition strips)");
+has(js, "renderEchoChoices", "E3 echo gate renderer");
+has(js, "ECHO_GATES", "E3 echo gate nodes");
 
 // docs 参照整合: README/AGENTS が存在しない scripts を案内していないこと（forward 撤去後の漂流防止）
 for (const docFile of ["README.md", "AGENTS.md"]) {

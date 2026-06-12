@@ -321,6 +321,9 @@ body[data-tension="high"] .hz-scene { animation: hz-shudder 2.6s ease-in-out inf
 /* 表層で読む＝知覚ゲートで弾かれる手。降下でも戻りでもない“逸れ”＝点線枠＋逸れマーク（生の差し色）。 */
 .hz-choice.surface { background: rgba(216,68,46,0.04); border-style: dashed; border-color: rgba(216,68,46,0.32); }
 .hz-choice.surface .sub { color: var(--hand-red); opacity: 0.85; }
+/* エコー門の断片＝既存 choice 準拠＋細い点線でわずかに異質に（説明はしない）。kind は echo＝descend の手マークは付かない。 */
+.hz-choice.echo { border-style: dotted; border-color: rgba(127,182,196,0.35); }
+.hz-choice.echo-skip { opacity: 0.75; }
 
 /* ---------- フッタ ---------- */
 .hz-footer {

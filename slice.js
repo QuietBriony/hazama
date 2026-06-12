@@ -28,21 +28,25 @@
   const RESIST_STRAIN = 3; // 観測者3（深度E〜）から「抗えるが引き込まれる」
   const DEEP_LOCK = 9;     // 観測者9（深度Q・外側の外側〜）から「戻れない」
 
-  // R2(逆統合): 認識/Ωゲート。構造読み(descend)で attunement が育ち、Ωは attuned のみ到達できる(ハード)。
-  // 未達は"失敗"でなく「浮上して帰る」二極の結末（renderEdge で分岐）。codex hazama-gate-run.js の移植。
-  const ATTUNE = { omegaThreshold: 6, structuralGain: 1, surfaceGain: 0, retreatGain: 0 };
+  // E3(認識2.0): 認識/Ωゲートを「descend クリック集計」から「読んだことの証明」へ。
+  //   深い構造読み(deep な descend)だけが +structuralGain＝無印の前進だけの降下は育たない。
+  //   表層読み(surface)は −surfaceErosion（floor 0）＝表層で読むと認識が剥がれる。
+  //   retreat は 0（変更なし）。エコー門の正答 +echoGain / 誤答 −echoSlip は EchoGate 側で適用。
+  //   Ωは attuned のみ到達できる(ハード)。未達は"失敗"でなく「浮上して帰る」二極の結末（renderEdge で分岐）。
+  const ATTUNE = { omegaThreshold: 6, structuralGain: 1, surfaceErosion: 1, echoGain: 2, echoSlip: 1 };
   const isAttuned = () => (state.attunement || 0) >= ATTUNE.omegaThreshold;
-  function gainRecognition(kind) {
-    const g = kind === "descend" ? ATTUNE.structuralGain
-      : kind === "surface" ? ATTUNE.surfaceGain : ATTUNE.retreatGain;
-    state.attunement = Math.min(99, (state.attunement || 0) + g);
+  function gainRecognition(c) {
+    let g = 0;
+    if (c.kind === "descend" && c.deep === true) g = ATTUNE.structuralGain;   // 深い構造読みだけが育つ
+    else if (c.kind === "surface") g = -ATTUNE.surfaceErosion;                 // 表層で読むと剥がれる
+    state.attunement = Math.max(0, Math.min(99, (state.attunement || 0) + g)); // floor 0 / ceil 99
   }
 
   // legacy = 周回をまたいで持ち越す履歴（restart 以外ではリセットしない）。次周の分岐 seed に効く。
   //   cycles=周回数, surfaceBounces=表層で弾かれた回数, detoursSeen=通った別の筋のid, maxRank=到達深度。
   // rejoin = 寄り道(detour)から本筋へ前進合流する先（divert 時に積む）。
   const freshLegacy = () => ({ cycles: 0, surfaceBounces: 0, detoursSeen: [], maxRank: 0 });
-  const state = { id: null, sink: 0, dread: 0, returnPaths: RETURN_PATHS_START, maxSink: 0, observer: 1, steps: 0, belowLoop: 0, resisted: 0, refused: 0, resistBeat: null, rank: 0, cycle: 0, visits: {}, rejoin: null, attunement: 0, legacy: freshLegacy() };
+  const state = { id: null, sink: 0, dread: 0, returnPaths: RETURN_PATHS_START, maxSink: 0, observer: 1, steps: 0, belowLoop: 0, resisted: 0, refused: 0, resistBeat: null, rank: 0, cycle: 0, visits: {}, rejoin: null, attunement: 0, echoDone: {}, legacy: freshLegacy() };
   let DATA = null;
   let revealToken = 0;
   const clamp01 = (x) => Math.max(0, Math.min(1, x));
@@ -498,6 +502,11 @@
     det_eightview: "一つの問いが、八つの面に裂ける"
   };
 
+  // E3 エコー門: 主要降下点で「読んだことの証明」を問う。発火ノードは ECHO_GATES。
+  // 周回ごとに一度だけ（state.echoDone[id] = cycle）。透過 state＝spiral には保存しない
+  // （restart/descendAgain で reset・周回で再挑戦できる）。真＝訪問済みの断片・偽＝未訪問の断片。
+  const ECHO_GATES = ["Q", "Z"];
+
   // 周回/再訪で本文を変異させる（cycle 0 の初回は不変＝作り込んだ導入を壊さない）。
   function applyCycle(id, base) {
     const visits = state.visits[id] || 1;
@@ -737,7 +746,15 @@
     });
 
     const choiceDelay = REDUCED ? 150 : delay + 220;
-    window.setTimeout(() => { if (myToken === revealToken) renderChoices(node); }, choiceDelay);
+    window.setTimeout(() => {
+      if (myToken !== revealToken) return;
+      // E3 エコー門: 対象ノード到達かつ周回内未発火かつ真候補ありなら、通常 choices の前に門を挿す。
+      if (ECHO_GATES.includes(id) && state.echoDone[id] !== state.cycle && echoTruthAvail(id)) {
+        renderEchoChoices(node, id);
+      } else {
+        renderChoices(node);
+      }
+    }, choiceDelay);
   }
 
   function renderChoices(node) {
@@ -760,11 +777,89 @@
     Follow.stick();
   }
 
+  // エコー門に真候補（訪問済み断片）があるか＝門を出せるか。renderNode の割り込み判定に使う。
+  function echoTruthAvail(id) {
+    return Object.keys(ECHO_BANK).some((key) => key !== id &&
+      (state.legacy.detoursSeen.includes(key) || state.visits[key]));
+  }
+
+  // E3 エコー門: 通常 choices の代わりに、降下の記憶（断片）を真偽混合で問う。
+  // 選抜・並びは worldSeed^hashStr("echo:"+id) の mulberry32 で決定論（同じ周回・状態なら同じ門）。
+  // 真＝訪問済み(detoursSeen 優先, なければ visits)から1つ／偽＝未訪問から2つ。クリックで結果ビート→通常 choices。
+  function renderEchoChoices(node, id) {
+    const rng = mulberry32((worldSeed() ^ hashStr("echo:" + id)) >>> 0);
+    const keys = Object.keys(ECHO_BANK).filter((k) => k !== id);
+    // 真候補: detoursSeen 該当を優先、なければ visits 済み。
+    const seenDetour = keys.filter((k) => state.legacy.detoursSeen.includes(k));
+    const visited = keys.filter((k) => state.visits[k] && !state.legacy.detoursSeen.includes(k));
+    const truthPool = seenDetour.length ? seenDetour : visited;
+    if (!truthPool.length) return renderChoices(node);   // 保険: 真候補が無ければ門をスキップ
+    const truthKey = truthPool[Math.floor(rng() * truthPool.length)];
+    // 偽候補: 未訪問（visits になく detoursSeen にもない）から rng で2つ（足りなければ1つ）。
+    // プールを決定論シャッフルして先頭から取る＝重複なし・プールが2未満でも自然に減る。
+    const falsePool = keys.filter((k) => !state.visits[k] && !state.legacy.detoursSeen.includes(k));
+    for (let i = falsePool.length - 1; i > 0; i--) { const j = Math.floor(rng() * (i + 1)); const t = falsePool[i]; falsePool[i] = falsePool[j]; falsePool[j] = t; }
+    const decoys = falsePool.slice(0, 2);
+    // 真偽混合をシャッフル（Fisher–Yates・決定論）。
+    const frags = [{ key: truthKey, truth: true }].concat(decoys.map((k) => ({ key: k, truth: false })));
+    for (let i = frags.length - 1; i > 0; i--) { const j = Math.floor(rng() * (i + 1)); const t = frags[i]; frags[i] = frags[j]; frags[j] = t; }
+
+    // 本文の後に短い導入行を1本足す（cold＝乾いた観測。機械的説明はしない）。
+    const intro = document.createElement("p");
+    intro.className = "hz-line cold shown";
+    intro.textContent = "——降下の記憶を、指でなぞる。どれを、視た。";
+    sceneEl.appendChild(intro); Follow.stick();
+
+    choicesEl.innerHTML = "";
+    const mk = (lead, extraClass, fn) => {
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "hz-choice echo" + (extraClass ? " " + extraClass : "");
+      btn.innerHTML = `<span class="lead"></span>`;
+      btn.querySelector(".lead").textContent = lead;
+      btn.addEventListener("click", fn, { once: true });
+      choicesEl.appendChild(btn);
+      return btn;
+    };
+    frags.forEach((f) => mk("『" + ECHO_BANK[f.key] + "』", "", () => echoResolve(node, id, f.truth)));
+    mk("目を逸らし、先へ", "echo-skip", () => echoResolve(node, id, null));
+    choicesEl.querySelectorAll(".hz-choice").forEach((b, i) =>
+      window.setTimeout(() => b.classList.add("in"), REDUCED ? 0 : 120 + i * 150));
+    Follow.stick();
+  }
+
+  // エコー門の結果（クリック時）: 周回内発火を記録し、真/偽/逸らしの結果ビートを sceneEl へ挿す。
+  // truth===true 真 / false 偽 / null 逸らし。結果後 600ms で通常 choices（深度遷移はしない）。
+  function echoResolve(node, id, truth) {
+    state.echoDone[id] = state.cycle;
+    const myToken = ++revealToken;     // 結果ビート以降の遅延描画をこのトークンで守る
+    let beat = null;
+    if (truth === true) {
+      state.attunement = Math.min(99, state.attunement + ATTUNE.echoGain);
+      Audio.pulseOnce(0.9);
+      beat = { who: "cold", t: "——視た。あなたの降下は、あなたのものだ。" };
+    } else if (truth === false) {
+      state.attunement = Math.max(0, state.attunement - ATTUNE.echoSlip);
+      state.dread = Math.min(1, state.dread + 0.05);
+      Audio.glitchHit(0.5);
+      beat = { who: "danger", t: "——それは、あなたの視たものではない。借り物の記憶は、ここでは効かない。" };
+    }
+    choicesEl.innerHTML = "";
+    if (beat) {
+      const p = document.createElement("p");
+      p.className = "hz-line " + (WHO_CLASS[beat.who] || "") + " shown";
+      p.textContent = beat.t;
+      sceneEl.appendChild(p); Follow.stick();
+    }
+    renderAttune(); Spiral.save();
+    window.setTimeout(() => { if (myToken === revealToken) renderChoices(node); }, REDUCED ? 150 : 600);
+  }
+
   function sinkNorm() { return Math.min(1, state.sink / SINK_SCALE); }
 
   function choose(c) {
     if (c.kind === "retreat" && !c.terminal) return resolveResist(c);
-    gainRecognition(c.kind);  // R2: 構造読み(descend)で認識が育つ／表層(surface)は中立
+    gainRecognition(c);  // E3: 深い構造読み(deep descend)で育ち／表層(surface)で剥がれる
     state.sink += c.sink || 0;
     state.dread = Math.min(1, state.dread + (c.dread || 0));
     if (c.close && state.returnPaths > 0) state.returnPaths -= 1; // 戻り道は復活しない
@@ -911,7 +1006,7 @@
     revealToken++;
     state.id = null; state.sink = 0; state.dread = 0; state.returnPaths = RETURN_PATHS_START;
     state.maxSink = 0; state.observer = 1; state.resisted = 0; state.refused = 0;
-    state.resistBeat = null; state.rank = 0; state.rejoin = null;
+    state.resistBeat = null; state.rank = 0; state.rejoin = null; state.echoDone = {};
     document.body.classList.remove("surfaced");
     buildReturnPaths();
     renderNode(DATA.start || "zero");
@@ -1510,7 +1605,7 @@
 
   // ---------- 起動 ----------
   async function loadData() {
-    const res = await fetch("depths-shell.json?v=e2", { cache: "no-store" });
+    const res = await fetch("depths-shell.json?v=e3", { cache: "no-store" });
     DATA = await res.json();
   }
   // ---------- 動く表紙（R6：タイトルも state/seed に応じて動く・静止でない） ----------
@@ -1551,7 +1646,7 @@
   }
   function restart() {
     revealToken++;
-    state.id = null; state.sink = 0; state.dread = 0; state.returnPaths = RETURN_PATHS_START; state.maxSink = 0; state.observer = 1; state.steps = 0; state.belowLoop = 0; state.resisted = 0; state.refused = 0; state.resistBeat = null; state.rank = 0; state.cycle = 0; state.visits = {}; state.rejoin = null; state.attunement = 0; state.legacy = freshLegacy();
+    state.id = null; state.sink = 0; state.dread = 0; state.returnPaths = RETURN_PATHS_START; state.maxSink = 0; state.observer = 1; state.steps = 0; state.belowLoop = 0; state.resisted = 0; state.refused = 0; state.resistBeat = null; state.rank = 0; state.cycle = 0; state.visits = {}; state.rejoin = null; state.attunement = 0; state.echoDone = {}; state.legacy = freshLegacy();
     if (document.body && document.body.classList) document.body.classList.remove("surfaced");
     const st = $("status"); if (st) st.textContent = "";
     buildReturnPaths();
