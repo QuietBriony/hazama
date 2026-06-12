@@ -73,6 +73,22 @@ has(js, "surfaceErosion", "E3 surface erosion (recognition strips)");
 has(js, "renderEchoChoices", "E3 echo gate renderer");
 has(js, "ECHO_GATES", "E3 echo gate nodes");
 
+// E5: 視覚の磨きとパターン変化（A1 surfaced / A4 phase-break / B1 focus / B3 title / B4 cycle）。
+// css に新層・状態・a11y・タイトル擬似要素が立ち、dead CSS(.hz-tl-c) は回収済みであること。
+has(css, "body.surfaced", "E5/A1 surfaced wash style");
+has(css, "phase-break", "E5/A4 phase-break style");
+has(css, ":focus-visible", "E5/B1 focus-visible a11y");
+has(css, ".hz-gate-title::before", "E5/B3 title RGB-split pseudo");
+assert(!css.includes(".hz-tl-c"), "E5/B3 dead CSS removed (.hz-tl-c must not remain)");
+// js: dev hook・周回スキン・phase 跨ぎ検知・below seed 畳み込み。
+has(js, "__hz", "E5/A3 dev hook namespace");
+has(js, "garden:", "E5/A3 garden dev hook");
+has(js, "applyCycleSkin", "E5/B4 cycle skin");
+has(js, "lastPhase", "E5/A4 phase transition tracker");
+has(js, "belowLoop, 0x632be59b", "E5/A2 belowLoop seed fold");
+// html: 表紙タイトルの data-text（B3 の RGB ずれ再接続の燃料）。
+has(html, 'data-text="Hazama"', "E5/B3 title data-text");
+
 // docs 参照整合: README/AGENTS が存在しない scripts を案内していないこと（forward 撤去後の漂流防止）
 for (const docFile of ["README.md", "AGENTS.md"]) {
   const t = read(docFile);

@@ -50,6 +50,12 @@
   let DATA = null;
   let revealToken = 0;
   const clamp01 = (x) => Math.max(0, Math.min(1, x));
+  // A4: phase 跨ぎの句読点。深くなる方向の遷移を一度だけ強く破断する。
+  // lastPhase は state に入れない（transient な演出トリガ＝保存も持ち越しもしない）。
+  // restart/descendAgain/forget で "surface" に戻す＝再降下のたびに最初の跨ぎが効く。
+  const PHASE_ORDER = ["surface", "drift", "deep", "bottom"];
+  let lastPhase = "surface";
+  let phaseBreakTimer = 0;
 
   // ---------- 記憶（spiral 層）の永続化 — E1 ----------
   // 「戻ってきたのではない。一段、上書きされて、また下へ置かれただけだ」を実装で言う:
@@ -647,6 +653,21 @@
     }
   }
 
+  // A4: phase 跨ぎの句読点（一度だけの強い破断）。深くなる方向の跨ぎでだけ呼ぶ。
+  //  - body.phase-break を 900ms（タイマーで除去・多重発火は先勝ち＝走行中は撃ち直さない）。
+  //  - 既存バースト機構を借りる: Glitch.hardBreak() が glitch-hard＋leak-on（--leak-rgb はランダム）を
+  //    一拍点ける＝視覚・音(glitchHit)・leak が同 burst で同調。Audio 未解禁なら glitchHit は no-op。
+  //  - reduced-motion は発火自体を no-op（クラスを付けない）。
+  function firePhaseBreak() {
+    if (REDUCED) return;
+    if (document.body.classList.contains("phase-break")) return; // 先勝ち（走行中は無視）
+    document.body.classList.add("phase-break");
+    clearTimeout(phaseBreakTimer);
+    phaseBreakTimer = window.setTimeout(() => document.body.classList.remove("phase-break"), 900);
+    Glitch.hardBreak();          // glitch-hard＋leak-on を一拍点ける（視覚のみ・音は鳴らさない）
+    Audio.glitchHit(0.9);        // 音の破断はここで一度だけ（未解禁なら no-op）
+  }
+
   // ---------- 圧/沈下を CSS と body へ ----------
   function applyAtmosphere(node) {
     const sinkNorm = Math.min(1, state.sink / SINK_SCALE);
@@ -655,7 +676,11 @@
     root.setProperty("--sink", sinkNorm.toFixed(3));
     root.setProperty("--press", Math.min(1, state.dread).toFixed(3));
     root.setProperty("--reveal-ms", (REDUCED ? 0 : Math.round(34 + state.dread * 64)) + "ms");
-    document.body.dataset.phase = phaseFor(sinkNorm);
+    const phase = phaseFor(sinkNorm);
+    document.body.dataset.phase = phase;
+    // A4: phase が深くなる方向へ跨いだ瞬間だけ句読点を打つ（浅くなる retreat では発火しない）。
+    if (PHASE_ORDER.indexOf(phase) > PHASE_ORDER.indexOf(lastPhase)) firePhaseBreak();
+    lastPhase = phase;
     if (node && node.tension === "high" && !REDUCED) document.body.dataset.tension = "high";
     else document.body.removeAttribute("data-tension");
     sinkFill.style.height = (sinkNorm * 100).toFixed(1) + "%";
@@ -673,7 +698,10 @@
     Glitch.update(depthN, dr);   // 深いほどグリッジが高頻度・高強度（leak/音の裂けも同 burst で同調）
     // 反転重森ガーデン：浅クリーン→深で露出。構図は分岐エンジンの信号(worldSeed)で再生成
     // ＝テキストを分岐させているのと同じ信号が背景の構図も組み直す（一緒に壊れていく）。
-    Garden.update(depthN, dr, worldSeed());
+    // A2(設計目標 §4-6 の取りこぼし修正): below(∞) の周回(belowLoop)を seed に畳み込む。
+    // belowLoop=0 のとき Math.imul(0,k)=0＝XOR 恒等＝通常降下の構図は従来と完全一致（後方互換）。
+    // below を一段下りるごとに庭が掻き直される＝底なしの反復に、テキストだけでなく背景でも質感差。
+    Garden.update(depthN, dr, (worldSeed() ^ Math.imul(state.belowLoop, 0x632be59b)) >>> 0);
   }
 
   // 注: 以前ここにあった buildProfile()（depth.html へ postMessage する hazama-profile v1 wire
@@ -681,6 +709,18 @@
   // できない／全画面オーバーレイがフリーズの元」だったため廃止。音は同一document の内製エンジン
   // (Audio) が applyAtmosphere の Audio.update で直接鳴らす。depth.html 単体デモは別repoに残す。
   function phaseFor(s) { return s < 0.18 ? "surface" : s < 0.45 ? "drift" : s < 0.75 ? "deep" : "bottom"; }
+
+  // B4: 周回スキン（周回≥1 の表紙写真の seeded 変化）。root へ2変数を立てる＝決定論（Math.random 不使用）。
+  //  --cycle-hue: 周回ごとに色相を ±10deg 内でずらす（descent の hue-rotate 連鎖へ加算）。
+  //  --cycle-pan: 表紙写真の見えを ±4% 横にパン（object-position へ）。
+  // cycle=0 は両変数 0＝完全に従来どおり（後方互換）。値は周期的（21deg/9% で巡る）。
+  function applyCycleSkin() {
+    const c = state.cycle | 0;
+    const root = document.documentElement.style;
+    // c=0 は明示的に 0＝初回の見えを 1px も変えない（剰余式は c=0 でも -10/-4 を返すため guard が要る）。
+    root.setProperty("--cycle-hue", (c === 0 ? 0 : ((c * 7) % 21) - 10) + "deg");
+    root.setProperty("--cycle-pan", (c === 0 ? 0 : ((c * 13) % 9) - 4) + "%");
+  }
 
   // ---------- slow-reveal レンダラ ----------
   function renderNode(id) {
@@ -691,6 +731,7 @@
     if (id === (DATA.start || "zero") && state.steps > 0) {
       state.cycle += 1;
       state.legacy.cycles = state.cycle;   // 持ち越し（次周の分岐 seed に効く）
+      applyCycleSkin();                    // B4: 周回が深まったら表紙スキン(--cycle-hue/pan)を取り直す
     }
     state.visits[id] = (state.visits[id] || 0) + 1;
     // 深度∞: below は周回ごとに手続き生成（底なしの質感差）。audio も周回で色付け。
@@ -1015,7 +1056,8 @@
     state.id = null; state.sink = 0; state.dread = 0; state.returnPaths = RETURN_PATHS_START;
     state.maxSink = 0; state.observer = 1; state.resisted = 0; state.refused = 0;
     state.resistBeat = null; state.rank = 0; state.rejoin = null; state.echoDone = {};
-    document.body.classList.remove("surfaced");
+    lastPhase = "surface";   // A4: 再降下のたびに最初の深い跨ぎがまた句読点を打てる
+    document.body.classList.remove("surfaced", "phase-break");
     buildReturnPaths();
     renderNode(DATA.start || "zero");
   }
@@ -1319,31 +1361,17 @@
       cv.width = W; cv.height = H;
       draw();
     }
-    function draw() {
-      if (!W) return;
-      g.clearRect(0, 0, W, H);
-      const s = cur.depth, d = cur.dread;
-      // 浅はクリーン（露出しない）。深く潜るほど世界が剥き出しに。screen blend で焼き込む。
-      const vis = Math.max(0, (s - 0.12) / 0.88);
-      cv.style.opacity = (vis * 0.92).toFixed(3);
-      if (vis <= 0.003) return;
-      const rng = mulberry32((cur.seed >>> 0) || 1);
-      const R = (n) => rng() * (n == null ? 1 : n);
-      const bright = 0.5 + s * 0.5;        // 深いほど僅かに灼ける（不気味な反転色が立つ）
-      const mosh = s * 0.6 + d * 0.4;      // バグの強度：行ずらし／反転セル
-      const minWH = Math.min(W, H);
-      g.lineCap = "round";
-
-      // --- 砂紋（掻き目）：水平の掻き目を平面にぶちまける。深いほど波打ち・行ずれ（datamosh）。 ---
-      const rows = 22;
-      const amp = H * 0.013 * (1 + s);
+    // --- ヘルパー：砂紋（水平の掻き目）。rows 本・amp 振幅。深いほど波打ち・行ずれ（datamosh）。
+    // mosh は全モード共通の破壊＝一部の行を横へごっそりずらすデータモッシュの帯（mode に依らない）。
+    // rng/R は draw() が作った同一 PRNG（消費順は構図互換不要＝mode で変わってよい）。
+    function sandRows(rng, R, s, d, bright, mosh, rows, ampMul) {
+      const amp = H * 0.013 * (1 + s) * ampMul;
       const step = Math.max(8, Math.floor(12 * dpr));
       for (let i = 0; i < rows; i++) {
         const y = H * (i + 0.5) / rows;
         const a = (0.05 + s * 0.15) * bright;
         g.strokeStyle = "hsla(216," + (28 + s * 30).toFixed(0) + "%," + (46 + s * 16).toFixed(0) + "%," + a.toFixed(3) + ")";
         g.lineWidth = Math.max(1, dpr * 0.8);
-        // バグ：一部の行を横方向にごっそりずらす＝データモッシュの帯
         const band = (rng() < mosh * 0.55) ? (R(2) - 1) * W * 0.14 * mosh : 0;
         const freq = 2 + (i % 3);
         g.beginPath();
@@ -1354,14 +1382,17 @@
         }
         g.stroke();
       }
+    }
 
-      // --- 石組＋渦（砂紋が石の周りで同心円に巻く） ---
-      const stones = 2 + Math.floor(R(2.4));
-      for (let n = 0; n < stones; n++) {
+    // --- ヘルパー：石組（砂紋が石の周りで同心円に巻く渦＋角張った幾何のワイヤー）。count 個。
+    // ringMul で環の大きさを変える（mode 1 の石組群は大きめ）。
+    function stoneCluster(rng, R, s, d, bright, count, ringMul) {
+      const minWH = Math.min(W, H);
+      for (let n = 0; n < count; n++) {
         const cx = W * (0.14 + R(0.72)), cy = H * (0.16 + R(0.66));
         const rings = 4 + Math.floor(R(4));
         for (let r = 1; r <= rings; r++) {
-          const rr = r * (minWH * 0.022) * (1 + s * 0.5);
+          const rr = r * (minWH * 0.022) * (1 + s * 0.5) * ringMul;
           const a = (0.08 + s * 0.13) * bright / Math.sqrt(r);
           g.strokeStyle = "hsla(210," + (30 + s * 24).toFixed(0) + "%," + (52 + s * 12).toFixed(0) + "%," + a.toFixed(3) + ")";
           g.lineWidth = Math.max(1, dpr * 0.7);
@@ -1374,7 +1405,6 @@
           }
           g.closePath(); g.stroke();
         }
-        // 石＝角張った幾何のワイヤーフレーム（冷たいシアン rim）
         const verts = 5 + Math.floor(R(3)), sr = minWH * (0.028 + R(0.03));
         g.strokeStyle = "hsla(190," + (40 + s * 20).toFixed(0) + "%," + (58 + s * 14).toFixed(0) + "%," + ((0.28 + s * 0.3) * bright).toFixed(3) + ")";
         g.lineWidth = Math.max(1, dpr * 1.1);
@@ -1387,21 +1417,91 @@
         }
         g.closePath(); g.stroke();
       }
+    }
 
-      // --- 市松苔（東福寺 北庭の象徴）：反転モス＝マゼンタの石畳。端でフェード＝市松が崩れる。 ---
+    // --- ヘルパー：市松苔（東福寺 北庭の象徴）。patches パッチ・glitchRate で崩落率を変える。
+    // mode 2(市松崩落)は glitchRate↑＝反転(シアン)へ飛ぶセルが増える。mosh は全モード共通の破壊。
+    function checkerPatch(rng, R, s, bright, mosh, patches, glitchRate) {
+      const minWH = Math.min(W, H);
       const cols = 6, rowsC = 5, cell = minWH * 0.058 * (1 + s * 0.3);
-      const ox = W * (0.04 + R(0.40)), oy = H * (0.50 + R(0.32));
-      for (let yy = 0; yy < rowsC; yy++) for (let xx = 0; xx < cols; xx++) {
-        if ((xx + yy) % 2) continue;                       // 市松＝一つ飛ばし
-        const fade = 1 - (yy / rowsC) * 0.7;
-        let gx = ox + xx * cell, gy = oy + yy * cell;
-        const glitched = rng() < mosh * 0.4;               // バグ：深いほどセルがずれ／飛ぶ
-        if (glitched) gx += (R(2) - 1) * cell * 0.5 * mosh;
-        const a = (0.10 + s * 0.20) * fade * bright;
-        g.fillStyle = glitched
-          ? "hsla(170,70%,60%," + (a * 0.9).toFixed(3) + ")"   // 反転バグ＝シアンへ飛ぶ
-          : "hsla(300," + (34 + s * 26).toFixed(0) + "%," + (30 + s * 16).toFixed(0) + "%," + a.toFixed(3) + ")";
-        g.fillRect(gx, gy, cell * 0.92, cell * 0.92);
+      for (let p = 0; p < patches; p++) {
+        const ox = W * (0.04 + R(0.40)), oy = H * (0.50 + R(0.32));
+        for (let yy = 0; yy < rowsC; yy++) for (let xx = 0; xx < cols; xx++) {
+          if ((xx + yy) % 2) continue;                     // 市松＝一つ飛ばし
+          const fade = 1 - (yy / rowsC) * 0.7;
+          let gx = ox + xx * cell, gy = oy + yy * cell;
+          const glitched = rng() < (mosh * 0.4 + glitchRate);
+          if (glitched) gx += (R(2) - 1) * cell * 0.5 * mosh;
+          const a = (0.10 + s * 0.20) * fade * bright;
+          g.fillStyle = glitched
+            ? "hsla(170,70%,60%," + (a * 0.9).toFixed(3) + ")"   // 反転バグ＝シアンへ飛ぶ
+            : "hsla(300," + (34 + s * 26).toFixed(0) + "%," + (30 + s * 16).toFixed(0) + "%," + a.toFixed(3) + ")";
+          g.fillRect(gx, gy, cell * 0.92, cell * 0.92);
+        }
+      }
+    }
+
+    // --- ヘルパー：渦中心（mode 3）。水平でなく seed 中心の同心円/渦の掻き目。
+    // 半径段々(rings)×40分割の閉路で「砂を渦に掻く」。行数×ステップは砂紋(≈30行×W/step)と同程度
+    // に収める（rings≈32 × 40 ≈ 1280 点）＝描画コストは既存砂紋と同オーダー。mosh で一部の弧を欠く。
+    function vortexScratch(rng, R, s, d, bright, mosh) {
+      const minWH = Math.min(W, H);
+      const cx = W * (0.30 + R(0.40)), cy = H * (0.28 + R(0.44));  // 渦の中心（seed で動く）
+      const rings = 32, maxR = minWH * (0.46 + s * 0.2);
+      const twist = (0.6 + R(0.8)) * (1 + s);                       // 渦の捻り（深いほど強い）
+      for (let r = 1; r <= rings; r++) {
+        const f = r / rings;
+        const rr = maxR * f;
+        const a = (0.05 + s * 0.16) * bright * (0.6 + 0.4 * (1 - f));
+        g.strokeStyle = "hsla(214," + (30 + s * 28).toFixed(0) + "%," + (48 + s * 14).toFixed(0) + "%," + a.toFixed(3) + ")";
+        g.lineWidth = Math.max(1, dpr * 0.8);
+        // mosh：一部の環を弧（開いた掻き目）にして渦を破る＝同心円が崩れる datamosh
+        const broken = rng() < mosh * 0.4;
+        const a0 = broken ? R(Math.PI) : 0;
+        const a1 = broken ? a0 + Math.PI * (1.1 + R(0.7)) : Math.PI * 2;
+        g.beginPath();
+        for (let k = 0; k <= 40; k++) {
+          const t = a0 + (a1 - a0) * (k / 40);
+          const ang = t + twist * f * Math.PI;                     // 半径で角がずれる＝渦
+          const wob = 1 + Math.sin(ang * 4 + r) * 0.05 * (1 + d);
+          const x = cx + Math.cos(ang) * rr * wob, y = cy + Math.sin(ang) * rr * wob;
+          k ? g.lineTo(x, y) : g.moveTo(x, y);
+        }
+        g.stroke();
+      }
+      stoneCluster(rng, R, s, d, bright, 2 + Math.floor(R(2)), 0.9);  // 石 2〜3 を渦上に
+    }
+
+    function draw() {
+      if (!W) return;
+      g.clearRect(0, 0, W, H);
+      const s = cur.depth, d = cur.dread;
+      // 浅はクリーン（露出しない）。深く潜るほど世界が剥き出しに。screen blend で焼き込む。
+      const vis = Math.max(0, (s - 0.12) / 0.88);
+      cv.style.opacity = (vis * 0.92).toFixed(3);
+      if (vis <= 0.003) return;
+      const rng = mulberry32((cur.seed >>> 0) || 1);
+      const R = (n) => rng() * (n == null ? 1 : n);
+      const bright = 0.5 + s * 0.5;        // 深いほど僅かに灼ける（不気味な反転色が立つ）
+      const mosh = s * 0.6 + d * 0.4;      // バグの強度：行ずらし／反転セル（全モード共通の破壊）
+      g.lineCap = "round";
+
+      // A3: seed からモードを最初に決める（rng の最初の消費＝同じ seed は同じ構図モード）。
+      // 0=砂紋主体 / 1=石組群 / 2=市松崩落 / 3=渦中心。深度による破壊(mosh)は全モード共通で継続。
+      const mode = Math.floor(rng() * 4);
+      if (mode === 0) {            // 砂紋主体：砂紋 30〜34行・振幅↑・石 0〜1・市松なし
+        sandRows(rng, R, s, d, bright, mosh, 30 + Math.floor(R(5)), 1.35);
+        stoneCluster(rng, R, s, d, bright, Math.floor(R(1.6)), 1.0);
+      } else if (mode === 1) {    // 石組群：砂紋 10〜12行（薄く）・石 5〜7（環大きめ）・市松 0〜1
+        sandRows(rng, R, s, d, bright, mosh, 10 + Math.floor(R(3)), 0.85);
+        stoneCluster(rng, R, s, d, bright, 5 + Math.floor(R(3)), 1.5);
+        checkerPatch(rng, R, s, bright, mosh, Math.floor(R(1.6)), 0);
+      } else if (mode === 2) {    // 市松崩落：砂紋 12〜14行・石 1〜2・市松パッチ 2〜3（glitched↑）
+        sandRows(rng, R, s, d, bright, mosh, 12 + Math.floor(R(3)), 1.0);
+        stoneCluster(rng, R, s, d, bright, 1 + Math.floor(R(2)), 1.0);
+        checkerPatch(rng, R, s, bright, mosh, 2 + Math.floor(R(2)), 0.28);
+      } else {                    // 渦中心：同心円/渦の掻き目（seed 中心）・石 2〜3 を渦上に・市松なし
+        vortexScratch(rng, R, s, d, bright, mosh);
       }
     }
     return {
@@ -1454,19 +1554,44 @@
       });
       schedule();
     }
-    return { start, update: (d, dr) => { depth = clamp01(d); dread = clamp01(dr); setGi(); } };
+    // A4 句読点用：確定で hard バースト＋原色 leak を一拍点ける（ランダム抽選を経ない）。
+    // 既存の glitch-hard / leak-on / --leak-rgb 機構をそのまま借りる＝視覚と leak が同調。
+    // reduced は no-op（呼び出し元 firePhaseBreak も REDUCED で早期 return するが、二重に守る）。
+    function hardBreak() {
+      if (REDUCED) return;
+      document.body.classList.add("glitch-hard");
+      const dur = 240;
+      root.setProperty("--leak-rgb", LEAK[Math.floor(Math.random() * LEAK.length)]);
+      document.body.classList.add("leak-on");
+      clearTimeout(leakTimer);
+      leakTimer = window.setTimeout(() => document.body.classList.remove("leak-on"), Math.round(dur * 0.8));
+      window.setTimeout(clearBurst, dur);
+    }
+    return { start, hardBreak, update: (d, dr) => { depth = clamp01(d); dread = clamp01(dr); setGi(); } };
   })();
 
   // ---------- 塗装剥がれ／めくれ遷移（各遷移で層が一枚めくれて降りる） ----------
+  // B2: keyframes から clip-path を外し（transform/opacity のみ）、ぎざ縁の polygon は遷移ごとに
+  // ここで 3 種から 1 つ選んで inline で与える＝毎回同じ縁でなくなる（演出のみ・Math.random で可）。
+  // 持続も 0.55〜0.7s で揺らす。reduced は従来どおり無効（play 冒頭で return）。
   const Peel = (() => {
+    const el = document.querySelector(".hz-peel");
     let t = 0;
+    const EDGES = [
+      "polygon(0 0,8% 4%,20% 0,34% 5%,50% 1%,66% 6%,80% 1%,92% 5%,100% 0,100% 100%,0 100%)",
+      "polygon(0 0,12% 6%,24% 1%,40% 7%,52% 2%,70% 8%,84% 3%,95% 7%,100% 1%,100% 100%,0 100%)",
+      "polygon(0 0,6% 3%,16% 7%,30% 2%,46% 6%,60% 1%,76% 5%,88% 2%,100% 5%,100% 100%,0 100%)"
+    ];
     function play() {
-      if (REDUCED) return;
+      if (REDUCED || !el) return;
+      const dur = 0.55 + Math.random() * 0.15;     // 0.55〜0.70s で揺らす
+      el.style.clipPath = EDGES[Math.floor(Math.random() * EDGES.length)];
+      el.style.animationDuration = dur.toFixed(3) + "s";
       document.body.classList.remove("peeling");
       void document.body.offsetWidth;        // リフロー強制＝アニメ再起動
       document.body.classList.add("peeling");
       clearTimeout(t);
-      t = window.setTimeout(() => document.body.classList.remove("peeling"), 700);
+      t = window.setTimeout(() => document.body.classList.remove("peeling"), Math.round(dur * 1000) + 60);
     }
     return { play };
   })();
@@ -1613,7 +1738,7 @@
 
   // ---------- 起動 ----------
   async function loadData() {
-    const res = await fetch("depths-shell.json?v=e4", { cache: "no-store" });
+    const res = await fetch("depths-shell.json?v=e5", { cache: "no-store" });
     DATA = await res.json();
   }
   // ---------- 動く表紙（R6：タイトルも state/seed に応じて動く・静止でない） ----------
@@ -1644,6 +1769,7 @@
     stopTitleAmbient();              // 表紙の生成ループを止め、深度信号（降下）へ明け渡す
     gateEl.classList.add("gone");
     Spiral.consumeCycleBump();       // 前セッションで降下していた時だけ、ここで周回が一つ深まる
+    applyCycleSkin();                // B4: consume 後の cycle で表紙スキンを取り直す
     buildReturnPaths();
     // ★ここは「沈む」ボタンの実タップ（同一document・transient activation 有）の中。
     //   この手勢の中で AudioContext を生成＆resume するので、モバイルでも音が鳴り始める。
@@ -1655,7 +1781,9 @@
   function restart() {
     revealToken++;
     state.id = null; state.sink = 0; state.dread = 0; state.returnPaths = RETURN_PATHS_START; state.maxSink = 0; state.observer = 1; state.steps = 0; state.belowLoop = 0; state.resisted = 0; state.refused = 0; state.resistBeat = null; state.rank = 0; state.cycle = 0; state.visits = {}; state.rejoin = null; state.attunement = 0; state.echoDone = {}; state.legacy = freshLegacy();
-    if (document.body && document.body.classList) document.body.classList.remove("surfaced");
+    lastPhase = "surface";   // A4: restart/forget でも跨ぎ検知を初期化（再降下で最初の跨ぎが効く）
+    applyCycleSkin();        // B4: cycle=0 に戻ったので表紙スキンも 0（完全に従来どおり）へ
+    if (document.body && document.body.classList) document.body.classList.remove("surfaced", "phase-break");
     const st = $("status"); if (st) st.textContent = "";
     buildReturnPaths();
     renderNode(DATA.start || "zero");
@@ -1664,7 +1792,8 @@
   $("audio-toggle").addEventListener("click", () => Music.cycle());
 
   // 開発用フック（プレビュー検証専用）: 任意ノードへ跳ぶ／状態を読む／縁・カードを直接出す。
-  window.__hz = { go: renderNode, choose, state, isAttuned, edge: renderEdge, card: (a) => EdgeCard.draw(a == null ? isAttuned() : !!a), get sink() { return sinkNorm(); }, get attunement() { return state.attunement; } };
+  // garden(depth, dread, seed): A3 構図モード検証用＝seed を変えて #garden を直接描き直す。
+  window.__hz = { go: renderNode, choose, state, isAttuned, edge: renderEdge, card: (a) => EdgeCard.draw(a == null ? isAttuned() : !!a), garden: (depth, dread, seed) => Garden.update(depth, dread, seed), get sink() { return sinkNorm(); }, get attunement() { return state.attunement; } };
 
   // R4: PWA — slice をインストール/オフライン対応に。サブパス /hazama/slice/ スコープ（相対 sw.js）。
   function registerSlicePWA() {
@@ -1683,6 +1812,7 @@
     // E1: 記憶（spiral 層）を読む。戻ってきた観測者には表紙が応える＝庭は前回の続きから組まれ、
     // 入口の言葉が変わる。周回の加算は enter（「沈む」の実タップ）まで保留。
     const returning = Spiral.load();
+    applyCycleSkin();          // B4: 読み込んだ周回で表紙スキン(--cycle-hue/pan)を立てる（cycle=0 は従来どおり）
     if (returning) {
       const sub = document.querySelector(".hz-gate-sub");
       if (sub) sub.innerHTML = "また、来た。<br>入口は、前より一段、深い。";

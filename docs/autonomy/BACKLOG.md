@@ -109,6 +109,15 @@ handoff 前の確認は `docs/autonomy/closeout-checklist.md` を使います。
 
 ## Done
 
+### HZ-BL-013 — E5 視覚の磨きとパターン変化 ✅ 2026-06-13
+- scope: runtime(visual) / css
+- A=浮上ウォッシュ（body.surfaced 6規則）・below∞ seed 畳み込み（XOR 恒等で後方互換）・
+  ガーデン構図モード4種（砂紋主体/石組群/市松崩落/渦中心）・phase 跨ぎ句読点（深化のみ・一度きり）。
+  B=hover/focus-visible・peel ぎざ縁3種・タイトル RGB ずれ再接続（dead CSS 回収）・周回スキン。
+  レビューで仕様起因バグ1件修正（cycle=0 スキンが -10deg になる剰余式→明示 guard）。`?v=e5`。
+  検証メモ: 非表示ドキュメントでは CSSTransition が time0 凍結し !important より優先される＝
+  computed 検証は transition 中立化（*, *::before, *::after）で行う。
+
 ### HZ-BL-009 — E2 原典給餌 ✅ 2026-06-12 (commit cc89b72)
 - scope: runtime / data
 - 原典30本→sonnet カタログ→opus 草稿→Fable レビュー→適用。NODE_VARIANTS 19キー・

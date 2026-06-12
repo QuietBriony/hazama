@@ -14,6 +14,8 @@
   --reveal-ms: 46ms;       /* 1文字あたりの送り。危険局面で JS が伸ばす */
   --press: 0;              /* 0..1 圧。JS が更新。ヴィネット/震えに使う */
   --sink: 0;               /* 0..1 沈下。背景の暗さに使う */
+  --cycle-hue: 0deg;       /* B4: 周回スキンの色相ずれ。JS(applyCycleSkin)が更新。cycle=0 は 0deg */
+  --cycle-pan: 0%;         /* B4: 周回スキンの横パン。JS が更新。cycle=0 は 0% */
 }
 
 * { box-sizing: border-box; }
@@ -58,7 +60,9 @@ body[data-phase="bottom"] { --bg: #020308; --ink: #aab4bf; --accent: #8aa6ac; --
     brightness(calc(0.6 - var(--sink) * 0.46))
     saturate(calc(0.78 - var(--sink) * 0.5))
     contrast(calc(1.05 + var(--sink) * 0.12))
-    hue-rotate(calc(var(--sink) * -8deg));
+    hue-rotate(calc(var(--sink) * -8deg + var(--cycle-hue, 0deg)));
+  /* B4: 周回スキン＝表紙写真をわずかに横へパン（cycle=0 は 50%＝従来どおり）。 */
+  object-position: calc(50% + var(--cycle-pan, 0%)) 50%;
   transform: translateY(calc(var(--sink) * 2.4%)) scale(calc(1 + var(--sink) * 0.06));
   transition: filter 1.6s ease, transform 3s ease, opacity 2.2s ease;
   /* R6: 深く潜るほど"世界の輪郭が溶ける"＝写真が退き、下から反転ガーデンが露出して取って代わる。 */
@@ -139,6 +143,32 @@ body[data-phase="bottom"] { --bg: #020308; --ink: #aab4bf; --accent: #8aa6ac; --
   transition: opacity .16s steps(2, end);
 }
 body.leak-on .hz-bg-leak { opacity: calc(0.22 + 0.5 * var(--gi)); }
+
+/* ============================================================================
+   A1 — 浮上のウォッシュ（body.surfaced）。JS は縁の浮上極で body.surfaced を付ける。
+   水面を破る速度＝2.5s 前後の遅い transition で、世界の骨格が退場し表層世界が戻る。
+   グリッジ/leak は surfaced 中も生きてよい（世界は治らない）。scanline だけ圧を抜く。
+   reduced-motion では transition なしで同じ静止状態へ到達する（末尾ブロックで上書き）。
+   ============================================================================ */
+/* 上からの光：水面の手前に薄い光帯。screen で足すだけ＝既存層を潰さない（z-index は leak と同層）。 */
+.hz-bg::after {
+  content: ""; position: absolute; inset: 0; z-index: 1; pointer-events: none;
+  background: linear-gradient(to bottom, rgba(184,204,214,0.12), transparent 46%);
+  opacity: 0; mix-blend-mode: screen;
+  transition: opacity 2.5s ease;
+}
+body.surfaced .hz-bg::after { opacity: 1; }
+/* 世界の骨格の退場（JS が inline opacity を持つため !important）。 */
+body.surfaced .hz-bg-garden { opacity: 0.22 !important; transition: opacity 2.5s ease; }
+body.surfaced .hz-bg-mandala { opacity: 0.04; top: 112%; transition: opacity 2.5s ease, top 2.6s ease; }
+/* 表層世界の戻り（沈下 var に依存しない固定値で「浮上した」を言う）。 */
+body.surfaced .hz-bg-descent {
+  opacity: 0.55; filter: brightness(0.5) saturate(0.6) contrast(1.04);
+  transition: opacity 2.5s ease, filter 2.5s ease;
+}
+/* 色温度：わずかな醒め。scanline は圧を抜く。 */
+body.surfaced { --ink: #cdd6de; --accent: #8fc0cc; }
+body.surfaced .hz-scanline { opacity: 0.04; transition: opacity 2.5s ease; }
 
 .hz-vignette {
   position: absolute; inset: 0;
@@ -325,6 +355,19 @@ body[data-tension="high"] .hz-scene { animation: hz-shudder 2.6s ease-in-out inf
 .hz-choice.echo { border-style: dotted; border-color: rgba(127,182,196,0.35); }
 .hz-choice.echo-skip { opacity: 0.75; }
 
+/* ---------- B1: hover / focus-visible（PC 反応と a11y） ----------
+   トーンを壊さない最小反応。hover は (hover:hover) でのみ＝タッチ端末では発火しない。
+   focus-visible はキーボード操作の可視化（accent の細い outline）。 */
+@media (hover: hover) {
+  .hz-choice:hover { background: rgba(127,182,196,0.10); border-color: rgba(127,182,196,0.4); }
+  .hz-choice.retreat:hover { background: rgba(127,182,196,0.05); }
+  .hz-chip:hover { color: var(--ink); border-color: var(--ink-dim); }
+  .hz-gate-enter:hover { background: rgba(127,182,196,0.14); }
+}
+.hz-choice:focus-visible, .hz-chip:focus-visible, .hz-gate-enter:focus-visible {
+  outline: 2px solid var(--accent); outline-offset: 2px;
+}
+
 /* ---------- フッタ ---------- */
 .hz-footer {
   position: relative; z-index: 2;
@@ -438,6 +481,23 @@ body.glitch-hard .hz-bg { animation: hz-tear .2s steps(3,end) 1; }
 body.glitch-soft .hz-scanline, body.glitch-hard .hz-scanline { opacity: calc(0.14 + 0.5 * var(--gi)); }
 body.glitch-hard .hz-grain { opacity: calc(0.10 + 0.16 * var(--gi)); animation-duration: 0.12s; }
 
+/* ---------- A4: phase 跨ぎの句読点（一度だけの強い破断・900ms body.phase-break） ----------
+   深くなる方向へ phase を跨いだ瞬間、JS が glitch-hard＋leak-on を一拍点けつつ phase-break を付ける。
+   ここでは scanline をさらに増光し、.hz-bg の tear を一拍長く（専用 1.2s keyframes）＝句読点を強調。
+   phase-break は glitch-hard と同時に付くが、.hz-bg の animation はこちらが後勝ち（長い tear が優先）。
+   reduced は JS が発火しない（クラスが付かない）＝静止。 */
+body.phase-break .hz-scanline { opacity: calc(0.30 + 0.5 * var(--gi)); }
+body.phase-break .hz-bg { animation: hz-phase-tear 1.2s steps(4,end) 1; }
+@keyframes hz-phase-tear {
+  0%   { transform: translate3d(0,0,0); clip-path: inset(0); }
+  10%  { transform: translate3d(calc(6px * var(--gi)),0,0); clip-path: inset(12% 0 70% 0); }
+  12%  { transform: translate3d(calc(-8px * var(--gi)),0,0); clip-path: inset(52% 0 10% 0); }
+  30%  { transform: translate3d(0,0,0); clip-path: inset(0); }
+  34%  { transform: translate3d(calc(-5px * var(--gi)),0,0); clip-path: inset(76% 0 4% 0); }
+  55%  { transform: translate3d(calc(4px * var(--gi)),0,0); clip-path: inset(30% 0 44% 0); }
+  100% { transform: translate3d(0,0,0); clip-path: inset(0); }
+}
+
 /* ---------- 塗装剥がれ／めくれ遷移 ----------
    ノード遷移で一度だけ、ぎざついた縁の帯（塗装片）がめくれて画面を降りる。
    「世界＝塗装が剥がれる／層がめくれる」を遷移として。reduced で無効。 */
@@ -452,12 +512,14 @@ body.glitch-hard .hz-grain { opacity: calc(0.10 + 0.16 * var(--gi)); animation-d
       rgba(20,26,34,0.55) 64%,
       rgba(2,4,10,0.0) 78%);
 }
+/* B2: animation-duration は JS(Peel.play)が inline で 0.55〜0.7s に揺らす（shorthand の .62s は inline が後勝ち）。
+   ぎざ縁の clip-path は keyframes から外し、JS が遷移ごとに 3 種から 1 つを inline で与える＝毎回同じ縁でない。
+   keyframes は transform/opacity のみ＝inline clip-path がアニメ中も保持される。 */
 body.peeling .hz-peel { visibility: visible; animation: hz-peel-sweep .62s cubic-bezier(.45,0,.2,1) 1; }
 @keyframes hz-peel-sweep {
-  0%   { transform: translateY(-118%); clip-path: polygon(0 0,8% 4%,20% 0,34% 5%,50% 1%,66% 6%,80% 1%,92% 5%,100% 0,100% 100%,0 100%); opacity: 0; }
+  0%   { transform: translateY(-118%); opacity: 0; }
   12%  { opacity: 1; }
-  100% { transform: translateY(118%); opacity: 0;
-         clip-path: polygon(0 0,8% 4%,20% 0,34% 5%,50% 1%,66% 6%,80% 1%,92% 5%,100% 0,100% 100%,0 100%); }
+  100% { transform: translateY(118%); opacity: 0; }
 }
 
 /* ---------- 割り込み行 scrawl（タガが外れた手の声が冷たい構造へ書き込まれる） ----------
@@ -508,21 +570,26 @@ body.peeling .hz-peel { visibility: visible; animation: hz-peel-sweep .62s cubic
 .hz-choice.retreat.heavy .lead { color: var(--ink-dim); }
 .hz-choice:active { box-shadow: inset 0 0 0 1px rgba(216,68,46,0.25); }
 
-/* ---------- タイトル（バスキア的・RGBずれ＝グリッジ＆刷り重ね） ---------- */
-.hz-gate-art {
-  display: block; width: min(86vw, 360px); height: auto; margin: 0 auto 1.6em;
-  filter: drop-shadow(0 6px 18px rgba(0,0,0,0.55));
+/* ---------- タイトル（バスキア的・RGBずれ＝グリッジ＆刷り重ね） ----------
+   B3: data-text を赤/シアンの二層に刷り重ね（::before/::after）、本体の上下にわずかにずらして
+   ゆっくり呼吸させる＝生きた刷り。グリッジ・バースト(glitch-hard)で一瞬大きく裂ける（既存と同調）。
+   reduced は呼吸停止・静止 ±1px（薄く）。 */
+.hz-gate-title { position: relative; }
+.hz-gate-title::before, .hz-gate-title::after {
+  content: attr(data-text);
+  position: absolute; left: 0; top: 0; width: 100%;
+  pointer-events: none;
+  /* タイトルは letter-spacing/text-indent を持つ＝擬似要素も同じ字送りで重なる（継承される）。 */
 }
-/* RGBずれ層の僅かな呼吸（生きた刷り）。reduced で静止。 */
-.hz-tl-c { animation: hz-tl-c 5.5s ease-in-out infinite; }
-.hz-tl-r { animation: hz-tl-r 5.5s ease-in-out infinite; }
-@keyframes hz-tl-c { 0%,100%{transform:translate(-3px,-2px)} 50%{transform:translate(-5px,-1px)} }
-@keyframes hz-tl-r { 0%,100%{transform:translate(3px,2px)} 50%{transform:translate(5px,1px)} }
-/* グリッジバースト中はタイトルも裂ける */
-body.glitch-hard .hz-tl-c { animation: hz-tl-c-glitch .18s steps(2) 1; }
-body.glitch-hard .hz-tl-r { animation: hz-tl-r-glitch .18s steps(2) 1; }
-@keyframes hz-tl-c-glitch { 0%{transform:translate(-3px,-2px)} 50%{transform:translate(-11px,2px)} 100%{transform:translate(-3px,-2px)} }
-@keyframes hz-tl-r-glitch { 0%{transform:translate(3px,2px)} 50%{transform:translate(12px,-3px)} 100%{transform:translate(3px,2px)} }
+.hz-gate-title::before { color: rgba(216,68,46,0.55); animation: hz-tl-before 5.5s ease-in-out infinite; }  /* 赤 */
+.hz-gate-title::after  { color: rgba(10,186,181,0.5); animation: hz-tl-after 5.5s ease-in-out infinite; }   /* シアン */
+@keyframes hz-tl-before { 0%,100%{transform:translate(-2px,-2px)} 50%{transform:translate(-3px,-1px)} }
+@keyframes hz-tl-after  { 0%,100%{transform:translate(2px,2px)}  50%{transform:translate(3px,1px)} }
+/* グリッジバースト中はタイトルも一瞬大きく裂ける（既存グリッジ・バーストに同調） */
+body.glitch-hard .hz-gate-title::before { animation: hz-tl-before-glitch .18s steps(2) 1; }
+body.glitch-hard .hz-gate-title::after  { animation: hz-tl-after-glitch .18s steps(2) 1; }
+@keyframes hz-tl-before-glitch { 0%{transform:translate(-2px,-2px)} 50%{transform:translate(-10px,2px)} 100%{transform:translate(-2px,-2px)} }
+@keyframes hz-tl-after-glitch  { 0%{transform:translate(2px,2px)}  50%{transform:translate(11px,-3px)} 100%{transform:translate(2px,2px)} }
 
 /* サブ：手で引いた打ち消し線（「戻り道は細くなる」を予兆として消し込む） */
 .hz-strike { position: relative; }
@@ -551,14 +618,24 @@ body.glitch-hard .hz-tl-r { animation: hz-tl-r-glitch .18s steps(2) 1; }
   /* グレインは静止（消さずに質感だけ残す）。観測者の呼吸は止める。 */
   .hz-grain { animation: none; opacity: 0.03; }
   .hz-observer.deep { animation: none; }
-  /* R5: グリッジ／めくれ／タイトル呼吸は全停止。質感だけ薄く静止で残す。 */
-  .hz-tl-c, .hz-tl-r { animation: none; }
+  /* R5: グリッジ／めくれは全停止。質感だけ薄く静止で残す。 */
   .hz-glitch { visibility: visible; opacity: 0.5; mix-blend-mode: screen; }
   .hz-glitch::before { opacity: 0.06; transform: translate(-2px,0); animation: none; }
   .hz-glitch::after  { opacity: 0.06; transform: translate(2px,0); animation: none; }
   body.glitch-soft .hz-bg, body.glitch-hard .hz-bg { animation: none; }
   body.peeling .hz-peel { animation: none; visibility: hidden; }
   .hz-line.scrawl { transform: none; }
+  /* B3: タイトルの RGB 呼吸は停止＝静止 ±1px（薄く）。グリッジ・バーストでも裂けない。 */
+  .hz-gate-title::before { animation: none; transform: translate(-1px,-1px); color: rgba(216,68,46,0.32); }
+  .hz-gate-title::after  { animation: none; transform: translate(1px,1px);  color: rgba(10,186,181,0.30); }
+  body.glitch-hard .hz-gate-title::before, body.glitch-hard .hz-gate-title::after { animation: none; }
+  /* A4: phase 跨ぎの句読点は JS が発火しない（クラスを付けない）。保険で tear/増光を静止・無効に。 */
+  body.phase-break .hz-bg { animation: none; }
+  body.phase-break .hz-scanline { opacity: calc(0.05 + var(--press) * 0.14); }
+  /* A1: 浮上のウォッシュは transition なしで同じ静止状態へ到達する（瞬時に切り替わる）。 */
+  .hz-bg::after, body.surfaced .hz-bg::after,
+  body.surfaced .hz-bg-garden, body.surfaced .hz-bg-mandala,
+  body.surfaced .hz-bg-descent, body.surfaced .hz-scanline { transition: none; }
   /* R6: 反転ガーデンは生成art＝静止1枚で残す（slice.js が深度で1回描く）。原色 leak の明滅は
      グリッジ・バーストに紐づくため reduced では発火せず＝事実上 off（保険で薄い静止に固定）。 */
   .hz-bg-descent { transition: none; }

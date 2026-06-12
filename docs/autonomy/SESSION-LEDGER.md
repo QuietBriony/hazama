@@ -19,6 +19,26 @@ Hazama 自律開発 session の追記専用ログ。
 
 ---
 
+## 2026-06-13 — 進化 E5: 視覚の磨きとパターン変化（Tier A+B）
+- agent      : Fable(仕様 docs/evolution/E5-SPEC.md・レビュー・検証) + opus(canvas/CSS 実装)
+- goal       : 視覚の取りこぼし3件（surfaced CSS 欠落・below∞ 背景凍結・dead CSS）と
+  パターン変化の核心（ガーデン語彙の固定）。branch `claude/evolve-e5`・master 無変更
+- shipped    :
+  - A1 浮上のウォッシュ: body.surfaced の CSS 新設（上からの光・骨格退場・表層の戻り・色温度）
+  - A2 below∞ 質感差: belowLoop を garden seed へ XOR 畳み込み（=0 は恒等＝後方互換）
+  - A3 ガーデン構図モード4種: 砂紋主体/石組群/市松崩落/渦中心（seed 先頭で決定・mosh 共通）
+  - A4 phase 跨ぎ句読点: 深化のみ・一度きり・Glitch.hardBreak 新設（hard+leak 同調）
+  - B: hover/focus-visible・peel ぎざ縁3種＋持続揺らぎ・タイトル RGB ずれ再接続（::before/::after・
+    dead .hz-tl-c 撤去）・周回スキン --cycle-hue/pan（c=0 明示 guard）。`?v=e5`
+- checks     : hazama-check 2 PASS / 0 FAIL＋実ブラウザ: 構図 12seed 全相異・below 3/3 相異・
+  phase-break 跨ぎのみ/同phase無発火・surfaced 6 規則の computed 全一致・cycle スキン c0/c3・console 0
+- notes      : レビューで仕様起因バグ1件（cycle=0 スキン -10deg）捕捉・修正。
+  検証の学び＝非表示ドキュメントは CSSTransition が time0 凍結（カスケード最上位）→
+  computed 検証は transition 中立化で行う（BACKLOG HZ-BL-013 Done にも記載）
+- backlog    : HZ-BL-013 done
+- next       : ユーザー号令で master 反映。タッチパス（HZ-BL-002）に E5 演出の好みも同乗
+- blockers   : master 反映は号令待ち
+
 ## 2026-06-13 — 進化 E4: 仕上げ（堅牢化・整合・配布面）
 - agent      : Fable（少量・精密のため外注なし）
 - goal       : E1〜E3 後の残磨き。human-gate（音/タッチパス）には踏み込まない
