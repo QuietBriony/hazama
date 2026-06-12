@@ -20,10 +20,10 @@ node scripts/hazama-check.mjs
 ```
 
 このエンジンは作業の順番を揃えるためのものです。自動 merge、自動 release、
-外部音声操作、Music への依存追加はしません。
+外部依存の追加はしません。
 
-自律開発 docs 自体の接続は `node scripts/autonomy-docs-smoke.mjs` で確認できます。
-静的 PWA 契約は `node scripts/pwa-static-contract-smoke.mjs` で確認できます。
+自律開発 docs 自体の接続は `node scripts/autonomy-docs-smoke.mjs`、
+ビルドの実体（version 同期・spiral 契約・docs 参照整合を含む）は
+`node scripts/build-consistency-smoke.mjs` で確認できます。
 
-Playwright が無い session で browser smoke が skip した時の手動確認は
-[browser-smoke-fallback.md](browser-smoke-fallback.md) を使います。
+ブラウザでの手動確認の観点は [browser-smoke-fallback.md](browser-smoke-fallback.md) を使います。

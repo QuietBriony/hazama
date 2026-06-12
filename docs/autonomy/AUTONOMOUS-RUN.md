@@ -52,8 +52,8 @@ Claude と Codex が同時に動く場合:
 
 - docs / autonomy 整備: docs だけを編集し、runtime version は bump しない
 - smoke / script: no dependency のまま追加
-- runtime UI: `index.html` / `hazama-index.html` / `sw.js` / startup smoke の version 同期を確認
-- balance: `hazama-gate-run.js` と `scripts/balance-smoke.mjs` を同じ意図で更新
+- runtime UI: `index.html` / `slice.js` / `sw.js` の `?v=` 同期を確認（`build-consistency` が検証）
+- 手触り: `slice.js` の ATTUNE / RESIST_STRAIN / DEEP_LOCK 定数は manual play note と一緒に変える
 
 ## 6. 検証
 
@@ -63,13 +63,12 @@ node scripts/hazama-check.mjs
 
 必要に応じて in-app browser か実機で確認:
 
-- fresh start -> HUB
-- locked Ω
-- Gate Run win
-- Ω -> A_reborn
-- completion CTA -> HUB
+- fresh start -> 「沈む」 -> 零章
+- 構造読みで認識◆が育つ / 表層読みで別の筋へ逸れる
+- 縁の二極（深度Ω 到達 ⇄ 浮上）と「もう一度沈む / すべて忘れる」
+- リロードで spiral 記憶が復元される（表紙が応え、次の「沈む」で周回が深まる）
 - mobile width overflow
-- Music unopened / BGM stop harmless
+- ♪ chip の一時停止/再開が無害
 - PWA install / offline reload when human-gated
 
 ## 7. 締め
@@ -94,5 +93,5 @@ Hazama の自律ランを 1 回回して。起点は C:\workspace\hazama
 5. node scripts/hazama-check.mjs を再確認
 6. BACKLOG と SESSION-LEDGER を更新し、変更と次タスクを報告する
 
-Music は任意 companion のまま。raw input、音源、依存、GitHub Actions は追加しない。
+音は内製 Audio。raw input、音源、依存、GitHub Actions は追加しない。
 ```

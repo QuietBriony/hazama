@@ -53,6 +53,8 @@ const requiredFiles = [
 
 for (const requiredFile of requiredFiles) assertExists(requiredFile);
 
+// README は入口の core 接続のみ要求する。深い手順 docs への接続は
+// docs/autonomy/README.md（index）と STACK-INDEX.md 側で担保する（没入版単一ビルドの契約）。
 const readme = read("README.md");
 for (const needle of [
   "node scripts/hazama-check.mjs",
@@ -61,17 +63,32 @@ for (const needle of [
   "docs/autonomy/AUTONOMOUS-RUN.md",
   "docs/autonomy/BACKLOG.md",
   "docs/autonomy/SESSION-LEDGER.md",
-  "docs/autonomy/pwa-install-offline-checklist.md",
-  "docs/autonomy/pwa-install-offline-result-template.md",
-  "docs/autonomy/closeout-checklist.md",
-  "docs/autonomy/next-agent-prompts.md",
-  "docs/autonomy/browser-smoke-fallback.md",
-  "docs/playtest/gate-run-balance-decision-rubric.md",
-  "docs/playtest/human-playtest-template.md",
-  "scripts/pwa-static-contract-smoke.mjs",
   "docs/COLLAB-CLAUDE-AND-CODEX.md"
 ]) {
   assertIncludes(readme, needle, "README.md");
+}
+
+const autonomyIndex = read("docs/autonomy/README.md");
+for (const needle of [
+  "pwa-install-offline-checklist.md",
+  "pwa-install-offline-result-template.md",
+  "closeout-checklist.md",
+  "next-agent-prompts.md",
+  "browser-smoke-fallback.md",
+  "harness-quality-checklist-candidate-001.md"
+]) {
+  assertIncludes(autonomyIndex, needle, "docs/autonomy/README.md");
+}
+
+const stackIndex = read("docs/autonomy/STACK-INDEX.md");
+for (const needle of [
+  "slice.js",
+  "depths-shell.json",
+  "hazama_spiral_v1",
+  "build-consistency-smoke.mjs",
+  "human-playtest-template.md"
+]) {
+  assertIncludes(stackIndex, needle, "docs/autonomy/STACK-INDEX.md");
 }
 
 const backlog = read("docs/autonomy/BACKLOG.md");
@@ -85,6 +102,7 @@ for (const itemId of ["HZ-BL-001", "HZ-BL-002"]) {
 const ledger = read("docs/autonomy/SESSION-LEDGER.md");
 const normalizedLedger = ledger.replaceAll("\u2014", "-");
 for (const needle of [
+  "## 2026-06-12 - 進化 E1",
   "## 2026-05-16 - Human-gate prep sprint",
   "## 2026-05-16 - Multi-agent backlog sprint",
   "## 2026-05-16 - Hazama autonomy engine import",

@@ -47,6 +47,56 @@
   let revealToken = 0;
   const clamp01 = (x) => Math.max(0, Math.min(1, x));
 
+  // ---------- 記憶（spiral 層）の永続化 — E1 ----------
+  // 「戻ってきたのではない。一段、上書きされて、また下へ置かれただけだ」を実装で言う:
+  // 周回・認識・痕跡（visits/detoursSeen/弾かれ履歴/below周回）は画面を閉じても消えない。
+  // 保存は集計済みの spiral 層のみ。transient（sink/dread/returnPaths/observer）は保存しない
+  // ＝閉じて戻るのは「浮上して、もう一度沈む」: 入口は新しく、世界だけが覚えている。
+  // 周回の加算は、前セッションで実際に降下していた（rank>0）場合に限り、次の「沈む」の
+  // 実タップで行う（タイトルのリロード連打では増えない）。「すべて忘れる」だけがこの層を消す。
+  const Spiral = (() => {
+    const KEY = "hazama_spiral_v1";
+    let pendingCycle = false;
+    function save() {
+      try {
+        localStorage.setItem(KEY, JSON.stringify({
+          v: 1, cycle: state.cycle, attunement: state.attunement, visits: state.visits,
+          belowLoop: state.belowLoop, legacy: state.legacy, sank: state.rank > 0
+        }));
+      } catch (e) {}
+    }
+    function load() {
+      try {
+        const d = JSON.parse(localStorage.getItem(KEY) || "null");
+        if (!d || d.v !== 1) return false;
+        state.cycle = Math.max(0, d.cycle | 0);
+        state.attunement = Math.min(99, Math.max(0, +d.attunement || 0));
+        state.visits = (d.visits && typeof d.visits === "object") ? d.visits : {};
+        state.belowLoop = Math.max(0, d.belowLoop | 0);
+        const lg = d.legacy || {};
+        state.legacy = {
+          cycles: Math.max(0, lg.cycles | 0),
+          surfaceBounces: Math.max(0, lg.surfaceBounces | 0),
+          detoursSeen: Array.isArray(lg.detoursSeen) ? lg.detoursSeen.filter((x) => typeof x === "string") : [],
+          maxRank: Math.max(0, lg.maxRank | 0)
+        };
+        pendingCycle = !!d.sank;
+        // 「戻ってきた」は実際に降下した痕跡で判定する。visits だけ（入口を見ただけ／
+        // 「すべて忘れる」直後の zero 再訪）では表紙は応えない＝忘れた者は初めてとして迎える。
+        return state.cycle > 0 || state.attunement > 0 || state.legacy.maxRank > 0
+          || state.legacy.surfaceBounces > 0 || state.legacy.detoursSeen.length > 0;
+      } catch (e) { return false; }
+    }
+    function consumeCycleBump() {
+      if (!pendingCycle) return;
+      pendingCycle = false;
+      state.cycle += 1;
+      state.legacy.cycles = state.cycle;
+    }
+    function wipe() { pendingCycle = false; try { localStorage.removeItem(KEY); } catch (e) {} }
+    return { save, load, wipe, consumeCycleBump };
+  })();
+
   // 降下インデックス＝音楽ブリッジの第一義 depth（depth.html は source.rank/28 で深さを取る）。
   // production の深度梯子(A_start..Z,Ω,A_reborn,HUB_NIGHT=0..28)に対応。retreat/drift は
   // ランクを持たず＝直前の深さを保つ（沈下は残す）。below(∞)は最深=28。
@@ -433,6 +483,7 @@
     if (state.rank > state.legacy.maxRank) state.legacy.maxRank = state.rank; // 到達深度を持ち越す
     if (typeof node.observer === "number" && node.observer > 0) state.observer = Math.max(state.observer, node.observer);
     applyAtmosphere(node);
+    Spiral.save();   // 状態確定後に spiral 層を書く＝どこで閉じても周回/認識/痕跡は残る
     sceneEl.innerHTML = "";
     choicesEl.innerHTML = "";
     Follow.reset();              // 新ノード：追従ON・最上部から（行は下から積み上がる）
@@ -561,6 +612,7 @@
     const attuned = isAttuned();   // R2: Ω(没入)は attuned のみ。未達は浮上/帰還の極へ。
     state.dread = attuned ? 1 : 0.4;
     applyAtmosphere({ tension: attuned ? "high" : "low" });
+    Spiral.save();   // 縁＝結末でも spiral 層を確定（閉じて去っても、次の表紙が応えられる）
     if (!attuned) document.body && document.body.classList && document.body.classList.add("surfaced");
     sceneEl.innerHTML = ""; choicesEl.innerHTML = "";
     Follow.reset();
@@ -608,10 +660,57 @@
         ? "観測OSは終わらない。再起動すれば、また零章から——だが、底は最後まで無い。"
         : "戻れた——それも、ひとつの結末だ。再起動すれば、また零章から潜れる。";
       sceneEl.appendChild(more); more.classList.add("shown");
+      renderEdgeChoices(attuned);
       Follow.stick();
-      $("restart").hidden = false;
     }, delay + 400);
   }
+
+  // 縁の選択（E1）: 二極どちらの結末でも、次は「記憶を抱えて沈み直す」か「すべて忘れる」かの二択。
+  // 周回は restart でなく再降下で深まる＝spiral 層（周回/認識/痕跡）は、忘れない限り消えない。
+  function renderEdgeChoices(attuned) {
+    choicesEl.innerHTML = "";
+    const mk = (kind, lead, sub, fn) => {
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "hz-choice " + kind;
+      btn.innerHTML = `<span class="lead"></span><span class="sub"></span>`;
+      btn.querySelector(".lead").textContent = lead;
+      btn.querySelector(".sub").textContent = sub;
+      btn.addEventListener("click", fn, { once: true });
+      choicesEl.appendChild(btn);
+      return btn;
+    };
+    mk("descend", "縁から、もう一度沈む",
+      `視たものを抱えたまま、零章へ——周回が一つ深まる（${state.cycle + 1}）`, descendAgain);
+    mk("retreat", "すべて忘れる",
+      "周回・認識・痕跡を消す。次は、初めてになる", forgetAll);
+    // 縁カード: 結末サマリを画像で外へ（share か PNG 保存）。物語の選択ではないので chip として小さく。
+    const row = document.createElement("div");
+    row.style.cssText = "display:flex;justify-content:center;padding:2px 0 4px;";
+    const chip = document.createElement("button");
+    chip.type = "button"; chip.className = "hz-chip";
+    chip.textContent = "縁を画像で残す";
+    chip.addEventListener("click", () => EdgeCard.share(attuned, chip));
+    row.appendChild(chip);
+    choicesEl.appendChild(row);
+    choicesEl.querySelectorAll(".hz-choice").forEach((b, i) =>
+      window.setTimeout(() => b.classList.add("in"), REDUCED ? 0 : 200 + i * 160));
+    Follow.stick();
+  }
+
+  // 再降下: transient（沈下/圧/戻り道/観測者/抗い）は新しく、spiral 層は保つ。
+  // steps を保つ＝renderNode(zero) が周回を一つ深める（in-session の reborn→zero と同じ経路）。
+  function descendAgain() {
+    revealToken++;
+    state.id = null; state.sink = 0; state.dread = 0; state.returnPaths = RETURN_PATHS_START;
+    state.maxSink = 0; state.observer = 1; state.resisted = 0; state.refused = 0;
+    state.resistBeat = null; state.rank = 0; state.rejoin = null;
+    document.body.classList.remove("surfaced");
+    buildReturnPaths();
+    renderNode(DATA.start || "zero");
+  }
+
+  function forgetAll() { Spiral.wipe(); restart(); }
 
   // ---------- 沈下連動 inline Web Audio（Hazama内製・music-stack非依存） ----------
   // 設計: 深いほど 低く・暗く・密に・広く。
@@ -1062,6 +1161,119 @@
     return { play };
   })();
 
+  // ---------- 縁カード（E1: 結末サマリの画像化・共有） ----------
+  // 縁の結果（二極・認識・到達深度・周回）を 1080×1350 の canvas に決定論で描く
+  // （worldSeed＝同じ縁は同じカード）。Web Share が files を受ける環境では share sheet、
+  // それ以外は PNG 保存。外部送信はしない＝外へ出すかどうかは常にユーザーの手。
+  // 載せるのは集計値のみ（本文・raw テキストは載せない）。
+  const EdgeCard = (() => {
+    const W = 1080, H = 1350;
+    const FONT = '"Hiragino Sans","Yu Gothic","Noto Sans JP",system-ui,sans-serif';
+    function draw(attuned) {
+      const cv = document.createElement("canvas");
+      cv.width = W; cv.height = H;
+      const g = cv.getContext("2d");
+      const rng = mulberry32((worldSeed() ^ 0x5f356495) >>> 0);
+      // 地：奈落のドーム（.hz-bg の簡約）
+      const bg = g.createLinearGradient(0, 0, 0, H);
+      bg.addColorStop(0, "#0a131d"); bg.addColorStop(0.5, "#04060b"); bg.addColorStop(1, "#010206");
+      g.fillStyle = bg; g.fillRect(0, 0, W, H);
+      // 砂紋（反転ガーデンの掻き目。バグの帯も一部の行に）
+      const s = clamp01(state.maxSink || 0.4);
+      for (let i = 0; i < 20; i++) {
+        const y = H * (i + 0.5) / 20;
+        g.strokeStyle = `hsla(216,${Math.round(30 + s * 24)}%,${Math.round(44 + s * 14)}%,${(0.05 + rng() * 0.07).toFixed(3)})`;
+        g.lineWidth = 2;
+        const band = rng() < 0.25 ? (rng() * 2 - 1) * W * 0.1 : 0;
+        const freq = 2 + (i % 3);
+        g.beginPath();
+        for (let x = 0; x <= W; x += 24) {
+          const yy = y + Math.sin((x / W) * Math.PI * 2 * freq + i) * 16;
+          const xx = x + (x > W * 0.5 ? band : 0);
+          x === 0 ? g.moveTo(xx, yy) : g.lineTo(xx, yy);
+        }
+        g.stroke();
+      }
+      // 曼荼羅（八観の環。中心＝核は描かない）
+      const cx = W / 2, cy = H * 0.32, R = W * 0.30, voidR = R * 0.26;
+      g.globalCompositeOperation = "lighter";
+      for (let i = 0; i < 6; i++) {
+        const rr = voidR + (R - voidR) * (i / 5);
+        g.beginPath();
+        for (let k = 0; k <= 8; k++) {
+          const ang = i * 0.25 + (k / 8) * Math.PI * 2;
+          const x = cx + Math.cos(ang) * rr, y = cy + Math.sin(ang) * rr;
+          k ? g.lineTo(x, y) : g.moveTo(x, y);
+        }
+        g.closePath();
+        g.lineWidth = 1.6;
+        g.strokeStyle = `rgba(127,182,196,${(0.10 + i * 0.022).toFixed(3)})`;
+        g.stroke();
+      }
+      g.globalCompositeOperation = "source-over";
+      const vg = g.createRadialGradient(cx, cy, 0, cx, cy, voidR);
+      vg.addColorStop(0, "rgba(0,0,0,1)"); vg.addColorStop(1, "rgba(2,4,10,0)");
+      g.fillStyle = vg; g.beginPath(); g.arc(cx, cy, voidR, 0, Math.PI * 2); g.fill();
+      // タイトル（RGBずれ＝グリッジの刷り重ね）
+      g.textAlign = "center";
+      g.font = `800 64px ${FONT}`;
+      g.fillStyle = "rgba(216,68,46,0.4)"; g.fillText("Hazama 狭間", cx - 4, 150);
+      g.fillStyle = "rgba(10,186,181,0.4)"; g.fillText("Hazama 狭間", cx + 4, 150);
+      g.fillStyle = "#ece6d6"; g.fillText("Hazama 狭間", cx, 150);
+      // 結末（二極）＋手の下線（生の差し色）
+      const headY = H * 0.56;
+      g.font = `700 72px ${FONT}`;
+      g.fillStyle = attuned ? "#7fb6c4" : "#aab4bf";
+      g.fillText(attuned ? "深度Ω 到達" : "浮上 — 表層へ帰る", cx, headY);
+      g.strokeStyle = "rgba(216,68,46,0.7)"; g.lineWidth = 5; g.beginPath();
+      g.moveTo(cx - 280, headY + 34);
+      g.quadraticCurveTo(cx, headY + 22, cx + 280, headY + 30);
+      g.stroke();
+      g.font = `400 34px ${FONT}`;
+      g.fillStyle = "#6b7682";
+      g.fillText(attuned ? "外殻踏破——底は、最後まで無い" : "視たものを、抱えたまま", cx, headY + 92);
+      // 計器（縁の結果カードと同じ集計値）
+      const need = ATTUNE.omegaThreshold;
+      const lit = Math.min(Math.round(state.attunement || 0), need);
+      const depthLit = Math.max(0, Math.min(8, Math.round((state.maxSink || 0) * 8)));
+      const rows = [
+        ["認識", "◆".repeat(lit) + "◇".repeat(need - lit) + (attuned ? "　合致" : "")],
+        ["到達深度", "▮".repeat(depthLit) + "▯".repeat(8 - depthLit)],
+        ["戻り道", `${state.returnPaths}/${RETURN_PATHS_START}　　観測者 ${state.observer}　　周回 ${state.cycle}`],
+        ["", `抗った ${state.resisted}　・　戻れなかった ${state.refused}`]
+      ];
+      let y = H * 0.70;
+      for (const [k, v] of rows) {
+        if (k) { g.font = `400 30px ${FONT}`; g.fillStyle = "#3a424c"; g.textAlign = "right"; g.fillText(k, cx - 180, y); }
+        g.font = `500 38px ${FONT}`;
+        g.fillStyle = (k === "認識" && attuned) ? "#7fb6c4" : "#c8d2dc";
+        g.textAlign = "left";
+        g.fillText(v, cx - 150, y);
+        y += 78;
+      }
+      g.textAlign = "center";
+      g.font = `400 28px ${FONT}`; g.fillStyle = "#3a424c";
+      g.fillText("quietbriony.github.io/hazama", cx, H - 70);
+      return cv;
+    }
+    async function share(attuned, chip) {
+      const cv = draw(attuned);
+      const blob = await new Promise((res) => cv.toBlob(res, "image/png"));
+      if (!blob) return;
+      const file = new File([blob], `hazama-edge-c${state.cycle}.png`, { type: "image/png" });
+      if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+        try { await navigator.share({ files: [file], title: "Hazama 狭間" }); return; }
+        catch (e) { if (e && e.name === "AbortError") return; }   // キャンセルは保存に落とさない
+      }
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob); a.download = file.name;
+      document.body.appendChild(a); a.click(); a.remove();
+      window.setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+      if (chip) { chip.textContent = "残した"; window.setTimeout(() => { chip.textContent = "縁を画像で残す"; }, 2000); }
+    }
+    return { share, draw };
+  })();
+
   // ---------- 音楽コントローラ（同一document・実手勢で解禁する内製エンジン） ----------
   // 旧方式（depth.html を不可視 iframe に埋め、START を親から click して解禁）は廃止した:
   //   ・AudioContext.resume()/Tone.start() は「その context を持つ document の window」が
@@ -1091,7 +1303,7 @@
 
   // ---------- 起動 ----------
   async function loadData() {
-    const res = await fetch("depths-shell.json?v=r8", { cache: "no-store" });
+    const res = await fetch("depths-shell.json?v=e1", { cache: "no-store" });
     DATA = await res.json();
   }
   // ---------- 動く表紙（R6：タイトルも state/seed に応じて動く・静止でない） ----------
@@ -1099,11 +1311,13 @@
   // 原色が隙間から明滅する。構図は per-load の seed で毎回ちがい、ゆっくり別構図へ再生成＝生きた庭。
   // enter すると同じ深度信号（applyAtmosphere）へ引き継がれ、降下とともに深まる。
   let titleTimer = 0, titleSeed = 1;
-  function titleAmbient() {
+  function titleAmbient(returning) {
     Garden.start();
     Glitch.update(0.42, 0.16);       // 表紙の浅め深度：グリッジ頻度・--gi・原色 leak 強度の基準
     Glitch.start();                  // reduced は no-op（CSS が薄い静止フリンジ＝それでも"動かない表紙"でない）
-    titleSeed = (Math.floor((Math.random() || 0.5) * 0x7fffffff)) >>> 0 || 1;
+    // E1: 戻ってきた観測者の表紙は乱数でなく履歴（worldSeed）から＝庭が「前回の続き」から組まれる。
+    titleSeed = returning ? ((worldSeed() >>> 0) || 1)
+      : ((Math.floor((Math.random() || 0.5) * 0x7fffffff)) >>> 0 || 1);
     Garden.update(0.5, 0.18, titleSeed);
     if (REDUCED) return;
     titleTimer = window.setInterval(() => {
@@ -1119,6 +1333,7 @@
     entered = true;
     stopTitleAmbient();              // 表紙の生成ループを止め、深度信号（降下）へ明け渡す
     gateEl.classList.add("gone");
+    Spiral.consumeCycleBump();       // 前セッションで降下していた時だけ、ここで周回が一つ深まる
     buildReturnPaths();
     // ★ここは「沈む」ボタンの実タップ（同一document・transient activation 有）の中。
     //   この手勢の中で AudioContext を生成＆resume するので、モバイルでも音が鳴り始める。
@@ -1131,17 +1346,15 @@
     revealToken++;
     state.id = null; state.sink = 0; state.dread = 0; state.returnPaths = RETURN_PATHS_START; state.maxSink = 0; state.observer = 1; state.steps = 0; state.belowLoop = 0; state.resisted = 0; state.refused = 0; state.resistBeat = null; state.rank = 0; state.cycle = 0; state.visits = {}; state.rejoin = null; state.attunement = 0; state.legacy = freshLegacy();
     if (document.body && document.body.classList) document.body.classList.remove("surfaced");
-    const st = $("status"); if (st) st.textContent = "preview · M2 沈下スパイン";
-    $("restart").hidden = true;
+    const st = $("status"); if (st) st.textContent = "";
     buildReturnPaths();
     renderNode(DATA.start || "zero");
   }
 
   $("audio-toggle").addEventListener("click", () => Music.cycle());
-  $("restart").addEventListener("click", restart);
 
-  // 開発用フック（プレビュー検証専用・本体統合時は外す）: 任意ノードへ跳ぶ／状態を読む。
-  window.__hz = { go: renderNode, choose, state, isAttuned, get sink() { return sinkNorm(); }, get attunement() { return state.attunement; } };
+  // 開発用フック（プレビュー検証専用）: 任意ノードへ跳ぶ／状態を読む／縁・カードを直接出す。
+  window.__hz = { go: renderNode, choose, state, isAttuned, edge: renderEdge, card: (a) => EdgeCard.draw(a == null ? isAttuned() : !!a), get sink() { return sinkNorm(); }, get attunement() { return state.attunement; } };
 
   // R4: PWA — slice をインストール/オフライン対応に。サブパス /hazama/slice/ スコープ（相対 sw.js）。
   function registerSlicePWA() {
@@ -1157,7 +1370,14 @@
   loadData().then(() => {
     const gb = $("gate-enter");
     gb.disabled = false;
-    titleAmbient();   // 表紙を動かす（反転ガーデン＋グリッジ＋原色 leak をゲート背後で薄く生かす）
+    // E1: 記憶（spiral 層）を読む。戻ってきた観測者には表紙が応える＝庭は前回の続きから組まれ、
+    // 入口の言葉が変わる。周回の加算は enter（「沈む」の実タップ）まで保留。
+    const returning = Spiral.load();
+    if (returning) {
+      const sub = document.querySelector(".hz-gate-sub");
+      if (sub) sub.innerHTML = "また、来た。<br>入口は、前より一段、深い。";
+    }
+    titleAmbient(returning);   // 表紙を動かす（反転ガーデン＋グリッジ＋原色 leak をゲート背後で薄く生かす）
     // 「沈む」の実タップ＝同一document の手勢。この中で enter()→Audio.start()→resume() が走る
     // ＝モバイルで AudioContext を堅牢に解禁できる（cross-document iframe・全画面オーバーレイは廃止）。
     gb.addEventListener("click", enter, { once: false });

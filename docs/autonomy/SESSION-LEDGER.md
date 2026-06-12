@@ -19,6 +19,27 @@ Hazama 自律開発 session の追記専用ログ。
 
 ---
 
+## 2026-06-12 — 進化 E1: spiral 記憶・縁カード・docs 逆統合完遂
+- agent      : Claude Code (Fable 5)
+- goal       : Tier1 推奨3点 — 記憶の永続化 / 縁の共有カード / docs 整合（branch `claude/evolve-e1`・master 無変更）
+- shipped    :
+  - `slice.js`: Spiral 永続化（`hazama_spiral_v1`・transient 非保存・「沈む」実タップで周回+1・
+    「すべて忘れる」だけが消す）、縁の二択（縁から、もう一度沈む / すべて忘れる）、
+    EdgeCard（1080×1350 PNG・Web Share か保存・worldSeed 決定論）、
+    戻ってきた観測者への表紙応答（入口の言葉＋worldSeed 庭）
+  - `index.html` / `sw.js`: footer restart chip 撤去・status "preview" 撤去・`?v=e1` / `hazama-pwa-e1`
+  - `scripts/build-consistency-smoke.mjs`: version 三点同期（index/slice fetch/sw）・spiral 契約
+    （transient 非保存）・README/AGENTS の scripts 参照整合
+  - `scripts/autonomy-docs-smoke.mjs`: README 契約を core 接続のみに整理、autonomy index /
+    STACK-INDEX 側の接続検証を追加
+  - README / AGENTS / STACK-INDEX / AUTONOMOUS-RUN / closeout / next-agent-prompts / COLLAB /
+    BACKLOG / REVERSE-INTEGRATION: forward 記述を整理（沿革へ圧縮・Status banner）
+- checks     : `node scripts/hazama-check.mjs` -> 2 PASS / 0 FAIL ＋ ローカルブラウザで
+  記憶の復元・縁の二択・カード生成を手動確認（詳細は本 session の最終報告）
+- backlog    : HZ-BL-008 done / HZ-BL-003 retired / HZ-BL-001・002 detail を没入版へ更新
+- next       : HZ-BL-001 PWA install/offline human pass（没入版）、その先は Tier2（認識2.0 / 生成への給餌）
+- blockers   : master 反映はユーザー号令待ち（branch `claude/evolve-e1`）
+
 ## 2026-05-25 — Playful Gate Run polish
 - agent      : Codex
 - goal       : first playable の route / balance を変えず、Gate Run の選択が少し楽しく読めるようにする

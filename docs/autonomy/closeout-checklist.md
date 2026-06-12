@@ -18,23 +18,23 @@ node scripts/hazama-check.mjs
 ```
 
 - `0 FAIL` is the commit baseline. If it fails, report the failing check, likely cause, and whether you fixed it.
-- Optional browser-backed smokes may report `SKIP` when Playwright is unavailable. Treat that as a valid zero exit only if the rest passes; add a manual or in-app browser note when the task needed UI confidence.
+- Browser confidence comes from a manual or in-app browser pass; add a note to the ledger when the task needed UI confidence.
 - Docs-only / autonomy-only edits usually do not require version or PWA cache bumps. Still run `hazama-check` if the handoff expects a verified repo state.
 
 ## 3. Guard the Hard Rules
 
 - Keep Hazama static Web first: no build step, server runtime, database, or GitHub Actions.
-- Do not change public routes, storage keys, `hazama-depths.json` schema, or Music payload shape without explicit scope.
-- Never store raw Breath Gate input or send it to Music. Only seed, progress position, and aggregated run state are allowed.
-- Keep Music optional: game progress must not depend on Music launch, audio playback, or an external tab.
-- Do not add audio files, samples, lyrics, external dependencies, or copied Music runtime code.
-- Touch only Hazama-namespaced PWA cache behavior. Do not clear same-origin Music caches.
+- Do not change public routes, the storage key (`hazama_spiral_v1`), or the `depths-shell.json` schema without explicit scope.
+- Never persist raw player input. Only the aggregated spiral layer (cycle / attunement / traces) may be saved; transients (sink / dread / return paths / observer) stay unsaved.
+- Keep audio self-contained (`slice.js` built-in Web Audio): game progress must not depend on audio playback or any external tab/repo.
+- Do not add audio files, samples, lyrics, or external dependencies.
+- Touch only the `hazama-pwa-` cache namespace.
 
 ## 4. Handle Human Gates
 
 - Do not mark `human-gate: yes` work as done by agent verification alone.
 - Agent closeout may include implementation, prepared checklist, smoke results, and notes for the human pass.
-- Leave PWA install, offline feel, mobile feel, Music START.HZM experience, and taste calls for a human result unless the user explicitly supplies that result.
+- Leave PWA install, offline feel, mobile feel, sound feel, and taste calls for a human result unless the user explicitly supplies that result.
 
 ## 5. Final Handoff
 

@@ -27,10 +27,15 @@ const js = read("slice.js");
 const css = read("slice.css");
 const sw = read("sw.js");
 
-// index: 没入シェル構造＋ランタイム参照（version一致）
+// index: 没入シェル構造＋ランタイム参照（version一致: index の css/js・slice.js の depths fetch・sw cache）
 const cssV = (html.match(/slice\.css\?v=([a-z0-9.]+)/) || [])[1];
 const jsV = (html.match(/slice\.js\?v=([a-z0-9.]+)/) || [])[1];
 assert(cssV && jsV && cssV === jsV, `index runtime version mismatch: css=${cssV} js=${jsV}`);
+const fetchV = (js.match(/depths-shell\.json\?v=([a-z0-9.]+)/) || [])[1];
+assert(fetchV === jsV, `slice.js depths fetch version mismatch: fetch=${fetchV} index=${jsV}`);
+const swV = (sw.match(/const VERSION = "hazama-pwa-([a-z0-9.]+)"/) || [])[1];
+assert(swV === jsV, `sw.js cache version mismatch: sw=${swV} index=${jsV}`);
+assert(!html.includes("preview"), "production index.html should not say preview");
 for (const layer of ["hz-bg-garden", "hz-bg-mandala", "hz-glitch", "hz-scanline", "hz-vignette"]) has(html, layer, "immersive art layer");
 for (const el of ['id="scene"', 'id="choices"', 'id="gate-enter"', 'id="attune"', 'rel="manifest"']) has(html, el, "index element");
 
@@ -43,6 +48,28 @@ has(js, "深度Ω 到達", "omega ending");
 has(js, "function renderAttune", "recognition indicator");
 has(js, 'navigator.serviceWorker.register("sw.js")', "sw registration");
 assert(css.includes(".hz-attune"), "slice.css recognition indicator style");
+
+// E1: 記憶（spiral 層）＋縁の二択＋縁カード
+has(js, '"hazama_spiral_v1"', "spiral storage key");
+has(js, "function renderEdgeChoices", "edge two-way choices");
+has(js, "function descendAgain", "descend-again (cycle deepen)");
+has(js, "縁から、もう一度沈む", "edge re-descend label");
+has(js, "すべて忘れる", "edge forget label");
+has(js, "const EdgeCard", "edge share card");
+// transient（戻り道/圧/観測者）は保存しない＝spiral 層の save に紛れ込んだら fail
+const saveBody = (js.match(/function save\(\) \{[\s\S]*?\n    \}/) || [""])[0];
+assert(saveBody.includes("localStorage.setItem"), "spiral save writes localStorage");
+for (const transient of ["returnPaths", "dread", "observer"]) {
+  assert(!saveBody.includes(transient), `spiral save must not persist transient: ${transient}`);
+}
+
+// docs 参照整合: README/AGENTS が存在しない scripts を案内していないこと（forward 撤去後の漂流防止）
+for (const docFile of ["README.md", "AGENTS.md"]) {
+  const t = read(docFile);
+  for (const m of t.matchAll(/scripts\/[a-z0-9-]+\.(?:mjs|sh)/g)) {
+    assert(existsSync(repoPath(m[0])), `${docFile} references missing ${m[0]}`);
+  }
+}
 
 // manifest（root スコープ PWA）
 let manifest;

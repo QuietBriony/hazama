@@ -32,38 +32,37 @@ Hazama 自律開発の作業待ち行列。
 - agent    : human
 - human-gate: yes
 - status   : open
-- source   : v2.34 PWA shell
+- source   : v2.34 PWA shell（対象は現行の没入版単一ビルド）
 - detail   : 実機ブラウザで install prompt、standalone 起動、初回 visit 後の offline reload、
-  reset、`A_start -> HUB_NIGHT` を確認する。agent は手順整理と結果記録まで。
-  現在の実施対象は最新の Pages/runtime 版。
+  「沈む」→ 零章 → 数手の降下、リロード後の spiral 記憶（表紙が応え、次の「沈む」で
+  周回が深まる）を確認する。agent は手順整理と結果記録まで。
+  現在の実施対象は最新の Pages 没入版（`?v=e1`）。
   手順書は `docs/autonomy/pwa-install-offline-checklist.md`、結果テンプレートは
   `docs/autonomy/pwa-install-offline-result-template.md` に準備済み。
 
-### HZ-BL-002 — First playable manual play notes
+### HZ-BL-002 — Immersive build manual play notes
 - priority : P1
 - scope    : verify
 - agent    : either
 - human-gate: yes
 - status   : open
-- source   : `docs/hazama-playtest-slices-v0.md`
-- detail   : 5〜8分の通しプレイで、Ω unlock までの迷い、Gate Run の意思決定感、
-  Breath Gate の任意感、`A_reborn` の完了感を記録する。数値調整はメモ後。
-  最新 pass では `次にやること` guide、Gate Run の `今のノリ` / `おすすめ`、
-  同じ画面BGM、次周回Ω再ロックが集中を邪魔しないかも記録する。
-  agent / in-app browser pass は `docs/playtest/first-playable-agent-pass-2026-05-16.md`
-  に記録済みだが、人間の taste pass は未完了。人間記録テンプレートは
-  `docs/playtest/human-playtest-template.md`。
+- source   : `docs/hazama-playtest-slices-v0.md`（対象は現行の没入版）
+- detail   : 5〜8分の通しプレイで、没入読書の手触り、認識◆が「構造で読む」に応えて
+  育つ伝わり方、二極終端（深度Ω 到達 ⇄ 浮上）の納得感、縁の二択
+  （もう一度沈む / すべて忘れる）、縁カードの体感を記録する。
+  数値調整（`slice.js` の ATTUNE / RESIST_STRAIN / DEEP_LOCK）はメモ後。
+  人間記録テンプレートは `docs/playtest/human-playtest-template.md`。
 
 ### HZ-BL-003 — Gate Run balance evaluation after notes
 - priority : P1
 - scope    : balance
 - agent    : either
 - human-gate: no
-- status   : open
+- status   : retired — 2026-06-12 逆統合で Gate Run 資源ゲームを撤去、対象消滅
 - source   : `docs/hazama-game-dev-plan.md`
-- detail   : manual notes で具体的な違和感が出た場合だけ、
-  `hazama-gate-run.js` の deterministic values と `scripts/balance-smoke.mjs` を一緒に調整する。
-  判断基準は `docs/playtest/gate-run-balance-decision-rubric.md`。
+- detail   : （歴史）forward 版 Gate Run の数値調整枠。現ビルドの手触り調整は
+  `slice.js` の ATTUNE / RESIST_STRAIN / DEEP_LOCK 定数＋manual play note で行う
+  （HZ-BL-002 のメモが前提）。
 
 ## P2
 
@@ -83,12 +82,20 @@ handoff 前の確認は `docs/autonomy/closeout-checklist.md` を使います。
 - human-gate: yes
 - status   : open
 - source   : post-first-playable
-- detail   : first playable が読める状態を保ったまま、追加 depth / second loop の採否を決める。
-  今は増やさない。
+- detail   : 没入ビルドのまま、NODE_VARIANTS / detour / below 断片バンクへ
+  `docs/source/` の原典素材を給餌するかを決める。今は増やさない。
 
 ---
 
 ## Done
+
+### HZ-BL-008 — E1: spiral 記憶・縁カード・docs 逆統合完遂 ✅ 2026-06-12
+- scope: runtime / smoke / docs
+- spiral 層（周回/認識/痕跡）を `hazama_spiral_v1` へ永続化（transient は保存しない・
+  「すべて忘れる」だけが消す・「沈む」の実タップで周回+1）。縁を二択
+  （もう一度沈む / すべて忘れる）＋共有カード（1080×1350 PNG・Web Share/保存）に。
+  README / AGENTS / autonomy docs を没入版単一ビルドへ現行化し、`build-consistency` に
+  version 三点同期・spiral 契約・docs 参照整合を追加（`?v=e1`）。
 
 ### HZ-BL-000 — Autonomy engine import ✅ 2026-05-16
 - scope: docs / smoke

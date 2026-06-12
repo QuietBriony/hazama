@@ -1,5 +1,8 @@
 # REVERSE-INTEGRATION.md — 逆統合（slice シェル土台 ＋ ゲーム移植）
 
+> **Status: 完了（2026-06）** — R1〜R9 まで実施し、master root は没入版単一ビルドへ昇格済み。
+> 本書は計画の歴史記録。現行の構成・検証は `README.md` と `scripts/hazama-check.mjs` が正。
+
 ユーザー決定（2026-06-03）: **B＝逆統合**。slice（hazama-preview の没入シェル）を土台にし、
 codex 側のゲーム（認識/Ωゲート・Gate Run・PWA・43深度コンテンツ）を slice 側へ移植する。
 理由: 統合版（codex土台＋slice アート）は本文下にゲームUIが積層し "機能説明画面" 化しやすく、
