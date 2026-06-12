@@ -108,6 +108,8 @@ Codex / Claude Code が同じ順番で作業を継続するための薄いエン
   ECHO_BANK/deep タグ（`?v=e2`・カタログは `docs/research/source-catalog-e2.md`）
 - **進化 E3（2026-06）**: 認識2.0 — 深い構造読みのみ認識+1・表層侵食・エコー門 Q/Z（`?v=e3`）
 - **進化 E4（2026-06）**: 仕上げ — spiral 入力浄化・ECHO_BANK 契約 smoke・OG/Twitter メタ・docs 整合（`?v=e4`）
+- **進化 E5（2026-06）**: 視覚の磨きとパターン変化 — 浮上ウォッシュ・below∞ 質感差・
+  ガーデン構図モード4種・phase 跨ぎ句読点・hover/focus-visible・peel/タイトル/周回スキン（`?v=e5`）
 
 ## Status / Rules
 

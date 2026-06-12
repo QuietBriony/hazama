@@ -1,5 +1,8 @@
 # E5 SPEC — 視覚の磨きとパターン変化（Tier A+B）
 
+> **Status: 完了（2026-06-13）** — d3a6b61 として実装・検証済み。本書は発注の歴史記録。
+> 現行の構成・検証は `README.md` と `scripts/hazama-check.mjs` が正。
+
 発注書。実装は opus、レビュー/検証/コミットは管理側（Fable）。branch `claude/evolve-e5`。
 対象: `slice.js` / `slice.css` / `index.html` / `sw.js` / `scripts/build-consistency-smoke.mjs`。
 **触らない領域**: Spiral／認識・エコー門ロジック／Audio 内部（`glitchHit`/`pulseOnce` の呼び出しのみ可）。

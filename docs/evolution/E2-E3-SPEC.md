@@ -1,5 +1,8 @@
 # E2-E3 SPEC — 原典給餌（E2）＋ 認識2.0（E3）
 
+> **Status: 完了（2026-06-12/13）** — E2=cc89b72 / E3=2a8db3f として master 反映済み。本書は発注の歴史記録。
+> 現行の構成・検証は `README.md` と `scripts/hazama-check.mjs` が正。
+
 発注書。実装エージェント（opus）と将来の agent はこれを正とする。
 レビュー/承認/コミットは管理側（Fable）が行う。branch `claude/evolve-e1`。master 無変更。
 

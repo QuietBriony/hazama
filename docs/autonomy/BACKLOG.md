@@ -36,7 +36,7 @@ Hazama 自律開発の作業待ち行列。
 - detail   : 実機ブラウザで install prompt、standalone 起動、初回 visit 後の offline reload、
   「沈む」→ 零章 → 数手の降下、リロード後の spiral 記憶（表紙が応え、次の「沈む」で
   周回が深まる）を確認する。agent は手順整理と結果記録まで。
-  現在の実施対象は最新の Pages 没入版（`?v=e1`）。
+  現在の実施対象は最新の Pages 没入版（version は README 沿革を参照＝ここに固定値を書かない）。
   手順書は `docs/autonomy/pwa-install-offline-checklist.md`、結果テンプレートは
   `docs/autonomy/pwa-install-offline-result-template.md` に準備済み。
 
