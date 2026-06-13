@@ -9,7 +9,7 @@
  *
  * 三層で「どれだけ沈むか／戻りにくくなるか」を見せる:
  *   1) 本文     — 声が近づく / 戻り道が細る、を地の文で（JSONの lines）
- *   2) 選択肢   — descend=沈む / retreat=深いほど重く遅い・drift へ落ちて沈下は残る
+ *   2) 選択肢   — descend=沈む / retreat=深いほど重く遅い・戻れても沈下は残る（深さは戻らない）
  *   3) シグナル — 沈下ゲージ・戻り道インジケータ・観測者カウンタ・slow reveal速度・圧
  *
  * 深度∞: 着地させない／常にもう一段／戻り道は復活しない／核は描写しない。
@@ -129,6 +129,9 @@
 
   const $ = (id) => document.getElementById(id);
   const sceneEl = $("scene");
+  // E6(監査): aria-live(polite) の #scene は reveal 中に行ごと append すると SR が過多読み上げになる。
+  // reveal 開始で aria-busy=true、確定(choices 表示)で false＝SR は1ノードを一括で読む。
+  const setBusy = (b) => { if (sceneEl) sceneEl.setAttribute("aria-busy", b ? "true" : "false"); };
   const choicesEl = $("choices");
   const sinkFill = $("sink-fill");
   const returnPathsEl = $("return-paths");
@@ -744,12 +747,13 @@
     }
     state.id = id;
     state.steps++;
-    if (typeof RANK[id] === "number") state.rank = RANK[id]; // drift/未登録は直前の深さを保つ
+    if (typeof RANK[id] === "number") state.rank = RANK[id]; // 未登録ノードは直前の深さを保つ
     if (state.rank > state.legacy.maxRank) state.legacy.maxRank = state.rank; // 到達深度を持ち越す
     if (typeof node.observer === "number" && node.observer > 0) state.observer = Math.max(state.observer, node.observer);
     applyAtmosphere(node);
     Spiral.save();   // 状態確定後に spiral 層を書く＝どこで閉じても周回/認識/痕跡は残る
     sceneEl.innerHTML = "";
+    setBusy(true);               // E6: reveal 中は SR 読み上げを抑制（choices 表示で解除）
     choicesEl.innerHTML = "";
     Follow.reset();              // 新ノード：追従ON・最上部から（行は下から積み上がる）
     if (!firstEver) Peel.play(); // 塗装剥がれ：各遷移で層が一枚めくれて降りる
@@ -823,6 +827,7 @@
     });
     // ボタンを積んで scene が縮んだ“後”に最新行を底へ。重なりはレイアウトで防止済み、
     // ここは「最後の行を選択肢の真上に見せる」ための追従（ユーザーが上に居れば奪わない）。
+    setBusy(false);              // E6: 本文＋選択肢が出揃った＝SR は1ノードを一括で読む
     Follow.stick();
   }
 
@@ -874,6 +879,7 @@
     mk("目を逸らし、先へ", "echo-skip", () => echoResolve(node, id, null));
     choicesEl.querySelectorAll(".hz-choice").forEach((b, i) =>
       window.setTimeout(() => b.classList.add("in"), REDUCED ? 0 : 120 + i * 150));
+    setBusy(false);              // E6: 本文＋エコー門が出揃った
     Follow.stick();
   }
 
@@ -881,6 +887,7 @@
   // truth===true 真 / false 偽 / null 逸らし。結果後 600ms で通常 choices（深度遷移はしない）。
   function echoResolve(node, id, truth) {
     state.echoDone[id] = state.cycle;
+    setBusy(true);                     // E6: 結果ビート→choices が出揃うまで SR を抑制
     const myToken = ++revealToken;     // 結果ビート以降の遅延描画をこのトークンで守る
     let beat = null;
     if (truth === true) {
@@ -966,6 +973,7 @@
     Spiral.save();   // 縁＝結末でも spiral 層を確定（閉じて去っても、次の表紙が応えられる）
     if (!attuned) document.body && document.body.classList && document.body.classList.add("surfaced");
     sceneEl.innerHTML = ""; choicesEl.innerHTML = "";
+    setBusy(true);               // E6: 縁の結末文＋選択が出揃うまで SR を抑制
     Follow.reset();
     const sank = state.returnPaths <= 1;
     // 帰還の極（未達）＝失敗演出にしない。光のほうへ浮上して帰る、視たものを抱えたまま。
@@ -1046,6 +1054,7 @@
     choicesEl.appendChild(row);
     choicesEl.querySelectorAll(".hz-choice").forEach((b, i) =>
       window.setTimeout(() => b.classList.add("in"), REDUCED ? 0 : 200 + i * 160));
+    setBusy(false);              // E6: 縁が出揃った
     Follow.stick();
   }
 
@@ -1057,7 +1066,9 @@
     state.maxSink = 0; state.observer = 1; state.resisted = 0; state.refused = 0;
     state.resistBeat = null; state.rank = 0; state.rejoin = null; state.echoDone = {};
     lastPhase = "surface";   // A4: 再降下のたびに最初の深い跨ぎがまた句読点を打てる
-    document.body.classList.remove("surfaced", "phase-break");
+    // E6(監査): phase-break 由来の glitch-hard/leak-on が縁で発火したまま残り、再降下直後の零章に
+    // 焼き付くのを断つ（burst の clearBurst タイマーは revealToken と無関係に走るため明示除去）。
+    document.body.classList.remove("surfaced", "phase-break", "glitch-hard", "glitch-soft", "leak-on");
     buildReturnPaths();
     renderNode(DATA.start || "zero");
   }
@@ -1738,7 +1749,7 @@
 
   // ---------- 起動 ----------
   async function loadData() {
-    const res = await fetch("depths-shell.json?v=e5", { cache: "no-store" });
+    const res = await fetch("depths-shell.json?v=e6", { cache: "no-store" });
     DATA = await res.json();
   }
   // ---------- 動く表紙（R6：タイトルも state/seed に応じて動く・静止でない） ----------
@@ -1756,6 +1767,7 @@
     Garden.update(0.5, 0.18, titleSeed);
     if (REDUCED) return;
     titleTimer = window.setInterval(() => {
+      if (document.hidden) return;     // E6(監査): タブ非表示中は再描画しない（Mandala/Glitch と同じ規律）
       titleSeed = (Math.imul(titleSeed, 1664525) + 1013904223) >>> 0;  // ゆっくり別構図へ＝庭が掻き直される
       Garden.update(0.5, 0.18, titleSeed);
     }, 4800);
@@ -1768,6 +1780,9 @@
     entered = true;
     stopTitleAmbient();              // 表紙の生成ループを止め、深度信号（降下）へ明け渡す
     gateEl.classList.add("gone");
+    // E6(監査): enter 後はゲートボタンをタブ順から外す（不可視 opacity:0 のまま残ると
+    // キーボードの Tab が最初の選択肢でなく見えないボタンへ着地し、focus が迷子になる）。
+    const geBtn = $("gate-enter"); if (geBtn) geBtn.disabled = true;
     Spiral.consumeCycleBump();       // 前セッションで降下していた時だけ、ここで周回が一つ深まる
     applyCycleSkin();                // B4: consume 後の cycle で表紙スキンを取り直す
     buildReturnPaths();
@@ -1783,7 +1798,7 @@
     state.id = null; state.sink = 0; state.dread = 0; state.returnPaths = RETURN_PATHS_START; state.maxSink = 0; state.observer = 1; state.steps = 0; state.belowLoop = 0; state.resisted = 0; state.refused = 0; state.resistBeat = null; state.rank = 0; state.cycle = 0; state.visits = {}; state.rejoin = null; state.attunement = 0; state.echoDone = {}; state.legacy = freshLegacy();
     lastPhase = "surface";   // A4: restart/forget でも跨ぎ検知を初期化（再降下で最初の跨ぎが効く）
     applyCycleSkin();        // B4: cycle=0 に戻ったので表紙スキンも 0（完全に従来どおり）へ
-    if (document.body && document.body.classList) document.body.classList.remove("surfaced", "phase-break");
+    if (document.body && document.body.classList) document.body.classList.remove("surfaced", "phase-break", "glitch-hard", "glitch-soft", "leak-on");
     const st = $("status"); if (st) st.textContent = "";
     buildReturnPaths();
     renderNode(DATA.start || "zero");

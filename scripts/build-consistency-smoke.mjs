@@ -59,7 +59,7 @@ has(js, "const EdgeCard", "edge share card");
 // transient（戻り道/圧/観測者/エコー門発火）は保存しない＝spiral 層の save に紛れ込んだら fail
 const saveBody = (js.match(/function save\(\) \{[\s\S]*?\n    \}/) || [""])[0];
 assert(saveBody.includes("localStorage.setItem"), "spiral save writes localStorage");
-for (const transient of ["returnPaths", "dread", "observer", "echoDone"]) {
+for (const transient of ["returnPaths", "dread", "observer", "echoDone", "sink"]) {
   assert(!saveBody.includes(transient), `spiral save must not persist transient: ${transient}`);
 }
 
@@ -133,6 +133,17 @@ if (depths) {
   assert(missing.length === 0, `depths missing choice targets: ${missing.join(", ")}`);
   // E4: ECHO_BANK の全キーが実在ノードを指す（タイポした id の断片は永遠に真にならない＝ここで止める）
   for (const k of echoKeys) assert(depths.nodes[k], `ECHO_BANK key not in depths nodes: ${k}`);
+  // E6(監査): deep:true は構造読み(descend)のみ＝認識2.0 の不変条件。surface/retreat に付くと認識計算が設計と乖離。
+  for (const [id, node] of Object.entries(depths.nodes)) {
+    for (const c of node.choices || []) {
+      assert(!(c.deep === true && c.kind !== "descend"), `deep:true on non-descend choice: ${id} -> ${c.to} (kind=${c.kind})`);
+    }
+  }
+  // E6(監査): ECHO_GATES の発火ノード(Q/Z 等)が depths に実在すること（リネームで門が永久に出ない事故を止める）。
+  const gateMatch = js.match(/const ECHO_GATES = \[([^\]]*)\]/);
+  const gateNodes = gateMatch ? (gateMatch[1].match(/"([^"]+)"/g) || []).map((s) => s.replace(/"/g, "")) : [];
+  assert(gateNodes.length > 0, "ECHO_GATES not parseable");
+  for (const g of gateNodes) assert(depths.nodes[g], `ECHO_GATES node not in depths: ${g}`);
 }
 
 if (failures.length) {

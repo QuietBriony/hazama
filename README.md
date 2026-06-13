@@ -110,6 +110,10 @@ Codex / Claude Code が同じ順番で作業を継続するための薄いエン
 - **進化 E4（2026-06）**: 仕上げ — spiral 入力浄化・ECHO_BANK 契約 smoke・OG/Twitter メタ・docs 整合（`?v=e4`）
 - **進化 E5（2026-06）**: 視覚の磨きとパターン変化 — 浮上ウォッシュ・below∞ 質感差・
   ガーデン構図モード4種・phase 跨ぎ句読点・hover/focus-visible・peel/タイトル/周回スキン（`?v=e5`）
+- **進化 E6（2026-06）**: 敵対的監査と修正 — 多エージェント監査（52体）で E1〜E5 を全数走査し、
+  確定 15 件を修正（reduced-motion 漏れ3・gate-enter focus・aria-live 過多読み上げ・drift 死蔵
+  ノード撤去・残留 glitch クラス・表紙 interval・smoke 契約3）。核心ロジックはバグゼロ。
+  記録は `docs/evolution/E6-AUDIT.md`（`?v=e6`）
 
 ## Status / Rules
 

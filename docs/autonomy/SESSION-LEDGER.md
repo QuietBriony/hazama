@@ -19,6 +19,23 @@ Hazama 自律開発 session の追記専用ログ。
 
 ---
 
+## 2026-06-13 — 進化 E6: 敵対的監査と修正（多エージェント・cheap-tier）
+- agent      : Fable(ワークフロー設計・確定 finding の精密修正・検証) + sonnet×52(監査/反証)
+- goal       : E1〜E5 本番コードを多エージェント敵対的監査で全数走査し、確定バグを修正
+- method     : review(7次元)→verify(各 finding に2レンズ懐疑者)→critic の Workflow。22→確定15
+- finding    : 核心ロジック(spiral/認識/エコー門/ガーデン/phase-break)は**バグゼロ**＝委任実装の健全性裏取り。
+  確定は a11y/reduced-motion/perf/契約/死蔵データの周辺品質のみ
+- shipped     : (branch claude/evolve-e6-polish) reduced-motion 抑制3(gauge-fill/body/return-paths)・
+  enter() で gate-enter disable・aria-busy で reveal 中の SR 過多読み上げ抑制・drift 死蔵ノード+returnDrift 撤去・
+  descendAgain/restart で残留 glitch/leak クラス除去・titleAmbient interval の document.hidden ガード・
+  build-consistency に3アサーション(sink transient/deep=descend限定/ECHO_GATES 実在)。`?v=e6`
+- dismissed   : 第2懐疑者が by-design 反証した5件は修正せず（小チップ/||1 seed/重複 transition/cycle cap/ledger needle）
+- checks      : hazama-check 2 PASS / 0 FAIL＋実ブラウザ(reduced-motion 規則・gate disable・aria-busy ライフサイクル・
+  エコー門+2・Ω縁・再降下のクラス残留 全 false・console 0)
+- backlog     : —（監査は単発）。記録は docs/evolution/E6-AUDIT.md
+- next        : ユーザー号令で master 反映。残 human-gate（タッチパス/PWA/音）
+- blockers    : master 反映は号令待ち
+
 ## 2026-06-13 — 進化 E5: 視覚の磨きとパターン変化（Tier A+B）
 - agent      : Fable(仕様 docs/evolution/E5-SPEC.md・レビュー・検証) + opus(canvas/CSS 実装)
 - goal       : 視覚の取りこぼし3件（surfaced CSS 欠落・below∞ 背景凍結・dead CSS）と

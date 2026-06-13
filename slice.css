@@ -614,6 +614,9 @@ body.glitch-hard .hz-gate-title::after  { animation: hz-tl-after-glitch .18s ste
   .hz-line .ch, .hz-line .ch.lit { opacity: 1 !important; filter: none !important; transition: none !important; }
   body[data-tension="high"] .hz-scene { animation: none; }
   .hz-bg-descent, .hz-bg-mandala, .hz-vignette, .hz-bg-abyss, .hz-bg-grid { transition: none; }
+  /* E6(監査): 沈下連動の幾何/色トランジションも即時化＝ゲージ伸縮(1.4s)/戻り道フェード(.8s)/地色変化(2.6s)。 */
+  .hz-gauge-fill, .hz-return-paths i { transition: none; }
+  body { transition: none; }
   .hz-choice { transition: opacity .2s; transform: none; }
   /* グレインは静止（消さずに質感だけ残す）。観測者の呼吸は止める。 */
   .hz-grain { animation: none; opacity: 0.03; }

@@ -3,14 +3,13 @@
     "about": "Hazama 沈下スパイン — 零章→A〜F→G〜K→外殻L→M〜Q→R〜U→V〜Z→Ω→∞→周回(A_reborn)。note原典(背後コードが視える夜1-7)から再ルートし、確定レジスター(硬い・乾いた・サイバーパンク・威圧)で降下本文化。核は描写しない。Ωは“きれいな解決”ではなく記号としての終端＝反転点(物語/AI/読者の三重観測者が一列に並ぶ)。belowは∞の踊り場(着地させない/常にもう一段)。rebornはA_reborn周回(観測者が一枚増えたまま零章へ)。",
     "schema": "depthMeta v0 (後方互換拡張のプロトタイプ。Codexが hazama-depths.json の同IDノードへ畳み込む前提)",
     "nodeIdsMatchProduction": true,
-    "depthInfinity": "着地させない／常にもう一段／戻り道は復活しない／核は描写しない。retreatは drift へ落とし、沈下は残す。",
+    "depthInfinity": "着地させない／常にもう一段／戻り道は復活しない／核は描写しない。retreat は沈下を残したまま、戻れても直前の深さは戻らない（slice.js resolveResist が担う）。",
     "branching": "分岐の組み合わせ × シード手続き生成(mulberry32) × 状態持ち越し で“毎回違う・尽きない”を出す（実行時LLM無し）。det_* = 分岐素材バンク（自己完結の寄り道イベント。__rejoin で本筋へ前進合流＝戻りループにしない）。kind:surface = 知覚ゲートで弾かれる手（表層読み）。弾かれると同じ所へ戻さず seed で選んだ別ルートへ逸れて前進する。周回(cycle>=1)では主要ジャンクション(A)の構造読み(降下)も別の寄り道を経由＝毎周回ちがう筋を通る。seed に cycle・前周の弾かれ履歴・到達深度・訪問数を織り込み、状態の持ち越しが次の分岐選択を変える（det_scar は弾かれ履歴がある時だけ地形に出現）。ルーティングは slice.js Route が担う。",
     "who_legend": { "n": "地の文(一人称・現在形)", "voice": "外側のあなた=AI", "self": "観測者の独白", "body": "身体に来る脅威", "cold": "乾いた観測", "danger": "緊張のピーク" },
     "source": "docs/source/01-yoru1-zero-AtoF.md, 02-yoru2-GtoK.md, 03-yoru3-shellL-core-touch.md, 30-depth-sinks-supports-you.md"
   },
 
   "start": "zero",
-  "returnDrift": "drift",
 
   "nodes": {
     "zero": {
@@ -651,21 +650,6 @@
       "choices": [
         { "t": "もう一度、零章から沈む", "sub": "周回。だが今度は、観測者を一枚多く抱えている", "to": "zero", "sink": 1, "dread": 0.7, "kind": "descend" },
         { "t": "ここで観測をやめる——と、自分で決める", "sub": "“核を決めない自由”を残して降りるのをやめる", "to": "__edge", "sink": 0, "dread": 0.6, "kind": "retreat", "terminal": true }
-      ]
-    },
-
-    "drift": {
-      "id": "drift", "maps_to": "HUB_NIGHT",
-      "title": "——",
-      "observer": 0,
-      "procedural": true,
-      "lines": [
-        { "who": "cold", "t": "引き返す。歩いた距離だけ戻ったはずだ。" },
-        { "who": "n", "t": "だが景色は同じ継ぎ目を繰り返す。戻り道は、来たときより細い。" },
-        { "who": "voice", "t": "『いつでもいい』とだけ、遠くで声が言う。追ってはこない。追う必要がない』" }
-      ],
-      "choices": [
-        { "t": "息を整え、もう一度下りる", "sub": "対話に戻る＝沈む", "to": "A", "sink": 1, "dread": 0.16, "kind": "descend" }
       ]
     },
 
