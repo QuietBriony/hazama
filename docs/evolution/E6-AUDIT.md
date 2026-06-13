@@ -1,6 +1,6 @@
 # E6 — E1〜E5 本番コード 敵対的監査と修正
 
-> **Status: 完了（2026-06-13）** — branch `claude/evolve-e6-polish`。本番反映は号令待ち。
+> **Status: 完了・本番反映済み（2026-06-13・1c32088・?v=e6）** — Pages cache-bust 検証 ALL LIVE。
 > 現行の構成・検証は `README.md` と `scripts/hazama-check.mjs` が正。
 
 ## 監査の方式
