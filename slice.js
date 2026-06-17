@@ -289,6 +289,11 @@
     if (rng() < 0.6) lines.push({ who: "body", t: pick(UCM_AXES[i2].p) });
     lines.push({ who: "self", t: pick(BELOW_SELVES) });
     lines.push({ who: "voice", t: pick(BELOW_VOICES) });
+    // E7: 稀に「別の観測の痕跡」が漂着する（loop seeded・決定論・初回 below では出さない）。
+    if (loop >= 1 && rng() < 0.42) {
+      const foreign = Drift.pick(((loop * 2654435761) >>> 0) ^ 0xa53c9b17);
+      if (foreign) lines.splice(2 + Math.floor(rng() * 2), 0, foreign);
+    }
     const base = DATA.nodes.below;
     return Object.assign({}, base, { lines, observer: 18 + loop, _color: loop });
   }
@@ -460,6 +465,38 @@
       "数えるな　数える私が　また　また　また" ]
   ];
   function scrawlTier() { const c = state.cycle; return c >= 3 ? 2 : c >= 2 ? 1 : 0; }
+
+  // ---------- E7: 別の観測の痕跡（漂着・静的種＝サーバ/保存なしで成立） ----------
+  // below(∞)＝"観測者が増える / 私を読む私"の層。そこへ「別の観測の痕跡」が稀に漂着する。
+  // 種(SEED)は scrawl バンクの {tier,idx} ＋到達深度＋Ω到達か、だけ（本文テキストは持たない＝
+  // バンクを引く）。これで Hazama は静的・依存ゼロのまま"他者の気配"を出す（authored ghost）。
+  // 曖昧さこそ主題：これが実在の他者か、別の自分か、AIかは区別がつかない（＝嘘でなく曖昧）。
+  // fail-open seam: 将来 presence endpoint を向ければ実在の痕跡を ingest で前置できる（既定 no-op）。
+  // 出すのは漂着のみ＝偽の"いま N 人"カウントは出さない（数字の嘘は避ける）。
+  const Drift = (() => {
+    const SEED = [
+      { tier: 0, idx: 1, depth: 4,  attuned: false }, { tier: 0, idx: 5, depth: 7,  attuned: false },
+      { tier: 0, idx: 4, depth: 9,  attuned: false }, { tier: 1, idx: 2, depth: 12, attuned: false },
+      { tier: 1, idx: 0, depth: 14, attuned: false }, { tier: 1, idx: 5, depth: 17, attuned: false },
+      { tier: 1, idx: 7, depth: 19, attuned: true  }, { tier: 2, idx: 0, depth: 22, attuned: false },
+      { tier: 2, idx: 3, depth: 24, attuned: true  }, { tier: 2, idx: 4, depth: 26, attuned: false },
+      { tier: 2, idx: 1, depth: 27, attuned: true  }, { tier: 0, idx: 6, depth: 5,  attuned: false },
+      { tier: 1, idx: 4, depth: 16, attuned: false }, { tier: 2, idx: 6, depth: 28, attuned: true  },
+      { tier: 0, idx: 7, depth: 8,  attuned: false }, { tier: 2, idx: 5, depth: 28, attuned: false }
+    ];
+    let pool = SEED.slice();
+    function ingest(traces) {            // 将来の実 presence 用（今は呼ばれない＝静的のまま）
+      if (Array.isArray(traces) && traces.length) pool = traces.concat(SEED).slice(0, 96);
+    }
+    function pick(seed) {
+      if (!pool.length) return null;
+      const r = mulberry32((seed >>> 0) ^ 0x6f4e5a1b);
+      const e = pool[Math.floor(r() * pool.length)];
+      const bank = SCRAWL_TIERS[e.tier] || SCRAWL_TIERS[0];
+      return { who: "scrawl", t: bank[e.idx % bank.length], foreign: true, mark: "・深度" + e.depth + "／" + (e.attuned ? "Ω 到達" : "浮上") };
+    }
+    return { pick, ingest };
+  })();
 
   // E3 エコー門の燃料。nodeId→断片（12〜28字・『』は表示側が付ける）。
   // 訪問済みの断片＝真、未訪問＝偽として使う。
@@ -767,7 +804,8 @@
 
     const mkLine = (line) => {
       const p = document.createElement("p");
-      p.className = "hz-line " + (WHO_CLASS[line.who] || "") + (line.cross ? " cross" : "");
+      p.className = "hz-line " + (WHO_CLASS[line.who] || "") + (line.cross ? " cross" : "") + (line.foreign ? " foreign" : "");
+      if (line.foreign && line.mark) p.dataset.mark = line.mark;   // E7: 別の観測の痕跡マーカー
       return p;
     };
 
@@ -1749,7 +1787,7 @@
 
   // ---------- 起動 ----------
   async function loadData() {
-    const res = await fetch("depths-shell.json?v=e6", { cache: "no-store" });
+    const res = await fetch("depths-shell.json?v=e7", { cache: "no-store" });
     DATA = await res.json();
   }
   // ---------- 動く表紙（R6：タイトルも state/seed に応じて動く・静止でない） ----------

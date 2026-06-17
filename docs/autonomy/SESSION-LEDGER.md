@@ -19,6 +19,22 @@ Hazama 自律開発 session の追記専用ログ。
 
 ---
 
+## 2026-06-13 — 進化 E7: 別の観測の痕跡（漂着・静的種＝サーバ/保存なし）
+- agent      : Fable（精密・本番隣接のため外注なし）
+- goal       : 「本物の観測者」札を **Hazama の純度を一切崩さず**に出す（D1/サーバ不要の①）。
+  branch `claude/evolve-e7-drift`・master 無変更
+- decision    : ユーザー問い「D1で保存する/ただの演出？」→ 3択提示（①演出=静的種/②実刹那/③実蓄積=D1要）。
+  推奨①＝authored ghost（曖昧こそ主題・静的依存ゼロ維持）。偽の"いま N 人"カウントは出さない（数字の嘘回避）。
+- shipped     : slice.js `Drift`（種16・scrawl バンク {tier,idx}+深度+attuned のみ・本文はネット非送）＋
+  below(∞) へ稀に漂着（loop seeded 0.42・初回除く）＋mkLine foreign クラス＋`Drift.ingest` fail-open seam（将来
+  Cloudflare DO/D1 へ昇格可）。slice.css 別の手の色＋「― 別の観測の痕跡 ―」マーカー。smoke 5件追加。`?v=e7`
+- proto       : presence の実バックエンド試作は別dir `C:\workspace\hazama-presence-proto`（git dc26481・未デプロイ）
+- checks      : hazama-check 2 PASS / 0 FAIL＋実ブラウザ（below で foreign 漂着・accent 別の手色・marker・
+  決定論・console error 0）。reduced-motion 安全（新アニメ無し）
+- backlog     : —。次の選択＝そのまま①で本番／後で③（実 presence）へ昇格（ユーザー判断）
+- next        : ユーザー号令で master 反映
+- blockers    : master 反映は号令待ち
+
 ## 2026-06-13 — 進化 E6: 敵対的監査と修正（多エージェント・cheap-tier）
 - agent      : Fable(ワークフロー設計・確定 finding の精密修正・検証) + sonnet×52(監査/反証)
 - goal       : E1〜E5 本番コードを多エージェント敵対的監査で全数走査し、確定バグを修正

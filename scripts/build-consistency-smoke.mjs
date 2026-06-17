@@ -73,6 +73,13 @@ has(js, "surfaceErosion", "E3 surface erosion (recognition strips)");
 has(js, "renderEchoChoices", "E3 echo gate renderer");
 has(js, "ECHO_GATES", "E3 echo gate nodes");
 
+// E7: 別の観測の痕跡（漂着・静的種・サーバ/保存なし）。fail-open seam(ingest)＋曖昧マーカー＋冷たい別の手。
+has(js, "const Drift", "E7 drift module");
+has(js, "foreign: true", "E7 foreign trace flag");
+has(js, "function ingest", "E7 fail-open ingest seam");
+assert(css.includes(".hz-line.scrawl.foreign"), "E7 foreign scrawl style");
+assert(css.includes("別の観測の痕跡"), "E7 ambiguous drift marker (not a fake live count)");
+
 // E5: 視覚の磨きとパターン変化（A1 surfaced / A4 phase-break / B1 focus / B3 title / B4 cycle）。
 // css に新層・状態・a11y・タイトル擬似要素が立ち、dead CSS(.hz-tl-c) は回収済みであること。
 has(css, "body.surfaced", "E5/A1 surfaced wash style");

@@ -114,6 +114,10 @@ Codex / Claude Code が同じ順番で作業を継続するための薄いエン
   確定 15 件を修正（reduced-motion 漏れ3・gate-enter focus・aria-live 過多読み上げ・drift 死蔵
   ノード撤去・残留 glitch クラス・表紙 interval・smoke 契約3）。核心ロジックはバグゼロ。
   記録は `docs/evolution/E6-AUDIT.md`（`?v=e6`）
+- **進化 E7（2026-06）**: 別の観測の痕跡（漂着）— below(∞) に「別の観測の痕跡」が稀に漂着する
+  （静的種＝サーバ/保存なし・依存ゼロのまま・authored ghost）。実在の他者か別の自分かは区別がつかない
+  ＝曖昧こそ主題。冷たい別の手の色＋「― 別の観測の痕跡 ―」マーカー。偽の"いま N 人"カウントは出さない。
+  `Drift.ingest` は将来の実 presence（Cloudflare DO / D1 など）への fail-open seam（`?v=e7`）
 
 ## Status / Rules
 
