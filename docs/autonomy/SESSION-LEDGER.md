@@ -19,6 +19,19 @@ Hazama 自律開発 session の追記専用ログ。
 
 ---
 
+## 2026-06-13 — 進化 E8: 漂着を届かせる（below 限定→深い降下＋戻り表紙）
+- agent      : Fable（精密・本番隣接のため外注なし）
+- goal       : E7 の漂着は below(∞) 限定で大多数のプレイヤーが一度も見なかった。深い降下中と戻り表紙へ広げる。
+  branch `claude/evolve-e8-drift-reach`・master 無変更
+- shipped     : slice.js `maybeForeignDrift`（below 以外・rank≥9・0.12・worldSeed 決定論・**原典 DATA.nodes を
+  汚さないようコピーへ splice**＝applyCycle が初回 base を返す穴を回避）＋戻り観測者の表紙 `.hz-gate-drift`。
+  slice.css 表紙痕跡スタイル＋reduced-motion 静止。smoke 3件追加。`?v=e8`
+- checks      : hazama-check 2 PASS / 0 FAIL＋実ブラウザ（node U/rank21 で mid-descent 漂着・accent 色・marker・
+  戻り表紙の漂着描画・console error 0）。reduced-motion 安全（新アニメ無し）
+- backlog     : —
+- next        : ユーザー号令で master 反映。残提案＝オンボーディング最小ヒント／外向き LP（Claude Design 適所）
+- blockers    : master 反映は号令待ち
+
 ## 2026-06-13 — 進化 E7: 別の観測の痕跡（漂着・静的種＝サーバ/保存なし）
 - agent      : Fable（精密・本番隣接のため外注なし）
 - goal       : 「本物の観測者」札を **Hazama の純度を一切崩さず**に出す（D1/サーバ不要の①）。

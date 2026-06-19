@@ -80,6 +80,11 @@ has(js, "function ingest", "E7 fail-open ingest seam");
 assert(css.includes(".hz-line.scrawl.foreign"), "E7 foreign scrawl style");
 assert(css.includes("別の観測の痕跡"), "E7 ambiguous drift marker (not a fake live count)");
 
+// E8: 漂着を below 以外（深い降下中＋戻ってきた表紙）にも届かせる＝大多数のプレイヤーが見える。
+has(js, "function maybeForeignDrift", "E8 mid-descent drift");
+has(js, "hz-gate-drift", "E8 returning-title drift");
+assert(css.includes(".hz-gate-drift"), "E8 gate drift style");
+
 // E5: 視覚の磨きとパターン変化（A1 surfaced / A4 phase-break / B1 focus / B3 title / B4 cycle）。
 // css に新層・状態・a11y・タイトル擬似要素が立ち、dead CSS(.hz-tl-c) は回収済みであること。
 has(css, "body.surfaced", "E5/A1 surfaced wash style");

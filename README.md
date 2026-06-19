@@ -118,6 +118,9 @@ Codex / Claude Code が同じ順番で作業を継続するための薄いエン
   （静的種＝サーバ/保存なし・依存ゼロのまま・authored ghost）。実在の他者か別の自分かは区別がつかない
   ＝曖昧こそ主題。冷たい別の手の色＋「― 別の観測の痕跡 ―」マーカー。偽の"いま N 人"カウントは出さない。
   `Drift.ingest` は将来の実 presence（Cloudflare DO / D1 など）への fail-open seam（`?v=e7`）
+- **進化 E8（2026-06）**: 漂着を届かせる — E7 は below(∞) 限定で大多数が見なかったため、深い降下中
+  （rank≥9・稀・worldSeed 決定論）と戻ってきた観測者の表紙にも漂着を広げた。原典は汚さない（コピーへ splice）。
+  reduced-motion 安全（`?v=e8`）
 
 ## Status / Rules
 

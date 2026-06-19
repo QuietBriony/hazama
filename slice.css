@@ -559,6 +559,15 @@ body.peeling .hz-peel { visibility: visible; animation: hz-peel-sweep .62s cubic
   font-family: system-ui, sans-serif; font-size: 0.62rem; letter-spacing: 0.04em;
   color: var(--ink-faint); transform: rotate(-0.5deg); opacity: 0.85;
 }
+/* E8: 戻ってきた観測者の表紙に漂う痕跡（別の観測＝あなたは最初の一人ではない）。静止・控えめ。 */
+.hz-gate-drift {
+  margin: 1.8em auto 0; max-width: 22em;
+  color: var(--accent); opacity: 0.6;
+  font-family: "Hiragino Maru Gothic ProN", "Yu Gothic", "Comic Sans MS", system-ui, sans-serif;
+  font-size: 0.9rem; line-height: 1.7; letter-spacing: 0.03em;
+  transform: rotate(-0.4deg);
+}
+.hz-gate-drift-mark { font-family: system-ui, sans-serif; font-size: 0.6rem; color: var(--ink-faint); letter-spacing: 0.04em; opacity: 0.85; }
 
 /* ---------- 選択肢の手マーク（descend＝戴冠の沈降 / retreat＝消し込まれた戻り道） ---------- */
 .hz-choice { position: relative; }
@@ -643,6 +652,7 @@ body.glitch-hard .hz-gate-title::after  { animation: hz-tl-after-glitch .18s ste
   body.glitch-soft .hz-bg, body.glitch-hard .hz-bg { animation: none; }
   body.peeling .hz-peel { animation: none; visibility: hidden; }
   .hz-line.scrawl { transform: none; }
+  .hz-gate-drift { transform: none; }   /* E8: 表紙の漂着も静止に揃える */
   /* B3: タイトルの RGB 呼吸は停止＝静止 ±1px（薄く）。グリッジ・バーストでも裂けない。 */
   .hz-gate-title::before { animation: none; transform: translate(-1px,-1px); color: rgba(216,68,46,0.32); }
   .hz-gate-title::after  { animation: none; transform: translate(1px,1px);  color: rgba(10,186,181,0.30); }

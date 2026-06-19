@@ -762,6 +762,22 @@
     root.setProperty("--cycle-pan", (c === 0 ? 0 : ((c * 13) % 9) - 4) + "%");
   }
 
+  // E8: below(∞) 以外の深い層へも稀に「別の観測の痕跡」を漂着させる＝Ωまで潜らない大多数にも届かせる
+  // （E7 は below 限定だった）。浅い導入(rank<9＝境界が融ける手前)は守る。worldSeed 決定論＝同じ状態は
+  // 同じ出現（再描画でちらつかない）。原典を汚さないため必ず lines のコピーへ splice して新ノードを返す。
+  function maybeForeignDrift(id, node) {
+    if (id === "below" || (state.rank || 0) < 9 || !node.lines) return node;
+    const v = state.visits[id] || 1;
+    const g = mulberry32((worldSeed() ^ hashStr("drift8:" + id) ^ Math.imul(v, 0x9e3779b9)) >>> 0);
+    if (g() >= 0.12) return node;                                  // 稀（深い層の通過で時折ひとつ）
+    const foreign = Drift.pick((worldSeed() ^ hashStr("drift8pick:" + id) ^ Math.imul(v, 0x85ebca6b)) >>> 0);
+    if (!foreign) return node;
+    const lines = node.lines.slice();
+    const at = Math.min(lines.length, 1 + Math.floor(g() * Math.max(1, lines.length - 1)));
+    lines.splice(at, 0, foreign);
+    return Object.assign({}, node, { lines });                     // 新オブジェクト＝原典 DATA.nodes を汚さない
+  }
+
   // ---------- slow-reveal レンダラ ----------
   function renderNode(id) {
     let node = DATA.nodes[id];
@@ -786,6 +802,7 @@
     state.steps++;
     if (typeof RANK[id] === "number") state.rank = RANK[id]; // 未登録ノードは直前の深さを保つ
     if (state.rank > state.legacy.maxRank) state.legacy.maxRank = state.rank; // 到達深度を持ち越す
+    node = maybeForeignDrift(id, node);   // E8: 深い降下中にも稀に別の観測の痕跡が漂着（below 以外）
     if (typeof node.observer === "number" && node.observer > 0) state.observer = Math.max(state.observer, node.observer);
     applyAtmosphere(node);
     Spiral.save();   // 状態確定後に spiral 層を書く＝どこで閉じても周回/認識/痕跡は残る
@@ -1787,7 +1804,7 @@
 
   // ---------- 起動 ----------
   async function loadData() {
-    const res = await fetch("depths-shell.json?v=e7", { cache: "no-store" });
+    const res = await fetch("depths-shell.json?v=e8", { cache: "no-store" });
     DATA = await res.json();
   }
   // ---------- 動く表紙（R6：タイトルも state/seed に応じて動く・静止でない） ----------
@@ -1869,6 +1886,20 @@
     if (returning) {
       const sub = document.querySelector(".hz-gate-sub");
       if (sub) sub.innerHTML = "また、来た。<br>入口は、前より一段、深い。";
+      // E8: 戻ってきた観測者の表紙に、別の観測の痕跡がひとつ漂う（種・決定論＝あなたは最初の一人ではない）。
+      const foreign = Drift.pick((worldSeed() ^ 0x7a3b1c9d) >>> 0);
+      const inner = document.querySelector(".hz-gate-inner");
+      if (foreign && inner) {
+        const p = document.createElement("p");
+        p.className = "hz-gate-drift";
+        p.textContent = "「" + foreign.t + "」";
+        const m = document.createElement("span");
+        m.className = "hz-gate-drift-mark";
+        m.textContent = "― 別の観測の痕跡 " + foreign.mark + " ―";
+        p.appendChild(document.createElement("br"));
+        p.appendChild(m);
+        inner.appendChild(p);
+      }
     }
     titleAmbient(returning);   // 表紙を動かす（反転ガーデン＋グリッジ＋原色 leak をゲート背後で薄く生かす）
     // 「沈む」の実タップ＝同一document の手勢。この中で enter()→Audio.start()→resume() が走る
