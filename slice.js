@@ -865,8 +865,28 @@
     }, choiceDelay);
   }
 
+  // E9: 初回オンボーディング（一度きり・没入を壊さない最小ヒント）。
+  // 最初の「どう読むか」の岐路（descend と surface が並ぶノード）で、地の声を一行だけ。
+  // 一度見たら以後ずっと出ない（hazama_onboarded_v1 で永続＝忘却しても"人"は読み方を学んだまま）。
+  // spiral schema は不変（別キー・fail-open＝localStorage 不可でも boot は止まらない）。
+  const ONBOARD_KEY = "hazama_onboarded_v1";
+  let onboarded = (() => { try { return localStorage.getItem(ONBOARD_KEY) === "1"; } catch (e) { return false; } })();
+  let onboardPending = false;   // ヒントを出した→次の選択で onboarded を確定
+  function markOnboarded() { onboarded = true; onboardPending = false; try { localStorage.setItem(ONBOARD_KEY, "1"); } catch (e) {} }
+  function onboardHint(node) {
+    if (onboarded || state.cycle !== 0) return;
+    const kinds = (node.choices || []).map((c) => c.kind);
+    if (!(kinds.includes("descend") && kinds.includes("surface"))) return; // 最初の読みの岐路だけ
+    onboardPending = true;
+    const p = document.createElement("p");
+    p.className = "hz-onboard";
+    p.textContent = "——どう読むかで、どこまで降りられるかが決まる。深く読むほど、深く。";
+    choicesEl.appendChild(p);    // choices の先頭＝ボタンの上
+  }
+
   function renderChoices(node) {
     choicesEl.innerHTML = "";
+    onboardHint(node);           // E9: 初回だけ、最初の読みの岐路に一行
     (node.choices || []).forEach((c, idx) => {
       const btn = document.createElement("button");
       btn.type = "button";
@@ -969,6 +989,7 @@
   function sinkNorm() { return Math.min(1, state.sink / SINK_SCALE); }
 
   function choose(c) {
+    if (onboardPending) markOnboarded();   // E9: ヒントを見て選んだ＝以後ずっと出さない
     if (c.kind === "retreat" && !c.terminal) return resolveResist(c);
     gainRecognition(c);  // E3: 深い構造読み(deep descend)で育ち／表層(surface)で剥がれる
     state.sink += c.sink || 0;
@@ -1804,7 +1825,7 @@
 
   // ---------- 起動 ----------
   async function loadData() {
-    const res = await fetch("depths-shell.json?v=e8", { cache: "no-store" });
+    const res = await fetch("depths-shell.json?v=e9", { cache: "no-store" });
     DATA = await res.json();
   }
   // ---------- 動く表紙（R6：タイトルも state/seed に応じて動く・静止でない） ----------

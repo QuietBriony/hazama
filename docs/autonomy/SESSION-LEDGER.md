@@ -19,6 +19,19 @@ Hazama 自律開発 session の追記専用ログ。
 
 ---
 
+## 2026-06-13 — 進化 E9: 初回オンボーディング最小ヒント（完走率レバー）
+- agent      : Fable（精密・本番隣接のため外注なし）
+- goal       : 新規プレイヤーが「読み方が降り方を決める」核心を掴めず離脱する穴を、没入を壊さず最小で塞ぐ。
+  branch `claude/evolve-e8-drift-reach` に E9 として重ねる（未デプロイの E8 と一緒にレビュー/出荷）
+- shipped     : slice.js `onboardHint`＝最初の descend+surface 岐路（=ノードA）で地の声を一行だけ。
+  一度きり（永続キー `hazama_onboarded_v1`・別キーで spiral schema 不変・fail-open）。choose で確定。
+  slice.css `.hz-onboard`（薄いイタリック・下線・静止＝reduced-motion 安全）。smoke 4件追加。`?v=e9`
+- checks      : hazama-check 2 PASS / 0 FAIL＋実ブラウザ（新規プレイヤーで A に出る・選択で永続確定・
+  2つ目の岐路Jで非表示・リロード/別セッションで非表示・cycle≠0 でも非表示・console error 0）
+- backlog     : —
+- next        : ユーザー号令で本番反映（未デプロイ stack ＝ E7(master) → E8 → E9）。LP はデプロイ保留中
+- blockers    : master 反映は号令待ち
+
 ## 2026-06-13 — 進化 E8: 漂着を届かせる（below 限定→深い降下＋戻り表紙）
 - agent      : Fable（精密・本番隣接のため外注なし）
 - goal       : E7 の漂着は below(∞) 限定で大多数のプレイヤーが一度も見なかった。深い降下中と戻り表紙へ広げる。
