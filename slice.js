@@ -912,6 +912,14 @@
       (state.legacy.detoursSeen.includes(key) || state.visits[key]));
   }
 
+  // E10: エコー門が初めて出る瞬間だけ、stakes を一行で示す（一度きり・地の声・永続）。
+  // 結果ビートが本機構を教えるが、選ぶ前に「これは本物の記憶の門」と分かると初見の取りこぼしが減る。
+  // 別キー＝spiral schema 不変・fail-open。忘却しても残す（人は一度学べばよい）。
+  const ECHO_ONBOARD_KEY = "hazama_echo_onboarded_v1";
+  let echoOnboarded = (() => { try { return localStorage.getItem(ECHO_ONBOARD_KEY) === "1"; } catch (e) { return false; } })();
+  let echoOnboardPending = false;
+  function markEchoOnboarded() { echoOnboarded = true; echoOnboardPending = false; try { localStorage.setItem(ECHO_ONBOARD_KEY, "1"); } catch (e) {} }
+
   // E3 エコー門: 通常 choices の代わりに、降下の記憶（断片）を真偽混合で問う。
   // 選抜・並びは worldSeed^hashStr("echo:"+id) の mulberry32 で決定論（同じ周回・状態なら同じ門）。
   // 真＝訪問済み(detoursSeen 優先, なければ visits)から1つ／偽＝未訪問から2つ。クリックで結果ビート→通常 choices。
@@ -938,6 +946,13 @@
     intro.className = "hz-line cold shown";
     intro.textContent = "——降下の記憶を、指でなぞる。どれを、視た。";
     sceneEl.appendChild(intro); Follow.stick();
+    if (!echoOnboarded) {   // E10: 初回だけ、選ぶ前に stakes を一行
+      echoOnboardPending = true;
+      const g = document.createElement("p");
+      g.className = "hz-line cold shown hz-onboard-echo";
+      g.textContent = "——視たものだけが、ここを通る。借り物の記憶は、効かない。";
+      sceneEl.appendChild(g); Follow.stick();
+    }
 
     choicesEl.innerHTML = "";
     const mk = (lead, extraClass, fn) => {
@@ -961,6 +976,7 @@
   // エコー門の結果（クリック時）: 周回内発火を記録し、真/偽/逸らしの結果ビートを sceneEl へ挿す。
   // truth===true 真 / false 偽 / null 逸らし。結果後 600ms で通常 choices（深度遷移はしない）。
   function echoResolve(node, id, truth) {
+    if (echoOnboardPending) markEchoOnboarded();   // E10: 初回グロスを見て選んだ＝以後出さない
     state.echoDone[id] = state.cycle;
     setBusy(true);                     // E6: 結果ビート→choices が出揃うまで SR を抑制
     const myToken = ++revealToken;     // 結果ビート以降の遅延描画をこのトークンで守る
@@ -1825,7 +1841,7 @@
 
   // ---------- 起動 ----------
   async function loadData() {
-    const res = await fetch("depths-shell.json?v=e9", { cache: "no-store" });
+    const res = await fetch("depths-shell.json?v=e10", { cache: "no-store" });
     DATA = await res.json();
   }
   // ---------- 動く表紙（R6：タイトルも state/seed に応じて動く・静止でない） ----------

@@ -278,6 +278,8 @@ body.surfaced .hz-scanline { opacity: 0.04; transition: opacity 2.5s ease; }
   letter-spacing: 0.03em; text-align: center; font-style: italic; opacity: 0.82;
   border-bottom: 1px solid rgba(127,182,196,0.12);
 }
+/* E10: エコー門の初回グロス（地の声・一度きり）。本文より一段薄く・伊体で"傍白"と分かる。 */
+.hz-onboard-echo { font-style: italic; opacity: 0.78; }
 
 /* シーン本文：ここが内部スクロール領域。choices とは別トラックなので本文がボタンに被らない。
    ::before の margin-top:auto で「本文が短い時は下寄せ（沈下の手触り）／長い時は上から素直にスクロール」

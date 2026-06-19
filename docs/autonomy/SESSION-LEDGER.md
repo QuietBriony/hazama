@@ -19,6 +19,19 @@ Hazama 自律開発 session の追記専用ログ。
 
 ---
 
+## 2026-06-13 — 進化 E10: エコー門の初回グロス（一度きり・stakes 提示）
+- agent      : Fable（精密・本番隣接のため外注なし）
+- goal       : エコー門が初めて出る時、選ぶ前に「本物の記憶の門」だと分かるよう stakes を一行（初見の取りこぼし減）。
+  branch `claude/evolve-e8-drift-reach` に E10 として積層（E8/E9 と一緒に）
+- shipped     : slice.js renderEchoChoices に初回だけグロス「——視たものだけが、ここを通る。借り物の記憶は、効かない。」、
+  echoResolve で確定。別キー `hazama_echo_onboarded_v1`（spiral schema 不変・fail-open・忘却しても残す）。
+  門の発火条件(ECHO_GATES/echoDone/echoTruthAvail)には不干渉。slice.css `.hz-onboard-echo`（伊体・薄）。smoke 3件。`?v=e10`
+- checks      : hazama-check 2 PASS / 0 FAIL＋実ブラウザ（Q 初回でグロス→選択で永続確定→Z(同セッション)は門出るがグロス無し→
+  リロード(別セッション)でも門出るがグロス無し→console error 0）
+- backlog     : —。残提案＝音の軸色(human-gate・要・人間の耳)／LP OG カード 1200×630（次に着手）
+- next        : ユーザー号令で本番反映（未デプロイ stack ＝ E7(master) → E8 → E9 → E10）
+- blockers    : master 反映は号令待ち／音は human-gate
+
 ## 2026-06-13 — 進化 E9: 初回オンボーディング最小ヒント（完走率レバー）
 - agent      : Fable（精密・本番隣接のため外注なし）
 - goal       : 新規プレイヤーが「読み方が降り方を決める」核心を掴めず離脱する穴を、没入を壊さず最小で塞ぐ。

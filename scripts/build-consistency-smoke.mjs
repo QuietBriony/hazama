@@ -90,7 +90,12 @@ has(js, "function onboardHint", "E9 onboarding hint");
 has(js, '"hazama_onboarded_v1"', "E9 onboarding persist key");
 assert(css.includes(".hz-onboard"), "E9 onboarding style");
 // オンボーディングは別キー＝spiral 層には混ぜない（save に紛れたら fail）。
-assert(!saveBody.includes("onboard"), "E9 onboarding must not be in spiral save");
+assert(!saveBody.includes("onboard"), "E9/E10 onboarding must not be in spiral save");
+
+// E10: エコー門の初回グロス（一度きり・別キー永続）。
+has(js, '"hazama_echo_onboarded_v1"', "E10 echo onboarding persist key");
+has(js, "視たものだけが、ここを通る", "E10 echo gloss line");
+assert(css.includes(".hz-onboard-echo"), "E10 echo gloss style");
 
 // E5: 視覚の磨きとパターン変化（A1 surfaced / A4 phase-break / B1 focus / B3 title / B4 cycle）。
 // css に新層・状態・a11y・タイトル擬似要素が立ち、dead CSS(.hz-tl-c) は回収済みであること。
