@@ -19,6 +19,23 @@ Hazama 自律開発 session の追記専用ログ。
 
 ---
 
+## 2026-06-19 — 進化 E11: E7-E10 敵対的監査＋確定修正（reduced-motion 取りこぼし）
+- agent      : Opus 4.8（管理・精密）＋ Workflow（sonnet finders・opus verifiers／agent 11体・46万tok）
+- goal       : E8-E10 本番反映（4f63fc8・?v=e10）直後、E6 監査対象外だった E7-E10（drift reach/onboarding/echo gloss）を
+  敵対的監査で裏取り。委任草稿ベースのため a11y/reduced-motion/死蔵の取りこぼしを狙う（E6 の学び）
+- shipped     : slice.css @media(prefers-reduced-motion) に `.hz-line.scrawl.foreign, …::after { transform:none }` を追加
+  ＝漂着行の傾きが reduced-motion で残る取りこぼしを是正（`.scrawl.foreign` 詳細度 0,3,0 が `.scrawl` reset 0,2,0 より
+  高く @media 外で勝っていた／`.hz-gate-drift` は L666 で是正済みだった兄弟漏れ）。version e10→e11 同期（css/js/depths/sw）。`?v=e11`
+- checks      : hazama-check 2 PASS / 0 FAIL＋実ブラウザ（CSSOM で @media 内 foreign transform:none 確認・通常モードで
+  rotate(0.5deg)/(-0.5deg) 保持＝回帰なし・::after マーカー描画 OK・console error 0）
+- audit       : raised 3 → 確定1（上記・nit/minor）。反証2件（"PRNG ストリーム再利用"＝決定論で再描画再現・
+  "foreign ::after の SR 読み"＝by-design）。critic gaps は by-design 確認（forgetAll は onboarding 非リセット＝
+  "人は読み方を学んだまま"が意図／drift mark 浅深度＝曖昧さが主題／reload-mid-gate＝"一度の完了で onboarded"）。
+  不採用1: E9 hint の #choices 配置（E10 と非対称・nit・投票割れ）＝relocation リスク>便益で見送り
+- backlog     : —。残＝音の軸色(human-gate)／LP デプロイ(固まってから)／実 presence 昇格(アカウント作業)
+- next        : ユーザー号令で本番反映（未デプロイ ＝ E10(master 4f63fc8) → E11）
+- blockers    : master 反映は号令待ち（無人 push 禁止）／音は human-gate
+
 ## 2026-06-13 — 進化 E10: エコー門の初回グロス（一度きり・stakes 提示）
 - agent      : Fable（精密・本番隣接のため外注なし）
 - goal       : エコー門が初めて出る時、選ぶ前に「本物の記憶の門」だと分かるよう stakes を一行（初見の取りこぼし減）。

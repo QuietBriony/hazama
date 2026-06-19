@@ -127,6 +127,11 @@ Codex / Claude Code が同じ順番で作業を継続するための薄いエン
 - **進化 E10（2026-06）**: エコー門の初回グロス — 門が初めて出る時だけ stakes を一行「——視たものだけが、
   ここを通る。借り物の記憶は、効かない。」。一度きり（`hazama_echo_onboarded_v1`）・門の発火自体には不干渉・
   reduced-motion 安全（`?v=e10`）
+- **進化 E11（2026-06・監査ハードニング）**: E7〜E10 を敵対的監査（多エージェント・review 4次元→懐疑者2体で反証→
+  完全性 critic）。determinism/persistence/原典不変/once-logic の核は健全（"PRNG ストリーム再利用"等は反証）。
+  確定修正は1件＝reduced-motion で**漂着行（`.hz-line.scrawl.foreign`）の傾きが残る取りこぼし**を是正
+  （`.scrawl.foreign` の詳細度が `.scrawl` reset より高く @media 外で勝っていた・`.hz-gate-drift` は是正済みだった兄弟漏れ）。
+  by-design 確認: forgetAll は onboarding キーを消さない（"人は読み方を学んだまま"＝意図的）（`?v=e11`）
 
 ## Status / Rules
 
