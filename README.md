@@ -141,6 +141,17 @@ Codex / Claude Code が同じ順番で作業を継続するための薄いエン
   ひと目で同じに見える非対称が残っていた。画面 `body.omega` と対の手触りを 1080×1350 にも届ける＝
   Ω 極：**底から核の軸光・曼荼羅中心の核グロー（§4-1「核は描かない」が消えるのは Ω に届いた時だけ）**／
   浮上極：**上からの軸光・退いた奈落色**。決定論（worldSeed のみ）は維持（`?v=e13`）
+- **進化 E14（2026-06・確定 patch 群）**: scout workflow（4 レンズ・5 agent・49万tok）が出した 12 候補→
+  判定で do-now 8件を一気に積む。
+  ①「すべて忘れる」が無音・無演出で即 restart していた＝ゲーム内最大不可逆操作（spiral 全消去）と
+  「縁から、もう一度沈む」(Audio.pulseOnce) の対称欠落を是正＝忘却の破断ビート＋`Audio.glitchHit(0.6)`＋
+  1.4s 遅延 restart。②エコー門 Q と Z が同一文面だった＝Z（外殻最終・Ω 直前）の intro/skip/真偽ビートを差分化。
+  ③`SURFACE_LINES` を sank 分岐＝深く潜って戻った者と浅く戻った者で帰し方を変える（Ω 側 sankLines/heldLines と対称）。
+  ④`ECHO_BANK` 中盤深度 +5（G/I/O/R/W）＝Q/Z の真候補プールが中盤を取りこぼさない（≥20）。
+  ⑤reveal 中の choices 暴発タップ防止＝appear タイマー前は `disabled=true`、`in` クラス付与と同時に false。
+  ⑥`.hz-choice.descend/.surface` の hover が種別色（鉄錆／赤の点線）を青緑で上書きしていた＝個別保持。
+  ⑦`.hz-chip` タッチ目標 WCAG 2.5.5（44×44px）を `min-height` で確保。
+  ⑧`.hz-onboard / .hz-onboard-echo` の日本語合成斜体（italic）回避＝normal+palt+optimizeLegibility（`?v=e14`）
 
 ## Status / Rules
 

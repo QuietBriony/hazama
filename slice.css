@@ -298,12 +298,24 @@ body.omega { --ink: #e2ebf1; --accent: #9fd0db; }
    静止（アニメ無し）＝reduced-motion 安全。 */
 .hz-onboard {
   margin: 2px 0 10px; padding-bottom: 8px;
+  /* E14: 日本語フォントへの italic は合成斜体（oblique）でレンダリングがフォント毎に大きく荒れる＝
+     normal に戻し、prop. metrics(palt) で字間を引き締め＋optimizeLegibility／smoothing で
+     暗背景・小サイズ日本語のシャギーを抑える。傍白の階層差は font-size と opacity で出す。 */
   font-size: 0.82rem; line-height: 1.75; color: var(--ink-dim);
-  letter-spacing: 0.03em; text-align: center; font-style: italic; opacity: 0.82;
+  letter-spacing: 0.03em; text-align: center; font-style: normal; opacity: 0.82;
+  font-feature-settings: "palt" 1;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
   border-bottom: 1px solid rgba(127,182,196,0.12);
 }
-/* E10: エコー門の初回グロス（地の声・一度きり）。本文より一段薄く・伊体で"傍白"と分かる。 */
-.hz-onboard-echo { font-style: italic; opacity: 0.78; }
+/* E10: エコー門の初回グロス（地の声・一度きり）。本文より一段薄く・"傍白"と分かる。
+   E14: .hz-line を継承して本文と同サイズになっていた＝font-size を明示し、合成斜体を回避。 */
+.hz-onboard-echo {
+  font-size: 0.82rem; opacity: 0.78;
+  font-style: normal; font-feature-settings: "palt" 1;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+}
 
 /* シーン本文：ここが内部スクロール領域。choices とは別トラックなので本文がボタンに被らない。
    ::before の margin-top:auto で「本文が短い時は下寄せ（沈下の手触り）／長い時は上から素直にスクロール」
@@ -396,9 +408,15 @@ body[data-tension="high"] .hz-scene { animation: hz-shudder 2.6s ease-in-out inf
 @media (hover: hover) {
   .hz-choice:hover { background: rgba(127,182,196,0.10); border-color: rgba(127,182,196,0.4); }
   .hz-choice.retreat:hover { background: rgba(127,182,196,0.05); }
+  /* E14: descend(沈む手＝鉄錆) / surface(弾かれる手＝赤の点線) の種別色を hover で上書きしない＝
+     ポインタを当てた瞬間に色記号が消える非対称を是正。色相は同じで透過度だけ上げる。 */
+  .hz-choice.descend:hover { background: rgba(196,107,90,0.10); border-color: rgba(196,107,90,0.55); }
+  .hz-choice.surface:hover { background: rgba(216,68,46,0.08); border-color: rgba(216,68,46,0.55); }
   .hz-chip:hover { color: var(--ink); border-color: var(--ink-dim); }
   .hz-gate-enter:hover { background: rgba(127,182,196,0.14); }
 }
+/* E14: 暴発タップ防止＝reveal 中の choices は disabled。SR にも明示され、視覚にも僅かな違いを残す。 */
+.hz-choice:disabled, .hz-choice[disabled] { cursor: default; pointer-events: none; }
 .hz-choice:focus-visible, .hz-chip:focus-visible, .hz-gate-enter:focus-visible {
   outline: 2px solid var(--accent); outline-offset: 2px;
 }
@@ -416,7 +434,12 @@ body[data-tension="high"] .hz-scene { animation: hz-shudder 2.6s ease-in-out inf
   background: transparent;
   border: 1px solid var(--line);
   border-radius: 999px;
-  padding: 5px 12px; cursor: pointer;
+  /* E14: タッチ目標 WCAG 2.5.5 (44×44px) を min-height で満たす。padding はそのままに高さだけ確保＝
+     見た目は丸薬のまま、見えないヒット範囲だけ広がる（縁の手触りには影響しない）。 */
+  padding: 5px 12px;
+  min-height: 44px;
+  display: inline-flex; align-items: center;
+  cursor: pointer;
 }
 .hz-chip[aria-pressed="true"] { color: var(--accent); border-color: var(--accent); }
 .hz-chip-quiet { border-color: transparent; }

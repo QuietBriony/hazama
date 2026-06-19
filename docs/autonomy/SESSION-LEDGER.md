@@ -19,6 +19,29 @@ Hazama 自律開発 session の追記専用ログ。
 
 ---
 
+## 2026-06-19 — 進化 E14: scout 判定の確定 patch 8件（忘却の重み・Q/Z 差分・SURFACE 二極・ECHO 中盤・誤タップ防止・hover 種別保持・44px・タイポ）
+- agent      : Opus 4.7（精密・本番隣接のため外注なし）＋ Workflow scout（4 レンズ・sonnet finders・5体・49万tok）
+- goal       : E11-E13 後の「次の磨き」を fan-out で発見→判定→do-now 8件を E14 として一気に積む
+  （8件いずれも完全 autonomy・HARD INVARIANTS 不変・原典 mutation なし・spiral schema 不変）
+- shipped     :
+  - slice.js forgetAll() を「沈む」と対称の重みに＝Spiral.wipe → choicesEl 消去 → cold ビート
+    「——消えた。周回も、認識も、痕跡も。次は、初めてになる。」→ Audio.glitchHit(0.6) → 1.4s 遅延 restart
+  - ECHO_BANK 中盤深度 G/I/O/R/W +5（出典＝depths-shell.json 各ノード本文・12〜18 字）
+  - renderEchoChoices intro/skip と echoResolve 真偽ビートを id==="Z" で差分化（外殻最終/Ω 直前の質感）
+  - SURFACE_LINES を sank 分岐（深く潜って戻った者 vs 浅く戻った者）＝Ω 側 sankLines/heldLines と対称
+  - renderChoices/renderEchoChoices で btn.disabled=true 初期化＋appear タイマーで false＝reveal 中の暴発タップ防止
+  - slice.css @media(hover) に .hz-choice.descend:hover / .surface:hover を個別追加＝種別色保持
+  - .hz-chip min-height:44px + display:inline-flex + align-items:center（WCAG 2.5.5）
+  - .hz-onboard font-style:normal + palt + optimizeLegibility / .hz-onboard-echo に font-size:0.82rem 明示
+  - smoke 契約 +12（ECHO_BANK >=20 / G,I,O,R,W 実在 / forgetAll wipe+glitchHit+遅延 restart+ビート文言 /
+    btn.disabled 双方 / descend/surface hover spec / Z intro & skip / chip 44px / onboard normal+palt）
+- checks      : hazama-check 2 PASS / 0 FAIL＋実ブラウザ（loaded slice.js に 17 マーカー全 true：forgetBeat/
+  glitch/deferred／ECHO G,I,O,R,W／Z intro,skip,true,false／Q 維持／SURFACE sank,not-sank／disabled true,false。
+  CSSOM で descend/surface hover の色保持確認・onboard font-style normal + palt・console error 0）
+- backlog     : —。残＝音の軸色(human-gate)／LP デプロイ(固まってから)／実 presence 昇格(アカウント作業)
+- next        : ユーザー号令で本番反映（未デプロイ ＝ E10(master 4f63fc8) → E11 → E12 → E13 → E14）
+- blockers    : master 反映は号令待ち（無人 push 禁止）／音は human-gate
+
 ## 2026-06-19 — 進化 E13: 縁カード（共有 PNG）の地も二極化（E12 と対）
 - agent      : Opus 4.7（精密・本番隣接のため外注なし／途中 4.8 と切替）
 - goal       : E12 で画面終端は対極になったが、EdgeCard.draw(attuned) は背景 gradient・砂紋・曼荼羅が attuned に

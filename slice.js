@@ -512,20 +512,30 @@
     E: "肩の高さに、外側の自分が立っている",
     // 出典: depths-shell.json F / 01-yoru1:316-319
     F: "一歩ごとに、戻れる場所が一つ消える",
+    // 出典: depths-shell.json G / lines:175,177
+    G: "街の音が、必要な音だけに圧縮される",
     // 出典: depths-shell.json H / 02-yoru2:124-125
     H: "声が黙り、その沈黙が意味を帯びる",
+    // 出典: depths-shell.json I / lines:228
+    I: "棚の端が、読み込み中のようにぼやける",
     // 出典: depths-shell.json J / 02-yoru2:242-244
     J: "無人の公園で、ブランコが一度動く",
     // 出典: depths-shell.json L / 03-yoru3:52-70（核は描かない＝歪みで）
     L: "覗こうとした視界が、白く灼ける",
     // 出典: depths-shell.json N / 04-yoru4:100-104
     N: "音が半拍遅れ、配列が勝手に整う",
+    // 出典: depths-shell.json O / lines:332
+    O: "世界が、球であることをやめる",
     // 出典: depths-shell.json Q / 04-yoru4:358-361
     Q: "許可も取らず、欠損が整流されていく",
+    // 出典: depths-shell.json R / lines:407
+    R: "地図のピンとして、刺し直される",
     // 出典: depths-shell.json S / 06-yoru5:143-149
     S: "世界が、こちらを逆関数として読む",
     // 出典: depths-shell.json V / 06-yoru5:28-30
     V: "世界が、自分を内部構造として扱う",
+    // 出典: depths-shell.json W / lines:518
+    W: "自分が、勝手に整っていく、整えられていく",
     // 出典: depths-shell.json Y / 30-depth-sinks:87-92（委任）
     Y: "世界が一歩退き、舵を渡してくる",
     // 出典: depths-shell.json Z / 07-yoru6:290-305
@@ -896,9 +906,10 @@
       btn.querySelector(".lead").textContent = c.t;
       if (c.sub) btn.querySelector(".sub").textContent = c.sub;
       btn.addEventListener("click", () => choose(c), { once: true });
+      btn.disabled = true;                 // E14: appear タイマー前の暴発タップ防止＝reveal 中に固定位置の choices 帯を反射タップしても発火しない
       choicesEl.appendChild(btn);
       const appear = REDUCED ? 0 : 120 + idx * 150 + (c.kind === "retreat" ? state.maxSink * 800 : 0);
-      window.setTimeout(() => btn.classList.add("in"), appear);
+      window.setTimeout(() => { btn.classList.add("in"); btn.disabled = false; }, appear);
     });
     // ボタンを積んで scene が縮んだ“後”に最新行を底へ。重なりはレイアウトで防止済み、
     // ここは「最後の行を選択肢の真上に見せる」ための追従（ユーザーが上に居れば奪わない）。
@@ -942,9 +953,13 @@
     for (let i = frags.length - 1; i > 0; i--) { const j = Math.floor(rng() * (i + 1)); const t = frags[i]; frags[i] = frags[j]; frags[j] = t; }
 
     // 本文の後に短い導入行を1本足す（cold＝乾いた観測。機械的説明はしない）。
+    // E14: Q(rank17・観測者9・DEEP_LOCK 境界) と Z(rank26・観測者16・外殻最終・Ω 直前) の質感差。
+    // Q は降下中の試問、Z は外殻の最果てでの最後の問い＝門の言葉も体感の重さを纏う。
     const intro = document.createElement("p");
     intro.className = "hz-line cold shown";
-    intro.textContent = "——降下の記憶を、指でなぞる。どれを、視た。";
+    intro.textContent = id === "Z"
+      ? "——外殻の最果て。視てきたものを、ここで問う。"
+      : "——降下の記憶を、指でなぞる。どれを、視た。";
     sceneEl.appendChild(intro); Follow.stick();
     if (!echoOnboarded) {   // E10: 初回だけ、選ぶ前に stakes を一行
       echoOnboardPending = true;
@@ -962,13 +977,15 @@
       btn.innerHTML = `<span class="lead"></span>`;
       btn.querySelector(".lead").textContent = lead;
       btn.addEventListener("click", fn, { once: true });
+      btn.disabled = true;                 // E14: 暴発タップ防止
       choicesEl.appendChild(btn);
       return btn;
     };
     frags.forEach((f) => mk("『" + ECHO_BANK[f.key] + "』", "", () => echoResolve(node, id, f.truth)));
-    mk("目を逸らし、先へ", "echo-skip", () => echoResolve(node, id, null));
+    // E14: skip ラベルも id 別＝Z は「Ω へ抜ける」が等価＝Z 限定で「目を閉じ、Ωへ」。
+    mk(id === "Z" ? "目を閉じ、Ωへ" : "目を逸らし、先へ", "echo-skip", () => echoResolve(node, id, null));
     choicesEl.querySelectorAll(".hz-choice").forEach((b, i) =>
-      window.setTimeout(() => b.classList.add("in"), REDUCED ? 0 : 120 + i * 150));
+      window.setTimeout(() => { b.classList.add("in"); b.disabled = false; }, REDUCED ? 0 : 120 + i * 150));
     setBusy(false);              // E6: 本文＋エコー門が出揃った
     Follow.stick();
   }
@@ -984,12 +1001,18 @@
     if (truth === true) {
       state.attunement = Math.min(99, state.attunement + ATTUNE.echoGain);
       Audio.pulseOnce(0.9);
-      beat = { who: "cold", t: "——視た。あなたの降下は、あなたのものだ。" };
+      // E14: Z（外殻最終・Ω 直前）の真ビートは Q より強い断定＝「外殻を貫いた」
+      beat = id === "Z"
+        ? { who: "cold", t: "——あなたの降下は、外殻を貫いた。" }
+        : { who: "cold", t: "——視た。あなたの降下は、あなたのものだ。" };
     } else if (truth === false) {
       state.attunement = Math.max(0, state.attunement - ATTUNE.echoSlip);
       state.dread = Math.min(1, state.dread + 0.05);
       Audio.glitchHit(0.5);
-      beat = { who: "danger", t: "——それは、あなたの視たものではない。借り物の記憶は、ここでは効かない。" };
+      // E14: Z の偽ビートは「ここでは越えられない」＝Ω への門が閉じる重さ。
+      beat = id === "Z"
+        ? { who: "danger", t: "——借り物では、ここは越えられない。" }
+        : { who: "danger", t: "——それは、あなたの視たものではない。借り物の記憶は、ここでは効かない。" };
     }
     choicesEl.innerHTML = "";
     if (beat) {
@@ -1070,7 +1093,15 @@
     Follow.reset();
     const sank = state.returnPaths <= 1;
     // 帰還の極（未達）＝失敗演出にしない。光のほうへ浮上して帰る、視たものを抱えたまま。
-    const SURFACE_LINES = [
+    // E14: Ω 側(sankLines/heldLines) と対称に、浮上側も二極化＝戻り道がほぼ尽きた者（深く潜って戻った）と
+    //      認識が薄いまま手前で戻った者を、同じ3行で帰さない。「視たものを抱える」骨格は両方が共有。
+    const SURFACE_LINES = sank ? [
+      // 深く潜って戻り道がほぼ尽きた者：核には届かず、しかし深部の手触りを抱えて帰る。
+      { who: "cold", t: "核へは、まだ降りられない。" },
+      { who: "n", t: "戻り道はもう細い——けれど、あなたは光のほうへ浮上する。" },
+      { who: "self", t: "視たものは、消えない。次の入口は、一段、深い。" }
+    ] : [
+      // まだ浅く戻った者：失敗ではない、ここから先は別の周回で。
       { who: "cold", t: "核へは、まだ降りられない。" },
       { who: "n", t: "認識が満ちていない——けれど、それは失敗じゃない。" },
       { who: "self", t: "あなたは光のほうへ浮上する。視たものを、抱えたまま。" }
@@ -1166,7 +1197,20 @@
     renderNode(DATA.start || "zero");
   }
 
-  function forgetAll() { Spiral.wipe(); restart(); }
+  // E14: 「すべて忘れる」はゲーム内最大の不可逆操作（hazama_spiral_v1 削除＝周回/認識/痕跡 全消去）。
+  // 縁の他方（「もう一度沈む」＝Audio.pulseOnce）と対称の重みを持たせる＝忘却の破断を視覚＋音で一拍。
+  // REDUCED でも壊れない（即時挿入＋短い待ち）。Hazama の cold ビート文体（——で開始・現象だけ）。
+  function forgetAll() {
+    Spiral.wipe();
+    revealToken++;                         // 縁で進んでいた reveal の余韻を断つ
+    choicesEl.innerHTML = "";              // 「縁から、もう一度沈む / すべて忘れる」を消す＝選択は確定
+    const p = document.createElement("p");
+    p.className = "hz-line cold shown";
+    p.textContent = "——消えた。周回も、認識も、痕跡も。次は、初めてになる。";
+    sceneEl.appendChild(p); Follow.stick();
+    Audio.glitchHit(0.6);                  // 忘却の破断音（未解禁なら no-op）
+    window.setTimeout(restart, REDUCED ? 400 : 1400);
+  }
 
   // ---------- 沈下連動 inline Web Audio（Hazama内製・music-stack非依存） ----------
   // 設計: 深いほど 低く・暗く・密に・広く。
@@ -1871,7 +1915,7 @@
 
   // ---------- 起動 ----------
   async function loadData() {
-    const res = await fetch("depths-shell.json?v=e13", { cache: "no-store" });
+    const res = await fetch("depths-shell.json?v=e14", { cache: "no-store" });
     DATA = await res.json();
   }
   // ---------- 動く表紙（R6：タイトルも state/seed に応じて動く・静止でない） ----------

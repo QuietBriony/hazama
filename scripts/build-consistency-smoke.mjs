@@ -66,7 +66,9 @@ for (const transient of ["returnPaths", "dread", "observer", "echoDone", "sink"]
 // E3: 認識2.0（読解の試験化）＝深い構造読み＋エコー門。原典給餌(E2)の燃料が揃っていること。
 has(js, "const ECHO_BANK", "E3 echo bank");
 const echoKeys = [...js.matchAll(/^\s{4}([A-Za-z_]+): "/gm)].map((m) => m[1]);
-assert(echoKeys.length >= 15, `E3 echo bank entries: ${echoKeys.length} (need >=15)`);
+// E14: 中盤深度 G/I/O/R/W の真候補を追加＝Q/Z の門が中盤を取りこぼさない（≥20）。
+assert(echoKeys.length >= 20, `E3/E14 echo bank entries: ${echoKeys.length} (need >=20)`);
+for (const k of ["G", "I", "O", "R", "W"]) assert(echoKeys.includes(k), `E14 ECHO_BANK missing mid-depth key: ${k}`);
 const deepTags = (read("depths-shell.json").match(/"deep":\s*true/g) || []).length;
 assert(deepTags >= 10, `E3 deep descend tags: ${deepTags} (need >=10)`);
 has(js, "surfaceErosion", "E3 surface erosion (recognition strips)");
@@ -110,6 +112,26 @@ const edgeCardBody = (js.match(/const EdgeCard = \(\(\) => \{[\s\S]*?\n  \}\)\(\
 assert(edgeCardBody.length > 0, "E13 EdgeCard IIFE present");
 assert(/if \(attuned\)[\s\S]*createRadialGradient/.test(edgeCardBody), "E13 EdgeCard axis-light branches on attuned");
 assert(edgeCardBody.includes("159,208,219"), "E13 EdgeCard omega core glow color present");
+// E14: 「すべて忘れる」が縁の他方（再降下）と対称＝忘却の破断ビート＋Audio.glitchHit＋遅延 restart。
+const forgetBody = (js.match(/function forgetAll\(\)[\s\S]*?\n  \}/) || [""])[0];
+assert(forgetBody.includes("Spiral.wipe()"), "E14 forgetAll still wipes spiral");
+assert(/setTimeout\(\s*restart/.test(forgetBody), "E14 forgetAll defers restart for the beat");
+assert(forgetBody.includes("Audio.glitchHit"), "E14 forgetAll triggers break sound");
+has(js, "次は、初めてになる", "E14 forget beat text");
+// E14: choices の暴発タップ防止＝reveal 中は disabled・appear タイマーで false。
+assert(js.includes("btn.disabled = true"), "E14 choice button disabled until appear");
+assert(js.includes("btn.disabled = false"), "E14 choice button enabled after appear timer");
+// E14: descend/surface の hover が種別の意味（descend 鉄錆・surface 赤の点線）を上書きしない。
+has(css, ".hz-choice.descend:hover", "E14 descend hover keeps the iron-rust kind color");
+has(css, ".hz-choice.surface:hover", "E14 surface hover keeps the red dashed kind color");
+// E14: 縁カード以外でも Q/Z のエコー門が文面で差分化（Z は外殻最終の質感）。
+has(js, '外殻の最果て', "E14 echo gate Z intro line");
+has(js, '目を閉じ、Ωへ', "E14 echo gate Z skip label");
+// E14: chip タッチターゲット 44px（min-height）。
+has(css, "min-height: 44px", "E14 chip 44px touch target");
+// E14: onboard タイポ漂泊是正＝合成斜体回避（normal）＋ palt。
+assert(/\.hz-onboard\s*\{[^}]*font-style:\s*normal/.test(css), "E14 onboard font-style normalized");
+assert(/\.hz-onboard\s*\{[^}]*palt/.test(css), "E14 onboard uses palt feature");
 has(css, "phase-break", "E5/A4 phase-break style");
 has(css, ":focus-visible", "E5/B1 focus-visible a11y");
 has(css, ".hz-gate-title::before", "E5/B3 title RGB-split pseudo");
