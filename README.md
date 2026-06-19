@@ -152,6 +152,14 @@ Codex / Claude Code が同じ順番で作業を継続するための薄いエン
   ⑥`.hz-choice.descend/.surface` の hover が種別色（鉄錆／赤の点線）を青緑で上書きしていた＝個別保持。
   ⑦`.hz-chip` タッチ目標 WCAG 2.5.5（44×44px）を `min-height` で確保。
   ⑧`.hz-onboard / .hz-onboard-echo` の日本語合成斜体（italic）回避＝normal+palt+optimizeLegibility（`?v=e14`）
+- **進化 E15（2026-06）**: 縁の再降下に「沈む側」の句読点 — `descendAgain`（縁→零章）は Ω/浮上の重い到達
+  状態から無接続で `renderNode('zero')` を即時呼んでいた＝兄弟の `forgetAll`（忘却の破断ビート＋`Audio.glitchHit`＋
+  遅延 restart）とも、in-story の `reborn→zero`（`choose` 経由で `pulseOnce`）とも非対称だった。E14 のコメントが
+  約束しながら未実装だった「もう一度沈む＝`Audio.pulseOnce`」を実装で満たす＝現象だけの cold 一行
+  「——縁が、足の下でほどける。もう一度、沈む。」→ `Audio.pulseOnce(1)`（降下脈）→ 遅延 `renderNode`。周回深化は
+  `reborn` 本文（「一段、上書きされて…」）＋縁カード「周回: N」が既に2度語るため、ビートは数値も「深まる」も
+  再宣言しない（3度目を言わない）。`reborn` が縁の唯一の入口で必ず直前に読まれることを多エージェント検証で
+  確定。reduced-motion 安全（即時 `.shown`・遅延 400ms）。smoke 契約4件（`?v=e15`）
 
 ## Status / Rules
 

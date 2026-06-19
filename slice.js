@@ -1194,7 +1194,19 @@
     // 焼き付くのを断つ（burst の clearBurst タイマーは revealToken と無関係に走るため明示除去）。
     document.body.classList.remove("surfaced", "omega", "phase-break", "glitch-hard", "glitch-soft", "leak-on");
     buildReturnPaths();
-    renderNode(DATA.start || "zero");
+    // E15: 縁の再降下に「沈む側」の句読点を一拍。forgetAll（破断＝glitchHit＋遅延 restart）と対の儀式＝
+    //   E14 のコメントが約束しながら未実装だった「もう一度沈む＝Audio.pulseOnce」を、ここで実装として満たす。
+    //   in-story の reborn→zero（choose 経由で pulseOnce(1) が鳴る）と同じ降下脈を、縁からの再降下にも通す。
+    //   周回深化は reborn 本文（「一段、上書きされて…」）＋縁カード「周回: N」が既に2度語る＝ここでは数値も
+    //   「深まる」も再宣言しない＝現象だけの cold 一行。forgetAll と同じ append→遅延 renderNode の生存パターン
+    //   （ビートは遅延中だけ縁に残り、renderNode の sceneEl 初期化で零章へ切り替わる）。reduced-motion 安全。
+    choicesEl.innerHTML = "";              // 「もう一度沈む / すべて忘れる / 縁を画像で残す」を消す＝選択は確定
+    const p = document.createElement("p");
+    p.className = "hz-line cold shown";
+    p.textContent = "——縁が、足の下でほどける。もう一度、沈む。";
+    sceneEl.appendChild(p); Follow.stick();
+    Audio.pulseOnce(1);                    // 沈む脈（未解禁なら no-op）＝reborn→zero と同じ降下音
+    window.setTimeout(() => renderNode(DATA.start || "zero"), REDUCED ? 400 : 1400);
   }
 
   // E14: 「すべて忘れる」はゲーム内最大の不可逆操作（hazama_spiral_v1 削除＝周回/認識/痕跡 全消去）。
@@ -1915,7 +1927,7 @@
 
   // ---------- 起動 ----------
   async function loadData() {
-    const res = await fetch("depths-shell.json?v=e14", { cache: "no-store" });
+    const res = await fetch("depths-shell.json?v=e15", { cache: "no-store" });
     DATA = await res.json();
   }
   // ---------- 動く表紙（R6：タイトルも state/seed に応じて動く・静止でない） ----------

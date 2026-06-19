@@ -19,6 +19,26 @@ Hazama 自律開発 session の追記専用ログ。
 
 ---
 
+## 2026-06-19 — 進化 E15: 縁の再降下に降下の句読点（forgetAll と対称・E14 の未実装対称を完成）
+- agent      : Opus 4.8（精密・本番隣接のため外注なし）＋ Workflow 検証（3レンズ懐疑者＋3文面・6体・約33万tok）
+- goal       : 前 session の scout が impact=high・「書き味の責任で保留」とした descendAgain（縁→零章）の
+  周回深化体感欠如を、実コードで判定して決着。全 ending が reborn を必ず通る（__edge の唯一入口＝reborn の
+  retreat「ここで観測をやめる」・Omega 入場に attunement ゲートなし）ことを確定＝深化の再宣言はせず、
+  forgetAll/in-story reborn→zero との非対称（音＋句読点の欠落）だけを是正する最小対称化に絞った
+- shipped     :
+  - slice.js descendAgain() を forgetAll と対称化＝choicesEl クリア → cold ビート
+    「——縁が、足の下でほどける。もう一度、沈む。」→ Audio.pulseOnce(1)（降下脈）→ REDUCED?400:1400ms 遅延 renderNode
+  - E14 コメントが約束しながら未実装だった「もう一度沈む＝Audio.pulseOnce」を実装で履行（in-story reborn→zero と同音）
+  - version e14→e15 同期（index.html css/js・slice.js depths fetch・sw.js cache）
+  - smoke 契約 +4（descendAgain の pulseOnce / 遅延 renderNode / choicesEl クリア / ビート文言）
+- checks      : hazama-check 2 PASS / 0 FAIL＋実ブラウザ（__hz に descendAgain を一時露出して直接駆動。
+  同期＝choicesEl→0・scene 末尾に cold ビート「足の下でほどける」(class=hz-line cold shown)・body の
+  surfaced/omega/glitch/leak 全除去・transient reset(returnPaths→5 / observer→1 / echoDone 空)・cycle 未バンプ。
+  遅延後＝id=zero・cycle 1→2・steps++・零章描画・ビート置換・console error 0。一時露出は commit 前に revert 済）
+- backlog     : —。残＝音の軸色(human-gate)／LP デプロイ(固まってから)／実 presence 昇格(アカウント作業)
+- next        : ユーザー号令で本番反映（E15＝branch evolve-e15-descend-punctuation・master 未反映）
+- blockers    : master 反映は号令待ち（無人 push 禁止）／音は human-gate
+
 ## 2026-06-19 — 進化 E14: scout 判定の確定 patch 8件（忘却の重み・Q/Z 差分・SURFACE 二極・ECHO 中盤・誤タップ防止・hover 種別保持・44px・タイポ）
 - agent      : Opus 4.7（精密・本番隣接のため外注なし）＋ Workflow scout（4 レンズ・sonnet finders・5体・49万tok）
 - goal       : E11-E13 後の「次の磨き」を fan-out で発見→判定→do-now 8件を E14 として一気に積む

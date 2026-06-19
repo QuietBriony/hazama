@@ -118,6 +118,14 @@ assert(forgetBody.includes("Spiral.wipe()"), "E14 forgetAll still wipes spiral")
 assert(/setTimeout\(\s*restart/.test(forgetBody), "E14 forgetAll defers restart for the beat");
 assert(forgetBody.includes("Audio.glitchHit"), "E14 forgetAll triggers break sound");
 has(js, "次は、初めてになる", "E14 forget beat text");
+// E15: 縁の再降下(descendAgain)を forgetAll と対称化＝降下の句読点＋Audio.pulseOnce＋遅延 renderNode。
+// E14 コメントが約束しながら未実装だった「もう一度沈む＝Audio.pulseOnce」をここで満たす。周回数値は
+// reborn 本文＋縁カードが既に2度語るため、ビートは現象だけ（数値・「深まる」の再宣言なし）。
+const descendBody = (js.match(/function descendAgain\(\)[\s\S]*?\n  \}/) || [""])[0];
+assert(descendBody.includes("Audio.pulseOnce"), "E15 descendAgain plays the sink pulse (symmetry with forget's glitchHit / in-story reborn→zero)");
+assert(/setTimeout\([\s\S]*?renderNode/.test(descendBody), "E15 descendAgain defers renderNode for the descent beat");
+assert(descendBody.includes('choicesEl.innerHTML = ""'), "E15 descendAgain clears edge choices before the beat");
+has(js, "縁が、足の下でほどける", "E15 re-descend beat text");
 // E14: choices の暴発タップ防止＝reveal 中は disabled・appear タイマーで false。
 assert(js.includes("btn.disabled = true"), "E14 choice button disabled until appear");
 assert(js.includes("btn.disabled = false"), "E14 choice button enabled after appear timer");
