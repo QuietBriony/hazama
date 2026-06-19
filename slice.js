@@ -1713,10 +1713,29 @@
       cv.width = W; cv.height = H;
       const g = cv.getContext("2d");
       const rng = mulberry32((worldSeed() ^ 0x5f356495) >>> 0);
-      // 地：奈落のドーム（.hz-bg の簡約）
+      // 地：奈落のドーム（.hz-bg の簡約）。E13: 終端を二極化＝Ω は底光で満ち・浮上は上光で醒める。
+      // 画面終端 (body.omega / body.surfaced) と対の手触りを 1080×1350 でも視覚的に届ける。
       const bg = g.createLinearGradient(0, 0, 0, H);
-      bg.addColorStop(0, "#0a131d"); bg.addColorStop(0.5, "#04060b"); bg.addColorStop(1, "#010206");
+      if (attuned) {
+        // Ω: 上は深い藍・下に核の光（surfaced と対極）
+        bg.addColorStop(0, "#08111c"); bg.addColorStop(0.5, "#04080f"); bg.addColorStop(1, "#0a1c26");
+      } else {
+        // 浮上: 上に薄い醒め・下は退いた奈落
+        bg.addColorStop(0, "#101a25"); bg.addColorStop(0.5, "#06090f"); bg.addColorStop(1, "#02040a");
+      }
       g.fillStyle = bg; g.fillRect(0, 0, W, H);
+      // E13: 軸光（attuned=底光／未達=上光）。screen 合成で薄く満たす＝既存層の上に「方角」だけ足す。
+      g.save(); g.globalCompositeOperation = "lighter";
+      const ax = attuned
+        ? g.createRadialGradient(W * 0.5, H * 1.05, 0, W * 0.5, H * 1.05, W * 0.78)
+        : g.createRadialGradient(W * 0.5, -H * 0.08, 0, W * 0.5, -H * 0.08, W * 0.85);
+      if (attuned) {
+        ax.addColorStop(0, "rgba(150,196,210,0.34)"); ax.addColorStop(0.4, "rgba(127,182,196,0.10)"); ax.addColorStop(1, "rgba(0,0,0,0)");
+      } else {
+        ax.addColorStop(0, "rgba(184,204,214,0.22)"); ax.addColorStop(0.5, "rgba(143,192,204,0.06)"); ax.addColorStop(1, "rgba(0,0,0,0)");
+      }
+      g.fillStyle = ax; g.fillRect(0, 0, W, H);
+      g.restore();
       // 砂紋（反転ガーデンの掻き目。バグの帯も一部の行に）
       const s = clamp01(state.maxSink || 0.4);
       for (let i = 0; i < 20; i++) {
@@ -1750,9 +1769,19 @@
         g.stroke();
       }
       g.globalCompositeOperation = "source-over";
-      const vg = g.createRadialGradient(cx, cy, 0, cx, cy, voidR);
-      vg.addColorStop(0, "rgba(0,0,0,1)"); vg.addColorStop(1, "rgba(2,4,10,0)");
-      g.fillStyle = vg; g.beginPath(); g.arc(cx, cy, voidR, 0, Math.PI * 2); g.fill();
+      // E13: 核（曼荼羅の中心）— Ω のみ核が満ちる（画面終端 body.omega の曼荼羅前面化と対）。
+      // 浮上 / 未達は従来どおり中心の空白を残す＝§4-1「核は描かない」が消えるのは Ω に届いた時だけ。
+      if (attuned) {
+        const cg = g.createRadialGradient(cx, cy, 0, cx, cy, voidR);
+        cg.addColorStop(0, "rgba(159,208,219,0.62)");   // 核の透徹（画面 --accent #9fd0db 系）
+        cg.addColorStop(0.5, "rgba(127,182,196,0.22)");
+        cg.addColorStop(1, "rgba(2,4,10,0)");
+        g.fillStyle = cg; g.beginPath(); g.arc(cx, cy, voidR, 0, Math.PI * 2); g.fill();
+      } else {
+        const vg = g.createRadialGradient(cx, cy, 0, cx, cy, voidR);
+        vg.addColorStop(0, "rgba(0,0,0,1)"); vg.addColorStop(1, "rgba(2,4,10,0)");
+        g.fillStyle = vg; g.beginPath(); g.arc(cx, cy, voidR, 0, Math.PI * 2); g.fill();
+      }
       // タイトル（RGBずれ＝グリッジの刷り重ね）
       g.textAlign = "center";
       g.font = `800 64px ${FONT}`;
@@ -1842,7 +1871,7 @@
 
   // ---------- 起動 ----------
   async function loadData() {
-    const res = await fetch("depths-shell.json?v=e12", { cache: "no-store" });
+    const res = await fetch("depths-shell.json?v=e13", { cache: "no-store" });
     DATA = await res.json();
   }
   // ---------- 動く表紙（R6：タイトルも state/seed に応じて動く・静止でない） ----------

@@ -104,6 +104,12 @@ has(css, "body.surfaced", "E5/A1 surfaced wash style");
 has(css, "body.omega", "E12 omega breakthrough wash style");
 has(js, 'classList.add("omega")', "E12 omega class applied at attuned edge");
 assert(js.includes('remove("surfaced", "omega"'), "E12 omega class cleared on re-descend/restart");
+// E13: 縁カード(EdgeCard) の地も二極化＝Ω は底光・核グロー／浮上は上光（画面終端と対）。
+// draw(attuned) の中で背景 gradient／軸光／核中央が attuned で分岐していること。
+const edgeCardBody = (js.match(/const EdgeCard = \(\(\) => \{[\s\S]*?\n  \}\)\(\);/) || [""])[0];
+assert(edgeCardBody.length > 0, "E13 EdgeCard IIFE present");
+assert(/if \(attuned\)[\s\S]*createRadialGradient/.test(edgeCardBody), "E13 EdgeCard axis-light branches on attuned");
+assert(edgeCardBody.includes("159,208,219"), "E13 EdgeCard omega core glow color present");
 has(css, "phase-break", "E5/A4 phase-break style");
 has(css, ":focus-visible", "E5/B1 focus-visible a11y");
 has(css, ".hz-gate-title::before", "E5/B3 title RGB-split pseudo");

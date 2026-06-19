@@ -19,6 +19,23 @@ Hazama 自律開発 session の追記専用ログ。
 
 ---
 
+## 2026-06-19 — 進化 E13: 縁カード（共有 PNG）の地も二極化（E12 と対）
+- agent      : Opus 4.7（精密・本番隣接のため外注なし／途中 4.8 と切替）
+- goal       : E12 で画面終端は対極になったが、EdgeCard.draw(attuned) は背景 gradient・砂紋・曼荼羅が attuned に
+  完全無関係で、文字色だけ差分＝共有先（X/Discord）では Ω と浮上がひと目で同じに見える非対称が残っていた。
+  画面 body.omega と対の手触りを 1080×1350 にも届ける
+- shipped     : slice.js EdgeCard.draw に attuned 分岐＝
+  Ω: bg gradient 下が核色(#0a1c26)・底から軸光(radial at H*1.05, rgba(150,196,210,0.34))・曼荼羅中心に核グロー
+     (rgba(159,208,219,0.62)＝§4-1「核は描かない」が消えるのは Ω に届いた時だけ)。
+  浮上: bg gradient 上が薄い醒め(#101a25)・上からの軸光(radial at -H*0.08, rgba(184,204,214,0.22))・中心は従来の空白。
+  worldSeed 決定論は維持（同じ縁＝同じカード）。smoke 契約3件（EdgeCard IIFE 検出・attuned 分岐・核グロー色）。`?v=e13`
+- checks      : hazama-check 2 PASS / 0 FAIL＋実ブラウザ（__hz.card(true/false) で両極の canvas を出し、
+  4点で RGB 比較＝核中央 (540,432) で omega=(99,131,141) vs surface=(0,0,0)＝Ω のみ核が満ちる確定／
+  下端 (540,1280) で omega +74B＝Ω のみ底光／PNG bytes 1.1MB/1.0MB の別物・console error 0）
+- backlog     : —。残＝音の軸色(human-gate)／LP デプロイ(固まってから)／実 presence 昇格(アカウント作業)
+- next        : ユーザー号令で本番反映（未デプロイ ＝ E10(master 4f63fc8) → E11 → E12 → E13）
+- blockers    : master 反映は号令待ち（無人 push 禁止）／音は human-gate
+
 ## 2026-06-19 — 進化 E12: Ω 突破の専用ウォッシュ（終端の視覚的非対称を是正）
 - agent      : Opus 4.8（精密・本番隣接のため外注なし）
 - goal       : 浮上極は E5 で専用ウォッシュ(body.surfaced)を持つのに、最も hard-earned な Ω 極(attuned のみ)は
