@@ -132,6 +132,10 @@ Codex / Claude Code が同じ順番で作業を継続するための薄いエン
   確定修正は1件＝reduced-motion で**漂着行（`.hz-line.scrawl.foreign`）の傾きが残る取りこぼし**を是正
   （`.scrawl.foreign` の詳細度が `.scrawl` reset より高く @media 外で勝っていた・`.hz-gate-drift` は是正済みだった兄弟漏れ）。
   by-design 確認: forgetAll は onboarding キーを消さない（"人は読み方を学んだまま"＝意図的）（`?v=e11`）
+- **進化 E12（2026-06）**: Ω 突破の専用ウォッシュ（`body.omega`）— 終端の視覚的非対称を是正。浮上極（大多数が到達）は
+  E5 で専用ウォッシュ（庭が退場・曼荼羅が落ちる・上からの光）を持っていたが、最も hard-earned な **Ω 極（attuned のみ到達）**
+  は高テンション止まりで専用着地が無かった。浮上の対極として、**核（曼荼羅）が画面中央へ迫り上がって満ち・底から核の光が
+  満ち・庭は静まり・色温度は核の透徹へ澄む**。遅い 2.5〜3s で到達・reduced-motion 即時化・縁→再降下/restart で除去（`?v=e12`）
 
 ## Status / Rules
 

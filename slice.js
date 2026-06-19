@@ -1064,6 +1064,7 @@
     applyAtmosphere({ tension: attuned ? "high" : "low" });
     Spiral.save();   // 縁＝結末でも spiral 層を確定（閉じて去っても、次の表紙が応えられる）
     if (!attuned) document.body && document.body.classList && document.body.classList.add("surfaced");
+    else document.body && document.body.classList && document.body.classList.add("omega");   // E12: Ω 突破の専用ウォッシュ（核＝曼荼羅が前面化・底光で満ちる）
     sceneEl.innerHTML = ""; choicesEl.innerHTML = "";
     setBusy(true);               // E6: 縁の結末文＋選択が出揃うまで SR を抑制
     Follow.reset();
@@ -1160,7 +1161,7 @@
     lastPhase = "surface";   // A4: 再降下のたびに最初の深い跨ぎがまた句読点を打てる
     // E6(監査): phase-break 由来の glitch-hard/leak-on が縁で発火したまま残り、再降下直後の零章に
     // 焼き付くのを断つ（burst の clearBurst タイマーは revealToken と無関係に走るため明示除去）。
-    document.body.classList.remove("surfaced", "phase-break", "glitch-hard", "glitch-soft", "leak-on");
+    document.body.classList.remove("surfaced", "omega", "phase-break", "glitch-hard", "glitch-soft", "leak-on");
     buildReturnPaths();
     renderNode(DATA.start || "zero");
   }
@@ -1841,7 +1842,7 @@
 
   // ---------- 起動 ----------
   async function loadData() {
-    const res = await fetch("depths-shell.json?v=e11", { cache: "no-store" });
+    const res = await fetch("depths-shell.json?v=e12", { cache: "no-store" });
     DATA = await res.json();
   }
   // ---------- 動く表紙（R6：タイトルも state/seed に応じて動く・静止でない） ----------
@@ -1890,7 +1891,7 @@
     state.id = null; state.sink = 0; state.dread = 0; state.returnPaths = RETURN_PATHS_START; state.maxSink = 0; state.observer = 1; state.steps = 0; state.belowLoop = 0; state.resisted = 0; state.refused = 0; state.resistBeat = null; state.rank = 0; state.cycle = 0; state.visits = {}; state.rejoin = null; state.attunement = 0; state.echoDone = {}; state.legacy = freshLegacy();
     lastPhase = "surface";   // A4: restart/forget でも跨ぎ検知を初期化（再降下で最初の跨ぎが効く）
     applyCycleSkin();        // B4: cycle=0 に戻ったので表紙スキンも 0（完全に従来どおり）へ
-    if (document.body && document.body.classList) document.body.classList.remove("surfaced", "phase-break", "glitch-hard", "glitch-soft", "leak-on");
+    if (document.body && document.body.classList) document.body.classList.remove("surfaced", "omega", "phase-break", "glitch-hard", "glitch-soft", "leak-on");
     const st = $("status"); if (st) st.textContent = "";
     buildReturnPaths();
     renderNode(DATA.start || "zero");

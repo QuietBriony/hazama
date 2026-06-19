@@ -170,6 +170,30 @@ body.surfaced .hz-bg-descent {
 body.surfaced { --ink: #cdd6de; --accent: #8fc0cc; }
 body.surfaced .hz-scanline { opacity: 0.04; transition: opacity 2.5s ease; }
 
+/* ============================================================================
+   A1b — Ω 突破のウォッシュ（body.omega）。浮上の対極：核（曼荼羅）へ到達した者だけが視る着地。
+   JS は縁の Ω 極（attuned）で body.omega を付ける。浮上は世界の骨格が退場して表層へ戻るが、
+   Ω は逆＝核が画面中央へ迫り上がって満ち、底から光が満ちる。遅い 2.5〜3s で到達。
+   reduced-motion では transition なしで同じ静止状態へ（末尾ブロックで上書き）。 */
+/* 底から満ちる核の光（浮上の"上からの光"と対：下＝核の方角から）。screen で足すだけ。 */
+body.omega .hz-bg::after {
+  opacity: 1;
+  background: radial-gradient(120% 82% at 50% 116%,
+    rgba(150,196,210,0.22) 0%, rgba(127,182,196,0.06) 40%, transparent 72%);
+}
+/* 核（曼荼羅）が画面中央へ迫り上がり、満ちる＝到達した目的地。surfaced の退場(top:112%)と対極。 */
+body.omega .hz-bg-mandala { top: 48%; opacity: 0.72; transition: top 3s ease, opacity 3s ease; }
+/* 底の沈降グローが核の輝度として強まる（あなたは核に在る）。 */
+body.omega .hz-bg-abyss {
+  background: radial-gradient(86% 64% at 50% 108%,
+    rgba(120,186,206,0.34) 0%, rgba(58,118,140,0.18) 40%, transparent 74%);
+  transform: translateY(-6%);
+}
+/* 表層の庭は退く（核の手前で構造が静まる）。JS inline opacity のため !important。 */
+body.omega .hz-bg-garden { opacity: 0.3 !important; transition: opacity 2.5s ease; }
+/* 色温度：核の透徹＝わずかに明るく澄む（浮上の"醒め"とは逆向きの解像）。 */
+body.omega { --ink: #e2ebf1; --accent: #9fd0db; }
+
 .hz-vignette {
   position: absolute; inset: 0;
   pointer-events: none;
@@ -678,6 +702,9 @@ body.glitch-hard .hz-gate-title::after  { animation: hz-tl-after-glitch .18s ste
   .hz-bg::after, body.surfaced .hz-bg::after,
   body.surfaced .hz-bg-garden, body.surfaced .hz-bg-mandala,
   body.surfaced .hz-bg-descent, body.surfaced .hz-scanline { transition: none; }
+  /* A1b: Ω 突破のウォッシュも同じく即時化（核の迫り上がり・底光・庭の退きを静止で）。 */
+  body.omega .hz-bg::after, body.omega .hz-bg-mandala,
+  body.omega .hz-bg-abyss, body.omega .hz-bg-garden { transition: none; }
   /* R6: 反転ガーデンは生成art＝静止1枚で残す（slice.js が深度で1回描く）。原色 leak の明滅は
      グリッジ・バーストに紐づくため reduced では発火せず＝事実上 off（保険で薄い静止に固定）。 */
   .hz-bg-descent { transition: none; }

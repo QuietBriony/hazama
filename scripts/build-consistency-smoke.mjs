@@ -100,6 +100,10 @@ assert(css.includes(".hz-onboard-echo"), "E10 echo gloss style");
 // E5: 視覚の磨きとパターン変化（A1 surfaced / A4 phase-break / B1 focus / B3 title / B4 cycle）。
 // css に新層・状態・a11y・タイトル擬似要素が立ち、dead CSS(.hz-tl-c) は回収済みであること。
 has(css, "body.surfaced", "E5/A1 surfaced wash style");
+// E12: Ω 突破の専用ウォッシュ（浮上の対極＝核が前面化）。両極の終端が視覚的に揃っていること。
+has(css, "body.omega", "E12 omega breakthrough wash style");
+has(js, 'classList.add("omega")', "E12 omega class applied at attuned edge");
+assert(js.includes('remove("surfaced", "omega"'), "E12 omega class cleared on re-descend/restart");
 has(css, "phase-break", "E5/A4 phase-break style");
 has(css, ":focus-visible", "E5/B1 focus-visible a11y");
 has(css, ".hz-gate-title::before", "E5/B3 title RGB-split pseudo");

@@ -19,6 +19,21 @@ Hazama 自律開発 session の追記専用ログ。
 
 ---
 
+## 2026-06-19 — 進化 E12: Ω 突破の専用ウォッシュ（終端の視覚的非対称を是正）
+- agent      : Opus 4.8（精密・本番隣接のため外注なし）
+- goal       : 浮上極は E5 で専用ウォッシュ(body.surfaced)を持つのに、最も hard-earned な Ω 極(attuned のみ)は
+  高テンション止まりで専用着地が無い＝終端の視覚的非対称。浮上の対極として Ω 突破ウォッシュを足す（説明文でなく atmospheric）
+- shipped     : slice.css `body.omega` 群＝核(曼荼羅)が中央へ迫り上がり満ちる(opacity 0.08→0.72・top 48%)／底から核の光
+  (`.hz-bg::after` opacity→1・下方からの radial)／abyss を核グローへ強化／庭は静まる(0.397→0.3)／色温度は核の透徹
+  (--ink #e2ebf1 / --accent #9fd0db)。slice.js renderEdge の attuned 分岐で `body.omega` 付与・descendAgain/restart で除去。
+  reduced-motion で即時化(末尾ブロック)。smoke 契約3件(body.omega/add/remove)。`?v=e12`
+- checks      : hazama-check 2 PASS / 0 FAIL＋実ブラウザ（transition 中立化で確定測定＝omega: 曼荼羅0.72/庭0.3/核光1/
+  abyss核グロー/澄んだ色・surfaced との対極を確認・reset で base 復帰・console error 0）。
+  SW キャッシュ stale で初回 omega が出ず＝unregister+caches.delete+reload で解消（既知の Hazama 検証手順）
+- backlog     : —。残＝音の軸色(human-gate)／LP デプロイ(固まってから)／実 presence 昇格(アカウント作業)
+- next        : ユーザー号令で本番反映（未デプロイ ＝ E10(master 4f63fc8) → E11 → E12）
+- blockers    : master 反映は号令待ち（無人 push 禁止）／音は human-gate
+
 ## 2026-06-19 — 進化 E11: E7-E10 敵対的監査＋確定修正（reduced-motion 取りこぼし）
 - agent      : Opus 4.8（管理・精密）＋ Workflow（sonnet finders・opus verifiers／agent 11体・46万tok）
 - goal       : E8-E10 本番反映（4f63fc8・?v=e10）直後、E6 監査対象外だった E7-E10（drift reach/onboarding/echo gloss）を
