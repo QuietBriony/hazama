@@ -19,6 +19,22 @@ Hazama 自律開発 session の追記専用ログ。
 
 ---
 
+## 2026-06-19 — 進化 E16: 複線化（降りる幹を分ける）— A の岐路が deep幹(構造)/soma幹(身体) を選び Z で再合流
+- agent      : Opus 4.8（精密・本番隣接のため外注なし）＋ Workflow（設計探索＝グラフマップ/原典マイニング/設計2案・5体・約48万tok）
+- goal       : 実機プレイテストFB「ストーリーの多面性が欲しい・展開が一緒・分岐がない」への直球。ユーザー選択＝
+  Design A(2幹・1プレイで効く)＋Soma 幹。降下グラフを A で分岐させ、Z で再合流（終端ロジックは共有）
+- shipped     :
+  - depths-shell.json: A の surface 選択を「編み目から手を離し、ただ身体で受けとめる」へ語り直し→soma 幹入口(B_soma)。
+    soma 幹8ノード新規執筆（B/D/F/J/N/S/V/Y_soma＝原典 docs/source/30-depth-sinks の五大: 土→風→水→火→光→競わない→外殻接続）。Y_soma→Z 再合流。
+  - slice.js: state.activeTrunk(transient)・RANK に soma 梯子(2/4/6/10/14/19/22/25)・Route.resolve に A 分岐1点
+    (surface→soma 直入＝弾き skip / descend→deep 既定)・descendAgain/restart で activeTrunk リセット・縁カードに「降り方: 構造/身体」
+  - version e15→e16 同期・smoke 契約+5（activeTrunk transient / A 分岐 / soma 8ノード実在 / A surface→B_soma / Y_soma→Z 再合流）
+- checks      : hazama-check 2 PASS / 0 FAIL＋実ブラウザ（__hz で routing 踏破: A(null)→surface→B_soma(soma)→D→F→J→N→S→V→Y→Z 再合流・
+  attunement 8＝Ω は soma からも到達可・rank 26・A descend→B で deep 幹は不変・soma 本文が実描画・foreign drift も soma に効く・console error 0）
+- backlog     : —。残＝音の軸色(human-gate)／LP デプロイ／E15 微ミス(縁ビート/カードの発見性)は次の磨きへ
+- next        : ユーザー書き味レビュー→号令で本番反映（E16＝branch evolve-e16-soma-trunk・master 未反映）。将来 E17=周回連動(Design B)を重ねる余地
+- blockers    : master 反映は号令待ち（無人 push 禁止）
+
 ## 2026-06-19 — 進化 E15: 縁の再降下に降下の句読点（forgetAll と対称・E14 の未実装対称を完成）
 - agent      : Opus 4.8（精密・本番隣接のため外注なし）＋ Workflow 検証（3レンズ懐疑者＋3文面・6体・約33万tok）
 - goal       : 前 session の scout が impact=high・「書き味の責任で保留」とした descendAgain（縁→零章）の

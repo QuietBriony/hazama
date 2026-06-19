@@ -126,6 +126,10 @@ assert(descendBody.includes("Audio.pulseOnce"), "E15 descendAgain plays the sink
 assert(/setTimeout\([\s\S]*?renderNode/.test(descendBody), "E15 descendAgain defers renderNode for the descent beat");
 assert(descendBody.includes('choicesEl.innerHTML = ""'), "E15 descendAgain clears edge choices before the beat");
 has(js, "縁が、足の下でほどける", "E15 re-descend beat text");
+// E16: 複線化（降りる幹を分ける）＝A の岐路が deep 幹(構造)/soma 幹(身体)を選び、Z で再合流（終端は共有）。
+has(js, "activeTrunk", "E16 active-trunk state field");
+assert(/fromId === "A"[\s\S]{0,240}activeTrunk/.test(js), "E16 fork selects the descent trunk at junction A");
+assert(saveBody.length > 0 && !saveBody.includes("activeTrunk"), "E16 activeTrunk stays transient (not in spiral save)");
 // E14: choices の暴発タップ防止＝reveal 中は disabled・appear タイマーで false。
 assert(js.includes("btn.disabled = true"), "E14 choice button disabled until appear");
 assert(js.includes("btn.disabled = false"), "E14 choice button enabled after appear timer");
@@ -208,6 +212,14 @@ if (depths) {
   const gateNodes = gateMatch ? (gateMatch[1].match(/"([^"]+)"/g) || []).map((s) => s.replace(/"/g, "")) : [];
   assert(gateNodes.length > 0, "ECHO_GATES not parseable");
   for (const g of gateNodes) assert(depths.nodes[g], `ECHO_GATES node not in depths: ${g}`);
+  // E16: soma 幹（複線化）の実在＋A surface→soma 入口＋Y_soma→Z 再合流。
+  for (const sid of ["B_soma", "D_soma", "F_soma", "J_soma", "N_soma", "S_soma", "V_soma", "Y_soma"]) {
+    assert(depths.nodes[sid], `E16 soma trunk node missing: ${sid}`);
+  }
+  const aSurface = (depths.nodes["A"]?.choices || []).find((c) => c.kind === "surface");
+  assert(aSurface && aSurface.to === "B_soma", "E16 A surface choice enters soma trunk (B_soma)");
+  const ySomaTargets = (depths.nodes["Y_soma"]?.choices || []).map((c) => c.to);
+  assert(ySomaTargets.includes("Z"), "E16 soma trunk reconverges to Z");
 }
 
 if (failures.length) {

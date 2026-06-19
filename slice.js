@@ -46,7 +46,7 @@
   //   cycles=周回数, surfaceBounces=表層で弾かれた回数, detoursSeen=通った別の筋のid, maxRank=到達深度。
   // rejoin = 寄り道(detour)から本筋へ前進合流する先（divert 時に積む）。
   const freshLegacy = () => ({ cycles: 0, surfaceBounces: 0, detoursSeen: [], maxRank: 0 });
-  const state = { id: null, sink: 0, dread: 0, returnPaths: RETURN_PATHS_START, maxSink: 0, observer: 1, steps: 0, belowLoop: 0, resisted: 0, refused: 0, resistBeat: null, rank: 0, cycle: 0, visits: {}, rejoin: null, attunement: 0, echoDone: {}, legacy: freshLegacy() };
+  const state = { id: null, sink: 0, dread: 0, returnPaths: RETURN_PATHS_START, maxSink: 0, observer: 1, steps: 0, belowLoop: 0, resisted: 0, refused: 0, resistBeat: null, rank: 0, cycle: 0, visits: {}, rejoin: null, attunement: 0, echoDone: {}, activeTrunk: null, legacy: freshLegacy() };
   let DATA = null;
   let revealToken = 0;
   const clamp01 = (x) => Math.max(0, Math.min(1, x));
@@ -124,7 +124,9 @@
     M: 13, N: 14, O: 15, O_hold: 15, P: 16, Q: 17,
     R: 18, S: 19, S_hold: 19, T: 20, U: 21,
     V: 22, W: 23, X: 24, X_hold: 24, Y: 25, Z: 26,
-    Omega: 27, below: 28, reborn: 27
+    Omega: 27, below: 28, reborn: 27,
+    // E16: soma 幹（複線化）の深度梯子＝既存文字キーと同位の rank（音/沈下の深まりを deep 幹と揃える）。
+    B_soma: 2, D_soma: 4, F_soma: 6, J_soma: 10, N_soma: 14, S_soma: 19, V_soma: 22, Y_soma: 25
   };
 
   const $ = (id) => document.getElementById(id);
@@ -646,6 +648,12 @@
       // 名目上の遷移先 c.to を、分岐ルールで実際の遷移先へ読み替える。
       resolve(fromId, c) {
         if (c.to === "__rejoin") { const r = state.rejoin || "B"; state.rejoin = null; return r; }
+        // E16: A の岐路が「降りる幹」を選ぶ複線化。構造で読む(descend)=deep 幹(既定)／身体で受けとめる(surface)=soma 幹。
+        //   どちらも Z で再合流＝終端(Ω/浮上/縁/spiral)は完全共有。activeTrunk は transient（spiral 非保存・再降下で再選択）。
+        if (fromId === "A") {
+          state.activeTrunk = (c.kind === "surface") ? "soma" : "deep";
+          if (state.activeTrunk === "soma") return c.to;   // A の surface は B_soma を直に指す＝弾き(divert)を通さず幹入口へ
+        }
         // 表層読み＝知覚ゲートで弾かれる：同じ所へ戻さず、別ルートへ逸れて“前進”する。
         if (c.kind === "surface") {
           const to = divert(fromId, "surface", c.to, { who: "danger",
@@ -1135,7 +1143,7 @@
       card.style.cssText = "margin-top:2em;font-size:0.8rem;line-height:1.9;";
       const lit = Math.round(state.maxSink * 8);
       const head = attuned ? "― 深度Ω 到達・外殻踏破 ―" : "― 浮上 — 表層へ帰る ―";
-      card.textContent = `${head}  認識: ${Math.round(state.attunement || 0)}/${ATTUNE.omegaThreshold}${attuned ? "（合致）" : "（深く読み、視たものを覚えているほど降りられる）"} / 到達深度: ${"▮".repeat(lit)}${"▯".repeat(8 - lit)} / 残った戻り道: ${state.returnPaths}/${RETURN_PATHS_START} / 観測者: ${state.observer} / 抗った: ${state.resisted} ・ 戻れなかった: ${state.refused} / 周回: ${state.cycle}`;
+      card.textContent = `${head}  認識: ${Math.round(state.attunement || 0)}/${ATTUNE.omegaThreshold}${attuned ? "（合致）" : "（深く読み、視たものを覚えているほど降りられる）"} / 到達深度: ${"▮".repeat(lit)}${"▯".repeat(8 - lit)} / 残った戻り道: ${state.returnPaths}/${RETURN_PATHS_START} / 観測者: ${state.observer} / 抗った: ${state.resisted} ・ 戻れなかった: ${state.refused} / 周回: ${state.cycle} / 降り方: ${state.activeTrunk === "soma" ? "身体" : "構造"}`;
       sceneEl.appendChild(card); card.classList.add("shown");
       const more = document.createElement("p");
       more.className = "hz-line"; more.style.cssText = "margin-top:0.6em;font-size:0.78rem;color:#6b7682;";
@@ -1188,7 +1196,7 @@
     revealToken++;
     state.id = null; state.sink = 0; state.dread = 0; state.returnPaths = RETURN_PATHS_START;
     state.maxSink = 0; state.observer = 1; state.resisted = 0; state.refused = 0;
-    state.resistBeat = null; state.rank = 0; state.rejoin = null; state.echoDone = {};
+    state.resistBeat = null; state.rank = 0; state.rejoin = null; state.echoDone = {}; state.activeTrunk = null;
     lastPhase = "surface";   // A4: 再降下のたびに最初の深い跨ぎがまた句読点を打てる
     // E6(監査): phase-break 由来の glitch-hard/leak-on が縁で発火したまま残り、再降下直後の零章に
     // 焼き付くのを断つ（burst の clearBurst タイマーは revealToken と無関係に走るため明示除去）。
@@ -1927,7 +1935,7 @@
 
   // ---------- 起動 ----------
   async function loadData() {
-    const res = await fetch("depths-shell.json?v=e15", { cache: "no-store" });
+    const res = await fetch("depths-shell.json?v=e16", { cache: "no-store" });
     DATA = await res.json();
   }
   // ---------- 動く表紙（R6：タイトルも state/seed に応じて動く・静止でない） ----------
@@ -1973,7 +1981,7 @@
   }
   function restart() {
     revealToken++;
-    state.id = null; state.sink = 0; state.dread = 0; state.returnPaths = RETURN_PATHS_START; state.maxSink = 0; state.observer = 1; state.steps = 0; state.belowLoop = 0; state.resisted = 0; state.refused = 0; state.resistBeat = null; state.rank = 0; state.cycle = 0; state.visits = {}; state.rejoin = null; state.attunement = 0; state.echoDone = {}; state.legacy = freshLegacy();
+    state.id = null; state.sink = 0; state.dread = 0; state.returnPaths = RETURN_PATHS_START; state.maxSink = 0; state.observer = 1; state.steps = 0; state.belowLoop = 0; state.resisted = 0; state.refused = 0; state.resistBeat = null; state.rank = 0; state.cycle = 0; state.visits = {}; state.rejoin = null; state.attunement = 0; state.echoDone = {}; state.activeTrunk = null; state.legacy = freshLegacy();
     lastPhase = "surface";   // A4: restart/forget でも跨ぎ検知を初期化（再降下で最初の跨ぎが効く）
     applyCycleSkin();        // B4: cycle=0 に戻ったので表紙スキンも 0（完全に従来どおり）へ
     if (document.body && document.body.classList) document.body.classList.remove("surfaced", "omega", "phase-break", "glitch-hard", "glitch-soft", "leak-on");
