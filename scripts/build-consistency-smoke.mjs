@@ -134,6 +134,8 @@ assert(saveBody.length > 0 && !saveBody.includes("activeTrunk"), "E16 activeTrun
 assert(/filter\(\(c\) => !c\.minCycle/.test(js), "E17 cycle-gate filters choices by minCycle");
 assert(/state\.activeTrunk = c\.trunk \|\|/.test(js), "E17 fork honors c.trunk (third trunk)");
 has(js, '=== "reso" ? "流れ"', "E17 edge card labels the reso trunk");
+// E18: 第4の幹 casc（崩壊と再生）＝cycle≥2 で A に開く。E17 の trunk/minCycle 機構をそのまま活用。
+has(js, '=== "casc" ? "崩壊"', "E18 edge card labels the casc trunk");
 // E14: choices の暴発タップ防止＝reveal 中は disabled・appear タイマーで false。
 assert(js.includes("btn.disabled = true"), "E14 choice button disabled until appear");
 assert(js.includes("btn.disabled = false"), "E14 choice button enabled after appear timer");
@@ -232,6 +234,14 @@ if (depths) {
   assert(aReso && aReso.to === "B_reso" && aReso.minCycle >= 1, "E17 A reso choice is cycle-gated and enters reso trunk");
   const yResoTargets = (depths.nodes["Y_reso"]?.choices || []).map((c) => c.to);
   assert(yResoTargets.includes("Z"), "E17 reso trunk reconverges to Z");
+  // E18: casc 幹（cycle≥2 で開く第4の幹）の実在＋A の casc 選択(minCycle:2 ゲート)＋Y_casc→Z 再合流。
+  for (const cid of ["B_casc", "E_casc", "H_casc", "M_casc", "S_casc", "Y_casc"]) {
+    assert(depths.nodes[cid], `E18 casc trunk node missing: ${cid}`);
+  }
+  const aCasc = (depths.nodes["A"]?.choices || []).find((c) => c.trunk === "casc");
+  assert(aCasc && aCasc.to === "B_casc" && aCasc.minCycle >= 2, "E18 A casc choice is cycle-gated (>=2) and enters casc trunk");
+  const yCascTargets = (depths.nodes["Y_casc"]?.choices || []).map((c) => c.to);
+  assert(yCascTargets.includes("Z"), "E18 casc trunk reconverges to Z");
 }
 
 if (failures.length) {

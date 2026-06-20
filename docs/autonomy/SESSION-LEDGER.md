@@ -19,6 +19,22 @@ Hazama 自律開発 session の追記専用ログ。
 
 ---
 
+## 2026-06-19 — 進化 E18: 第4の幹 Cascade（崩壊と再生）— cycle≥2 で A に開く・周回の階段を一段延ばす
+- agent      : Opus 4.8（精密・本番隣接のため外注なし）＋ Workflow（原典4源マイニング・4体・約12万tok）
+- goal       : 周回連動(E17)の階段をもう一段＝A の選択肢が周回で 2→3→4 に増える。第4の幹 casc(崩壊と再生)を cycle≥2 で開く
+- shipped     :
+  - depths-shell.json: A に casc 選択(trunk:casc/minCycle:2/to:B_casc)。casc 幹6ノード新規執筆
+    (B/E/H/M/S/Y_casc＝原典 13-memlock/14-transparent/05-cothink/12-omega-manual を Hazama register へ翻案: 凍結→透明化→共鳴→再生)。
+    AI技術用語(GC/メモリノード/Core0 等)は抽象化して捨てた。Y_casc が四幹を束ねて Z で再合流。
+  - slice.js: RANK に casc 梯子・縁カードを「降り方: 構造/身体/流れ/崩壊」4分岐へ。E17 の trunk/minCycle/activeTrunk 機構を
+    そのまま再利用＝Route.resolve 無改変（c.trunk が casc を自動処理）＝slice.js は6行追加のみ。
+  - version e17→e18 同期・smoke 契約+4（casc card / casc 6ノード実在 / A casc ゲート minCycle>=2 / Y_casc→Z）
+- checks      : hazama-check 2 PASS / 0 FAIL＋実ブラウザ（階段ゲート: cycle0=2択/cycle1=3択/cycle2=4択 確認・
+  A→casc→B_casc→E→H→M→S→Y→Z 踏破・attunement 6＝Ω 可・soma/reso 不変・casc 本文実描画(透明化)・console error 0）
+- backlog     : —。残＝音の軸色(human-gate)／LP デプロイ。**四幹（構造/身体/流れ/崩壊）が揃った**
+- next        : ユーザー書き味レビュー→号令で本番反映（E18＝branch evolve-e18-cascade-trunk・master 未反映）
+- blockers    : master 反映は号令待ち（無人 push 禁止）
+
 ## 2026-06-19 — 進化 E17: 周回連動（周回で世界が開く）— A に第3の幹 reso(流れ/共鳴) が cycle≥1 で開く
 - agent      : Opus 4.8（精密・本番隣接のため外注なし／設計は E16 の Workflow 探索 Design B を流用・現実装へ再縮約）
 - goal       : 実機FBのもう半分「クリアはいつでもできる・replay に意味がない」への答え。周回(もう一度沈む)で
