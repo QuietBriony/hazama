@@ -19,6 +19,22 @@ Hazama 自律開発 session の追記専用ログ。
 
 ---
 
+## 2026-06-19 — 進化 E22: 紹介 LP（表玄関）＋OG カード（ゲーム本体は不変）
+- agent      : Opus 4.8（精密・本番隣接のため外注なし）
+- goal       : human-gate 残「LP デプロイ」第一版＝作品の外向き入口を一枚。ゲーム(/hazama/)とは別の表玄関＋共有カード。
+  ゲーム本体は一切触らない（slice.js/css・index.html・depths・sw 無改変）
+- shipped     :
+  - lp.html（新規・自己完結・依存ゼロ・slice ランタイム非依存）＝奈落のドーム／底の核グロー／スキャンライン／ヴィネットの沈下美学を
+    インライン CSS で再現。Hazama 文字標＋「沈むほど、戻り道は細くなる。」＋五軸(構造/身体/流れ/崩壊/並行)＋「沈む」→ ./（本編）。OG/Twitter メタ。
+  - assets/og-card.jpg（新規・1200×630・canvas 生成→JPEG 67KB）＝同パレットの共有カード（文字標＋tagline＋五軸＋URL）。
+  - smoke 契約 +7（lp.html/og-card 実在・./ 導線・OG カード参照・1200×630 宣言・slice 非依存）
+- checks      : hazama-check 2 PASS / 0 FAIL＋実ブラウザ（lp.html 構造 snapshot・og:image=og-card.jpg・
+  OG カード naturalWidth/Height=1200×630・ゲームへ ./ 導線・console error 0・ゲーム build 無改変）。
+  ※ピクセルの見た目は visual-gate＝ユーザーが実機で目視（hidden-tab で screenshot 不能）
+- backlog     : —。残＝（任意）E21 音の耳調整／E15 微ミス
+- next        : 本番反映→ユーザーが lp.html とカードを目視→レイアウト/色を目で調整
+- blockers    : master 反映は号令待ち／見た目は visual-gate（ユーザーの目）
+
 ## 2026-06-19 — 進化 E21: 音の軸色＋縁の呼気（human-gate＝実装→実機で聴いて耳で調整）
 - agent      : Opus 4.8（精密・本番隣接のため外注なし）
 - goal       : human-gate の HZ-BL-012「音の軸色＋浮上/reborn の呼気」第一版。五幹＋浮上/Ω に音の質感差を付ける。

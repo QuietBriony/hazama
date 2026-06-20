@@ -269,6 +269,15 @@ if (depths) {
   assert(rebornEndings.some((c) => !c.requireAttune), "E19 reborn keeps an always-open surface ending");
 }
 
+// E22: 紹介 LP（表玄関）＋OG カード。ゲーム本体とは別ページ・自己完結（slice ランタイム非依存）・ゲームへ導線。
+nonEmpty("lp.html");
+nonEmpty("assets/og-card.jpg");
+const lpHtml = read("lp.html");
+has(lpHtml, 'href="./"', "E22 LP links into the game (./)");
+has(lpHtml, "assets/og-card.jpg", "E22 LP references the OG card");
+has(lpHtml, 'og:image:width" content="1200"', "E22 LP OG card declares 1200x630");
+assert(!lpHtml.includes("slice.js") && !lpHtml.includes("slice.css"), "E22 LP is self-contained (no game runtime deps)");
+
 if (failures.length) {
   console.error("build-consistency smoke FAIL");
   for (const f of failures) console.error(`- ${f}`);

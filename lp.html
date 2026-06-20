@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Hazama 狭間 — 没入の降下対話</title>
+  <meta name="description" content="沈むほど、戻り道は細くなる。どう読むかで降りる幹が分かれ、周回するほど新しい降り方が開く。認識を満たした者だけがΩを賭けて勝ち取る——没入の降下対話。" />
+  <meta name="theme-color" content="#04060b" />
+  <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png" />
+  <!-- リンク共有プレビュー（OG / Twitter）。絶対URL＝本番 Pages を指す。 -->
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="Hazama 狭間 — 没入の降下対話" />
+  <meta property="og:description" content="沈むほど、戻り道は細くなる。どう読むかで降りる幹が分かれ、周回するほど新しい降り方が開く——没入の降下対話。" />
+  <meta property="og:url" content="https://quietbriony.github.io/hazama/lp.html" />
+  <meta property="og:image" content="https://quietbriony.github.io/hazama/assets/og-card.jpg" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Hazama 狭間 — 没入の降下対話" />
+  <meta name="twitter:description" content="沈むほど、戻り道は細くなる——没入の降下対話。" />
+  <meta name="twitter:image" content="https://quietbriony.github.io/hazama/assets/og-card.jpg" />
+  <style>
+    :root {
+      --bg: #04060b; --ink: #c8d2dc; --ink-dim: #6b7682; --ink-faint: #3a424c;
+      --accent: #7fb6c4; --warn: #c46b5a; --line: rgba(127,182,196,0.22);
+      --core: 159,208,219;            /* 核グロー（EdgeCard と同色） */
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; min-height: 100%; }
+    body {
+      background: var(--bg); color: var(--ink);
+      font-family: "Hiragino Sans", "Yu Gothic", "Noto Sans JP", system-ui, sans-serif;
+      -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility;
+      line-height: 1.85; letter-spacing: 0.02em;
+      min-height: 100svh; display: flex; flex-direction: column;
+      position: relative; overflow-x: hidden;
+    }
+    /* 奈落のドーム：上端がわずかに醒め、下へ漆黒へ沈む。 */
+    .bg {
+      position: fixed; inset: 0; z-index: 0; pointer-events: none;
+      background:
+        radial-gradient(150% 95% at 50% -12%, #0a131d 0%, #060c15 34%, #03060e 68%, #010206 100%);
+    }
+    /* 底からの核の光（ごく薄く）。 */
+    .bg::after {
+      content: ""; position: absolute; inset: 0;
+      background: radial-gradient(120% 60% at 50% 118%, rgba(var(--core), 0.16) 0%, rgba(var(--core), 0.05) 32%, transparent 60%);
+    }
+    /* スキャンライン＋ヴィネット（硬い乾いた地）。 */
+    .scan {
+      position: fixed; inset: 0; z-index: 1; pointer-events: none; mix-blend-mode: overlay; opacity: 0.5;
+      background: repeating-linear-gradient(to bottom, rgba(127,182,196,0.05) 0 1px, transparent 1px 3px);
+    }
+    .vig {
+      position: fixed; inset: 0; z-index: 1; pointer-events: none;
+      box-shadow: inset 0 0 220px 40px rgba(0,0,0,0.7);
+    }
+    main {
+      position: relative; z-index: 2;
+      flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center;
+      width: 100%; max-width: 680px; margin: 0 auto; padding: 12vh 24px 8vh;
+      text-align: center;
+    }
+    .mark {
+      font-weight: 600; letter-spacing: 0.42em; text-indent: 0.42em;
+      font-size: clamp(2.5rem, 11vw, 4.6rem); color: var(--ink);
+      margin: 0; line-height: 1.1;
+      text-shadow: 0 0 26px rgba(var(--core), 0.18);
+    }
+    .kanji { display: block; font-size: 0.42em; letter-spacing: 0.5em; text-indent: 0.5em; color: var(--accent); margin-top: 0.7em; opacity: 0.9; }
+    .tag { color: var(--ink-dim); font-size: clamp(0.95rem, 3.6vw, 1.12rem); margin: 1.8em 0 0; letter-spacing: 0.06em; }
+    .lede { margin: 3.2em 0 0; max-width: 34em; }
+    .lede p { margin: 0 0 1.5em; color: #aeb9c4; font-size: clamp(0.92rem, 3.4vw, 1.02rem); }
+    .lede .cold { color: var(--ink-dim); }
+    .axes { display: flex; flex-wrap: wrap; gap: 0.5em 0.9em; justify-content: center; margin: 0.4em 0 0; }
+    .axes span { font-size: 0.82rem; color: var(--accent); opacity: 0.82; border: 1px solid var(--line); border-radius: 2px; padding: 0.18em 0.7em; letter-spacing: 0.08em; }
+    .enter {
+      display: inline-block; margin: 3.4em 0 0; padding: 0.95em 3.2em;
+      color: var(--ink); text-decoration: none; font-size: 1.06rem; letter-spacing: 0.34em; text-indent: 0.34em;
+      border: 1px solid rgba(var(--core), 0.42); border-radius: 2px; background: rgba(127,182,196,0.04);
+      transition: background 0.5s ease, border-color 0.5s ease, box-shadow 0.5s ease; position: relative;
+    }
+    .enter:hover, .enter:focus-visible {
+      background: rgba(127,182,196,0.10); border-color: rgba(var(--core), 0.7);
+      box-shadow: 0 0 34px rgba(var(--core), 0.22); outline: none;
+    }
+    .enter:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+    .sub { margin: 1.6em 0 0; color: var(--ink-faint); font-size: 0.78rem; letter-spacing: 0.05em; }
+    footer { position: relative; z-index: 2; text-align: center; color: var(--ink-faint); font-size: 0.72rem; padding: 2.4em 16px 3em; letter-spacing: 0.04em; }
+    footer a { color: var(--ink-dim); text-decoration: none; border-bottom: 1px solid var(--line); }
+    /* 入場の淡いフェード（reduced-motion では無効）。 */
+    @media (prefers-reduced-motion: no-preference) {
+      main > * { animation: rise 1.4s ease both; }
+      .kanji { animation-delay: 0.15s; }
+      .tag { animation-delay: 0.3s; }
+      .lede { animation-delay: 0.5s; }
+      .enter { animation-delay: 0.8s; }
+      @keyframes rise { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+    }
+  </style>
+</head>
+<body>
+  <div class="bg" aria-hidden="true"></div>
+  <div class="scan" aria-hidden="true"></div>
+  <div class="vig" aria-hidden="true"></div>
+
+  <main>
+    <h1 class="mark">Hazama<span class="kanji">狭間（あわい）</span></h1>
+    <p class="tag">沈むほど、戻り道は細くなる。</p>
+
+    <div class="lede">
+      <p>世界の表皮が剥がれ、鉄錆色の構造が露出する。これは、読むほど深く沈む——没入の降下対話。</p>
+      <p>どう読むかで、降りる幹が分かれる。周回するほど、新しい降り方が開く。</p>
+      <div class="axes" aria-label="五つの降り方">
+        <span>構造</span><span>身体</span><span>流れ</span><span>崩壊</span><span>並行</span>
+      </div>
+      <p class="cold" style="margin-top:1.6em">認識を満たした者だけが、核の外周を賭けて、Ω を勝ち取る。だが——核そのものは、決して描かれない。</p>
+    </div>
+
+    <a class="enter" href="./" aria-label="Hazama に入る">沈 む</a>
+    <p class="sub">音あり推奨・片手で読める縦長・インストール可（PWA）</p>
+  </main>
+
+  <footer>
+    依存ゼロの静的作品。観測OSは終わらない。 ·
+    <a href="./">本編へ入る</a>
+  </footer>
+</body>
+</html>
