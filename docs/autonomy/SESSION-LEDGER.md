@@ -19,6 +19,22 @@ Hazama 自律開発 session の追記専用ログ。
 
 ---
 
+## 2026-06-19 — 進化 E19: 終端を勝ち取る — reborn の Ω 貫きを“見える鍵”でロック（認識が満ちて賭けた時だけ Ω）
+- agent      : Opus 4.8（精密・本番隣接のため外注なし）
+- goal       : 実機FBの残り半分「クリアはいつでもできる」への直答。Ω/浮上が縁で認識値により自動決定＝賭けも勝ち取りも無い問題を、
+  終端に"賭け"と"見える要件"を入れて是正。Hazama の「浮上＝失敗にしない」設計は保つ
+- shipped     :
+  - depths-shell.json: reborn を3択へ＝もう一度沈む／核の外周を貫いて観測をやめる(requireAttune+wager→__edge)／静かに浮上する(__edge)
+  - slice.js: renderChoices に locked 描画(requireAttune && !isAttuned → 押せず「まだ届かない（認識 N/6）」)・choose で __edge に wager 持越
+    ・renderEdge を attuned=isAttuned() && state.wagered へ(賭けて勝ち取った時だけ Ω)・state.wagered(transient・descendAgain/restart で reset)
+  - slice.css: .hz-choice.locked(E13 核グロー色 159,208,219 が薄く差す・dashed・押せない)
+  - version e18→e19 同期・smoke 契約+5(locked gate / wager 判定 / wagered transient / .locked css / reborn 2終端)
+- checks      : hazama-check 2 PASS / 0 FAIL＋実ブラウザ(att4=ロック「まだ届かない（認識 4/6）」disabled・att6=解錠 clickable「Ωを賭けて勝ち取る」・
+  attuned+賭ける→Ω(body.omega)・attuned+安全→浮上・未達+賭ける(強制 bypass)→浮上(防御 isAttuned&&wagered)・未達+安全→浮上・console error 0)
+- backlog     : —。残＝音の軸色(human-gate)／LP デプロイ／第5の幹(otherself)
+- next        : ユーザー書き味/手応えレビュー→号令で本番反映（E19＝branch evolve-e19-earned-ending・master 未反映）
+- blockers    : master 反映は号令待ち（無人 push 禁止）
+
 ## 2026-06-19 — 進化 E18: 第4の幹 Cascade（崩壊と再生）— cycle≥2 で A に開く・周回の階段を一段延ばす
 - agent      : Opus 4.8（精密・本番隣接のため外注なし）＋ Workflow（原典4源マイニング・4体・約12万tok）
 - goal       : 周回連動(E17)の階段をもう一段＝A の選択肢が周回で 2→3→4 に増える。第4の幹 casc(崩壊と再生)を cycle≥2 で開く

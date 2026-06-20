@@ -417,6 +417,10 @@ body[data-tension="high"] .hz-scene { animation: hz-shudder 2.6s ease-in-out inf
 }
 /* E14: 暴発タップ防止＝reveal 中の choices は disabled。SR にも明示され、視覚にも僅かな違いを残す。 */
 .hz-choice:disabled, .hz-choice[disabled] { cursor: default; pointer-events: none; }
+/* E19: 終端を勝ち取る＝Ω 貫きの“見える鍵”。認識が満ちるまでロック＝押せず、核の光(159,208,219=E13 核グロー)が薄く差すだけ。 */
+.hz-choice.locked { opacity: 0.5; cursor: not-allowed; border-style: dashed; border-color: rgba(159,208,219,0.30); background: transparent; }
+.hz-choice.locked .lead { color: var(--ink-dim); }
+.hz-choice.locked .sub { color: rgba(159,208,219,0.72); }
 .hz-choice:focus-visible, .hz-chip:focus-visible, .hz-gate-enter:focus-visible {
   outline: 2px solid var(--accent); outline-offset: 2px;
 }

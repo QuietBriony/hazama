@@ -651,7 +651,8 @@
       ],
       "choices": [
         { "t": "もう一度、零章から沈む", "sub": "周回。だが今度は、観測者を一枚多く抱えている", "to": "zero", "sink": 1, "dread": 0.7, "kind": "descend" },
-        { "t": "ここで観測をやめる——と、自分で決める", "sub": "“核を決めない自由”を残して降りるのをやめる", "to": "__edge", "sink": 0, "dread": 0.6, "kind": "retreat", "terminal": true }
+        { "t": "核の外周を貫いて、観測をやめる", "sub": "Ωを賭けて勝ち取る——深く読んだ者だけが届く終端", "to": "__edge", "sink": 0, "dread": 0.7, "kind": "retreat", "terminal": true, "requireAttune": true, "wager": true },
+        { "t": "ここで、静かに浮上する", "sub": "賭けない＝安全に表層へ帰る。視たものは、抱えたまま", "to": "__edge", "sink": 0, "dread": 0.5, "kind": "retreat", "terminal": true }
       ]
     },
 

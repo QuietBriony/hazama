@@ -46,7 +46,7 @@
   //   cycles=周回数, surfaceBounces=表層で弾かれた回数, detoursSeen=通った別の筋のid, maxRank=到達深度。
   // rejoin = 寄り道(detour)から本筋へ前進合流する先（divert 時に積む）。
   const freshLegacy = () => ({ cycles: 0, surfaceBounces: 0, detoursSeen: [], maxRank: 0 });
-  const state = { id: null, sink: 0, dread: 0, returnPaths: RETURN_PATHS_START, maxSink: 0, observer: 1, steps: 0, belowLoop: 0, resisted: 0, refused: 0, resistBeat: null, rank: 0, cycle: 0, visits: {}, rejoin: null, attunement: 0, echoDone: {}, activeTrunk: null, legacy: freshLegacy() };
+  const state = { id: null, sink: 0, dread: 0, returnPaths: RETURN_PATHS_START, maxSink: 0, observer: 1, steps: 0, belowLoop: 0, resisted: 0, refused: 0, resistBeat: null, rank: 0, cycle: 0, visits: {}, rejoin: null, attunement: 0, echoDone: {}, activeTrunk: null, wagered: false, legacy: freshLegacy() };
   let DATA = null;
   let revealToken = 0;
   const clamp01 = (x) => Math.max(0, Math.min(1, x));
@@ -911,18 +911,25 @@
     onboardHint(node);           // E9: 初回だけ、最初の読みの岐路に一行
     // E17: 周回ゲート＝minCycle を持つ選択肢は state.cycle がその値以上のときだけ出す（周回で A に第3の幹が開く）。
     (node.choices || []).filter((c) => !c.minCycle || state.cycle >= c.minCycle).forEach((c, idx) => {
+      // E19: 終端を勝ち取る＝requireAttune の選択肢（Ω を貫く）は認識が満ちるまで“見える鍵”でロック。
+      //   ロック中は押せず「まだ届かない（認識 N/閾値）」を見せる＝深く読めば開くが伝わる（幹/周回と直結）。
+      //   浮上は requireAttune を持たない＝常に押せる安全な帰還（失敗演出にしない）。
+      const locked = c.requireAttune && !isAttuned();
       const btn = document.createElement("button");
       btn.type = "button";
-      btn.className = "hz-choice " + (c.kind || "");
-      if (c.kind === "retreat" && state.maxSink > 0.4) btn.classList.add("heavy");
+      btn.className = "hz-choice " + (c.kind || "") + (locked ? " locked" : "");
+      if (!locked && c.kind === "retreat" && state.maxSink > 0.4) btn.classList.add("heavy");
       btn.innerHTML = `<span class="lead"></span>${c.sub ? `<span class="sub"></span>` : ""}`;
       btn.querySelector(".lead").textContent = c.t;
-      if (c.sub) btn.querySelector(".sub").textContent = c.sub;
-      btn.addEventListener("click", () => choose(c), { once: true });
+      if (c.sub) btn.querySelector(".sub").textContent = locked
+        ? `まだ届かない（認識 ${Math.round(state.attunement || 0)}/${ATTUNE.omegaThreshold}）`
+        : c.sub;
+      if (!locked) btn.addEventListener("click", () => choose(c), { once: true });
+      else btn.setAttribute("aria-disabled", "true");
       btn.disabled = true;                 // E14: appear タイマー前の暴発タップ防止＝reveal 中に固定位置の choices 帯を反射タップしても発火しない
       choicesEl.appendChild(btn);
       const appear = REDUCED ? 0 : 120 + idx * 150 + (c.kind === "retreat" ? state.maxSink * 800 : 0);
-      window.setTimeout(() => { btn.classList.add("in"); btn.disabled = false; }, appear);
+      window.setTimeout(() => { btn.classList.add("in"); if (!locked) btn.disabled = false; }, appear);  // E19: ロックは解錠しない
     });
     // ボタンを積んで scene が縮んだ“後”に最新行を底へ。重なりはレイアウトで防止済み、
     // ここは「最後の行を選択肢の真上に見せる」ための追従（ユーザーが上に居れば奪わない）。
@@ -1049,7 +1056,7 @@
     if (c.close && state.returnPaths > 0) state.returnPaths -= 1; // 戻り道は復活しない
     Audio.pulseOnce(c.kind === "descend" ? 1 : c.kind === "surface" ? 0.85 : 0.5);
     const to = Route.resolve(state.id, c);   // 分岐ルーティング（表層弾き＝別ルート前進 / 周回＝別の幹）
-    if (to === "__edge") return renderEdge();
+    if (to === "__edge") { state.wagered = !!c.wager; return renderEdge(); }   // E19: 賭け（核を貫く）かどうかを終端へ持ち越す
     renderNode(to);
   }
 
@@ -1095,7 +1102,7 @@
   // ---------- 縁（増分の終わり。沈みきり/辛うじて で分岐） ----------
   function renderEdge() {
     const myToken = ++revealToken;
-    const attuned = isAttuned();   // R2: Ω(没入)は attuned のみ。未達は浮上/帰還の極へ。
+    const attuned = isAttuned() && state.wagered;   // R2/E19: Ω は「核を賭けて貫いた(wager)」かつ認識合致の時だけ。賭けない/未達は浮上。
     state.dread = attuned ? 1 : 0.4;
     applyAtmosphere({ tension: attuned ? "high" : "low" });
     Spiral.save();   // 縁＝結末でも spiral 層を確定（閉じて去っても、次の表紙が応えられる）
@@ -1201,7 +1208,7 @@
     revealToken++;
     state.id = null; state.sink = 0; state.dread = 0; state.returnPaths = RETURN_PATHS_START;
     state.maxSink = 0; state.observer = 1; state.resisted = 0; state.refused = 0;
-    state.resistBeat = null; state.rank = 0; state.rejoin = null; state.echoDone = {}; state.activeTrunk = null;
+    state.resistBeat = null; state.rank = 0; state.rejoin = null; state.echoDone = {}; state.activeTrunk = null; state.wagered = false;
     lastPhase = "surface";   // A4: 再降下のたびに最初の深い跨ぎがまた句読点を打てる
     // E6(監査): phase-break 由来の glitch-hard/leak-on が縁で発火したまま残り、再降下直後の零章に
     // 焼き付くのを断つ（burst の clearBurst タイマーは revealToken と無関係に走るため明示除去）。
@@ -1940,7 +1947,7 @@
 
   // ---------- 起動 ----------
   async function loadData() {
-    const res = await fetch("depths-shell.json?v=e18", { cache: "no-store" });
+    const res = await fetch("depths-shell.json?v=e19", { cache: "no-store" });
     DATA = await res.json();
   }
   // ---------- 動く表紙（R6：タイトルも state/seed に応じて動く・静止でない） ----------
@@ -1986,7 +1993,7 @@
   }
   function restart() {
     revealToken++;
-    state.id = null; state.sink = 0; state.dread = 0; state.returnPaths = RETURN_PATHS_START; state.maxSink = 0; state.observer = 1; state.steps = 0; state.belowLoop = 0; state.resisted = 0; state.refused = 0; state.resistBeat = null; state.rank = 0; state.cycle = 0; state.visits = {}; state.rejoin = null; state.attunement = 0; state.echoDone = {}; state.activeTrunk = null; state.legacy = freshLegacy();
+    state.id = null; state.sink = 0; state.dread = 0; state.returnPaths = RETURN_PATHS_START; state.maxSink = 0; state.observer = 1; state.steps = 0; state.belowLoop = 0; state.resisted = 0; state.refused = 0; state.resistBeat = null; state.rank = 0; state.cycle = 0; state.visits = {}; state.rejoin = null; state.attunement = 0; state.echoDone = {}; state.activeTrunk = null; state.wagered = false; state.legacy = freshLegacy();
     lastPhase = "surface";   // A4: restart/forget でも跨ぎ検知を初期化（再降下で最初の跨ぎが効く）
     applyCycleSkin();        // B4: cycle=0 に戻ったので表紙スキンも 0（完全に従来どおり）へ
     if (document.body && document.body.classList) document.body.classList.remove("surfaced", "omega", "phase-break", "glitch-hard", "glitch-soft", "leak-on");

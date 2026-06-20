@@ -136,6 +136,11 @@ assert(/state\.activeTrunk = c\.trunk \|\|/.test(js), "E17 fork honors c.trunk (
 has(js, '=== "reso" ? "流れ"', "E17 edge card labels the reso trunk");
 // E18: 第4の幹 casc（崩壊と再生）＝cycle≥2 で A に開く。E17 の trunk/minCycle 機構をそのまま活用。
 has(js, '=== "casc" ? "崩壊"', "E18 edge card labels the casc trunk");
+// E19: 終端を勝ち取る＝reborn の Ω 貫きは認識が満ちるまで“見える鍵”でロック。賭けて勝ち取った時だけ Ω 終端。
+assert(/requireAttune && !isAttuned\(\)/.test(js), "E19 Ω wager choice locked until attuned");
+assert(/attuned = isAttuned\(\) && state\.wagered/.test(js), "E19 omega ending requires the wager");
+assert(saveBody.length > 0 && !saveBody.includes("wagered"), "E19 wagered stays transient (not in spiral save)");
+assert(css.includes(".hz-choice.locked"), "E19 locked Ω door style");
 // E14: choices の暴発タップ防止＝reveal 中は disabled・appear タイマーで false。
 assert(js.includes("btn.disabled = true"), "E14 choice button disabled until appear");
 assert(js.includes("btn.disabled = false"), "E14 choice button enabled after appear timer");
@@ -242,6 +247,11 @@ if (depths) {
   assert(aCasc && aCasc.to === "B_casc" && aCasc.minCycle >= 2, "E18 A casc choice is cycle-gated (>=2) and enters casc trunk");
   const yCascTargets = (depths.nodes["Y_casc"]?.choices || []).map((c) => c.to);
   assert(yCascTargets.includes("Z"), "E18 casc trunk reconverges to Z");
+  // E19: reborn に Ω 貫き(requireAttune・wager) と安全な浮上(賭けない) の2終端。
+  const rebornEndings = (depths.nodes["reborn"]?.choices || []).filter((c) => c.to === "__edge");
+  assert(rebornEndings.length >= 2, "E19 reborn has wager + safe-surface endings");
+  assert(rebornEndings.some((c) => c.requireAttune && c.wager), "E19 reborn has locked Ω wager ending");
+  assert(rebornEndings.some((c) => !c.requireAttune), "E19 reborn keeps an always-open surface ending");
 }
 
 if (failures.length) {
