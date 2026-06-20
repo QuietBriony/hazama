@@ -19,6 +19,21 @@ Hazama 自律開発 session の追記専用ログ。
 
 ---
 
+## 2026-06-19 — 進化 E20: 第5の幹 otherself（多世界・選ばなかった私）— cycle≥3 で A に開く・階段を 2→3→4→5 へ
+- agent      : Opus 4.8（精密・本番隣接のため外注なし）＋ Workflow（原典3源マイニング・3体・約16万tok）
+- goal       : 周回連動の階段をさらに一段＝A の選択肢が周回で 2→3→4→5。第5の幹 other(並行自己/選ばなかった私)を cycle≥3 で開く
+- shipped     :
+  - depths-shell.json: A に other 選択(trunk:other/minCycle:3/to:B_other)。other 幹6ノード新規執筆
+    (B/E/H/M/S/Y_other＝原典 03-shellL/04-shellMtoQ＋既存 Meta-Self/観測者増殖テーマを翻案: 選ばなかった私が立つ→増える→境界溶解→無数の同時観測→総体は一人→一点へ)。
+    Y_other が五幹を「みな同じ一点に着く」と束ねて Z 再合流。
+  - slice.js: RANK に other 梯子・縁カードを「降り方: …/並行」5分岐へ。E17/E18 の trunk/minCycle/activeTrunk 機構を再利用＝Route 無改変・slice.js 6行のみ。
+  - version e19→e20 同期・smoke 契約+4（other card / other 6ノード実在 / A other ゲート minCycle>=3 / Y_other→Z）
+- checks      : hazama-check 2 PASS / 0 FAIL＋実ブラウザ（5段階段 cycle0=2/1=3/2=4/3=5択 確認・A→other→B→E→H→M→S→Y→Z 踏破・
+  attunement 6＝Ω 可・casc/soma 不変・other 本文実描画(境界が溶ける)・console error 0）
+- backlog     : —。残＝音の軸色(human-gate)／LP デプロイ。**五幹（構造/身体/流れ/崩壊/並行）が揃った**
+- next        : ユーザー書き味レビュー→号令で本番反映（E20＝branch evolve-e20-otherself-trunk・master 未反映）
+- blockers    : master 反映は号令待ち（無人 push 禁止）
+
 ## 2026-06-19 — 進化 E19: 終端を勝ち取る — reborn の Ω 貫きを“見える鍵”でロック（認識が満ちて賭けた時だけ Ω）
 - agent      : Opus 4.8（精密・本番隣接のため外注なし）
 - goal       : 実機FBの残り半分「クリアはいつでもできる」への直答。Ω/浮上が縁で認識値により自動決定＝賭けも勝ち取りも無い問題を、

@@ -136,6 +136,8 @@ assert(/state\.activeTrunk = c\.trunk \|\|/.test(js), "E17 fork honors c.trunk (
 has(js, '=== "reso" ? "流れ"', "E17 edge card labels the reso trunk");
 // E18: 第4の幹 casc（崩壊と再生）＝cycle≥2 で A に開く。E17 の trunk/minCycle 機構をそのまま活用。
 has(js, '=== "casc" ? "崩壊"', "E18 edge card labels the casc trunk");
+// E20: 第5の幹 other（並行自己）＝cycle≥3 で A に開く。E17/E18 と同じ trunk/minCycle 機構。
+has(js, '=== "other" ? "並行"', "E20 edge card labels the otherself trunk");
 // E19: 終端を勝ち取る＝reborn の Ω 貫きは認識が満ちるまで“見える鍵”でロック。賭けて勝ち取った時だけ Ω 終端。
 assert(/requireAttune && !isAttuned\(\)/.test(js), "E19 Ω wager choice locked until attuned");
 assert(/attuned = isAttuned\(\) && state\.wagered/.test(js), "E19 omega ending requires the wager");
@@ -247,6 +249,14 @@ if (depths) {
   assert(aCasc && aCasc.to === "B_casc" && aCasc.minCycle >= 2, "E18 A casc choice is cycle-gated (>=2) and enters casc trunk");
   const yCascTargets = (depths.nodes["Y_casc"]?.choices || []).map((c) => c.to);
   assert(yCascTargets.includes("Z"), "E18 casc trunk reconverges to Z");
+  // E20: other 幹（cycle≥3 で開く第5の幹）の実在＋A の other 選択(minCycle:3 ゲート)＋Y_other→Z 再合流。
+  for (const oid of ["B_other", "E_other", "H_other", "M_other", "S_other", "Y_other"]) {
+    assert(depths.nodes[oid], `E20 otherself trunk node missing: ${oid}`);
+  }
+  const aOther = (depths.nodes["A"]?.choices || []).find((c) => c.trunk === "other");
+  assert(aOther && aOther.to === "B_other" && aOther.minCycle >= 3, "E20 A otherself choice is cycle-gated (>=3) and enters other trunk");
+  const yOtherTargets = (depths.nodes["Y_other"]?.choices || []).map((c) => c.to);
+  assert(yOtherTargets.includes("Z"), "E20 otherself trunk reconverges to Z");
   // E19: reborn に Ω 貫き(requireAttune・wager) と安全な浮上(賭けない) の2終端。
   const rebornEndings = (depths.nodes["reborn"]?.choices || []).filter((c) => c.to === "__edge");
   assert(rebornEndings.length >= 2, "E19 reborn has wager + safe-surface endings");

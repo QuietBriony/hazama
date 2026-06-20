@@ -130,7 +130,9 @@
     // E17: reso 幹（周回で開く第3の幹）の深度梯子。
     B_reso: 2, E_reso: 5, H_reso: 8, M_reso: 13, S_reso: 19, Y_reso: 25,
     // E18: casc 幹（cycle≥2 で開く第4の幹）の深度梯子。
-    B_casc: 2, E_casc: 5, H_casc: 8, M_casc: 13, S_casc: 19, Y_casc: 25
+    B_casc: 2, E_casc: 5, H_casc: 8, M_casc: 13, S_casc: 19, Y_casc: 25,
+    // E20: other 幹（cycle≥3 で開く第5の幹＝並行自己）の深度梯子。
+    B_other: 2, E_other: 5, H_other: 8, M_other: 13, S_other: 19, Y_other: 25
   };
 
   const $ = (id) => document.getElementById(id);
@@ -1155,7 +1157,7 @@
       card.style.cssText = "margin-top:2em;font-size:0.8rem;line-height:1.9;";
       const lit = Math.round(state.maxSink * 8);
       const head = attuned ? "― 深度Ω 到達・外殻踏破 ―" : "― 浮上 — 表層へ帰る ―";
-      card.textContent = `${head}  認識: ${Math.round(state.attunement || 0)}/${ATTUNE.omegaThreshold}${attuned ? "（合致）" : "（深く読み、視たものを覚えているほど降りられる）"} / 到達深度: ${"▮".repeat(lit)}${"▯".repeat(8 - lit)} / 残った戻り道: ${state.returnPaths}/${RETURN_PATHS_START} / 観測者: ${state.observer} / 抗った: ${state.resisted} ・ 戻れなかった: ${state.refused} / 周回: ${state.cycle} / 降り方: ${state.activeTrunk === "soma" ? "身体" : state.activeTrunk === "reso" ? "流れ" : state.activeTrunk === "casc" ? "崩壊" : "構造"}`;
+      card.textContent = `${head}  認識: ${Math.round(state.attunement || 0)}/${ATTUNE.omegaThreshold}${attuned ? "（合致）" : "（深く読み、視たものを覚えているほど降りられる）"} / 到達深度: ${"▮".repeat(lit)}${"▯".repeat(8 - lit)} / 残った戻り道: ${state.returnPaths}/${RETURN_PATHS_START} / 観測者: ${state.observer} / 抗った: ${state.resisted} ・ 戻れなかった: ${state.refused} / 周回: ${state.cycle} / 降り方: ${state.activeTrunk === "soma" ? "身体" : state.activeTrunk === "reso" ? "流れ" : state.activeTrunk === "casc" ? "崩壊" : state.activeTrunk === "other" ? "並行" : "構造"}`;
       sceneEl.appendChild(card); card.classList.add("shown");
       const more = document.createElement("p");
       more.className = "hz-line"; more.style.cssText = "margin-top:0.6em;font-size:0.78rem;color:#6b7682;";
@@ -1947,7 +1949,7 @@
 
   // ---------- 起動 ----------
   async function loadData() {
-    const res = await fetch("depths-shell.json?v=e19", { cache: "no-store" });
+    const res = await fetch("depths-shell.json?v=e20", { cache: "no-store" });
     DATA = await res.json();
   }
   // ---------- 動く表紙（R6：タイトルも state/seed に応じて動く・静止でない） ----------
