@@ -19,6 +19,22 @@ Hazama 自律開発 session の追記専用ログ。
 
 ---
 
+## 2026-06-19 — 進化 E21: 音の軸色＋縁の呼気（human-gate＝実装→実機で聴いて耳で調整）
+- agent      : Opus 4.8（精密・本番隣接のため外注なし）
+- goal       : human-gate の HZ-BL-012「音の軸色＋浮上/reborn の呼気」第一版。五幹＋浮上/Ω に音の質感差を付ける。
+  音はヘッドレス検証不能＝実装→ユーザーが実機で聴いて採否/調整の往復が前提（推奨で進める合意）
+- shipped     :
+  - slice.js Audio: setAxis(trunk)＝幹ごとの detune(cents)/cutoff(温度)/うねり幅 オフセット(fail-safe 0=従来)。
+    soma(低暗どっしり)/reso(高く開ける)/casc(暗く不安定揺れ)/other(重なって揺らぐ合唱)/deep(従来)。apply() が3パラメータに反映。
+  - breath(attuned)＝縁の呼気。低い一音が膨らんで・わずかに沈んで・ほどける(解決しない)。Ω=80Hz満ちる/浮上=128Hz醒める。
+  - 配線: Route.resolve 幹フォークで Audio.setAxis・renderEdge で Audio.breath・restart で setAxis(null)。すべて未解禁なら no-op。
+  - version e20→e21 同期・smoke 契約+4(setAxis/breath 関数・フォーク呼び/縁呼びの存在)
+- checks      : hazama-check 2 PASS / 0 FAIL＋実ブラウザ（音 OFF/ON 両経路で setAxis×5幹・breath×2終端を駆動し例外ゼロ・
+  AudioContext 健全・console error 0）。**音質そのものは human-gate＝ユーザーが実機で聴いて採否/調整**
+- backlog     : —。残＝LP デプロイ。音は耳の往復で詰める
+- next        : 本番反映→ユーザーが実機で聴く→「この幹はもっと温かく/冷たく」等の耳の指示で微調整
+- blockers    : 音質採否は human-gate（ユーザーの耳）／master 反映は号令待ち
+
 ## 2026-06-19 — 進化 E20: 第5の幹 otherself（多世界・選ばなかった私）— cycle≥3 で A に開く・階段を 2→3→4→5 へ
 - agent      : Opus 4.8（精密・本番隣接のため外注なし）＋ Workflow（原典3源マイニング・3体・約16万tok）
 - goal       : 周回連動の階段をさらに一段＝A の選択肢が周回で 2→3→4→5。第5の幹 other(並行自己/選ばなかった私)を cycle≥3 で開く

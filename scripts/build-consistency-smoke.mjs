@@ -138,6 +138,11 @@ has(js, '=== "reso" ? "流れ"', "E17 edge card labels the reso trunk");
 has(js, '=== "casc" ? "崩壊"', "E18 edge card labels the casc trunk");
 // E20: 第5の幹 other（並行自己）＝cycle≥3 で A に開く。E17/E18 と同じ trunk/minCycle 機構。
 has(js, '=== "other" ? "並行"', "E20 edge card labels the otherself trunk");
+// E21: 音の軸色（幹ごとの微変調 setAxis ＋ 縁の呼気 breath）。human-gate＝耳で採否＝コード存在のみ検証。
+has(js, "function setAxis", "E21 per-trunk audio axis");
+has(js, "function breath", "E21 edge breath (呼気)");
+has(js, "Audio.setAxis(state.activeTrunk)", "E21 axis set at trunk fork");
+has(js, "Audio.breath(attuned)", "E21 breath at edge");
 // E19: 終端を勝ち取る＝reborn の Ω 貫きは認識が満ちるまで“見える鍵”でロック。賭けて勝ち取った時だけ Ω 終端。
 assert(/requireAttune && !isAttuned\(\)/.test(js), "E19 Ω wager choice locked until attuned");
 assert(/attuned = isAttuned\(\) && state\.wagered/.test(js), "E19 omega ending requires the wager");

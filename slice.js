@@ -658,6 +658,7 @@
         //   どちらも Z で再合流＝終端(Ω/浮上/縁/spiral)は完全共有。activeTrunk は transient（spiral 非保存・再降下で再選択）。
         if (fromId === "A") {
           state.activeTrunk = c.trunk || (c.kind === "surface" ? "soma" : "deep");   // E17: trunk フィールドで第3の幹(reso)も選べる
+          Audio.setAxis(state.activeTrunk);   // E21: 幹の音の軸色を取り直す（未解禁なら no-op）
           if (state.activeTrunk !== "deep") return c.to;   // soma/reso は幹入口(B_soma/B_reso)を直に指す＝弾き/迂回を通さず
         }
         // 表層読み＝知覚ゲートで弾かれる：同じ所へ戻さず、別ルートへ逸れて“前進”する。
@@ -1110,6 +1111,7 @@
     Spiral.save();   // 縁＝結末でも spiral 層を確定（閉じて去っても、次の表紙が応えられる）
     if (!attuned) document.body && document.body.classList && document.body.classList.add("surfaced");
     else document.body && document.body.classList && document.body.classList.add("omega");   // E12: Ω 突破の専用ウォッシュ（核＝曼荼羅が前面化・底光で満ちる）
+    Audio.breath(attuned);   // E21: 縁の呼気（解決音ではない息・未解禁なら no-op）
     sceneEl.innerHTML = ""; choicesEl.innerHTML = "";
     setBusy(true);               // E6: 縁の結末文＋選択が出揃うまで SR を抑制
     Follow.reset();
@@ -1260,6 +1262,7 @@
     // depth.html のリアクティブ設計（深さ→音域/cutoff/残響、多声→密度、圧→不協和/鼓動）を
     // 同一document の内製エンジンへ畳み込んだ信号。menace=浅は馴染む/深で威圧。
     let cur = { depth: 0, dread: 0, density: 0 }, colorSeed = 0, baseCents = 0;
+    let axisCents = 0, axisCut = 0, axisWobble = 0;   // E21: 幹ごとの音の軸色オフセット（fail-safe=0=従来の地）
     const supported = () => !!(window.AudioContext || window.webkitAudioContext);
 
     // 倍音: ratio=基音比, base=常時gain, bloom=深度で開く量, diss=不協和(dread で開く)
@@ -1322,10 +1325,10 @@
       const t = ctx.currentTime;
       const s = cur.depth, d = cur.dread, dens = cur.density;
       const base = 116 - s * 40;                         // 沈むほど低く（116→76Hz）。端末スピーカーで可聴な音域へ底上げ
-      const cutoff = 1900 - s * 1000 - d * 250;          // 沈むほど暗く（深さ＋圧で翳る）。中倍音が通るよう上げる
+      const cutoff = 1900 - s * 1000 - d * 250 + axisCut;  // 沈むほど暗く（深さ＋圧で翳る）。E21: 幹で温度を染める
       const bloomCurve = Math.max(0, s - 0.10) / 0.90;   // 浅では開かない／深で倍音が開花
       const menace = d * (0.30 + 0.70 * s);              // 不協和は浅は馴染み・深で威圧（menaceカーブ）
-      baseCents = (((colorSeed * 37) % 25) - 12) * 0.6; // 周回ごとの微デチューン（glitchHit の復帰先）
+      baseCents = (((colorSeed * 37) % 25) - 12) * 0.6 + axisCents; // 周回ごとの微デチューン＋E21 幹の軸色（glitchHit の復帰先）
       const slow = now ? 0.25 : 1.3;
       drones.forEach((dr) => {
         const sp = dr.spec;
@@ -1339,7 +1342,7 @@
       master.gain.setTargetAtTime(0.24 + d * 0.06, t, 0.8);
       wetGain.gain.setTargetAtTime(0.1 + s * 0.34, t, 1.8);            // 深いほど広い残響
       lfo.frequency.setTargetAtTime(0.05 + s * 0.1, t, 1.8);
-      lfoGain.gain.setTargetAtTime(3 + s * 10 + dens * 4 + (colorSeed % 5), t, 1.8); // うねり幅（cents）
+      lfoGain.gain.setTargetAtTime(3 + s * 10 + dens * 4 + (colorSeed % 5) + axisWobble, t, 1.8); // うねり幅（cents）＋E21 幹の揺れ
     }
     function schedulePulse() {
       if (pulseTimer) clearInterval(pulseTimer);
@@ -1402,8 +1405,35 @@
         src.start(t); src.stop(t + 0.06);
       } catch (e) {}
     }
+    // E21: 音の軸色＝幹ごとに地の音を微かに染める（解決音は鳴らさない・現象としての地）。
+    //   fail-safe＝既定(deep/null)はオフセット 0＝従来の地そのもの。実機で人間が聴いて採否/調整（human-gate）。
+    function setAxis(trunk) {
+      const AX = {
+        soma:  { cents: -5, cut: -260, wobble: 1 },   // 身体＝低く・暗く・どっしり
+        reso:  { cents:  4, cut:  360, wobble: 2 },   // 流れ＝やや高く・開けて明るい
+        casc:  { cents:  0, cut: -120, wobble: 7 },   // 崩壊＝暗く・不安定に揺れる
+        other: { cents:  2, cut:   60, wobble: 11 }   // 並行＝重なって揺らぐ（合唱的）
+      };
+      const a = AX[trunk] || { cents: 0, cut: 0, wobble: 0 };
+      axisCents = a.cents; axisCut = a.cut; axisWobble = a.wobble;
+      apply(false);
+    }
+    // E21: 縁の呼気＝解決音ではない、ただの息。低い一音が膨らんで、わずかに沈んで、ほどける。
+    //   Ω=低く満ちる／浮上=中域で醒める。Audio 未解禁なら no-op。
+    function breath(attuned) {
+      if (!on || !ctx || ctx.state !== "running") return;
+      const t = ctx.currentTime;
+      const f0 = attuned ? 80 : 128;
+      const o = ctx.createOscillator(), g = ctx.createGain();
+      o.type = "sine"; o.frequency.value = f0;
+      o.frequency.setTargetAtTime(f0 * 0.94, t + 1.0, 2.2);          // わずかに沈む＝吐く息（解決しない）
+      g.gain.value = 0.0001;
+      g.gain.setTargetAtTime(attuned ? 0.075 : 0.05, t + 0.08, 1.0); // ゆっくり吸う
+      g.gain.setTargetAtTime(0.0001, t + 2.8, 2.0);                  // ゆっくり吐く＝呼気
+      o.connect(g); g.connect(filter); o.start(t); o.stop(t + 6.0);
+    }
     return {
-      start, toggle, pulseOnce: (a) => beat(a), glitchHit,
+      start, toggle, pulseOnce: (a) => beat(a), glitchHit, setAxis, breath,
       get on() { return on; },
       get playing() { return playing; }, // 鳴らす意図（チップ表示の正）
       setColor: (seed) => { colorSeed = seed; apply(false); },
@@ -1949,7 +1979,7 @@
 
   // ---------- 起動 ----------
   async function loadData() {
-    const res = await fetch("depths-shell.json?v=e20", { cache: "no-store" });
+    const res = await fetch("depths-shell.json?v=e21", { cache: "no-store" });
     DATA = await res.json();
   }
   // ---------- 動く表紙（R6：タイトルも state/seed に応じて動く・静止でない） ----------
@@ -1996,6 +2026,7 @@
   function restart() {
     revealToken++;
     state.id = null; state.sink = 0; state.dread = 0; state.returnPaths = RETURN_PATHS_START; state.maxSink = 0; state.observer = 1; state.steps = 0; state.belowLoop = 0; state.resisted = 0; state.refused = 0; state.resistBeat = null; state.rank = 0; state.cycle = 0; state.visits = {}; state.rejoin = null; state.attunement = 0; state.echoDone = {}; state.activeTrunk = null; state.wagered = false; state.legacy = freshLegacy();
+    Audio.setAxis(null);     // E21: 全消去/再起動で音の軸色も従来の地へ戻す
     lastPhase = "surface";   // A4: restart/forget でも跨ぎ検知を初期化（再降下で最初の跨ぎが効く）
     applyCycleSkin();        // B4: cycle=0 に戻ったので表紙スキンも 0（完全に従来どおり）へ
     if (document.body && document.body.classList) document.body.classList.remove("surfaced", "omega", "phase-break", "glitch-hard", "glitch-soft", "leak-on");
