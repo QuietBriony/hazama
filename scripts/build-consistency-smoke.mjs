@@ -130,6 +130,10 @@ has(js, "縁が、足の下でほどける", "E15 re-descend beat text");
 has(js, "activeTrunk", "E16 active-trunk state field");
 assert(/fromId === "A"[\s\S]{0,240}activeTrunk/.test(js), "E16 fork selects the descent trunk at junction A");
 assert(saveBody.length > 0 && !saveBody.includes("activeTrunk"), "E16 activeTrunk stays transient (not in spiral save)");
+// E17: 周回連動＝周回(cycle>=1)で A に第3の幹(reso/流れ)が開く。minCycle ゲート＋trunk フィールドで分岐。
+assert(/filter\(\(c\) => !c\.minCycle/.test(js), "E17 cycle-gate filters choices by minCycle");
+assert(/state\.activeTrunk = c\.trunk \|\|/.test(js), "E17 fork honors c.trunk (third trunk)");
+has(js, '=== "reso" ? "流れ"', "E17 edge card labels the reso trunk");
 // E14: choices の暴発タップ防止＝reveal 中は disabled・appear タイマーで false。
 assert(js.includes("btn.disabled = true"), "E14 choice button disabled until appear");
 assert(js.includes("btn.disabled = false"), "E14 choice button enabled after appear timer");
@@ -220,6 +224,14 @@ if (depths) {
   assert(aSurface && aSurface.to === "B_soma", "E16 A surface choice enters soma trunk (B_soma)");
   const ySomaTargets = (depths.nodes["Y_soma"]?.choices || []).map((c) => c.to);
   assert(ySomaTargets.includes("Z"), "E16 soma trunk reconverges to Z");
+  // E17: reso 幹（周回で開く第3の幹）の実在＋A の reso 選択(minCycle ゲート)＋Y_reso→Z 再合流。
+  for (const rid of ["B_reso", "E_reso", "H_reso", "M_reso", "S_reso", "Y_reso"]) {
+    assert(depths.nodes[rid], `E17 reso trunk node missing: ${rid}`);
+  }
+  const aReso = (depths.nodes["A"]?.choices || []).find((c) => c.trunk === "reso");
+  assert(aReso && aReso.to === "B_reso" && aReso.minCycle >= 1, "E17 A reso choice is cycle-gated and enters reso trunk");
+  const yResoTargets = (depths.nodes["Y_reso"]?.choices || []).map((c) => c.to);
+  assert(yResoTargets.includes("Z"), "E17 reso trunk reconverges to Z");
 }
 
 if (failures.length) {

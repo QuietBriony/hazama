@@ -19,6 +19,22 @@ Hazama 自律開発 session の追記専用ログ。
 
 ---
 
+## 2026-06-19 — 進化 E17: 周回連動（周回で世界が開く）— A に第3の幹 reso(流れ/共鳴) が cycle≥1 で開く
+- agent      : Opus 4.8（精密・本番隣接のため外注なし／設計は E16 の Workflow 探索 Design B を流用・現実装へ再縮約）
+- goal       : 実機FBのもう半分「クリアはいつでもできる・replay に意味がない」への答え。周回(もう一度沈む)で
+  A に第3の降り方が開く＝replay が世界を増やす。E16(複線化)の上に周回連動を重ねる
+- shipped     :
+  - depths-shell.json: A に reso 選択(trunk:reso/minCycle:1/to:B_reso) を追加。reso 幹6ノード新規執筆
+    (B/E/H/M/S/Y_reso＝原典 docs/source/26 の断絶OS→共鳴OS＋A の八観伏線回収: 物でなく流れ・相互作用で読む)。Y_reso→Z 再合流。
+  - slice.js: renderChoices に minCycle 周回ゲート(filter)・Route.resolve を c.trunk 対応へ拡張・RANK に reso 梯子
+    (2/5/8/13/19/25)・縁カードを「降り方: 構造/身体/流れ」3分岐へ。E16 の activeTrunk 機構をそのまま活用＝spiral schema 不変。
+  - version e16→e17 同期・smoke 契約+6（minCycle filter / c.trunk fork / reso card / reso 6ノード実在 / A reso ゲート / Y_reso→Z）
+- checks      : hazama-check 2 PASS / 0 FAIL＋実ブラウザ（cycle0=A 2択(reso 無し)・cycle1=A 3択(reso 出る)＝周回ゲート確認・
+  __hz で A→reso→B_reso→E→H→M→S→Y→Z 踏破・attunement 6＝Ω 到達可・deep/soma 不変・reso 本文実描画(共鳴OS)・console error 0）
+- backlog     : —。残＝音の軸色(human-gate)／LP デプロイ／第2の幹(Cascade=崩壊と再生)も原典マイニング済（将来 E18 余地）
+- next        : ユーザー書き味レビュー→号令で本番反映（E17＝branch evolve-e17-cycle-resonance・master 未反映）
+- blockers    : master 反映は号令待ち（無人 push 禁止）
+
 ## 2026-06-19 — 進化 E16: 複線化（降りる幹を分ける）— A の岐路が deep幹(構造)/soma幹(身体) を選び Z で再合流
 - agent      : Opus 4.8（精密・本番隣接のため外注なし）＋ Workflow（設計探索＝グラフマップ/原典マイニング/設計2案・5体・約48万tok）
 - goal       : 実機プレイテストFB「ストーリーの多面性が欲しい・展開が一緒・分岐がない」への直球。ユーザー選択＝

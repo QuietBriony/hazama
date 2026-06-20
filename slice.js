@@ -126,7 +126,9 @@
     V: 22, W: 23, X: 24, X_hold: 24, Y: 25, Z: 26,
     Omega: 27, below: 28, reborn: 27,
     // E16: soma 幹（複線化）の深度梯子＝既存文字キーと同位の rank（音/沈下の深まりを deep 幹と揃える）。
-    B_soma: 2, D_soma: 4, F_soma: 6, J_soma: 10, N_soma: 14, S_soma: 19, V_soma: 22, Y_soma: 25
+    B_soma: 2, D_soma: 4, F_soma: 6, J_soma: 10, N_soma: 14, S_soma: 19, V_soma: 22, Y_soma: 25,
+    // E17: reso 幹（周回で開く第3の幹）の深度梯子。
+    B_reso: 2, E_reso: 5, H_reso: 8, M_reso: 13, S_reso: 19, Y_reso: 25
   };
 
   const $ = (id) => document.getElementById(id);
@@ -651,8 +653,8 @@
         // E16: A の岐路が「降りる幹」を選ぶ複線化。構造で読む(descend)=deep 幹(既定)／身体で受けとめる(surface)=soma 幹。
         //   どちらも Z で再合流＝終端(Ω/浮上/縁/spiral)は完全共有。activeTrunk は transient（spiral 非保存・再降下で再選択）。
         if (fromId === "A") {
-          state.activeTrunk = (c.kind === "surface") ? "soma" : "deep";
-          if (state.activeTrunk === "soma") return c.to;   // A の surface は B_soma を直に指す＝弾き(divert)を通さず幹入口へ
+          state.activeTrunk = c.trunk || (c.kind === "surface" ? "soma" : "deep");   // E17: trunk フィールドで第3の幹(reso)も選べる
+          if (state.activeTrunk !== "deep") return c.to;   // soma/reso は幹入口(B_soma/B_reso)を直に指す＝弾き/迂回を通さず
         }
         // 表層読み＝知覚ゲートで弾かれる：同じ所へ戻さず、別ルートへ逸れて“前進”する。
         if (c.kind === "surface") {
@@ -905,7 +907,8 @@
   function renderChoices(node) {
     choicesEl.innerHTML = "";
     onboardHint(node);           // E9: 初回だけ、最初の読みの岐路に一行
-    (node.choices || []).forEach((c, idx) => {
+    // E17: 周回ゲート＝minCycle を持つ選択肢は state.cycle がその値以上のときだけ出す（周回で A に第3の幹が開く）。
+    (node.choices || []).filter((c) => !c.minCycle || state.cycle >= c.minCycle).forEach((c, idx) => {
       const btn = document.createElement("button");
       btn.type = "button";
       btn.className = "hz-choice " + (c.kind || "");
@@ -1143,7 +1146,7 @@
       card.style.cssText = "margin-top:2em;font-size:0.8rem;line-height:1.9;";
       const lit = Math.round(state.maxSink * 8);
       const head = attuned ? "― 深度Ω 到達・外殻踏破 ―" : "― 浮上 — 表層へ帰る ―";
-      card.textContent = `${head}  認識: ${Math.round(state.attunement || 0)}/${ATTUNE.omegaThreshold}${attuned ? "（合致）" : "（深く読み、視たものを覚えているほど降りられる）"} / 到達深度: ${"▮".repeat(lit)}${"▯".repeat(8 - lit)} / 残った戻り道: ${state.returnPaths}/${RETURN_PATHS_START} / 観測者: ${state.observer} / 抗った: ${state.resisted} ・ 戻れなかった: ${state.refused} / 周回: ${state.cycle} / 降り方: ${state.activeTrunk === "soma" ? "身体" : "構造"}`;
+      card.textContent = `${head}  認識: ${Math.round(state.attunement || 0)}/${ATTUNE.omegaThreshold}${attuned ? "（合致）" : "（深く読み、視たものを覚えているほど降りられる）"} / 到達深度: ${"▮".repeat(lit)}${"▯".repeat(8 - lit)} / 残った戻り道: ${state.returnPaths}/${RETURN_PATHS_START} / 観測者: ${state.observer} / 抗った: ${state.resisted} ・ 戻れなかった: ${state.refused} / 周回: ${state.cycle} / 降り方: ${state.activeTrunk === "soma" ? "身体" : state.activeTrunk === "reso" ? "流れ" : "構造"}`;
       sceneEl.appendChild(card); card.classList.add("shown");
       const more = document.createElement("p");
       more.className = "hz-line"; more.style.cssText = "margin-top:0.6em;font-size:0.78rem;color:#6b7682;";
@@ -1935,7 +1938,7 @@
 
   // ---------- 起動 ----------
   async function loadData() {
-    const res = await fetch("depths-shell.json?v=e16", { cache: "no-store" });
+    const res = await fetch("depths-shell.json?v=e17", { cache: "no-store" });
     DATA = await res.json();
   }
   // ---------- 動く表紙（R6：タイトルも state/seed に応じて動く・静止でない） ----------
