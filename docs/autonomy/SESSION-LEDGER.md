@@ -19,6 +19,27 @@ Hazama 自律開発 session の追記専用ログ。
 
 ---
 
+## 2026-06-23 — QA ループ一巡完了：全25機能のユーザーストーリー化→検証→欠陥0
+- agent      : Opus 4.8（`/loop` 自走・dynamic）
+- goal       : 全機能をユーザーストーリー化し単一正典で追跡→各ストーリーを実走検証→論理/UXエラーを修正→再検証（4フェーズQAループ）
+- shipped     :
+  - `docs/qa/feature-stories.csv`（単一正典スプレッドシート・25機能・ID/区分/ストーリー/期待挙動/根拠 file:line/P1〜P4/human_gate）
+  - `docs/qa/QA-LOOP.md`（運用書）・`docs/qa/LOOP-STATE.md`（フェーズ栞）
+  - ※runtime/PWA/version は無改変（QA は読み取り＋検証のみ。bump なし）
+- verified    :
+  - Phase1 棚卸: slice.js/depths/index/lp/sw から全25機能を抽出・ストーリー化（全✅）
+  - Phase2 検証: hazama-check（契約系）＋ preview 実走で全25機能 pass。実走確認の主例＝
+    認識 deep gain 0→4 / 表層侵食 J surface で −1 / 弾き divert J→det_mirror(surfaceBounces++/rejoin K) /
+    二極終端 surfaced⇄omega / E19 Ω貫きロック「認識3/6」/ 五幹 cycle=3 開示 / 縁の二択 / 縁カード1080×1350 二極 /
+    戻り表紙＋漂着 / below∞ loop差分 / エコー門Q 真=+2 / forgetAll 全消去→fresh / 深部ロック≥9 戻れず(refused+1) / mobile 横溢れ無し
+  - Phase3 敵対的エッジ検査: forgetAll・深部ロック・エコー門真偽・mobile・連打ガード・弾きsurface＝**全クリア／実バグ0**
+  - Phase4 再テスト: 修正0につき N/A
+- checks      : node scripts/hazama-check.mjs = 2 PASS / 0 FAIL（前後不変）。preview console エラー0
+- result      : **アプリ欠陥0**。P3 全行 N/A（欠陥なし）
+- backlog     : 追加なし（QA は docs/qa 配下で自己完結）
+- next        : human-gate 2件のみ＝F07 音（軸色/呼気を実機の耳で採否）・F16 実機 PWA install/offline（HZ-BL-001）
+- blockers    : human-gate 2件は人間判断待ち（agent では done にしない）。preview 合成click 不発はツール癖（アプリ無問題）
+
 ## 2026-06-19 — 進化 E22: 紹介 LP（表玄関）＋OG カード（ゲーム本体は不変）
 - agent      : Opus 4.8（精密・本番隣接のため外注なし）
 - goal       : human-gate 残「LP デプロイ」第一版＝作品の外向き入口を一枚。ゲーム(/hazama/)とは別の表玄関＋共有カード。
