@@ -66,18 +66,6 @@ Hazama 自律開発の作業待ち行列。
 
 ## P2
 
-### HZ-BL-011 — spiral 記憶のエッジ堅牢化
-- priority : P2
-- scope    : smoke / runtime(narrow)
-- agent    : codex
-- human-gate: no
-- status   : open（縮小 — ガード本体は E4 で実装済み。残りは独立検証パスのみ）
-- source   : E1 spiral 永続化（`hazama_spiral_v1`）
-- detail   : **E4 で実装済み**: visits 値の数値浄化（型穴）・cycle/belowLoop クランプ・
-  壊れた JSON/型異常の fail-safe・quota 例外 no-op・旧 forward キーは読まない/消さない。
-  残タスク＝Codex による**独立検証**（壊しデータ matrix の実ブラウザ再現と、見落としガードの指摘）。
-  コピペ用プロンプトは `docs/autonomy/next-agent-prompts.md`（検証中心に読み替え可）。
-
 ### HZ-BL-012 — 音の軸色＋浮上/reborn の「呼気」
 - priority : P2
 - scope    : runtime(audio)
@@ -108,6 +96,14 @@ handoff 前の確認は `docs/autonomy/closeout-checklist.md` を使います。
 ---
 
 ## Done
+
+### HZ-BL-011 — spiral 記憶のエッジ堅牢化 ✅ 2026-07-07
+- scope: smoke / runtime(narrow)
+- E4 で実装済みだった spiral guard（`hazama_spiral_v1`）を Hermes が独立検証。
+  Local Chrome headless + CDP で壊しデータ matrix 6/6 PASS: 壊れた JSON、型異常、
+  visits 値浄化/上限 clamp、旧 forward keys (`hazama_state_v2` / `hazama_run_v1`) ignore+非削除、
+  `getItem` SecurityError boot、`setItem` QuotaExceeded during first descent no-op。
+  新規欠陥なし・runtime / PWA version / cache 無変更。
 
 ### HZ-BL-013 — E5 視覚の磨きとパターン変化 ✅ 2026-06-13
 - scope: runtime(visual) / css

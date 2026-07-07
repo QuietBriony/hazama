@@ -19,6 +19,20 @@ Hazama 自律開発 session の追記専用ログ。
 
 ---
 
+## 2026-07-07 — Hermes 初回: spiral 記憶エッジ検証＋baseline PASS
+- agent      : Hermes Agent / GPT-5.5
+- goal       : Hermes 側の Hazama 初回接触として、repo 状態確認と HZ-BL-011 残タスクの一部（破損 localStorage matrix）を独立検証する
+- shipped    : `docs/autonomy/SESSION-LEDGER.md` に本記録を追加し、`docs/autonomy/BACKLOG.md` で HZ-BL-011 を Done へ整理。runtime / PWA version / cache / app 契約は無変更
+- verified   :
+  - `git status --short --branch` = `## master...origin/master [ahead 1]`（未コミット変更なしで開始。ahead は既存 QA docs commit）
+  - `node --check slice.js` = PASS
+  - `node scripts/hazama-check.mjs` = 2 PASS / 0 FAIL / 0 SKIP
+  - Local Chrome headless + CDP で `hazama_spiral_v1` edge matrix 6/6 PASS: 壊れた JSON、型異常、visits 値浄化/上限 clamp、旧 forward keys (`hazama_state_v2` / `hazama_run_v1`) ignore+非削除、`getItem` SecurityError boot、`setItem` QuotaExceeded during first descent no-op
+- checks     : docs 整理後の `node scripts/hazama-check.mjs` = 2 PASS / 0 FAIL / 0 SKIP
+- backlog    : ユーザー承認を受け、HZ-BL-011 を Done へ移動（Hermes 独立検証で新規欠陥なし）
+- next       : human-gate の HZ-BL-001(PWA実機) / HZ-BL-002(手触り) へ
+- blockers   : in-app browser tool は win32-arm64 の agent-browser binary 不在で起動不可だったため、検証はローカル Chrome CDP で代替
+
 ## 2026-06-23 — QA ループ一巡完了：全25機能のユーザーストーリー化→検証→欠陥0
 - agent      : Opus 4.8（`/loop` 自走・dynamic）
 - goal       : 全機能をユーザーストーリー化し単一正典で追跡→各ストーリーを実走検証→論理/UXエラーを修正→再検証（4フェーズQAループ）
