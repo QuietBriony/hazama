@@ -26,16 +26,21 @@ Hazama 自律開発 session の追記専用ログ。
   - `docs/research/seven-forms-resonance-v0.md`（7形↔既存 motif の韻・reference/candidate・commit 020d2b4）
   - `docs/autonomy/BACKLOG.md` HZ-BL-007 に座席候補の注記
   - `docs/research/testament-seed-bank-form2-v0.md`（form 2 種バンク 18＋micro-arc 4・Stage 1）
-  - `docs/evolution/E23-SPEC.md`（発注＝Drift seam・below(∞)・attuned 専用の生成 testament・号令待ち）
-  - ※ game body / public contract / app version / PWA cache は無改変
+  - `docs/evolution/E23-SPEC.md`（発注＝Drift seam・below(∞)・attuned 専用の生成 testament）
+  - **進化 E23（runtime・本番反映）**: `Drift.TESTAMENT`(8種)＋`pickTestament`(別ソルト)。below(∞)・`isAttuned()` の
+    一箇所のみで漂着が半々で「・遺言／深度N」に寄る（`maybeForeignDrift`・表紙は従来＝単一 seat・二重注入なし）。
+    CSS 新規ゼロ・storage/depths schema 不変・un-attuned は byte 同一。version e21→e23 四点同期。t17 は register 保留で除外（推奨）
 - verified   :
   - seven-forms note を adversarial 5-lens（public安全/契約不変/実コード整合/voice/autonomy）全 clean
   - 13-memlock 原典の testament 行（167-168 limit-reached / 174 memory-frozen / 24-30 frozen-ref）を直接確認
-  - `node scripts/hazama-check.mjs` = 2 PASS / 0 FAIL
+  - E23 実走（localhost・reveal を setTimeout 平坦化して throttling 回避）: attuned below で「・遺言／深度22」出現・
+    un-attuned は遺言0件（同 seed の loop9 が通常「・深度14／浮上」へ＝単一 seat・後方互換）・決定論一致・
+    `::after`「― 別の観測の痕跡 ・遺言／深度22 ―」・console error 0
+  - `node scripts/hazama-check.mjs` = 2 PASS / 0 FAIL（E23 asserts 6件込み）
 - checks     : node scripts/hazama-check.mjs = 2 PASS / 0 FAIL
 - backlog    : HZ-BL-007 に form 2 座席候補＋testament bank 参照を注記（icebox のまま）
-- next       : E23 runtime（`Drift.TESTAMENT`＋`pickTestament`・below attuned 一箇所・version e21→e23・smoke E23）をワーキングツリーで実装→目/耳→号令でデプロイ
-- blockers   : docs commit（020d2b4 ほか）＋ E23 = **push/deploy は号令待ち**（human gate）。E23 の頻度/レジスタ/t17 採否はユーザーの目
+- next       : E23 の頻度(attuned×42%×50%)/レジスタ/t17 採否は実機でユーザーの目（deploy 後）。残り human-gate＝音(E21)・PWA(HZ-BL-001)
+- blockers   : なし（docs＋E23 を本番反映）。実機の手触り最終判断は human
 
 ## 2026-07-07 — Hermes 初回: spiral 記憶エッジ検証＋baseline PASS
 - agent      : Hermes Agent / GPT-5.5

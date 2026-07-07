@@ -278,6 +278,15 @@ has(lpHtml, "assets/og-card.jpg", "E22 LP references the OG card");
 has(lpHtml, 'og:image:width" content="1200"', "E22 LP OG card declares 1200x630");
 assert(!lpHtml.includes("slice.js") && !lpHtml.includes("slice.css"), "E22 LP is self-contained (no game runtime deps)");
 
+// E23: 遺言（限界の声が testament を遺して消える）＝Drift seam の attuned 専用 departed-voice（単一 seat）。
+has(js, "function pickTestament", "E23 testament picker");
+has(js, "const TESTAMENT", "E23 testament bank");
+has(js, "遺言", "E23 testament mark (departed-voice)");
+assert(/isAttuned\(\)[\s\S]{0,80}pickTestament/.test(js), "E23 testament only on attuned deep run");
+const driftFn = (js.match(/function maybeForeignDrift[\s\S]*?\n  \}/) || [""])[0];
+assert(driftFn && !driftFn.includes("pickTestament"), "E23 mid-descent seat must not emit testament (single seat)");
+assert(!saveBody.includes("testament") && !saveBody.includes("遺言"), "E23 testament stays out of spiral save");
+
 if (failures.length) {
   console.error("build-consistency smoke FAIL");
   for (const f of failures) console.error(`- ${f}`);

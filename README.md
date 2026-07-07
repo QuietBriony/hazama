@@ -203,6 +203,10 @@ Codex / Claude Code が同じ順番で作業を継続するための薄いエン
   別ページ `lp.html`（自己完結・slice ランタイム非依存・同じ沈下美学＝奈落のドーム／底の核グロー／スキャンライン／ヴィネット）。
   「これは何か → 五つの降り方(構造/身体/流れ/崩壊/並行) → Ω を賭けて勝ち取る → 核は描かれない」を簡潔に提示し、「沈む」で本編へ。
   共有用 OG カード `assets/og-card.jpg`（1200×630・canvas 生成 JPEG・Hazama 文字標＋tagline＋五軸）。reduced-motion 安全。smoke 契約7件
+- **進化 E23（2026-07）**: 生成 testament（去った声の遺言）— form 2「限界の声が testament を遺して消える」を既存 Drift seam に座席化。
+  `Drift.TESTAMENT`（抽象化 authored-ghost 8種）＋`pickTestament`（別ソルト）を足し、**below(∞)・`isAttuned()` の一箇所のみ**で
+  漂着が半々で「・遺言／深度N」に寄る（`maybeForeignDrift`・表紙は従来通り＝単一 seat・二重注入なし）。CSS 新規ゼロ（既存 foreign 再利用）・
+  storage/depths schema 不変・un-attuned は byte 同一（後方互換）。素材＝`docs/research/testament-seed-bank-form2-v0.md`、発注＝`docs/evolution/E23-SPEC.md`。smoke 契約6件（`?v=e23`）
 
 ## Status / Rules
 

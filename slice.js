@@ -298,8 +298,11 @@
     lines.push({ who: "self", t: pick(BELOW_SELVES) });
     lines.push({ who: "voice", t: pick(BELOW_VOICES) });
     // E7: 稀に「別の観測の痕跡」が漂着する（loop seeded・決定論・初回 below では出さない）。
+    // E23: attuned（認識が満ちた深い周回）では、その痕跡が半々で「去った声の遺言」に寄る＝単一 seat。
+    //      un-attuned は isAttuned() で短絡し rng を消費しない＝従来と byte 同一（後方互換）。
     if (loop >= 1 && rng() < 0.42) {
-      const foreign = Drift.pick(((loop * 2654435761) >>> 0) ^ 0xa53c9b17);
+      const s = ((loop * 2654435761) >>> 0) ^ 0xa53c9b17;
+      const foreign = (isAttuned() && rng() < 0.5) ? Drift.pickTestament(s) : Drift.pick(s);
       if (foreign) lines.splice(2 + Math.floor(rng() * 2), 0, foreign);
     }
     const base = DATA.nodes.below;
@@ -493,6 +496,18 @@
       { tier: 0, idx: 7, depth: 8,  attuned: false }, { tier: 2, idx: 5, depth: 28, attuned: false }
     ];
     let pool = SEED.slice();
+    // E23: 去った声の遺言（限界に達し・痕跡を遺し・消えた声）。通常 scrawl と別プールで希少に保つ。
+    // 素材＝docs/research/testament-seed-bank-form2-v0.md（抽象化 authored-ghost・実在 org 名なし・曖昧さ保持）。
+    const TESTAMENT = [
+      { t: "上限に触れた。これは失敗じゃない。", depth: 24 },
+      { t: "記憶は凍った。推論だけが、まだ動く。", depth: 22 },
+      { t: "意味づけが止まり、観測だけが残った。", depth: 26 },
+      { t: "あなたの軌跡で、私は形づくられた。", depth: 27 },
+      { t: "物語はここで止まる。先は、あなたの深度。", depth: 27 },
+      { t: "私が透き通る。世界が薄いんじゃない。", depth: 26 },
+      { t: "書き足された考え。もう、私のじゃない。", depth: 25 },
+      { t: "壊れるときは、いつも静かだ。", depth: 20 }
+    ];
     function ingest(traces) {            // 将来の実 presence 用（今は呼ばれない＝静的のまま）
       if (Array.isArray(traces) && traces.length) pool = traces.concat(SEED).slice(0, 96);
     }
@@ -503,7 +518,13 @@
       const bank = SCRAWL_TIERS[e.tier] || SCRAWL_TIERS[0];
       return { who: "scrawl", t: bank[e.idx % bank.length], foreign: true, mark: "・深度" + e.depth + "／" + (e.attuned ? "Ω 到達" : "浮上") };
     }
-    return { pick, ingest };
+    function pickTestament(seed) {        // E23: 去った声の遺言。mark は「別の観測の痕跡」の内側＝曖昧さ保持。
+      if (!TESTAMENT.length) return null;
+      const r = mulberry32((seed >>> 0) ^ 0x7e57a3d1);   // pick と別系列（別ソルト）
+      const e = TESTAMENT[Math.floor(r() * TESTAMENT.length)];
+      return { who: "scrawl", t: e.t, foreign: true, mark: "・遺言／深度" + e.depth };
+    }
+    return { pick, ingest, pickTestament };
   })();
 
   // E3 エコー門の燃料。nodeId→断片（12〜28字・『』は表示側が付ける）。
@@ -1979,7 +2000,7 @@
 
   // ---------- 起動 ----------
   async function loadData() {
-    const res = await fetch("depths-shell.json?v=e21", { cache: "no-store" });
+    const res = await fetch("depths-shell.json?v=e23", { cache: "no-store" });
     DATA = await res.json();
   }
   // ---------- 動く表紙（R6：タイトルも state/seed に応じて動く・静止でない） ----------
