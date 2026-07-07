@@ -93,8 +93,9 @@ handoff 前の確認は `docs/autonomy/closeout-checklist.md` を使います。
 - detail   : 没入ビルドのまま、NODE_VARIANTS / detour / below 断片バンクへ
   `docs/source/` の原典素材を給餌するかを決める。今は増やさない。
 - note     : 形「限界の声が testament を遺して消える」は既存 Drift seam
-  （authored-only / save-less）に `SEED` 一項足すだけで鳴る候補。参照＝
-  `docs/research/seven-forms-resonance-v0.md`。座席化は human gate・今は増やさない。
+  （authored-only / save-less）に種一項足すだけで鳴る候補。素材＝
+  `docs/research/seven-forms-resonance-v0.md`（韻）＋`docs/research/testament-seed-bank-form2-v0.md`
+  （種バンク 18）＋`docs/evolution/E23-SPEC.md`（発注）。座席化は human gate・今は増やさない。
 
 ---
 
