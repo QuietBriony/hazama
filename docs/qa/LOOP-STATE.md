@@ -10,6 +10,7 @@
 - baseline_check: 2 PASS / 0 FAIL（node scripts/hazama-check.mjs）
 - preview_serverId: 9449ff33-dd4d-4f08-8f01-ebeb6d0422cd（port 8740・preview_start name=hazama）
 - P2進捗: 25/25 完了。happy-path で実バグ0（console0・smoke 0FAIL）。不具合列はツール癖(F01)/human-gate(F07,F16)/網羅注記のみ。
+- addendum（2026-07-09・docs-only 追記、この一巡の記録=上記25機能・欠陥0は不変）: E23（生成 testament）を **F26** として正典 CSV へ追加。正典は**26機能**に更新。P2はこのセッションの実走で pass 済み（human_gate=yes＝頻度・レジスタの採否は実機）。次ループの Phase2 で F26 を通しで再検証すること。
 
 ## Phase 3 計画（修正）
 Phase2 happy-path は欠陥0。確定前に「敵対的エッジ検査」を1チャンク行い、実バグが出たら working tree のみで修正→hazama-check 0FAIL→P3列、出なければ「修正0」を確定して Phase4(=再テスト不要)へ。
@@ -37,6 +38,7 @@ Phase2 happy-path は欠陥0。確定前に「敵対的エッジ検査」を1チ
 - P4→終了: 修正行に P4_再テスト
 
 ## 進行ログ（新しい順に追記）
+- iter7（docs-only）: E23（生成 testament／below∞・attuned 専用・maybeForeignDrift/表紙ゲートは pick のみの単一 seat）を正典 CSV に F26 として追記。25→26機能。区分=漂着・根拠=slice.js:501/521/305＋build-consistency-smoke.mjs:281・human_gate=yes（頻度 attuned×42%×50%≈21%とレジスタ8種の採否は実機）。hazama-check 2 PASS/0 FAILを再確認。ループ Phase・last_row_id は動かさず（次回 /loop 起動時に F26 の Phase2 再検証から）。
 - iter6: Phase3 敵対的エッジ検査＝全クリア。F11 完全合格(J→det_mirror divert・surfaceBounces++・rejoin K・認識−1)／F03 表層侵食−1 直接観測／forgetAll(cycle2→全消去→fresh zero・新spiral cycle0再生成)／深部ロック observer9(retreat→E_noreturn・戻り道消えず・refused+1・dread↑)／エコー門Q 真断片=+2／mobile 横溢れ0(背景fixedのみ)／弾きsurface=A→soma と J→K の2つ(detours は slice.js DETOURS・json に det は無)。**実バグ0**。P3 全行 N/A・hazama-check 2PASS/0FAIL。ループ STOP。SESSION-LEDGER に一巡完了を追記。総ノード数=72（README沿革の「42」は逆統合期の旧値・trunk追加で増）。
 - iter5: Phase2 終端＋単体チャンク。__hz.edge/card/go で実走＝F04(surfaced/omega 二極)・F05(reborn Ω貫き locked『認識3/6』)・F06(cycle=3 で五幹開示)・F12(縁の二択)・F13(カード1080×1350・Ω底光/浮上上光で二極)・F14(reload で戻り表紙『また、来た』＋漂着)・F17(lp.html 200/五軸/OG1200×630/自己完結)・F18(belowLoop 0→1→2)・F20(代替:@media+REDUCED)・F21(♪chip 反転) を pass。**P2 25/25 完了・happy-path 実バグ0・console0**。current_phase 3 へ。
 - iter4: Phase2 降下チャンク。沈む→零章→descend で A→E→E_noreturn→F を実走。F02(3 kind routing)・F15(onboard 一行)・F03(認識 0→4)・F24(◆◆◆◆◇◇・戻り道5→0・観測者1→3)・F10(観測者3 中盤 retreat→E_noreturn・戻り道−1・抗った+1) を pass。F11 は A→soma 分岐のみ確認(弾き divert は深幹に無く未到達)。P2 15/25。console0。注意: 降下ループは1eval=1〜2step まで(reveal ~6-15s・eval 30s制限)。reveal 待ちは choices ポーリングで。

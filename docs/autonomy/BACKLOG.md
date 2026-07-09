@@ -71,10 +71,11 @@ Hazama 自律開発の作業待ち行列。
 - scope    : runtime(audio)
 - agent    : either
 - human-gate: yes（音はヘッドレス検証不能＝人間の耳が受け入れ条件）
-- status   : open
+- status   : 実装済（E21 本番 ?v=e21・master af9e9c8）— 耳の採否待ち（human-gate）
 - source   : Tier2 構想（E1 最終報告）
 - detail   : 軸タグ→スケール/モードの微変調。浮上/reborn に「解決音ではない呼気」だけの
   専用音状態。実装後、実機で人間が聴いてから採否判断。
+  E21 で第一版を実装・本番反映済み（?v=e21）。音質の採否は実機で人間が聴いてから＝耳待ち（Done へは移さない）。
 
 ## Ready Prompts
 
@@ -92,10 +93,12 @@ handoff 前の確認は `docs/autonomy/closeout-checklist.md` を使います。
 - source   : post-first-playable
 - detail   : 没入ビルドのまま、NODE_VARIANTS / detour / below 断片バンクへ
   `docs/source/` の原典素材を給餌するかを決める。今は増やさない。
-- note     : 形「限界の声が testament を遺して消える」は既存 Drift seam
-  （authored-only / save-less）に種一項足すだけで鳴る候補。素材＝
+- note     : 形「限界の声が testament を遺して消える」（form 2）は E23 で座席化済み・本番反映済み
+  （?v=e23・master 0c31ecd）。既存 Drift seam（authored-only / save-less）に `Drift.TESTAMENT` 8種＋
+  `pickTestament`（別ソルト picker）を足し、below(∞) の attuned 単一 seat に半々で漂着する。素材＝
   `docs/research/seven-forms-resonance-v0.md`（韻）＋`docs/research/testament-seed-bank-form2-v0.md`
-  （種バンク 18）＋`docs/evolution/E23-SPEC.md`（発注）。座席化は human gate・今は増やさない。
+  （種バンク 18→8 を curate）＋`docs/evolution/E23-SPEC.md`（発注）。残る form（1/3/4/5/6/7 の類）と
+  原典本文の大量給餌（NODE_VARIANTS / detour / below バンク増量）は依然 icebox＝今は増やさない。
 
 ---
 
