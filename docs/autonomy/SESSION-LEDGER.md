@@ -19,6 +19,26 @@ Hazama 自律開発 session の追記専用ログ。
 
 ---
 
+## 2026-07-10 — E23 生成 testament 独立検証（本番 ?v=e23・CDP 実走）
+- agent      : worker(opus) 独立検証（実装者と別の目）
+- goal       : E23（去った声の遺言）を本番 https://quietbriony.github.io/hazama/?v=e23（master 4d9a7d7）に対し独立実走検証。matrix 7項目。runtime/scripts 無改変・頻度/レジスタ/t17 の human-gate は評価しない
+- method     :
+  - ローカル Chrome headless + CDP（Node24 global WebSocket・依存追加なし）で本番 URL を直接実走（手段1・fallback 不要）
+  - CDP `Emulation.setEmulatedMedia` で `prefers-reduced-motion:reduce` → 行が同期追加（reveal 同期・背景 throttle 無効化）。加えて `window.setTimeout` を 0ms 化
+  - 等価性: 本番配信 `slice.js` を cache-bust curl → LF 正規化後 sha256=`69229ced…` が repo `slice.js` と完全一致（差は CRLF/LF のみ）／`sw.js` も一致＝「読んだコード＝実走コード＝HEAD」
+- verified   : matrix 7/7 PASS（新規欠陥なし）
+  1. attuned(attunement=6) below loop1–12: loop9「・遺言／深度22」(記憶は凍った…)・loop12「・遺言／深度27」(物語はここで止まる…)。`::after`=「― 別の観測の痕跡 ・遺言／深度N ―」= spec 一致
+  2. un-attuned(attunement=0) 同 loop1–12: 遺言0件。loop9 は同一 seed で通常「・深度14／浮上」へ（attuned で遺言だった席が通常マーク）。loop1/3/6/11 は attuned/un-attuned で drift テキスト・マーク byte 同一（Drift.pick は loop のみ seed）＝単一 gate=isAttuned()・後方互換を実証
+  3. 単一 seat: 深い非 below 降下 I–Z 各15回=foreign 33件・遺言0件。表紙ゲート drift（reload 後の returning）=「・深度9／浮上」通常マーク（Drift.pick のみ）
+  4. 決定論: loop9 を同 state で2回描画→scene/foreign 完全一致（content path に Math.random なし）
+  5. save 除外: localStorage `hazama_spiral_v1`={v,cycle,attunement,visits,belowLoop,legacy,sank} に「遺言」「testament」不在
+  6. console error 0・exception 0（warn は apple-mobile-web-app-capable 非推奨2件のみ＝E23 無関係・既存）
+  7. 本番 slice.js 静的: `const TESTAMENT`(8種)・`function pickTestament`・salt `0x7e57a3d1`・`maybeForeignDrift` 本体に pickTestament 参照なし・pickTestament 呼出は305行 `isAttuned() && rng() < 0.5` の単一 call site のみ。`sw.js` VERSION=`hazama-pwa-e23`
+- checks     : git status=clean(master 4d9a7d7)／node --check slice.js=OK／node scripts/hazama-check.mjs=2 PASS / 0 FAIL / 0 SKIP（build-consistency の E23 asserts 6件込み）
+- backlog    : 変更なし（検証のみ・runtime/scripts/version 無改変）
+- next       : E23 実走は健全。残 human-gate＝頻度(attuned×42%×50%)/レジスタ/t17「また会える」採否・音(E21)・PWA(HZ-BL-001)＝ユーザーの目/耳/号令
+- blockers   : なし。頻度/レジスタ/t17 の採否は評価対象外（human-gate・据え置き）
+
 ## 2026-07-07 — 七つの形 note 採択 → form 2 素材化（testament 種）→ E23 準備
 - agent      : Opus 4.8（ultracode・精密 curation は自作／探索・設計は Agent 外注）
 - goal       : 外部「七つの普遍の形」素材を受け、既存 motif との韻を docs 化。form 2「去った声の testament」を素材→E23（生成 testament）の2段で発展。game body 不変・号令までデプロイなし
