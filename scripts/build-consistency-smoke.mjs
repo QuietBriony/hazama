@@ -303,6 +303,14 @@ has(js, "preventScroll", "E25 focus first choice after reveal (a11y)");
 assert(/JUNCTIONS\.has\(state\.id\)\s*&&\s*c\.kind === "surface"/.test(js), "E25 A trunk (soma) is recognition-neutral");
 has(js, 'aria-live", "polite"', "E25 onboarding hint in SR live region");
 
+// E26: design レビュー propose 反映＝replay 発見性/初◆グロス/浮上の音戻し/新幹 affordance。
+has(read("depths-shell.json"), "まだ開いていない降り方が", "E26 reborn promises unopened trunks (replay legibility)");
+has(js, "ATTUNE_GLOSS_KEY", "E26 first-recognition gloss (one-time, own key)");
+has(js, "function attuneGlossHint", "E26 attune gloss hint");
+has(js, "Audio.update(0.16", "E26 surface pole reopens audio (音が戻る)");
+assert(/state\.cycle === c\.minCycle/.test(js), "E26 newly-opened trunk affordance");
+has(css, "hz-choice-open", "E26 newly-opened trunk glow");
+
 if (failures.length) {
   console.error("build-consistency smoke FAIL");
   for (const f of failures) console.error(`- ${f}`);

@@ -409,6 +409,13 @@ body[data-tension="high"] .hz-scene { animation: hz-shudder 2.6s ease-in-out inf
 /* エコー門の断片＝既存 choice 準拠＋細い点線でわずかに異質に（説明はしない）。kind は echo＝descend の手マークは付かない。 */
 .hz-choice.echo { border-style: dotted; border-color: rgba(127,182,196,0.35); }
 .hz-choice.echo-skip { opacity: 0.75; }
+/* E26: 幹が"初めて開いた"周回だけ、その択に一度きりの淡いグロー＝戻ってきた者が新しい降り方に気づく。reduced は静止の accent 枠のみ。 */
+.hz-choice.newly { border-color: rgba(159,208,219,0.5); animation: hz-choice-open 2.6s ease 1; }
+@keyframes hz-choice-open {
+  0%   { box-shadow: 0 0 0 rgba(159,208,219,0); }
+  26%  { box-shadow: 0 0 18px rgba(159,208,219,0.28); border-color: rgba(159,208,219,0.75); }
+  100% { box-shadow: 0 0 0 rgba(159,208,219,0); }
+}
 
 /* ---------- B1: hover / focus-visible（PC 反応と a11y） ----------
    トーンを壊さない最小反応。hover は (hover:hover) でのみ＝タッチ端末では発火しない。
@@ -717,6 +724,7 @@ body.glitch-hard .hz-gate-title::after  { animation: hz-tl-after-glitch .18s ste
   .hz-grain { animation: none; opacity: 0.03; }
   .hz-observer.deep { animation: none; }
   .hz-attune.pulse { animation: none; }   /* E25: 認識パルスも静止（色/グローの一瞬は付かない） */
+  .hz-choice.newly { animation: none; }   /* E26: 新幹グローも静止＝accent 枠だけ残す */
   /* R5: グリッジ／めくれは全停止。質感だけ薄く静止で残す。 */
   .hz-glitch { visibility: visible; opacity: 0.5; mix-blend-mode: screen; }
   .hz-glitch::before { opacity: 0.06; transform: translate(-2px,0); animation: none; }

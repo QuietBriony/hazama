@@ -220,6 +220,11 @@ Codex / Claude Code が同じ順番で作業を継続するための薄いエン
   別の降り方であって浅い読みでない＝剥がれ −1 を止める（E16 意図）④**横持ちノッチの safe-area 左右**⑤オンボード一行を SR live 領域へ。
   slice.js/slice.css のみ・route/storage/depths schema 不変・reduced-motion 不変。smoke 契約6件（`?v=e25`）。文言/音/バランスの深掘りは propose 済み
 
+- **進化 E26（2026-07・design レビュー propose 反映）**: E25 レビューの提案のうち推奨分を反映（P5 reveal 早送りは沈下の遅さが主題ゆえ見送り）。
+  ①**replay 発見性**（最重要）＝reborn の周回択 sub を「まだ開いていない降り方が、下に在る」へ＝複線化(E16-E20)を replay 前に約束（幹は伏せる）
+  ②**初◆グロス**＝認識が初めて灯った瞬間だけ一度地の声（E9/E10 型・別キー・fail-open・SR live）③**浮上で音が戻る**＝浮上極で lowpass 再開放（耳ゲート）
+  ④**新幹 affordance**＝幹が初めて開いた周回だけ択に淡いグロー（reduced は accent 枠）。slice.js/css＋depths sub のみ・schema/route/storage 不変・reduced-motion 不変。smoke 契約6件（`?v=e26`）
+
 ## Status / Rules
 
 このリポジトリは**稼働中の本番作品**（没入版単一ビルド）です。旧「Music スタックの参照用」位置づけは終了。

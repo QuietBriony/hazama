@@ -936,18 +936,37 @@
     choicesEl.appendChild(p);    // choices の先頭＝ボタンの上
   }
 
+  // E26: 認識◆が初めて灯った瞬間だけ、その意味を地の声で一度きり結ぶ（E9/E10 と同型・別キー・fail-open）。
+  //   ゴール明示でも進捗バーでもなく、◆と"降りられる深さ"を繋ぐだけ＝道中で目的を scent する。
+  const ATTUNE_GLOSS_KEY = "hazama_attune_gloss_v1";
+  let attuneGlossed = (() => { try { return localStorage.getItem(ATTUNE_GLOSS_KEY) === "1"; } catch (e) { return false; } })();
+  function attuneGlossHint() {
+    if (attuneGlossed || (state.attunement || 0) < 1) return;   // 認識が初めて灯った時だけ・一度きり
+    attuneGlossed = true;
+    try { localStorage.setItem(ATTUNE_GLOSS_KEY, "1"); } catch (e) {}
+    const p = document.createElement("p");
+    p.className = "hz-onboard";
+    p.setAttribute("role", "note");
+    p.setAttribute("aria-live", "polite");
+    p.textContent = "——ひとつ、灯った。視た分だけ、深く降りられる。";
+    choicesEl.appendChild(p);
+  }
+
   function renderChoices(node) {
     choicesEl.innerHTML = "";
     onboardHint(node);           // E9: 初回だけ、最初の読みの岐路に一行
+    attuneGlossHint();           // E26: 認識◆が初めて灯った時だけ、その意味を一行（一度きり）
     // E17: 周回ゲート＝minCycle を持つ選択肢は state.cycle がその値以上のときだけ出す（周回で A に第3の幹が開く）。
     (node.choices || []).filter((c) => !c.minCycle || state.cycle >= c.minCycle).forEach((c, idx) => {
       // E19: 終端を勝ち取る＝requireAttune の選択肢（Ω を貫く）は認識が満ちるまで“見える鍵”でロック。
       //   ロック中は押せず「まだ届かない（認識 N/閾値）」を見せる＝深く読めば開くが伝わる（幹/周回と直結）。
       //   浮上は requireAttune を持たない＝常に押せる安全な帰還（失敗演出にしない）。
       const locked = c.requireAttune && !isAttuned();
+      // E26: その幹が"初めて開いた"周回だけ、択に一度きりの affordance（戻ってきた者が増えた択を見落とさない）。
+      const newly = c.minCycle && state.cycle === c.minCycle;
       const btn = document.createElement("button");
       btn.type = "button";
-      btn.className = "hz-choice " + (c.kind || "") + (locked ? " locked" : "");
+      btn.className = "hz-choice " + (c.kind || "") + (locked ? " locked" : "") + (newly ? " newly" : "");
       if (!locked && c.kind === "retreat" && state.maxSink > 0.4) btn.classList.add("heavy");
       btn.innerHTML = `<span class="lead"></span>${c.sub ? `<span class="sub"></span>` : ""}`;
       btn.querySelector(".lead").textContent = c.t;
@@ -1143,8 +1162,12 @@
     state.dread = attuned ? 1 : 0.4;
     applyAtmosphere({ tension: attuned ? "high" : "low" });
     Spiral.save();   // 縁＝結末でも spiral 層を確定（閉じて去っても、次の表紙が応えられる）
-    if (!attuned) document.body && document.body.classList && document.body.classList.add("surfaced");
-    else document.body && document.body.classList && document.body.classList.add("omega");   // E12: Ω 突破の専用ウォッシュ（核＝曼荼羅が前面化・底光で満ちる）
+    if (!attuned) {
+      document.body && document.body.classList && document.body.classList.add("surfaced");
+      // E26: 浮上極では音も表層へ戻す＝深部で閉じていた lowpass を再開放（"音が戻る再認識"をコードで実体化）。
+      //   Ω 側（核に在る）は深部据え置きが正。密度は観測者から（applyAtmosphere と同式）。未解禁なら Audio 側で no-op。
+      Audio.update(0.16, 0.2, clamp01((state.observer - 1) / 18));
+    } else document.body && document.body.classList && document.body.classList.add("omega");   // E12: Ω 突破の専用ウォッシュ（核＝曼荼羅が前面化・底光で満ちる）
     Audio.breath(attuned);   // E21: 縁の呼気（解決音ではない息・未解禁なら no-op）
     sceneEl.innerHTML = ""; choicesEl.innerHTML = "";
     setBusy(true);               // E6: 縁の結末文＋選択が出揃うまで SR を抑制
@@ -2013,7 +2036,7 @@
 
   // ---------- 起動 ----------
   async function loadData() {
-    const res = await fetch("depths-shell.json?v=e25", { cache: "no-store" });
+    const res = await fetch("depths-shell.json?v=e26", { cache: "no-store" });
     DATA = await res.json();
   }
   // ---------- 動く表紙（R6：タイトルも state/seed に応じて動く・静止でない） ----------

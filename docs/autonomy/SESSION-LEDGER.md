@@ -19,6 +19,21 @@ Hazama 自律開発 session の追記専用ログ。
 
 ---
 
+## 2026-07-12 — 進化 E26: design レビュー propose を推奨実装（replay 発見性/初◆グロス/音戻し/新幹）（実装/検証済み・号令待ち）
+- agent      : Fable（E25 の propose を「推奨進めて」で実装・実機検証）
+- goal       : レビューの propose 群のうち推奨分を反映。P5（reveal 早送り）は「沈下の遅さが主題」ゆえ見送り
+- shipped（ゲーム本体・号令デプロイ待ち）:
+  - **P1 replay 発見性（最重要）**: reborn の周回択 sub を「まだ開いていない降り方が、下に在る。今度は、観測者を一枚多く抱えて。」へ＝
+    E16-E20 の複線化を replay 前に約束（どの幹かは伏せる＝驚き温存）。実機FB「replay 無意味」の根に対応
+  - **P2 初◆グロス**: 認識◆が初めて灯った瞬間だけ一度「——ひとつ、灯った。視た分だけ、深く降りられる。」（E9/E10 型・別キー hazama_attune_gloss_v1・fail-open・SR live）
+  - **P3 浮上で音が戻る**: 浮上極で lowpass を再開放（`Audio.update(0.16,…)`）＝ユーザーが好んだ「音が戻る再認識」をコードで実体化。Ω 側は深部据え置き。**耳ゲート**
+  - **P4 新幹 affordance**: 幹が"初めて開いた"周回だけ（cycle===minCycle）その択に一度きりの淡いグロー（reduced は accent 枠）＝戻ってきた者が新しい降り方に気づく
+  - version e25→e26 四点同期・smoke 契約6件・depths schema/route/storage 不変・reduced-motion 不変
+- verified   : 実ブラウザ（__hz・setTimeout 平坦化）: ?v=e26／初◆グロス発火し再表示なし（一度きり）／新幹グロー＝reso@cycle1・casc@cycle2 のみで再点灯なし／浮上縁 audio 再開放エラーなし／console 0。hazama-check 2 PASS/0 FAIL
+- checks     : hazama-check 2 PASS / 0 FAIL
+- next       : E24/E25/E26 を号令で push→Pages 検証。P3 の音・P1/P2 の文言・◆パルスの見えは実機で human 採否（不満なら1行リバート/差し替え）
+- blockers   : deploy は号令待ち。音は耳・文言と見えは目
+
 ## 2026-07-12 — 進化 E25: design レビュー（ゲーム開発者4レンズ）反映＋propose（実装/検証済み・号令待ち）
 - agent      : worker(opus)×4 敵対的でない設計レビュー（オンボーディング/ゲームフィール/進行/モバイル a11y）＋Fable 統合・実装・実機検証
 - goal       : 「デザイン/ゲーム開発者視点のレビューとして、すすめて」＝意図（没入第一・チュートリアルなし・核は描かない・曖昧さ主題）を尊重し、客観・低リスクの改善だけを反映
