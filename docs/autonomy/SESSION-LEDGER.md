@@ -19,6 +19,21 @@ Hazama 自律開発 session の追記専用ログ。
 
 ---
 
+## 2026-07-12 — 進化 E24: GUI 品質の磨き（既定不変・追加のみ・実装/検証済み・号令待ち）
+- agent      : Fable（精密・実ブラウザ metric 検証）
+- goal       : 「GUI のクオリティを上げる」＝没入の既定ムードを1px も変えずに、客観的な品質だけ足す
+- shipped    :
+  - `slice.css`＋`lp.html`: ①`.hz-scene`/LP に細い palette スクロールバー（OS 既定の太い bar 是正）
+    ②`-webkit-tap-highlight-color: transparent`（モバイル青閃光を断つ・`:active` に委ねる）③`::selection` palette 化
+    ④`@media (prefers-contrast: more)` の利用者にだけ `--ink-dim` 4.38→6.18・`--ink-faint` 1.99→4.25 へ引き上げ（オプトイン a11y）
+  - version e23→e24 四点同期・smoke 契約6件・README 沿革・route/storage/depths schema/reduced-motion 不変
+- verified   : 実ブラウザ metric（screenshot はヘッドレスで timeout＝metric 検証に切替）
+  - 既定コントラスト 4.38 が**不変**＝ムード保持（prefers-contrast は既定 off）。`.hz-scene` scrollbar-width=thin・tap-highlight=transparent・::selection 適用・LP 横溢れ0・console error 0・slice.js?v=e24 配信
+  - node --check OK・node scripts/hazama-check.mjs 2 PASS / 0 FAIL（E24 asserts 6件込み）
+- checks     : hazama-check 2 PASS / 0 FAIL
+- next       : ピクセルの見えは visual-gate＝ユーザーが localhost/本番で目視（screenshot 不可）。号令で push→Pages 検証
+- blockers   : deploy（push）は号令待ち。見た目の最終判断は human の目
+
 ## 2026-07-11 — E16〜E23 蓄積 runtime の統合健全性監査（read-only・14/14 PASS・確定バグ0）
 - agent      : worker(opus) ×2 敵対的監査＋Fable 検収（実コード裏取り）
 - goal       : 個別検証済みだが「五幹×周回×賭け×遺言」の**組合せグラフ全体**と state/永続/決定論は未通し監査だった空白（E6=E1-5・E11=E7-10 監査以来）を敵対的に埋める。read-only・修正/commit なし

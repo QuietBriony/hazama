@@ -737,3 +737,27 @@ body.glitch-hard .hz-gate-title::after  { animation: hz-tl-after-glitch .18s ste
   .hz-bg-descent { transition: none; }
   body.leak-on .hz-bg-leak { opacity: 0.08; transition: none; }
 }
+
+/* ============================================================================
+   E24 — GUI 品質の磨き（既定の見えは不変・追加のみ）。
+   ①スクロールバーを細く palette 化（OS 既定の太い bar が沈下美学に混じるのを是正）。
+   ②タップ発光（-webkit-tap-highlight）を消す＝:active の手触りに委ねる（モバイル既定の青閃光を断つ）。
+   ③テキスト選択色を palette 化（既定の青ハイライトを避ける）。
+   ④prefers-contrast: more の時だけ muted トーンを WCAG へ引き上げ＝既定のムードは保ったまま、
+     濃さを求める利用者にだけ濃くする（オプトイン a11y・既定の見えは1px も変えない）。
+   ============================================================================ */
+.hz-scene { scrollbar-width: thin; scrollbar-color: rgba(127,182,196,0.28) transparent; }
+.hz-scene::-webkit-scrollbar { width: 7px; }
+.hz-scene::-webkit-scrollbar-track { background: transparent; }
+.hz-scene::-webkit-scrollbar-thumb {
+  background: rgba(127,182,196,0.22); border-radius: 4px;
+  border: 2px solid transparent; background-clip: padding-box;
+}
+@media (hover: hover) {
+  .hz-scene::-webkit-scrollbar-thumb:hover { background: rgba(127,182,196,0.42); background-clip: padding-box; }
+}
+.hz-choice, .hz-chip, .hz-gate-enter { -webkit-tap-highlight-color: transparent; }
+::selection { background: rgba(127,182,196,0.30); color: var(--ink); text-shadow: none; }
+@media (prefers-contrast: more) {
+  :root { --ink-dim: #858f9b; --ink-faint: #69747f; --line: rgba(127,182,196,0.44); }
+}

@@ -287,6 +287,14 @@ const driftFn = (js.match(/function maybeForeignDrift[\s\S]*?\n  \}/) || [""])[0
 assert(driftFn && !driftFn.includes("pickTestament"), "E23 mid-descent seat must not emit testament (single seat)");
 assert(!saveBody.includes("testament") && !saveBody.includes("遺言"), "E23 testament stays out of spiral save");
 
+// E24: GUI 品質の磨き（既定不変・追加のみ）＝細い palette スクロールバー・タップ発光除去・選択色・prefers-contrast a11y。
+has(css, "scrollbar-width", "E24 thin scrollbar");
+has(css, "-webkit-tap-highlight-color", "E24 tap-highlight removed");
+has(css, "::selection", "E24 palette selection");
+has(css, "prefers-contrast: more", "E24 opt-in high-contrast a11y (game)");
+has(lpHtml, "prefers-contrast: more", "E24 opt-in high-contrast a11y (LP)");
+has(lpHtml, "scrollbar-width", "E24 LP thin scrollbar");
+
 if (failures.length) {
   console.error("build-consistency smoke FAIL");
   for (const f of failures) console.error(`- ${f}`);

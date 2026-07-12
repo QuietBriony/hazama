@@ -97,6 +97,17 @@
       .enter { animation-delay: 0.8s; }
       @keyframes rise { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
     }
+    /* E24 — GUI 品質（既定の見えは不変・追加のみ）: 細い palette スクロールバー・タップ発光除去・
+       選択色 palette・prefers-contrast の利用者にだけ muted を WCAG へ引き上げ。 */
+    html { scrollbar-width: thin; scrollbar-color: rgba(127,182,196,0.28) transparent; }
+    ::-webkit-scrollbar { width: 8px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: rgba(127,182,196,0.22); border-radius: 4px; }
+    .enter { -webkit-tap-highlight-color: transparent; }
+    ::selection { background: rgba(127,182,196,0.30); color: var(--ink); }
+    @media (prefers-contrast: more) {
+      :root { --ink-dim: #858f9b; --ink-faint: #69747f; --line: rgba(127,182,196,0.44); }
+    }
   </style>
 </head>
 <body>

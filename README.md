@@ -208,6 +208,11 @@ Codex / Claude Code が同じ順番で作業を継続するための薄いエン
   漂着が半々で「・遺言／深度N」に寄る（`maybeForeignDrift`・表紙は従来通り＝単一 seat・二重注入なし）。CSS 新規ゼロ（既存 foreign 再利用）・
   storage/depths schema 不変・un-attuned は byte 同一（後方互換）。素材＝`docs/research/testament-seed-bank-form2-v0.md`、発注＝`docs/evolution/E23-SPEC.md`。smoke 契約6件（`?v=e23`）
 
+- **進化 E24（2026-07）**: GUI 品質の磨き（既定の見えは1px も変えない・追加のみ）。①`.hz-scene` と LP に細い palette スクロールバー
+  （OS 既定の太い bar を是正）②`-webkit-tap-highlight-color: transparent`＝モバイルの青閃光を断ち `:active` の手触りに委ねる
+  ③`::selection` を palette 化 ④`@media (prefers-contrast: more)` の利用者にだけ muted トーンを WCAG へ引き上げ（`--ink-dim` 4.38→6.18・
+  `--ink-faint` 1.99→4.25＝オプトイン a11y）。slice.css＋lp.html のみ・route/storage/depths schema 不変・reduced-motion 不変。smoke 契約6件（`?v=e24`）
+
 ## Status / Rules
 
 このリポジトリは**稼働中の本番作品**（没入版単一ビルド）です。旧「Music スタックの参照用」位置づけは終了。
