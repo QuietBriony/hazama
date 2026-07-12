@@ -19,6 +19,21 @@ Hazama 自律開発 session の追記専用ログ。
 
 ---
 
+## 2026-07-12 — 進化 E25: design レビュー（ゲーム開発者4レンズ）反映＋propose（実装/検証済み・号令待ち）
+- agent      : worker(opus)×4 敵対的でない設計レビュー（オンボーディング/ゲームフィール/進行/モバイル a11y）＋Fable 統合・実装・実機検証
+- goal       : 「デザイン/ゲーム開発者視点のレビューとして、すすめて」＝意図（没入第一・チュートリアルなし・核は描かない・曖昧さ主題）を尊重し、客観・低リスクの改善だけを反映
+- shipped（slice.js＋slice.css・既定の見え/バランスは最小）:
+  - **認識◆パルス**: 認識が実際に増えた瞬間だけ一度光る（echo門 +2 は祝祭なのに deep +1 が無音だった非対称を是正・North Star「認識が育つ手応え」）。reduced-motion 無効
+  - **フォーカス移動の穴**: ノード遷移で body へ落ちていたフォーカスを、喪失時のみ最初の押せる択へ（キーボード/SR/スイッチだけ・focus-visible 非表示でマウス/タッチは見え不変）
+  - **soma 幹の認識中立**: A の「身体で受けとめる(soma)」は別の降り方＝剥がれ −1 を止める（deep +1 と非 A の surface 剥がれは維持・E16 意図）
+  - **横持ちノッチの safe-area 左右**（gauge/footer/app）・**オンボード一行を SR live 領域**（role=note+aria-live）
+  - version e24→e25 四点同期・smoke 契約6件・route/storage/depths schema 不変・reduced-motion 不変
+- verified   : 実ブラウザ（__hz・setTimeout 平坦化）: ?v=e25／pulse クラス発火／focus が最初の択へ着地（"編み目を…"）／soma@A は attunement 3 のまま・非 A surface は 3→2（剥がれ維持）＝ガード正確／console 0。node --check OK・hazama-check 2 PASS/0 FAIL
+- checks     : hazama-check 2 PASS / 0 FAIL
+- propose（未実装・作者の言葉/耳/バランス判断）: ①**replay 発見性**（最重要）= reborn の周回 sub を「未踏の降り方がある」へ＋任意で A cycle0 に封印ゴースト択（E19 locked イディオム）②初◆グロス一行（E9/E10 型）③浮上の縁で lowpass 再開放＝「音が戻る」を実体化（耳）④新幹「初めて開く」affordance ⑤reveal 早送り/押下確定 juice
+- next       : E25 は号令で push→Pages 検証。propose 群はユーザーの言葉/耳/実機で採否
+- blockers   : deploy は号令待ち。◆パルスの見え・文言/音/バランスは human の目耳
+
 ## 2026-07-12 — 進化 E24: GUI 品質の磨き（既定不変・追加のみ・実装/検証済み・号令待ち）
 - agent      : Fable（精密・実ブラウザ metric 検証）
 - goal       : 「GUI のクオリティを上げる」＝没入の既定ムードを1px も変えずに、客観的な品質だけ足す

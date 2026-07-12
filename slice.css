@@ -239,14 +239,15 @@ body.omega { --ink: #e2ebf1; --accent: #9fd0db; }
   max-width: 680px;
   width: 100%;
   margin: 0 auto;
-  padding: max(18px, env(safe-area-inset-top)) 22px 0;
+  /* E25: 横持ち＋ノッチで左右の safe-area を尊重（縦持ち/デスクトップは inset=0＝見え不変）。 */
+  padding: max(18px, env(safe-area-inset-top)) max(22px, env(safe-area-inset-right)) 0 max(22px, env(safe-area-inset-left));
   min-height: 0;
   overflow: hidden;            /* スクロールは #scene が内部で持つ。choices と本文は別トラックで絶対に重ならない */
 }
 
 /* 沈下ゲージ：右端に細い縦線。fill が下へ伸びる＝沈んだ深さ */
 .hz-gauge {
-  position: fixed; right: 10px; top: 14vh; bottom: 16vh; z-index: 3;
+  position: fixed; right: calc(10px + env(safe-area-inset-right)); top: 14vh; bottom: 16vh; z-index: 3;
   width: 14px;
   display: flex; flex-direction: column; align-items: center; gap: 8px;
   pointer-events: none;
@@ -293,6 +294,13 @@ body.omega { --ink: #e2ebf1; --accent: #9fd0db; }
   max-height: 9em; overflow: hidden; transition: color .8s ease; opacity: 0.85;
 }
 .hz-attune.attuned { color: var(--accent); opacity: 1; text-shadow: 0 0 7px rgba(127,182,196,0.55); }
+/* E25: 認識が実際に増えた瞬間だけ一度パルス＝「今の深い読みが効いた」feedback（echo門の祝祭に対し deep+1 が無音だった非対称を是正）。reduced-motion で無効。 */
+.hz-attune.pulse { animation: hz-attune-pulse 0.72s ease 1; }
+@keyframes hz-attune-pulse {
+  0%   { color: var(--accent); text-shadow: 0 0 7px rgba(127,182,196,0.5); transform: scale(1); }
+  28%  { color: #cfeaf1; text-shadow: 0 0 15px rgba(159,208,219,0.95), 0 0 5px rgba(159,208,219,0.85); transform: scale(1.16); }
+  100% { text-shadow: 0 0 7px rgba(127,182,196,0.5); transform: scale(1); }
+}
 
 /* E9: 初回オンボーディング（一度きり・最小ヒント）。choices の上に薄い地の声を一行。
    静止（アニメ無し）＝reduced-motion 安全。 */
@@ -429,7 +437,8 @@ body[data-tension="high"] .hz-scene { animation: hz-shudder 2.6s ease-in-out inf
 .hz-footer {
   position: relative; z-index: 2;
   display: flex; align-items: center; gap: 10px;
-  padding: 8px 18px max(8px, env(safe-area-inset-bottom));
+  /* E25: 左右も safe-area 尊重（横持ちノッチで chip/status がノッチ下へ潜らない）。 */
+  padding: 8px max(18px, env(safe-area-inset-right)) max(8px, env(safe-area-inset-bottom)) max(18px, env(safe-area-inset-left));
   border-top: 1px solid rgba(127,182,196,0.08);
 }
 .hz-chip {
@@ -707,6 +716,7 @@ body.glitch-hard .hz-gate-title::after  { animation: hz-tl-after-glitch .18s ste
   /* グレインは静止（消さずに質感だけ残す）。観測者の呼吸は止める。 */
   .hz-grain { animation: none; opacity: 0.03; }
   .hz-observer.deep { animation: none; }
+  .hz-attune.pulse { animation: none; }   /* E25: 認識パルスも静止（色/グローの一瞬は付かない） */
   /* R5: グリッジ／めくれは全停止。質感だけ薄く静止で残す。 */
   .hz-glitch { visibility: visible; opacity: 0.5; mix-blend-mode: screen; }
   .hz-glitch::before { opacity: 0.06; transform: translate(-2px,0); animation: none; }

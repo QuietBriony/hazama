@@ -213,6 +213,13 @@ Codex / Claude Code が同じ順番で作業を継続するための薄いエン
   ③`::selection` を palette 化 ④`@media (prefers-contrast: more)` の利用者にだけ muted トーンを WCAG へ引き上げ（`--ink-dim` 4.38→6.18・
   `--ink-faint` 1.99→4.25＝オプトイン a11y）。slice.css＋lp.html のみ・route/storage/depths schema 不変・reduced-motion 不変。smoke 契約6件（`?v=e24`）
 
+- **進化 E25（2026-07・design レビュー反映）**: シニアゲーム開発者4レンズ（オンボーディング/ゲームフィール/進行/モバイル a11y）の
+  レビューから、意図を尊重した**客観・低リスクの改善だけ**を反映。①**認識◆パルス**＝認識が増えた瞬間だけ一度光る（エコー門の +2 が
+  祝祭なのに deep +1 が無音だった非対称を是正・North Star「認識が育つ手応え」）②**フォーカス移動の穴**＝ノード遷移で body へ落ちていた
+  フォーカスを、喪失時のみ最初の押せる択へ（キーボード/SR/スイッチだけ・見え不変）③**soma 幹の認識中立**＝A の「身体で受けとめる」は
+  別の降り方であって浅い読みでない＝剥がれ −1 を止める（E16 意図）④**横持ちノッチの safe-area 左右**⑤オンボード一行を SR live 領域へ。
+  slice.js/slice.css のみ・route/storage/depths schema 不変・reduced-motion 不変。smoke 契約6件（`?v=e25`）。文言/音/バランスの深掘りは propose 済み
+
 ## Status / Rules
 
 このリポジトリは**稼働中の本番作品**（没入版単一ビルド）です。旧「Music スタックの参照用」位置づけは終了。

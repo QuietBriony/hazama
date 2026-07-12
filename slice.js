@@ -717,16 +717,20 @@
   }
 
   // R3: 認識インジケータ（構造を読むほど点が灯る＝Ωの資格が育つのを"感じる"。資源ゲームUIではない）。
+  let _attuneLit = 0;   // E25: 直近の点灯数。増えた瞬間だけ一度 pulse feedback を出す。
   function renderAttune() {
     const el = $("attune");
     if (!el) return;
     const a = Math.round(state.attunement || 0);
-    if (a <= 0) { el.hidden = true; return; }
+    if (a <= 0) { el.hidden = true; _attuneLit = 0; return; }
     el.hidden = false;
     const need = ATTUNE.omegaThreshold;
     const lit = Math.min(a, need);
     el.textContent = "認識 " + "◆".repeat(lit) + "◇".repeat(Math.max(0, need - lit)) + (isAttuned() ? " 合致" : "");
     el.classList.toggle("attuned", isAttuned());
+    // E25: 認識が実際に増えた瞬間だけ一度パルス＝deep 構造読みが「効いた」feedback（echo門の +2 も拾う）。
+    if (lit > _attuneLit) { el.classList.remove("pulse"); void el.offsetWidth; el.classList.add("pulse"); }
+    _attuneLit = lit;
   }
 
   // 分岐シグナル：周回・別ルート(表層弾き)・通った別の筋の数をフッタへ（分岐が起きたら表示）。
@@ -926,6 +930,8 @@
     onboardPending = true;
     const p = document.createElement("p");
     p.className = "hz-onboard";
+    p.setAttribute("role", "note");
+    p.setAttribute("aria-live", "polite");   // E25: 唯一の明示ヒントを SR にも届ける
     p.textContent = "——どう読むかで、どこまで降りられるかが決まる。深く読むほど、深く。";
     choicesEl.appendChild(p);    // choices の先頭＝ボタンの上
   }
@@ -953,7 +959,12 @@
       btn.disabled = true;                 // E14: appear タイマー前の暴発タップ防止＝reveal 中に固定位置の choices 帯を反射タップしても発火しない
       choicesEl.appendChild(btn);
       const appear = REDUCED ? 0 : 120 + idx * 150 + (c.kind === "retreat" ? state.maxSink * 800 : 0);
-      window.setTimeout(() => { btn.classList.add("in"); if (!locked) btn.disabled = false; }, appear);  // E19: ロックは解錠しない
+      window.setTimeout(() => {
+        btn.classList.add("in"); if (!locked) btn.disabled = false;   // E19: ロックは解錠しない
+        // E25: ノード遷移でフォーカスが body へ落ちる穴を塞ぐ＝最初の押せる択が有効化した時、フォーカス喪失時のみ移す。
+        //   マウス/タッチは activeElement=body かつ focus-visible 非表示＝見えは不変。キーボード/SR/スイッチだけ効く。
+        if (idx === 0 && !locked && document.activeElement === document.body) btn.focus({ preventScroll: true });
+      }, appear);
     });
     // ボタンを積んで scene が縮んだ“後”に最新行を底へ。重なりはレイアウトで防止済み、
     // ここは「最後の行を選択肢の真上に見せる」ための追従（ユーザーが上に居れば奪わない）。
@@ -1074,7 +1085,9 @@
   function choose(c) {
     if (onboardPending) markOnboarded();   // E9: ヒントを見て選んだ＝以後ずっと出さない
     if (c.kind === "retreat" && !c.terminal) return resolveResist(c);
-    gainRecognition(c);  // E3: 深い構造読み(deep descend)で育ち／表層(surface)で剥がれる
+    // E25: A の岐路の「身体で受けとめる(soma 幹)」は"別の降り方"であって浅い読みではない＝認識の剥がれ対象外。
+    //   deep 幹の +1 は維持。trunk 選択は読みの深浅と別軸（E16「soma は罰でなく別の降り方」意図に合わせる）。
+    if (!(JUNCTIONS.has(state.id) && c.kind === "surface")) gainRecognition(c);  // E3: 深い構造読みで育ち／表層で剥がれる
     state.sink += c.sink || 0;
     state.dread = Math.min(1, state.dread + (c.dread || 0));
     if (c.close && state.returnPaths > 0) state.returnPaths -= 1; // 戻り道は復活しない
@@ -2000,7 +2013,7 @@
 
   // ---------- 起動 ----------
   async function loadData() {
-    const res = await fetch("depths-shell.json?v=e24", { cache: "no-store" });
+    const res = await fetch("depths-shell.json?v=e25", { cache: "no-store" });
     DATA = await res.json();
   }
   // ---------- 動く表紙（R6：タイトルも state/seed に応じて動く・静止でない） ----------

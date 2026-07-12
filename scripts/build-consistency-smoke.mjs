@@ -295,6 +295,14 @@ has(css, "prefers-contrast: more", "E24 opt-in high-contrast a11y (game)");
 has(lpHtml, "prefers-contrast: more", "E24 opt-in high-contrast a11y (LP)");
 has(lpHtml, "scrollbar-width", "E24 LP thin scrollbar");
 
+// E25: design レビュー反映（既定不変・feedback/a11y）＝認識パルス・focus 移動・soma 幹中立・safe-area 左右・onboard SR。
+has(css, "hz-attune-pulse", "E25 recognition pulse feedback");
+has(css, "env(safe-area-inset-right)", "E25 landscape safe-area (right)");
+has(css, "env(safe-area-inset-left)", "E25 landscape safe-area (left)");
+has(js, "preventScroll", "E25 focus first choice after reveal (a11y)");
+assert(/JUNCTIONS\.has\(state\.id\)\s*&&\s*c\.kind === "surface"/.test(js), "E25 A trunk (soma) is recognition-neutral");
+has(js, 'aria-live", "polite"', "E25 onboarding hint in SR live region");
+
 if (failures.length) {
   console.error("build-consistency smoke FAIL");
   for (const f of failures) console.error(`- ${f}`);
