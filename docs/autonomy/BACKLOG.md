@@ -100,6 +100,19 @@ handoff 前の確認は `docs/autonomy/closeout-checklist.md` を使います。
   （種バンク 18→8 を curate）＋`docs/evolution/E23-SPEC.md`（発注）。残る form（1/3/4/5/6/7 の類）と
   原典本文の大量給餌（NODE_VARIANTS / detour / below バンク増量）は依然 icebox＝今は増やさない。
 
+### HZ-BL-014 — Runtime hardening seams（guard-if-touched・監査由来）
+- priority : icebox
+- scope    : runtime(narrow)
+- agent    : either
+- human-gate: no
+- status   : open
+- source   : 2026-07-11 E16–E23 統合健全性監査（**バグではない**・将来 edit 時の guard として記録）
+- detail   : ①`resolveResist` の `target === "__edge"` 分岐は `state.wagered` を設定しない。現状 `__edge` は
+  reborn の terminal:true 2択のみ＝`choose` 経路（wagered 設定あり）を通り当該分岐は到達不能な防御コード。
+  将来 non-terminal retreat を `__edge` へ向ける場合は wagered の設定/リセットを要確認（stale で E19 Ω 判定が誤り得る種）。
+  ②`legacy.cycles`/`legacy.maxRank` は下限 clamp のみで上限（9999）なし。用途は seed（`Math.imul` で wrap）＝現状無害。
+  改竄 payload の上限を揃えるなら load の clamp を legacy にも適用。**どちらも今は修正不要**。
+
 ---
 
 ## Done

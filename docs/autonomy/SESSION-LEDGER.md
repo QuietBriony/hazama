@@ -19,6 +19,23 @@ Hazama 自律開発 session の追記専用ログ。
 
 ---
 
+## 2026-07-11 — E16〜E23 蓄積 runtime の統合健全性監査（read-only・14/14 PASS・確定バグ0）
+- agent      : worker(opus) ×2 敵対的監査＋Fable 検収（実コード裏取り）
+- goal       : 個別検証済みだが「五幹×周回×賭け×遺言」の**組合せグラフ全体**と state/永続/決定論は未通し監査だった空白（E6=E1-5・E11=E7-10 監査以来）を敵対的に埋める。read-only・修正/commit なし
+- verified   :
+  - 監査1 routing 7/7 PASS: dangling edge 0（72ノード/136 choices）・孤立ノード0（resolve モデル BFS で 72/72 到達）・
+    五幹すべて Z 再合流→Ω→縁に到達・階段 cycle0-3 で厳密 2/3/4/5（B_reso=1/B_casc=2/B_other=3）・reborn ソフトロック不能
+    （常時押下可≥2）・trunk 取り違え/off-by-one なし・E23 遺言は below の lines のみで routing 副作用ゼロ
+  - 監査2 state 7/7 PASS: save は {v,cycle,attunement,visits,belowLoop,legacy,sank} のみ（transient 漏れ/逆欠落なし）・
+    activeTrunk/wagered 非永続で stale 復元不能・**content パスに Math.random ゼロ**（全 RNG は audio/visual・799 はコメントで不使用明記）・
+    descendAgain/forgetAll のリセット正当（stale 持ち越しなし）・soft-lock 不能・worldSeed 妥当・別キー fail-open
+  - Fable 独立裏取り（agent 報告を鵜呑みにせず実コード再確認）: dangling 0／A 階段 minCycle(0,0,1,2,3)／reborn requireAttune 1択のみ
+    ／save キー列／全 Math.random 用途（799＝偽陽性）／`__edge` は reborn terminal 2択のみ＝resolveResist 分岐は現状到達不能
+- checks     : node scripts/hazama-check.mjs = 2 PASS / 0 FAIL（監査は read-only・runtime/version 無改変）
+- backlog    : HZ-BL-014（潜在シーム2件・guard-if-touched・**バグではない**）を icebox に追加
+- next       : 蓄積 runtime は健全＝ship 済みの土台に統合バグなし。残は human-gate のみ（E23 目・E21 耳・PWA 実機）
+- blockers   : なし
+
 ## 2026-07-10 — E23 生成 testament 独立検証（本番 ?v=e23・CDP 実走）
 - agent      : worker(opus) 独立検証（実装者と別の目）
 - goal       : E23（去った声の遺言）を本番 https://quietbriony.github.io/hazama/?v=e23（master 4d9a7d7）に対し独立実走検証。matrix 7項目。runtime/scripts 無改変・頻度/レジスタ/t17 の human-gate は評価しない
