@@ -779,3 +779,21 @@ body.glitch-hard .hz-gate-title::after  { animation: hz-tl-after-glitch .18s ste
 @media (prefers-contrast: more) {
   :root { --ink-dim: #858f9b; --ink-faint: #69747f; --line: rgba(127,182,196,0.44); }
 }
+
+/* ============================================================================
+   E27 — ゲーム性向上（design レビュー残 propose の実装）。
+   ①押下の確定感: 選んだ択が一拍沈み（.chosen）、選ばれなかった択が退く（.unchosen）＝
+     「選んだボタンが選ばれた」余韻。REDUCED は JS が即時遷移＝従来どおり。
+   ②封印された扉（.ghost）: 次に開く降り方を1枚だけ・幹は伏せて見せる。Ω ロック(.locked)より一段静か。
+   ============================================================================ */
+.hz-choice.chosen {
+  background: rgba(127,182,196,0.16); border-color: rgba(159,208,219,0.75);
+  transform: translateY(1px);
+  transition: background .1s ease, border-color .1s ease, transform .1s ease;
+}
+.hz-choice.unchosen { opacity: 0.3; transition: opacity .14s ease; }
+.hz-choice.ghost { opacity: 0.38; }
+.hz-choice.ghost .lead { color: var(--ink-dim); letter-spacing: 0.05em; }
+@media (prefers-reduced-motion: reduce) {
+  .hz-choice.chosen, .hz-choice.unchosen { transition: none; }
+}

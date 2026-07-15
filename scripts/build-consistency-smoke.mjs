@@ -311,6 +311,15 @@ has(js, "Audio.update(0.16", "E26 surface pole reopens audio (音が戻る)");
 assert(/state\.cycle === c\.minCycle/.test(js), "E26 newly-opened trunk affordance");
 has(css, "hz-choice-open", "E26 newly-opened trunk glow");
 
+// E27: ゲーム性向上＝押下の確定感／既読再訪の reveal 早送り（初見は沈下の速度のまま）／封印された扉。
+has(js, 'classList.add("chosen")', "E27 choice confirm juice");
+has(js, "sceneSkipHandler", "E27 revisit fast-forward handler");
+assert(/state\.cycle >= 1 \|\| \(state\.visits\[id\] \|\| 0\) > 1/.test(js), "E27 fast-forward gated to revisits only");
+has(js, "locked ghost", "E27 sealed-door ghost choice");
+has(js, "まだ、開かない。周回した者だけに開く。", "E27 ghost speaks the mechanism in canon phrase");
+has(css, ".hz-choice.chosen", "E27 chosen style");
+has(css, ".hz-choice.ghost", "E27 ghost style");
+
 if (failures.length) {
   console.error("build-consistency smoke FAIL");
   for (const f of failures) console.error(`- ${f}`);

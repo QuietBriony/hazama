@@ -19,6 +19,22 @@ Hazama 自律開発 session の追記専用ログ。
 
 ---
 
+## 2026-07-12 — 進化 E27: ゲーム性向上（押下の確定感/既読再訪の早送り/封印された扉）（実装/検証済み・号令待ち）
+- agent      : Fable（design レビュー残 propose のゲーム性3本を「ゲーム性向上させて。GUI色々改善できるっしょ？」で実装）
+- goal       : moment-to-moment の手触りと replay 導線をゲーム性として仕上げる。初見の沈下の遅さ＝主題は不変
+- shipped（slice.js＋slice.css・号令デプロイ待ち）:
+  - **押下の確定感**: 選んだ択が一拍(140ms)沈み(.chosen)・選ばれなかった択が退く(.unchosen)→世界が動く。REDUCED は即時＝従来
+  - **既読再訪の reveal 早送り**: 周回≥1 or 再訪ノード限定で、reveal 中の本文タップ(click＝scroll と非衝突)が残り行を即点灯＋choices 表示。
+    初見はタップ無効（遅さの主題保持）・ヒント非表示（発見も曖昧さの内）・通常到達/ノード切替でハンドラを畳む＝二重描画なし
+  - **封印された扉**: 次に開く降り方を1枚だけ「――別の降り方／まだ、開かない。周回した者だけに開く。」（sub は depths:67 の原文句を再利用＝声安全）。
+    幹の中身は伏せる・disabled+aria-disabled・全幹開放(cycle≥3)後は消える＝周回の理由が初回から見える
+  - version e26→e27 四点同期・smoke 契約7件・depths schema/route/storage/reduced-motion 不変・E14/E17 既存 smoke 文字列保持
+- verified   : 実ブラウザ: ghost@cycle0(2択+扉・text/disabled 正)・ghost@cycle3 消滅(5択)／juice=chosen付与・他択退場・**即遷移せず**140ms後に遷移／
+  早送り=再訪 1行→タップ→5行全点灯+choices2・**初見はタップ無効**(choices 0 のまま)／console 0。node --check OK・hazama-check 2 PASS/0 FAIL
+- checks     : hazama-check 2 PASS / 0 FAIL
+- next       : 号令で push→Pages 検証。扉の文言/juice の間(140ms)/早送りの手触りは実機で human 採否
+- blockers   : deploy は号令待ち
+
 ## 2026-07-12 — 進化 E26: design レビュー propose を推奨実装（replay 発見性/初◆グロス/音戻し/新幹）（実装/検証済み・号令待ち）
 - agent      : Fable（E25 の propose を「推奨進めて」で実装・実機検証）
 - goal       : レビューの propose 群のうち推奨分を反映。P5（reveal 早送り）は「沈下の遅さが主題」ゆえ見送り

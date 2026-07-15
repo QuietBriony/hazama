@@ -49,6 +49,7 @@
   const state = { id: null, sink: 0, dread: 0, returnPaths: RETURN_PATHS_START, maxSink: 0, observer: 1, steps: 0, belowLoop: 0, resisted: 0, refused: 0, resistBeat: null, rank: 0, cycle: 0, visits: {}, rejoin: null, attunement: 0, echoDone: {}, activeTrunk: null, wagered: false, legacy: freshLegacy() };
   let DATA = null;
   let revealToken = 0;
+  let sceneSkipHandler = null;   // E27: 既読再訪の reveal 早送り（scene タップ）。renderNode ごとに張り替える
   const clamp01 = (x) => Math.max(0, Math.min(1, x));
   // A4: phase 跨ぎの句読点。深くなる方向の遷移を一度だけ強く破断する。
   // lastPhase は state に入れない（transient な演出トリガ＝保存も持ち越しもしない）。
@@ -876,6 +877,29 @@
       return p;
     };
 
+    // E27: 既読の再訪（周回≥1 or 再訪ノード）だけ、reveal 中の本文タップで残りを即点灯し選択肢を出す＝
+    //   replay に積もる待ちを断つ。初見は常に沈下の速度（タップは効かない＝遅さが主題）。REDUCED は元々即時。
+    //   scroll ドラッグでは発火しない click で拾う。ヒントは出さない（発見も曖昧さの内）。
+    let appended = 0;
+    if (sceneSkipHandler) { sceneEl.removeEventListener("click", sceneSkipHandler); sceneSkipHandler = null; }
+    if (!REDUCED && (state.cycle >= 1 || (state.visits[id] || 0) > 1)) {
+      sceneSkipHandler = () => {
+        if (myToken !== revealToken) return;   // 古いノードの残骸＝何もしない（次の張り替えで消える）
+        revealToken++;                          // 予約済みの行/文字/choices タイマーを全て無効化
+        sceneEl.removeEventListener("click", sceneSkipHandler); sceneSkipHandler = null;
+        sceneEl.querySelectorAll(".ch").forEach((s) => s.classList.add("lit"));
+        for (let i = appended; i < lines.length; i++) {
+          const p = mkLine(lines[i]);
+          p.textContent = lines[i].t; p.classList.add("shown");
+          sceneEl.appendChild(p);
+        }
+        Follow.stick();
+        if (ECHO_GATES.includes(id) && state.echoDone[id] !== state.cycle && echoTruthAvail(id)) renderEchoChoices(node, id);
+        else renderChoices(node);
+      };
+      sceneEl.addEventListener("click", sceneSkipHandler);
+    }
+
     lines.forEach((line) => {
       const chars = [...line.t];
       if (REDUCED) {
@@ -893,6 +917,7 @@
           s.className = "ch"; s.textContent = ch; p.appendChild(s);
         });
         sceneEl.appendChild(p);
+        appended++;               // E27: 早送り時に「まだ出ていない行」から続きを描くための水位
         p.classList.add("shown");
         Follow.stick();          // 追従中のみ最新行を選択肢直上へ（ユーザーが上に居れば奪わない）
         // 文字の点灯は opacity のみ＝高さ不変。スクロール追従は不要（カクつき源を断つ）。
@@ -906,6 +931,8 @@
     const choiceDelay = REDUCED ? 150 : delay + 220;
     window.setTimeout(() => {
       if (myToken !== revealToken) return;
+      // E27: 通常到達なら早送りハンドラを畳む（choices 表示後の scene タップで二重描画しない）。
+      if (sceneSkipHandler) { sceneEl.removeEventListener("click", sceneSkipHandler); sceneSkipHandler = null; }
       // E3 エコー門: 対象ノード到達かつ周回内未発火かつ真候補ありなら、通常 choices の前に門を挿す。
       if (ECHO_GATES.includes(id) && state.echoDone[id] !== state.cycle && echoTruthAvail(id)) {
         renderEchoChoices(node, id);
@@ -973,7 +1000,13 @@
       if (c.sub) btn.querySelector(".sub").textContent = locked
         ? `まだ届かない（認識 ${Math.round(state.attunement || 0)}/${ATTUNE.omegaThreshold}）`
         : c.sub;
-      if (!locked) btn.addEventListener("click", () => choose(c), { once: true });
+      if (!locked) btn.addEventListener("click", () => {
+        // E27: 押下の確定感＝選んだ択が一拍沈み、選ばれなかった択が退いてから世界が動く（REDUCED は即時＝従来）。
+        choicesEl.querySelectorAll(".hz-choice").forEach((b) => { if (b !== btn) b.classList.add("unchosen"); b.disabled = true; });
+        btn.classList.add("chosen");
+        if (REDUCED) return choose(c);
+        window.setTimeout(() => choose(c), 140);
+      }, { once: true });
       else btn.setAttribute("aria-disabled", "true");
       btn.disabled = true;                 // E14: appear タイマー前の暴発タップ防止＝reveal 中に固定位置の choices 帯を反射タップしても発火しない
       choicesEl.appendChild(btn);
@@ -985,6 +1018,24 @@
         if (idx === 0 && !locked && document.activeElement === document.body) btn.focus({ preventScroll: true });
       }, appear);
     });
+    // E27: 次に開く降り方を「封印された扉」として一枚だけ見せる（幹の中身は伏せる＝驚き温存・
+    //   E19 の"見える鍵"イディオム）。周回の理由が初回から見える＝扉は sub の原文句で機構を語る。
+    //   全幹が開いたら出ない。押せない＝aria-disabled・focus 対象外。
+    const lockedNext = (node.choices || []).filter((c) => c.minCycle && state.cycle < c.minCycle)
+      .sort((a, b) => a.minCycle - b.minCycle)[0];
+    if (lockedNext) {
+      const gbtn = document.createElement("button");
+      gbtn.type = "button";
+      gbtn.className = "hz-choice locked ghost";
+      gbtn.innerHTML = `<span class="lead"></span><span class="sub"></span>`;
+      gbtn.querySelector(".lead").textContent = "――別の降り方";
+      gbtn.querySelector(".sub").textContent = "まだ、開かない。周回した者だけに開く。";
+      gbtn.disabled = true;
+      gbtn.setAttribute("aria-disabled", "true");
+      choicesEl.appendChild(gbtn);
+      const gAppear = REDUCED ? 0 : 120 + choicesEl.querySelectorAll(".hz-choice").length * 150;
+      window.setTimeout(() => gbtn.classList.add("in"), gAppear);
+    }
     // ボタンを積んで scene が縮んだ“後”に最新行を底へ。重なりはレイアウトで防止済み、
     // ここは「最後の行を選択肢の真上に見せる」ための追従（ユーザーが上に居れば奪わない）。
     setBusy(false);              // E6: 本文＋選択肢が出揃った＝SR は1ノードを一括で読む
@@ -2036,7 +2087,7 @@
 
   // ---------- 起動 ----------
   async function loadData() {
-    const res = await fetch("depths-shell.json?v=e26", { cache: "no-store" });
+    const res = await fetch("depths-shell.json?v=e27", { cache: "no-store" });
     DATA = await res.json();
   }
   // ---------- 動く表紙（R6：タイトルも state/seed に応じて動く・静止でない） ----------
