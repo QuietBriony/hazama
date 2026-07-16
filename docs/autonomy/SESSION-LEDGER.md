@@ -19,6 +19,20 @@ Hazama 自律開発 session の追記専用ログ。
 
 ---
 
+## 2026-07-16 — 進化 E28: 操作言語の統一（押下確定と focus 着地をエコー門・縁へ）（実装/検証済み・号令待ち）
+- agent      : Fable（「磨きあればやって」＝E25/E27 の残した不統一を是正）
+- goal       : 押下の確定感(E27)と focus 着地(E25)が renderChoices だけに効いていた＝エコー門(E3)と縁の二択(E1)が旧挙動のままの不統一を塞ぐ
+- shipped（slice.js のみ・号令デプロイ待ち）:
+  - 共有ヘルパ `confirmThen(btn, fn)`（chosen/unchosen・140ms・REDUCED 即時・chip 対象外）を新設し、
+    エコー門の断片/skip とエッジの二択（もう一度沈む/すべて忘れる）の click を confirmThen 経由に
+  - 両所の appear ループに focus 着地（喪失時のみ・キーボード/SR だけに効く・見え不変）
+  - version e27→e28 四点同期・smoke 契約3件（confirmThen 定義＋呼出≥3・focus 箇所≥3）・schema/route/storage/reduced-motion 不変
+- verified   : 実ブラウザ（__hz）: 門=4択に focus 着地・chosen/退場・**即 resolve せず**140ms 後に echoDone 記録／
+  縁=2択に focus 着地・chosen/退場・即遷移なし／?v=e28 配信・console 0。node --check OK・hazama-check 2 PASS/0 FAIL
+- checks     : hazama-check 2 PASS / 0 FAIL
+- next       : 号令で push。次ループ QA で F34（押下確定）の範囲を「全択共通」に更新すると正典が正確
+- blockers   : deploy は号令待ち
+
 ## 2026-07-12 — 進化 E27: ゲーム性向上（押下の確定感/既読再訪の早送り/封印された扉）（実装/検証済み・号令待ち）
 - agent      : Fable（design レビュー残 propose のゲーム性3本を「ゲーム性向上させて。GUI色々改善できるっしょ？」で実装）
 - goal       : moment-to-moment の手触りと replay 導線をゲーム性として仕上げる。初見の沈下の遅さ＝主題は不変

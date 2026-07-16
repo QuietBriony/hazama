@@ -1042,6 +1042,15 @@
     Follow.stick();
   }
 
+  // E28: 押下の確定感をエコー門・縁の択にも＝操作言語の統一（renderChoices と同じ chosen/unchosen・140ms）。
+  //   fn は一拍後に実行（REDUCED は即時＝従来）。退場は .hz-choice のみ（縁カード chip は対象外）。
+  function confirmThen(btn, fn) {
+    choicesEl.querySelectorAll(".hz-choice").forEach((b) => { if (b !== btn) b.classList.add("unchosen"); b.disabled = true; });
+    btn.classList.add("chosen");
+    if (REDUCED) return fn();
+    window.setTimeout(fn, 140);
+  }
+
   // エコー門に真候補（訪問済み断片）があるか＝門を出せるか。renderNode の割り込み判定に使う。
   function echoTruthAvail(id) {
     return Object.keys(ECHO_BANK).some((key) => key !== id &&
@@ -1101,7 +1110,7 @@
       btn.className = "hz-choice echo" + (extraClass ? " " + extraClass : "");
       btn.innerHTML = `<span class="lead"></span>`;
       btn.querySelector(".lead").textContent = lead;
-      btn.addEventListener("click", fn, { once: true });
+      btn.addEventListener("click", () => confirmThen(btn, fn), { once: true });   // E28: 押下の確定感を門にも
       btn.disabled = true;                 // E14: 暴発タップ防止
       choicesEl.appendChild(btn);
       return btn;
@@ -1110,7 +1119,11 @@
     // E14: skip ラベルも id 別＝Z は「Ω へ抜ける」が等価＝Z 限定で「目を閉じ、Ωへ」。
     mk(id === "Z" ? "目を閉じ、Ωへ" : "目を逸らし、先へ", "echo-skip", () => echoResolve(node, id, null));
     choicesEl.querySelectorAll(".hz-choice").forEach((b, i) =>
-      window.setTimeout(() => { b.classList.add("in"); b.disabled = false; }, REDUCED ? 0 : 120 + i * 150));
+      window.setTimeout(() => {
+        b.classList.add("in"); b.disabled = false;
+        // E28: 門でも focus 着地（E25 と同条件＝喪失時のみ・キーボード/SR だけに効く）。
+        if (i === 0 && document.activeElement === document.body) b.focus({ preventScroll: true });
+      }, REDUCED ? 0 : 120 + i * 150));
     setBusy(false);              // E6: 本文＋エコー門が出揃った
     Follow.stick();
   }
@@ -1291,7 +1304,7 @@
       btn.innerHTML = `<span class="lead"></span><span class="sub"></span>`;
       btn.querySelector(".lead").textContent = lead;
       btn.querySelector(".sub").textContent = sub;
-      btn.addEventListener("click", fn, { once: true });
+      btn.addEventListener("click", () => confirmThen(btn, fn), { once: true });   // E28: 縁の二択にも確定感
       choicesEl.appendChild(btn);
       return btn;
     };
@@ -1309,7 +1322,11 @@
     row.appendChild(chip);
     choicesEl.appendChild(row);
     choicesEl.querySelectorAll(".hz-choice").forEach((b, i) =>
-      window.setTimeout(() => b.classList.add("in"), REDUCED ? 0 : 200 + i * 160));
+      window.setTimeout(() => {
+        b.classList.add("in");
+        // E28: 縁（終端）でも focus 着地＝キーボード/SR が結末の二択へ迷わず届く（喪失時のみ・見え不変）。
+        if (i === 0 && document.activeElement === document.body) b.focus({ preventScroll: true });
+      }, REDUCED ? 0 : 200 + i * 160));
     setBusy(false);              // E6: 縁が出揃った
     Follow.stick();
   }
@@ -2087,7 +2104,7 @@
 
   // ---------- 起動 ----------
   async function loadData() {
-    const res = await fetch("depths-shell.json?v=e27", { cache: "no-store" });
+    const res = await fetch("depths-shell.json?v=e28", { cache: "no-store" });
     DATA = await res.json();
   }
   // ---------- 動く表紙（R6：タイトルも state/seed に応じて動く・静止でない） ----------

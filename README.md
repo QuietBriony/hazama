@@ -231,6 +231,11 @@ Codex / Claude Code が同じ順番で作業を継続するための薄いエン
   ③**封印された扉**＝次に開く降り方を1枚だけ「――別の降り方／まだ、開かない。周回した者だけに開く。」として表示（幹の中身は伏せる・E19 見える鍵イディオム・全幹開放後は消える）＝周回の理由が初回から見える。
   slice.js/css のみ・depths schema/route/storage/reduced-motion 不変。smoke 契約7件（`?v=e27`）
 
+- **進化 E28（2026-07・操作言語の統一）**: E25/E27 の押下確定と focus 着地が `renderChoices` だけに効いていた不統一を是正。
+  共有ヘルパ `confirmThen`（chosen/unchosen・140ms・REDUCED 即時）を**エコー門・縁の二択**にも配線し、両所に focus 着地
+  （喪失時のみ・キーボード/SR だけに効く）を追加＝ゲーム全域で「押した→選ばれた→世界が動く」が同じ言語になる。
+  slice.js のみ・schema/route/storage/reduced-motion 不変。smoke 契約3件（`?v=e28`）
+
 ## Status / Rules
 
 このリポジトリは**稼働中の本番作品**（没入版単一ビルド）です。旧「Music スタックの参照用」位置づけは終了。

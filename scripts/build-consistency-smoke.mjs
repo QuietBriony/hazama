@@ -320,6 +320,11 @@ has(js, "まだ、開かない。周回した者だけに開く。", "E27 ghost 
 has(css, ".hz-choice.chosen", "E27 chosen style");
 has(css, ".hz-choice.ghost", "E27 ghost style");
 
+// E28: 操作言語の統一＝押下の確定感と focus 着地をエコー門・縁の択にも（renderChoices と同じイディオム）。
+has(js, "function confirmThen", "E28 shared confirm helper");
+assert((js.match(/confirmThen\(btn, fn\)/g) || []).length >= 3, "E28 confirmThen wired to echo + edge (def + 2 call sites)");
+assert((js.match(/focus\(\{ preventScroll: true \}\)/g) || []).length >= 3, "E28 focus landing at choices + echo + edge");
+
 if (failures.length) {
   console.error("build-consistency smoke FAIL");
   for (const f of failures) console.error(`- ${f}`);
