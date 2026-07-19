@@ -1,0 +1,4 @@
+# Hazama は静的・依存ゼロ。ここで無視するのは build-time ツール(tools/blender の Python)の副産物のみ。
+# runtime(index.html/slice.*/depths-shell.json/PWA)には何も足さない方針は不変。
+__pycache__/
+*.pyc

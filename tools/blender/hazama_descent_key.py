@@ -7,6 +7,12 @@
 #   （常に構造とヘイズに遮られ、光の滲みだけ）。硬い・乾いた・冷たい・威圧。
 #   モバイルは cover で中央縦帯だけ映る＝主役(坑＋核の滲み)を必ず中央に置く。
 #
+# STATUS（2026-07-19）: この抽象幾何アセットは **保留候補**。本番 hero/OG は現行の figurative
+#   概念画（フード姿＋ランタン＋巨大産業奈落）を維持中＝別種のため drop-in 置換は見送り。
+#   本スクリプトは CFG 駆動化＋局所霧 bloom(core_fog) まで作り込み済みで、抽象アセットが要る時に
+#   即レンダできる状態（採択値の探索結果 w2_broad は CFG 既定に反映）。実証済み無人 SSH レンダ
+#   pipeline は memory: hazama-worker-render を参照。
+#
 # 使い方（worker/Codex 側で）:
 #   blender --background --python tools/blender/hazama_descent_key.py
 #   → カレントに hazama_descent_key.png を出力（環境変数 HZ_OUT で上書き可）。
@@ -39,11 +45,20 @@ CFG = {
     "core_glow":  (0.24, 0.55, 0.62),        # 核グロー (159,208,219)
 
     # --- 効き（blind 反復でここを言葉→数値に）---
-    "core_strength": 7.0,    # 核の気配の強さ（見えるのは滲みだけ・核自体は遮蔽）
-    "cold_emit":     2.4,    # 冷たい配線グローの強さ
+    "core_strength": 10.0,   # 遮蔽(iris)前提で強め＝縁からコロナ・上へ淡い光柱（w2_broad 候補・保留）
+    "cold_emit":     1.6,    # 冷たい配線グローの強さ
     "rust_amount":   0.6,    # 0..1 鉄錆の量
-    "haze":          0.028,  # 大気の濃さ（沈む霧＝核を遮る主役）
-    "key_strength":  3.0,    # 上端の冷たいキー（「上端がわずかに醒め」）
+    "haze":          0.052,  # 薄霧＋底の核光が柔らかい光輪に滲む（w2_broad 候補・保留）
+    "key_strength":  4.0,    # 上端の冷たいキー（「上端がわずかに醒め」）＝鉄錆の編み目を少し起こす
+
+    # --- 核の遮蔽と滲み（iris＝直視遮り／core_fog＝局所濃霧で bloom を作る＝compositor 非依存）---
+    "core_radius":     0.70,  # 核 emission 球の半径（面光源＝影スパイクを柔らかく。w2_broad 候補・保留）
+    "core_z_frac":     0.98,  # 核 z = -depth * これ（大きいほど深く沈む）
+    "iris_radius":     0.95,  # 手前の暗円盤の半径（大きいほど直視を遮り放射スパイクを減らす。w2_broad 候補・保留）
+    "iris_z_frac":     0.86,  # iris z = -depth * これ
+    "core_fog":        0.14,  # 薄い局所霧＝縁光を連続した柔らかい光輪に散らし規則スパイクを崩す（w2_broad 候補・保留）
+    "core_fog_radius": 3.6,   # 局所霧の球半径（大きく薄く＝吸収せず散乱で halo に広げる）
+    "core_fog_color":  (0.06, 0.16, 0.20),  # 局所濃霧の寒色（冷たい滲み）
 
     # --- 坑(shaft)の形 ---
     "top_z":        2.4,     # 坑の上端 z
@@ -63,6 +78,17 @@ CFG = {
     "look_z":       -5.5,    # カメラが向く先（坑の中ほど）
 }
 # ===================================================================
+
+# env 上書き（テスト/反復用。未設定なら CFG 既定）:
+#   HZ_OUT / HZ_SAMPLES / HZ_RES_X / HZ_RES_Y / HZ_DEVICE（CPU|GPU|OPTIX|CUDA）
+def _envi(k, d):
+    v = os.environ.get(k)
+    try: return int(v) if v not in (None, "") else d
+    except Exception: return d
+CFG["samples"] = _envi("HZ_SAMPLES", CFG["samples"])
+CFG["res_x"] = _envi("HZ_RES_X", CFG["res_x"])
+CFG["res_y"] = _envi("HZ_RES_Y", CFG["res_y"])
+if os.environ.get("HZ_DEVICE"): CFG["device"] = os.environ["HZ_DEVICE"]
 
 random.seed(CFG["seed"])
 
@@ -186,14 +212,37 @@ def make_cables():
 def make_core_glow():
     """底中央の"核の気配"。小さな emission 球＝ケージ＋霧に遮られ、滲みだけ上る。核は描かない。"""
     depth = CFG["depth"]
-    bpy.ops.mesh.primitive_uv_sphere_add(radius=0.7, location=(0, 0, -depth * 0.92))
+    core_z = -depth * CFG["core_z_frac"]
+    # 核＝小さく・深く（霧の層を厚く挟む）。見えるのは霧に散った滲みだけ。
+    bpy.ops.mesh.primitive_uv_sphere_add(radius=CFG["core_radius"], location=(0, 0, core_z))
     core = bpy.context.active_object; core.name = "hz_core"
     core.data.materials.append(emit_material("hz_core_glow", CFG["core_glow"], CFG["core_strength"]))
-    # 核の手前に遮蔽リング（暗い鉄）＝「決して見えない」を機構で担保
-    bpy.ops.mesh.primitive_torus_add(location=(0, 0, -depth * 0.78),
-                                     major_radius=1.2, minor_radius=0.35)
-    occ = bpy.context.active_object; occ.name = "hz_core_occluder"
-    occ.data.materials.append(emit_material("hz_dark", (0.0, 0.0, 0.0), 0.0))
+    # 核の手前に「暗い虹彩(iris)」の実円盤＝カメラから核の直視を遮る。glow は縁と霧へ漏れるだけ。
+    bpy.ops.mesh.primitive_circle_add(vertices=48, radius=CFG["iris_radius"], fill_type='NGON',
+                                      location=(0, 0, -depth * CFG["iris_z_frac"]))
+    occ = bpy.context.active_object; occ.name = "hz_core_iris"
+    dark = bpy.data.materials.new("hz_iris"); dark.use_nodes = True
+    nt = dark.node_tree; nt.nodes.clear()
+    out = nt.nodes.new("ShaderNodeOutputMaterial")
+    bsdf = nt.nodes.new("ShaderNodeBsdfPrincipled")
+    bsdf.inputs["Base Color"].default_value = (*CFG["iron"], 1)
+    try: bsdf.inputs["Roughness"].default_value = 0.9
+    except Exception: pass
+    nt.links.new(bsdf.outputs["BSDF"], out.inputs["Surface"])
+    occ.data.materials.append(dark)
+    # 局所濃霧（任意）: 核周りだけ濃い Volume を置くと、縁から漏れた光がここで散って
+    # 柔らかい blob になる＝compositor(FOG_GLOW)非依存の bloom。放射スパイクの規則性を崩す。
+    if CFG.get("core_fog", 0.0) > 0:
+        bpy.ops.mesh.primitive_uv_sphere_add(radius=CFG["core_fog_radius"], location=(0, 0, core_z + 0.3))
+        fog = bpy.context.active_object; fog.name = "hz_corefog"
+        fm = bpy.data.materials.new("hz_corefog_vol"); fm.use_nodes = True
+        fnt = fm.node_tree; fnt.nodes.clear()
+        fout = fnt.nodes.new("ShaderNodeOutputMaterial")
+        fvol = fnt.nodes.new("ShaderNodeVolumePrincipled")
+        fvol.inputs["Density"].default_value = CFG["core_fog"]
+        fvol.inputs["Color"].default_value = (*CFG["core_fog_color"], 1)
+        fnt.links.new(fvol.outputs["Volume"], fout.inputs["Volume"])
+        fog.data.materials.append(fm)
 
 
 def make_haze():
@@ -207,7 +256,7 @@ def make_haze():
         out = nt.nodes.new("ShaderNodeOutputMaterial")
         vol = nt.nodes.new("ShaderNodeVolumePrincipled")
         vol.inputs["Density"].default_value = CFG["haze"]
-        vol.inputs["Color"].default_value = (*CFG["cold"], 1)
+        vol.inputs["Color"].default_value = (0.05, 0.11, 0.15, 1)   # 暗い寒色＝全面ティール化を避ける
         nt.links.new(vol.outputs["Volume"], out.inputs["Volume"])
         dom.data.materials.append(m)
     except Exception as e:
