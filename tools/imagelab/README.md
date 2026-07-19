@@ -24,11 +24,13 @@ scp で `%USERPROFILE%` に配置 → `powershell -File` で実行 → 出力 PN
 2. **txt2img**（速い・構図はガチャ）: `run_txt2img.ps1`（`gen_txt2img.py`）
    - **30步 ≈ 23秒**/枚（1216×832・model_cpu_offload）。当たり探索・変種量産の主力。
    - env: `HZ_PROMPT/HZ_NEG/HZ_STEPS/HZ_CFG/HZ_W/HZ_H/HZ_SEED/HZ_MODEL/HZ_OUT`。プロンプトは CLIP 77 tokens で truncate されるので簡潔に。
-3. **hybrid**（構図固定・遅い）: `run_hybrid.ps1`（`gen_hybrid.py`）
+3. **hybrid**（構図固定）: `run_hybrid.ps1`（`gen_hybrid.py`）
    - Blender 竪坑 render（`tools/blender/hazama_descent_key.py` の出力）を **構図の足場**にし、
      Midas で depth 化 → ControlNet-depth → SDXL で painterly 化。**Blender で設計した構図を狙って**描ける。
-   - **30步 ≈ 11.7分**/枚（ControlNet が 8GB 超で cpu_offload thrash）。決め絵の構図固定用。
-     速度最適化の余地: 解像度↓（896×640）／offload 方式変更／最終稿のみ hosted Flux に depth を渡す。
+   - 速度: **既定 small CN＋offload 回避(cuda 常駐)で 30步 ≈ 3.3分**/枚（full CN＋cpu_offload の 11.7分から **3.5x**）。
+     small CN でも構図忠実・質感は劣化せず（むしろ精細）。残る遅さは 8GB ギリギリの **NVIDIA sysmem fallback 減速**
+     （〜6.5 s/it。txt2img は 0.7 s/it）。さらに詰めるなら 解像度↓（896×640）／sysmem fallback 無効化／最終稿のみ hosted Flux に depth。
+     OOM 時は自動で cpu_offload に再構築。決め絵の構図固定用。
    - env: 上記＋`HZ_CN/HZ_CONTROL_IMG/HZ_CSCALE`（conditioning 0.6〜0.7 が構図×自由度の膝点）。
 
 ## 仕上げ（決め絵が出たら）
