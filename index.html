@@ -21,11 +21,18 @@
   <link rel="manifest" href="manifest.webmanifest" />
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png" />
   <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png" />
-  <link rel="stylesheet" href="slice.css?v=e28" />
+  <link rel="stylesheet" href="slice.css?v=e29" />
 </head>
 <body data-phase="surface">
   <div class="hz-bg" aria-hidden="true">
     <img class="hz-bg-descent" src="assets/hazama-descent-key.webp" alt="" decoding="async" fetchpriority="high" />
+    <!-- E29 降下の弧：base(surface) の上に深度/終端の写真層を重ね、既存 data-phase / body.surfaced|omega に
+         opacity クロスフェード＝世界が「降りるほど溶け・縁で浮上/Ωに割れる」を1枚でなく段で描く。
+         base が常に見える＝JS無効/reduced/初回ペイントで従来と同一（後方互換）。 -->
+    <img class="hz-stage" data-stage="drift"    src="assets/hazama-descent-drift.webp"    alt="" aria-hidden="true" decoding="async" />
+    <img class="hz-stage" data-stage="bottom"   src="assets/hazama-descent-bottom.webp"   alt="" aria-hidden="true" decoding="async" />
+    <img class="hz-stage" data-stage="surfaced" src="assets/hazama-descent-surfaced.webp" alt="" aria-hidden="true" decoding="async" />
+    <img class="hz-stage" data-stage="omega"    src="assets/hazama-descent-omega.webp"    alt="" aria-hidden="true" decoding="async" />
     <!-- 反転重森ガーデン（R6）：深く潜るほど"世界の輪郭が溶け"、サイバーパンク×重森三玲の
          枯山水（砂紋/石組/市松苔）が色相反転（自然色を180°反転＝不気味）して progressive に露出する。
          構図は分岐エンジンの信号（周回/到達深度/弾かれ履歴/ランク）= worldSeed で再生成。
@@ -79,6 +86,6 @@
     </div>
   </div>
 
-  <script src="slice.js?v=e28"></script>
+  <script src="slice.js?v=e29"></script>
 </body>
 </html>

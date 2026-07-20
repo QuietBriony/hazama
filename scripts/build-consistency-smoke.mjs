@@ -201,6 +201,18 @@ for (const url of ["index.html", "slice.js", "slice.css", "depths-shell.json", "
 // アイコン/アセット実体
 for (const a of ["icons/icon-96.png", "icons/icon-192.png", "icons/icon-512.png", "icons/icon-512-maskable.png", "icons/apple-touch-icon.png", "assets/hazama-descent-key.webp"]) nonEmpty(a);
 
+// E29: 降下の弧（背景写真が深度/終端で差し替わる層スタック）。
+// base(surface)＝hazama-descent-key.webp は常在（後方互換）。overlay 4 枚＋実体＋CSS クロスフェード＋sw precache。
+for (const st of ["drift", "bottom", "surfaced", "omega"]) {
+  nonEmpty(`assets/hazama-descent-${st}.webp`);
+  has(html, `data-stage="${st}"`, `E29 stage img ${st}`);
+  has(sw, `assets/hazama-descent-${st}.webp`, `E29 sw precache ${st}`);
+}
+has(html, 'class="hz-stage"', "E29 stage layer class");
+has(css, ".hz-stage {", "E29 stage layer style");
+has(css, 'body[data-phase="bottom"] .hz-stage[data-stage="bottom"]', "E29 depth crossfade rule");
+has(css, 'body.omega    .hz-stage[data-stage="omega"]', "E29 omega terminal rule");
+
 // depths-shell（本文データ）: start＋ノード数＋choice到達性
 let depths;
 try { depths = JSON.parse(read("depths-shell.json")); } catch { failures.push("depths-shell.json invalid JSON"); }
