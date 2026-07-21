@@ -19,6 +19,24 @@ Hazama 自律開発 session の追記専用ログ。
 
 ---
 
+## 2026-07-21 — 進化 E29 デプロイ済＋hotfix / E30 OG 堅牢化（実装/検証済み・号令待ち）
+- agent      : Fable（worker のローカル AI 画像工房を構築し「展開に合わせてキービジュアルを変化」を実装）
+- goal       : E29=背景キービジュアルが game 展開に連れて変化する「降下の弧」／E30=OG 共有プレビューの堅牢化
+- shipped    :
+  - **工房**（`tools/imagelab/`・runtime 非依存）: worker(RTX2070) に diffusers SDXL。txt2img 23秒/枚・
+    hybrid(Blender depth×ControlNet-small) 3.3分/枚・SSH 無人駆動・Codex 不要。庭(zouen)へも開通中（別セッション）
+  - **E29（デプロイ済・master 76a2e2a→hotfix 1aae79f）**: base の上に data-stage 4枚を重ね、既存
+    `--sink`/`data-phase`/`body.surfaced|omega` へ CSS opacity クロスフェード（JS 追加ゼロ・schema/保存不変・
+    base 常在で後方互換・reduced 対応）。画像は承認 hero(seed123) から img2img チェーン。hero も差し替え。
+    **hotfix**: base に承認外 txt2img 画が混入（worker の Copy-Item サイレント失敗＋変換後未検収）→承認版へ是正・
+    全5アセットを Read で全数目視検収。教訓=アセット置換は repo 内実物を見てからコミット
+  - **E30（号令待ち）**: og:image 先頭を 1200×630 JPG（og-card.jpg・width/height 宣言）に＝webp 非対応
+    クライアントの欠落対策。og-card は E29 hero から再生成し LP と共有。version e29→e30・smoke 契約5件
+- checks     : hazama-check 2 PASS / 0 FAIL（E29/E30 asserts 込み）。E29 は本番検証済（?v=e29 配信・全 asset 200・
+  各 phase で正しい1枚のみ表示・console 0）
+- next       : E30 push は号令待ち。QA F37（降下の弧）を正典に追加済み。実機の目=弧のクロスフェードの間
+- blockers   : E30 deploy 号令。human-gate=実機で弧の見え/hero 差し替えの感触
+
 ## 2026-07-16 — 進化 E28: 操作言語の統一（押下確定と focus 着地をエコー門・縁へ）（実装/検証済み・号令待ち）
 - agent      : Fable（「磨きあればやって」＝E25/E27 の残した不統一を是正）
 - goal       : 押下の確定感(E27)と focus 着地(E25)が renderChoices だけに効いていた＝エコー門(E3)と縁の二択(E1)が旧挙動のままの不統一を塞ぐ

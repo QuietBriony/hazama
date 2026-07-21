@@ -15,13 +15,19 @@
   <meta property="og:title" content="Hazama 狭間" />
   <meta property="og:description" content="沈むほど戻りにくい。認識が合う者だけがΩへ潜る、没入の降下対話。" />
   <meta property="og:url" content="https://quietbriony.github.io/hazama/" />
+  <!-- E30: 先頭は 1200×630 JPG（og-card・width/height 宣言）＝webp を読まない WhatsApp/旧クライアントでも
+       欠落しない。二枚目に hero webp、最後に png（icon-512）。LP と同じ og-card を共有（中身は E29 hero 由来）。 -->
+  <meta property="og:image" content="https://quietbriony.github.io/hazama/assets/og-card.jpg" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
   <meta property="og:image" content="https://quietbriony.github.io/hazama/assets/hazama-descent-key.webp" />
   <meta property="og:image" content="https://quietbriony.github.io/hazama/icons/icon-512.png" />
   <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:image" content="https://quietbriony.github.io/hazama/assets/og-card.jpg" />
   <link rel="manifest" href="manifest.webmanifest" />
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png" />
   <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png" />
-  <link rel="stylesheet" href="slice.css?v=e29" />
+  <link rel="stylesheet" href="slice.css?v=e30" />
 </head>
 <body data-phase="surface">
   <div class="hz-bg" aria-hidden="true">
@@ -86,6 +92,6 @@
     </div>
   </div>
 
-  <script src="slice.js?v=e29"></script>
+  <script src="slice.js?v=e30"></script>
 </body>
 </html>

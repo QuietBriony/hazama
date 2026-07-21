@@ -213,6 +213,15 @@ has(css, ".hz-stage {", "E29 stage layer style");
 has(css, 'body[data-phase="bottom"] .hz-stage[data-stage="bottom"]', "E29 depth crossfade rule");
 has(css, 'body.omega    .hz-stage[data-stage="omega"]', "E29 omega terminal rule");
 
+// E30: OG 堅牢化＝先頭 og:image は 1200×630 JPG（webp 非対応クライアント欠落対策）＋寸法宣言。
+// og-card.jpg は LP と共有（中身は E29 hero 由来で再生成済み）。webp/png は後続フォールバックで残す。
+nonEmpty("assets/og-card.jpg");
+has(html, "assets/og-card.jpg", "E30 og-card referenced in index");
+has(html, 'property="og:image:width"', "E30 og:image width declared");
+has(html, 'property="og:image:height"', "E30 og:image height declared");
+assert(html.indexOf("assets/og-card.jpg") < html.indexOf("assets/hazama-descent-key.webp"),
+  "E30 og-card must precede webp og:image (first image wins on legacy parsers)");
+
 // depths-shell（本文データ）: start＋ノード数＋choice到達性
 let depths;
 try { depths = JSON.parse(read("depths-shell.json")); } catch { failures.push("depths-shell.json invalid JSON"); }
