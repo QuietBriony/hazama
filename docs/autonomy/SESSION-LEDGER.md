@@ -19,6 +19,40 @@ Hazama 自律開発 session の追記専用ログ。
 
 ---
 
+## 2026-07-24 — Hazama Blender生成器の5.2 compositor narrow compatibility patch
+- agent      : Codex
+- goal       : ユーザー承認後、前sessionで検出した `Scene.node_tree` 差分だけを修正し、5.2共通制作runtime候補でHazama固有生成器をcompositor込み完走させる
+- shipped    :
+  - `tools/blender/hazama_descent_key.py`: Blender 5.2は `compositing_node_group`＋socket式Glare `Bloom`、legacy 4.5は従来Scene tree＋`FOG_GLOW`へ分岐
+  - compositor構築エラーをsilent skipせずrender停止へ変更＝欠けた視覚効果を候補として誤採用しない
+  - `docs/BLENDER-AUTHORING.md` / `tools/blender/README.md`: 5.2/4.5合格結果と残るhuman visual gateを反映
+- verified   :
+  - 5.2 API probe: Sceneに`compositing_node_group`有・`node_tree`無、Glareはmenu/float socket式
+  - 5.2.0 LTS: `compositor api=5.2-group glare=Bloom`、Cycles CPU 1 sample、320×180 PNG、exit 0
+  - 4.5.5 LTS rollback: `compositor api=4.5-scene glare=FOG_GLOW`、同条件PNG、exit 0
+  - 4.5対5.2 PSNR 46.67 dB。どちらも画像を実見し、構図/暗部/冷色線の大崩れなし
+- checks     : `node scripts/hazama-check.mjs` 2 PASS / 0 FAIL / 0 SKIP／`git diff --check` PASS／repo外 report JSON・生成物/source SHA-256照合 PASS。runtime asset・PWA・storage/schema無変更
+- backlog    : 変更なし。Blenderコード互換は合格、最終1500×900画の採用は別human-gate
+- next       : 必要になった時だけrepo外で最終候補を生成し、人間レビュー後に別runtime candidateとして提示
+- blockers   : 本番asset採用は未承認。Hazama Studio / Landscape-OSは進行中変更を含めread-onlyのまま
+
+## 2026-07-23 — Blender 5.2 authoring candidate（静止画制作限定・runtime不変）
+- agent      : Codex
+- goal       : WorkerPCのBlender 5.2をHazama Studio / Landscape-OSと同じ共通制作runtime候補へ揃えつつ、Hazama Gameを静的Webのまま保つ境界を文書化・実証する
+- shipped    :
+  - `docs/BLENDER-AUTHORING.md`: 「使わない／静止画だけ／映像も」を比較し、静止画だけを最小推奨。共通launcher、repo外output、採用gate、cross-repo境界を定義
+  - `tools/blender/README.md`: 曖昧なPATH起動と5.1.x記述を、署名/hash/versionを照合する既存共通launcherの5.2 candidateへ更新
+  - repo外 `C:\workspace\blender-worker\renders\hazama-game-smoke\20260723T150518Z\`: 完全合成neutral smoke、既存生成器の低コスト互換render、hash付きreport
+- verified   :
+  - Blender 5.2.0 LTS / absolute path / Blender Foundation署名 Valid / SHA-256一致。共通launcher `candidate -Describe` PASS
+  - neutral synthetic 256×144 Workbench headless PASS、外部asset 0
+  - `hazama_descent_key.py` はCycles 1 sample・320×180でPNG生成PASS。ただし5.2で `Scene.node_tree` が無くcompositorをskip＝production同等は未合格
+  - Hazama Studioの未commit 5.2作業、Landscape-OSのcandidate worktreeとprotected 5.1.2はread-only。両repo変更なし
+- checks     : `node scripts/hazama-check.mjs` 2 PASS / 0 FAIL / 0 SKIP（baseline/closeout）／`git diff --check` PASS／runtime・asset・PWA version無変更
+- backlog    : 変更なし。5.2 production昇格は人間が静止画限定方針とcompositor互換patch着手を承認してから
+- next       : 人間が「静止画制作限定で5.2候補を進めるか」を判断。承認後にHazama固有compositorを5.2 APIへnarrow fixし、目視比較
+- blockers   : 既存生成器のcompositor互換と最終画の採否は未完。現行キービジュアル/E29 runtimeは置換しない
+
 ## 2026-07-21 — 進化 E29 デプロイ済＋hotfix / E30 OG 堅牢化（実装/検証済み・号令待ち）
 - agent      : Fable（worker のローカル AI 画像工房を構築し「展開に合わせてキービジュアルを変化」を実装）
 - goal       : E29=背景キービジュアルが game 展開に連れて変化する「降下の弧」／E30=OG 共有プレビューの堅牢化
