@@ -14,12 +14,19 @@
 #   pipeline は memory: hazama-worker-render を参照。
 #
 # 使い方（worker/Codex 側で）:
-#   blender --background --python tools/blender/hazama_descent_key.py
+#   C:\workspace\blender-worker\bin\invoke-blender.ps1 -Runtime candidate
+#   の -BlenderArgs に
+#   --background --factory-startup --python-exit-code 1 --python tools/blender/hazama_descent_key.py
+#   を配列で渡す（system PATH の blender は使わない）。
 #   → カレントに hazama_descent_key.png を出力（環境変数 HZ_OUT で上書き可）。
 #   → webp 化して置換:  cwebp -q 82 -resize 1500 900 hazama_descent_key.png -o assets/hazama-descent-key.webp
 #      （元と同じ 1500x900・drop-in。私(Fable)が E29 で version 同期・smoke・目視配線まで巻き取る）
 #
-# 前提: Blender 4.x / Cycles / 依存アセット無し（完全手続き）。依存ゼロの Hazama を崩さない
+# 前提: Blender 5.2.0 LTS candidate / Cycles / 依存アセット無し（完全手続き）。
+#      compositorは5.2 compositing_node_group/socket APIとlegacy 4.5 Scene.node_tree APIを分岐。
+#      両runtimeのlow-cost headless smokeで適用marker・PNG生成・exit code 0を確認済み。
+#      最終1500x900候補は docs/BLENDER-AUTHORING.md の採用gateに従う。
+#      依存ゼロの Hazama を崩さない
 #      （これは build-time ツール＝出力は静的画像1枚。runtime には何も足さない）。
 #
 # blind 反復の要: 下の CONFIG を弄って再 render するだけで画作りを追い込める。まず既定で1枚、
@@ -313,21 +320,43 @@ def setup_render():
 
 
 def setup_compositor():
-    """核の滲みを霧グロー(Glare)で膨らませ、周辺を沈める(vignette)。失敗しても render は続行。"""
-    try:
-        sc = bpy.context.scene; sc.use_nodes = True
-        nt = sc.node_tree; nt.nodes.clear()
-        rl = nt.nodes.new("CompositorNodeRLayers")
-        glare = nt.nodes.new("CompositorNodeGlare")
-        glare.glare_type = 'FOG_GLOW'; glare.quality = 'HIGH'; glare.threshold = 0.4
-        try: glare.size = 8
-        except Exception: pass
-        # vignette: 楕円マスク→ぼかし→乗算で周辺減光
+    """核の滲みを霧グロー(Glare)で膨らませる。4.5/5.2両APIで失敗時はrenderを止める。"""
+    sc = bpy.context.scene
+    uses_group = hasattr(sc, "compositing_node_group")
+    if uses_group:
+        # Blender 5.2: compositor tree は Scene.node_tree から独立した node group。
+        nt = bpy.data.node_groups.new("hz_compositor", "CompositorNodeTree")
+        sc.compositing_node_group = nt
+    else:
+        # Blender 4.5 legacy rollback。
+        sc.use_nodes = True
+        nt = sc.node_tree
+    nt.nodes.clear()
+
+    rl = nt.nodes.new("CompositorNodeRLayers")
+    glare = nt.nodes.new("CompositorNodeGlare")
+    if hasattr(glare, "glare_type"):
+        glare.glare_type = 'FOG_GLOW'
+        glare.quality = 'HIGH'
+        glare.threshold = 0.4
+        glare.size = 8
+    else:
+        # Blender 5.2: Glare設定はpropertyではなくsocket。Bloomが旧FOG_GLOWに対応。
+        glare.inputs["Type"].default_value = "Bloom"
+        glare.inputs["Quality"].default_value = "High"
+        glare.inputs["Threshold"].default_value = 0.4
+        glare.inputs["Size"].default_value = 0.8
+
+    if uses_group:
+        nt.interface.new_socket(name="Image", in_out='OUTPUT', socket_type='NodeSocketColor')
+        comp = nt.nodes.new("NodeGroupOutput")
+    else:
         comp = nt.nodes.new("CompositorNodeComposite")
-        nt.links.new(rl.outputs["Image"], glare.inputs["Image"])
-        nt.links.new(glare.outputs["Image"], comp.inputs["Image"])
-    except Exception as e:
-        print("  [compositor skipped]", e)
+    nt.links.new(rl.outputs["Image"], glare.inputs["Image"])
+    nt.links.new(glare.outputs["Image"], comp.inputs["Image"])
+    print("  [compositor api=%s glare=%s]" %
+          ("5.2-group" if uses_group else "4.5-scene",
+           "Bloom" if uses_group else "FOG_GLOW"))
 
 
 def main():

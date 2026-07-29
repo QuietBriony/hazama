@@ -13,6 +13,7 @@ Hazama は、沈むほど戻りにくい「降下する対話」の没入型静�
 - `manifest.webmanifest` / `sw.js` / `icons/` : PWA install / offline shell（cache prefix `hazama-pwa-`）
 - `assets/hazama-descent-key.webp` : キービジュアル（E29〜: base=surface。`hazama-descent-{drift,bottom,surfaced,omega}.webp` の4枚が深度/終端で差し替わる「降下の弧」・`og-card.jpg` は共有 OG カード）
 - 検証: `scripts/hazama-check.mjs`（`autonomy-docs` ＋ `build-consistency` の2本）
+- 制作候補: `docs/BLENDER-AUTHORING.md`（WorkerPC Blender 5.2をrepo外の静止画制作実行器に限定。runtime非依存）
 
 > 旧 forward 実装（Gate Run 資源ゲーム・Music ブリッジ・v2.x 系）と `slice/` 重複・別プレビュー repo は
 > 整理・撤去済み。履歴は git に保全（ロールバック: `f8763f2` 没入初版 / `7d5def9` forward v2.45 /
