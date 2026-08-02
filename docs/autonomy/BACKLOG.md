@@ -77,6 +77,19 @@ Hazama 自律開発の作業待ち行列。
   専用音状態。実装後、実機で人間が聴いてから採否判断。
   E21 で第一版を実装・本番反映済み（?v=e21）。音質の採否は実機で人間が聴いてから＝耳待ち（Done へは移さない）。
 
+### HZ-BL-015 — Sensory Response production governor
+- priority : P2
+- scope    : runtime(audio) / verify
+- agent    : either
+- human-gate: approved — 2026-08-02にユーザーがproduction mergeを明示承認（実機試聴済みとの記録ではない）
+- status   : done — E31 production採用・自動検証済み
+- source   : Three.js browser-game事例＋Music Stack設計harvest（2026-08-02）
+- detail   : `docs/SENSORY-RESPONSE-CANDIDATE.md` と `tools/sensory/` にSensory Frame純粋モデルと
+  native Web Audio試聴labを置き、E31では既存の単一
+  `Audio`にmobile light／reduced-motion static、compressor、visibility lifecycleだけをnarrow統合。
+  Tone/CDN/sample/storage/通信なし。public route/storage/depths schemaは変更せず、version/PWAを同期。
+  ユーザーの明示承認で本番採用し、端末固有の音量差が見つかった場合だけ別itemでnarrow tuneする。
+
 ## Ready Prompts
 
 次の agent に渡す短い依頼文は `docs/autonomy/next-agent-prompts.md` にまとめています。

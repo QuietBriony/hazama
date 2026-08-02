@@ -19,6 +19,43 @@ Hazama 自律開発 session の追記専用ログ。
 
 ---
 
+## 2026-08-02 — E31 Sensory governor production採用
+- agent      : Human＋Codex＋read-only監査agent 2系統
+- goal       : 検証済みE31 candidateをmasterへmergeし、静的Web本番としてcloseする
+- shipped    :
+  - ユーザーが`codex/hazama-sensory-governor`のproduction mergeを明示承認
+  - 既存の単一`Audio`へmobile light／reduced-motion static、compressor、hidden suspend＋明示再開、pagehide disposeだけを統合
+  - E31 version/PWA同期と、tools-only Sensory Frame／native Web Audio試聴labを同じrelease packetへ収録
+- checks     : `node --check slice.js` PASS／`audio-governor-smoke` PASS／`sensory-frame-smoke` PASS／`hazama-check` 2 PASS / 0 FAIL / 0 SKIP／`git diff --check` PASS／route・storage key・depths schema不変／監査blockerなし
+- backlog    : HZ-BL-015 done（2026-08-02 production採用承認）
+- next       : productionをmobile実機で観察し、端末固有の音量・疲労感に問題が出た場合だけ別itemでnarrow tune
+- blockers   : なし。内蔵browserのlocalhost許可拒否で実画面QAは未実施だが、ユーザーはその状態を含めmergeを明示承認
+
+## 2026-08-02 — E31 Sensory governor candidate branch適用
+- agent      : Codex＋read-only監査agent 3系統
+- goal       : tools-only Sensory Responseを、既存音色を守ったproduction governorとしてnarrow統合する
+- shipped    :
+  - HZ-BL-015をwip claim。`docs/SENSORY-RESPONSE-CANDIDATE.md`へE31最小範囲を確定
+  - 初回は既存`Audio` singleton内だけでmobile tier、compressor、visibility suspend/明示再開、pagehide disposeを行い、新verb・二重context・外部依存は見送る
+  - 隔離candidateで実装した`tools/sensory/e31-sensory-governor.patch`を、ユーザーが作成した`codex/hazama-sensory-governor`へ適用。masterは未変更
+- checks     : branch上で`node --check slice.js` PASS／`audio-governor-smoke` PASS／`sensory-frame-smoke` PASS／`hazama-check` 2 PASS / 0 FAIL / 0 SKIP／`git diff --check` PASS／read-only再監査blockerなし。内蔵browserのlocalhost許可拒否により実画面mobile QAはSKIP
+- backlog    : HZ-BL-015 `wip — Codex 2026-08-02（E31 candidate branch適用・自動検証済み／mobile実機の耳gate待ち）`
+- next       : 同一Wi-Fiのmobile実機で表示、音量、疲労感、hide→明示再開を確認し、このcandidateの採否を人間が判断
+- blockers   : コードblockerなし。音の体感と端末差はhuman-gateのため、確認前にmergeしない
+
+## 2026-08-02 — Sensory Response tools-only candidate（本編未配線）
+- agent      : Codex
+- goal       : Three.js browser-game事例とMusic Stackの設計知から、Hazamaの静的runtimeと内製Web Audio境界を守った最小の感覚統合candidateを作る
+- shipped    :
+  - `docs/SENSORY-RESPONSE-CANDIDATE.md`: Sensory Frame v1、production governor、音の動詞、負荷tier、Music/Three.js/Blender境界、production採用gate
+  - `tools/sensory/hazama-sensory-frame.mjs`: depth/dread/density/axis/phase/seed/tierを決定論的・immutableなaudio/visual budgetへ翻訳する純粋モデル
+  - `tools/sensory/sensory-audio-lab.{html,mjs}`: native Web Audioだけのスマホ優先試聴面。浅部/深部/浮上/Ωのquick scene、safe-area、48px以上の操作、mobile light既定、sticky停止、compressor guardrail、visibility suspend、明示停止/破棄、6 verb
+  - `scripts/sensory-frame-smoke.mjs`: clamp、決定論、単調関係、tier/reduced-motion、quick scene同期、coarse pointer light既定、immutable、依存不在を検証
+- checks     : sensory-frame smoke PASS／autonomy-docs PASS／build-consistency PASS／`git diff --check` PASS。LAN IPv4経由でHTML/module HTTP 200。内蔵browser backend 0件のためスマホ幅の実描画はSKIPし、実機human gateへ
+- backlog    : HZ-BL-015をP2 open（tools-only candidate / human試聴待ち）として追加
+- next       : 人間が同一Wi-Fiのスマホlabで4場面を聴き、残すverbを選んだ後だけ専用runtime branchで`slice.js`へnarrow統合
+- blockers   : 音色・音量・疲労感はhuman-gate。現sandboxは`.git` read-onlyでcandidate branch作成不可のため、production runtimeは無変更
+
 ## 2026-07-24 — Hazama Blender生成器の5.2 compositor narrow compatibility patch
 - agent      : Codex
 - goal       : ユーザー承認後、前sessionで検出した `Scene.node_tree` 差分だけを修正し、5.2共通制作runtime候補でHazama固有生成器をcompositor込み完走させる
