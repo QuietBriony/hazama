@@ -1381,14 +1381,25 @@
   //  - 圧(dread)で鼓動が速く・重く。core は描かない＝音でも"解決音"は鳴らさない。
   //  - below 周回ごとに setColor(seed) で detune/うねりを微妙にずらす＝底なしの質感差。
   const Audio = (() => {
-    let ctx = null, master = null, filter = null, dryGain = null, conv = null, wetGain = null;
+    let ctx = null, master = null, compressor = null, filter = null, dryGain = null, conv = null, wetGain = null;
     let lfo = null, lfoGain = null, drones = [], pulseTimer = null, on = false, playing = false;
+    let suspendedByVisibility = false;
     // depth=深度(rank/沈下の濃い方・0..1) / dread=圧(0..1) / density=観測者の多声(0..1)。
     // depth.html のリアクティブ設計（深さ→音域/cutoff/残響、多声→密度、圧→不協和/鼓動）を
     // 同一document の内製エンジンへ畳み込んだ信号。menace=浅は馴染む/深で威圧。
     let cur = { depth: 0, dread: 0, density: 0 }, colorSeed = 0, baseCents = 0;
     let axisCents = 0, axisCut = 0, axisWobble = 0;   // E21: 幹ごとの音の軸色オフセット（fail-safe=0=従来の地）
     const supported = () => !!(window.AudioContext || window.webkitAudioContext);
+    // E31: desktopの既存音は維持し、coarse pointerだけ持続音/IR budgetを下げる。
+    // reduced-motionは自動drone/pulseを作らず、実手勢のtransientだけを残す。
+    const AUDIO_BUDGETS = Object.freeze({
+      full:   Object.freeze({ partials: 6, impulseSeconds: 2.8, wetScale: 1, pulse: true }),
+      light:  Object.freeze({ partials: 3, impulseSeconds: 0.8, wetScale: 0.45, pulse: true }),
+      static: Object.freeze({ partials: 0, impulseSeconds: 0, wetScale: 0, pulse: false })
+    });
+    const coarsePointer = !!window.matchMedia && window.matchMedia("(pointer: coarse)").matches;
+    const audioTier = REDUCED ? "static" : coarsePointer ? "light" : "full";
+    const audioBudget = AUDIO_BUDGETS[audioTier];
 
     // 倍音: ratio=基音比, base=常時gain, bloom=深度で開く量, diss=不協和(dread で開く)
     const PARTIALS = [
@@ -1416,25 +1427,33 @@
       ctx = new C();
       master = ctx.createGain(); master.gain.value = 0.0001;
       master.gain.setTargetAtTime(0.26, ctx.currentTime + 0.05, 0.8);
-      master.connect(ctx.destination);
+      // E31: guardrail。音圧を稼がず、既存layerが重なった瞬間のpeakだけを受ける。
+      compressor = ctx.createDynamicsCompressor();
+      compressor.threshold.value = -18; compressor.knee.value = 12; compressor.ratio.value = 4;
+      compressor.attack.value = 0.006; compressor.release.value = 0.25;
+      master.connect(compressor); compressor.connect(ctx.destination);
       filter = ctx.createBiquadFilter(); filter.type = "lowpass"; filter.frequency.value = 1700; filter.Q.value = 0.8;
       dryGain = ctx.createGain(); dryGain.gain.value = 0.85;
       filter.connect(dryGain); dryGain.connect(master);
       // 合成IR の残響（"空間"）。wet は深いほど増える。
-      conv = ctx.createConvolver(); conv.buffer = makeImpulse(2.8, 2.6);
-      wetGain = ctx.createGain(); wetGain.gain.value = 0.0001;
-      filter.connect(conv); conv.connect(wetGain); wetGain.connect(master);
+      if (audioBudget.impulseSeconds > 0) {
+        conv = ctx.createConvolver(); conv.buffer = makeImpulse(audioBudget.impulseSeconds, 2.6);
+        wetGain = ctx.createGain(); wetGain.gain.value = 0.0001;
+        filter.connect(conv); conv.connect(wetGain); wetGain.connect(master);
+      }
       // 共有 LFO：全 partial の detune を揺らす（うねり）。
-      lfo = ctx.createOscillator(); lfo.type = "sine"; lfo.frequency.value = 0.06;
-      lfoGain = ctx.createGain(); lfoGain.gain.value = 4; lfo.connect(lfoGain); lfo.start();
-      PARTIALS.forEach((spec) => {
-        const osc = ctx.createOscillator(), g = ctx.createGain();
-        osc.type = spec.type; osc.frequency.value = 70 * spec.ratio;
-        g.gain.value = spec.base; osc.connect(g); g.connect(filter);
-        lfoGain.connect(osc.detune); osc.start();
-        drones.push({ osc, g, spec });
-      });
-      on = true; playing = true; schedulePulse(); apply(true);
+      if (audioBudget.partials > 0) {
+        lfo = ctx.createOscillator(); lfo.type = "sine"; lfo.frequency.value = 0.06;
+        lfoGain = ctx.createGain(); lfoGain.gain.value = 4; lfo.connect(lfoGain); lfo.start();
+        PARTIALS.slice(0, audioBudget.partials).forEach((spec) => {
+          const osc = ctx.createOscillator(), g = ctx.createGain();
+          osc.type = spec.type; osc.frequency.value = 70 * spec.ratio;
+          g.gain.value = spec.base; osc.connect(g); g.connect(filter);
+          lfoGain.connect(osc.detune); osc.start();
+          drones.push({ osc, g, spec });
+        });
+      }
+      on = true; playing = true; suspendedByVisibility = false; schedulePulse(); apply(true);
       // 実手勢の中で resume()＝モバイルでも解禁される（同一document の context なので通る）。
       if (ctx.state !== "running") ctx.resume();
     }
@@ -1443,7 +1462,11 @@
     function toggle() {
       if (!on) return start();
       playing = !playing;
-      try { if (playing) ctx.resume(); else ctx.suspend(); } catch (e) {}
+      suspendedByVisibility = false;
+      try {
+        if (playing) { ctx.resume(); schedulePulse(); }
+        else { clearPulse(); ctx.suspend(); }
+      } catch (e) {}
     }
     function apply(now) {
       if (!on || !ctx) return;
@@ -1465,12 +1488,17 @@
       });
       filter.frequency.setTargetAtTime(Math.max(280, cutoff), t, slow);
       master.gain.setTargetAtTime(0.24 + d * 0.06, t, 0.8);
-      wetGain.gain.setTargetAtTime(0.1 + s * 0.34, t, 1.8);            // 深いほど広い残響
-      lfo.frequency.setTargetAtTime(0.05 + s * 0.1, t, 1.8);
-      lfoGain.gain.setTargetAtTime(3 + s * 10 + dens * 4 + (colorSeed % 5) + axisWobble, t, 1.8); // うねり幅（cents）＋E21 幹の揺れ
+      if (wetGain) wetGain.gain.setTargetAtTime((0.1 + s * 0.34) * audioBudget.wetScale, t, 1.8); // 深いほど広い残響
+      if (lfo) lfo.frequency.setTargetAtTime(0.05 + s * 0.1, t, 1.8);
+      if (lfoGain) lfoGain.gain.setTargetAtTime(3 + s * 10 + dens * 4 + (colorSeed % 5) + axisWobble, t, 1.8); // うねり幅（cents）＋E21 幹の揺れ
+    }
+    function clearPulse() {
+      if (pulseTimer) clearInterval(pulseTimer);
+      pulseTimer = null;
     }
     function schedulePulse() {
-      if (pulseTimer) clearInterval(pulseTimer);
+      clearPulse();
+      if (!audioBudget.pulse || !on || !playing || document.hidden) return;
       pulseTimer = setInterval(() => beat(0.5), Math.max(440, Math.round(1150 - cur.dread * 680))); // 圧で鼓動が速い
     }
     function beat(amp) {
@@ -1557,10 +1585,40 @@
       g.gain.setTargetAtTime(0.0001, t + 2.8, 2.0);                  // ゆっくり吐く＝呼気
       o.connect(g); g.connect(filter); o.start(t); o.stop(t + 6.0);
     }
+    // E31: hiddenから勝手に鳴り直さない。再開は既存chipの実手勢だけ。
+    function suspendForVisibility() {
+      if (!on || !ctx || !playing) return false;
+      playing = false; suspendedByVisibility = true; clearPulse();
+      try { const pending = ctx.suspend(); if (pending && pending.catch) pending.catch(() => {}); } catch (e) {}
+      return true;
+    }
+    // E31: pagehide/BFCacheでも単一AudioContextを閉じ、次の実手勢で再生成可能にする。
+    function dispose() {
+      clearPulse();
+      const closing = ctx;
+      drones.forEach(({ osc, g }) => {
+        try { osc.stop(); } catch (e) {}
+        try { osc.disconnect(); g.disconnect(); } catch (e) {}
+      });
+      try { if (lfo) lfo.stop(); } catch (e) {}
+      try { if (lfo) lfo.disconnect(); if (lfoGain) lfoGain.disconnect(); } catch (e) {}
+      try { if (filter) filter.disconnect(); if (dryGain) dryGain.disconnect(); } catch (e) {}
+      try { if (conv) conv.disconnect(); if (wetGain) wetGain.disconnect(); } catch (e) {}
+      try { if (master) master.disconnect(); if (compressor) compressor.disconnect(); } catch (e) {}
+      ctx = null; master = null; compressor = null; filter = null; dryGain = null; conv = null; wetGain = null;
+      lfo = null; lfoGain = null; drones = []; on = false; playing = false; suspendedByVisibility = false;
+      try {
+        if (closing && closing.state !== "closed") {
+          const pending = closing.close(); if (pending && pending.catch) pending.catch(() => {});
+        }
+      } catch (e) {}
+    }
     return {
-      start, toggle, pulseOnce: (a) => beat(a), glitchHit, setAxis, breath,
+      start, toggle, pulseOnce: (a) => beat(a), glitchHit, setAxis, breath, suspendForVisibility, dispose,
       get on() { return on; },
       get playing() { return playing; }, // 鳴らす意図（チップ表示の正）
+      get suspendedByVisibility() { return suspendedByVisibility; },
+      get tier() { return audioTier; },
       setColor: (seed) => { colorSeed = seed; apply(false); },
       update: (depth, dread, density) => {
         const prev = cur.dread;
@@ -2093,18 +2151,23 @@
     const chip = $("audio-toggle");
     function label() {
       if (!chip) return;
-      chip.textContent = Audio.playing ? "♪ 鳴っている" : "♪ 鳴らす";
+      chip.textContent = Audio.suspendedByVisibility ? "♪ 再開" : Audio.playing ? "♪ 鳴っている" : "♪ 鳴らす";
       chip.setAttribute("aria-pressed", Audio.playing ? "true" : "false");
     }
     // 「沈む」タップ（実手勢・同一document）の中で呼ばれる＝ここで resume が通る。
     function startPrimary() { if (chip) chip.hidden = false; Audio.start(); label(); }
     function cycle() { Audio.toggle(); label(); }
+    document.addEventListener("visibilitychange", () => {
+      if (document.hidden && Audio.suspendForVisibility()) label();
+    });
+    window.addEventListener("pagehide", () => { Audio.dispose(); label(); });
+    window.addEventListener("pageshow", label);
     return { startPrimary, cycle };
   })();
 
   // ---------- 起動 ----------
   async function loadData() {
-    const res = await fetch("depths-shell.json?v=e30", { cache: "no-store" });
+    const res = await fetch("depths-shell.json?v=e31", { cache: "no-store" });
     DATA = await res.json();
   }
   // ---------- 動く表紙（R6：タイトルも state/seed に応じて動く・静止でない） ----------

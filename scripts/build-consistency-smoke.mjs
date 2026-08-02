@@ -3,6 +3,7 @@
    forward 一式・slice/ 重複は撤去済み。ここで build の整合を依存なしで一括検証する。 */
 import { existsSync, readFileSync, statSync } from "node:fs";
 import path from "node:path";
+import "./audio-governor-smoke.mjs";
 
 const root = process.cwd();
 const failures = [];
@@ -143,6 +144,19 @@ has(js, "function setAxis", "E21 per-trunk audio axis");
 has(js, "function breath", "E21 edge breath (呼気)");
 has(js, "Audio.setAxis(state.activeTrunk)", "E21 axis set at trunk fork");
 has(js, "Audio.breath(attuned)", "E21 breath at edge");
+
+// E31: production audio governor（単一AudioContextのままmobile budget・peak guard・lifecycleを強化）。
+has(js, "const AUDIO_BUDGETS", "E31 production audio tier budgets");
+has(js, 'window.matchMedia("(pointer: coarse)")', "E31 coarse-pointer light tier");
+has(js, "createDynamicsCompressor", "E31 master compressor guardrail");
+has(js, "function suspendForVisibility", "E31 hidden-page audio suspend");
+has(js, "function dispose", "E31 pagehide audio dispose");
+has(js, "Audio.suspendForVisibility()", "E31 visibility lifecycle wiring");
+has(js, "Audio.dispose()", "E31 pagehide lifecycle wiring");
+has(js, "dryGain.gain.value = 0.85", "E31 preserves the production dry gain");
+assert(!js.includes('import "./tools/sensory') && !js.includes('fetch("tools/sensory')
+  && !/\bnew\s+Tone\b/.test(js) && !/\bTone\.(?:Player|Transport|Oscillator)\b/.test(js),
+  "E31 production audio remains dependency-free and single-runtime");
 // E19: 終端を勝ち取る＝reborn の Ω 貫きは認識が満ちるまで“見える鍵”でロック。賭けて勝ち取った時だけ Ω 終端。
 assert(/requireAttune && !isAttuned\(\)/.test(js), "E19 Ω wager choice locked until attuned");
 assert(/attuned = isAttuned\(\) && state\.wagered/.test(js), "E19 omega ending requires the wager");
