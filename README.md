@@ -250,6 +250,15 @@ Codex / Claude Code が同じ順番で作業を継続するための薄いエン
   light budget、reduced-motionは持続音なしへ。master compressor、hidden suspend＋明示再開、pagehide disposeを追加。
   新verb・外部音源・dependency・storage/schema変更なし。2026-08-02にproduction採用を人間が明示承認（`?v=e31`）
 
+- **進化 E32（2026-08・レビュー輪の是正）**: E29-30 に opus×4 レンズの独立レビューを当て、客観・低リスクのみ実装。
+  (1) **終端の特異度欠陥修正**＝縁で深度 stage が終端 stage の下に二重露出していたのを `:not(.surfaced):not(.omega)`
+  ガードで解消（2 レンズが独立に実測・修正案は注入検証済み） (2) **終端 stage の固定 filter**＝--sink 式のままだと
+  縁で brightness≈0.19 に黒潰れしていたのを base 終端と同じ固定値に (3) overlay 4枚に `fetchpriority="low"`
+  ＝初回 164KB が本文ロードと帯域競合していたのを降格 (4) 死に規則（旧 body.surfaced .hz-bg-descent）整理
+  (5) og:image:alt/twitter:image:alt 追加 (6) smoke の E29/E30 契約を regex 化・実体パース化で強化。
+  見送り=glitch ghost の stage 連動・transition 時定数・bottom.webp 再圧縮（実機の目/worker 待ち）。
+  版 `?v=e32`（Codex の E31=sensory governor が e31 を先取）・全複合状態（phase×終端）をブラウザ実測で担当1枚のみ表示を確認
+
 ## Status / Rules
 
 このリポジトリは**稼働中の本番作品**（没入版単一ビルド）です。旧「Music スタックの参照用」位置づけは終了。

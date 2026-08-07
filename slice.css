@@ -161,11 +161,10 @@ body.surfaced .hz-bg::after { opacity: 1; }
 /* 世界の骨格の退場（JS が inline opacity を持つため !important）。 */
 body.surfaced .hz-bg-garden { opacity: 0.22 !important; transition: opacity 2.5s ease; }
 body.surfaced .hz-bg-mandala { opacity: 0.04; top: 112%; transition: opacity 2.5s ease, top 2.6s ease; }
-/* 表層世界の戻り（沈下 var に依存しない固定値で「浮上した」を言う）。 */
-body.surfaced .hz-bg-descent {
-  opacity: 0.55; filter: brightness(0.5) saturate(0.6) contrast(1.04);
-  transition: opacity 2.5s ease, filter 2.5s ease;
-}
+/* 表層世界の戻り: E29 以降、浮上の写真は base でなく .hz-stage[data-stage="surfaced"]（E29 ブロック）が担い、
+   base はそこで opacity:0 に退場する。旧 `body.surfaced .hz-bg-descent { opacity:.55; filter:… }` は
+   後段の E29 規則（同特異度・後方）に常に負ける死に規則だったため E31 で削除（固定 filter の言語は
+   E29 ブロックの終端 stage 側へ移設済み）。 */
 /* 色温度：わずかな醒め。scanline は圧を抜く。 */
 body.surfaced { --ink: #cdd6de; --accent: #8fc0cc; }
 body.surfaced .hz-scanline { opacity: 0.04; transition: opacity 2.5s ease; }
@@ -212,21 +211,29 @@ body.omega { --ink: #e2ebf1; --accent: #9fd0db; }
   opacity: 0;
   transition: opacity 1.8s ease, filter 1.6s ease, transform 3s ease;
 }
-/* 深度：drift は drift+deep を、bottom は bottom を担当。担当 stage だけ base の沈下 opacity で現れる。 */
-body[data-phase="drift"]  .hz-stage[data-stage="drift"],
-body[data-phase="deep"]   .hz-stage[data-stage="drift"],
-body[data-phase="bottom"] .hz-stage[data-stage="bottom"] {
+/* 深度：drift は drift+deep を、bottom は bottom を担当。担当 stage だけ base の沈下 opacity で現れる。
+   E32: 終端（surfaced/omega）では :not() ガードで深度規則そのものを外す＝data-phase は終端でも
+   立ち続ける（パレットが phase 依存のため落とせない）ので、特異度勝負でなく選択子で「終端優先」を担保。 */
+body:not(.surfaced):not(.omega)[data-phase="drift"]  .hz-stage[data-stage="drift"],
+body:not(.surfaced):not(.omega)[data-phase="deep"]   .hz-stage[data-stage="drift"],
+body:not(.surfaced):not(.omega)[data-phase="bottom"] .hz-stage[data-stage="bottom"] {
   opacity: calc(0.88 - var(--sink) * 0.52);
 }
 /* stage が出ている間は base 写真を退場（同深度の二重像を防ぐ）。特異度で既存 .hz-bg-descent を上書き。 */
 body[data-phase="drift"]  .hz-bg-descent,
 body[data-phase="deep"]   .hz-bg-descent,
 body[data-phase="bottom"] .hz-bg-descent { opacity: 0; }
-/* 終端：浮上/Ω は phase より優先。担当 stage のみ現れ、base と他 stage は退場。 */
+/* 終端：担当 stage のみ現れ、base と他 stage は退場（深度規則は上の :not() ガードで既に不一致）。
+   E32: 終端 stage は --sink 式 filter のままだと縁（--sink≈1）で brightness≈0.19＝ほぼ黒に潰れるため、
+   base の終端と同じ「沈下 var に依存しない固定 filter」で見えを保証する（具体値の追い込みは実機の目）。 */
 body.surfaced .hz-bg-descent, body.surfaced .hz-stage { opacity: 0; }
-body.surfaced .hz-stage[data-stage="surfaced"] { opacity: 0.62; }
+body.surfaced .hz-stage[data-stage="surfaced"] {
+  opacity: 0.62; filter: brightness(0.5) saturate(0.6) contrast(1.04);
+}
 body.omega    .hz-bg-descent, body.omega    .hz-stage { opacity: 0; }
-body.omega    .hz-stage[data-stage="omega"] { opacity: 0.66; }
+body.omega    .hz-stage[data-stage="omega"] {
+  opacity: 0.66; filter: brightness(0.52) saturate(0.66) contrast(1.05);
+}
 
 .hz-vignette {
   position: absolute; inset: 0;

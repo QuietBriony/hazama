@@ -19,6 +19,31 @@ Hazama 自律開発 session の追記専用ログ。
 
 ---
 
+## 2026-08-07 — 進化 E32: レビュー輪の是正（E29-30 に opus×4 レンズ→客観・低リスクのみ実装・号令待ち）
+- agent      : Fable（「自走進めて」＝確立パターンのレビュー輪。cloud subagent のみ・worker PC 不使用）
+- goal       : E29 降下の弧＋E30 OG の新面積を 4 レンズ（視覚統合/性能/CSS保守/OG・PWA）で独立レビューし、
+  客観・低リスクだけ直す
+- shipped（号令デプロイ待ち・?v=e32 四点同期（Codex の E31 sensory governor が e31 を先取したため e32））:
+  - **終端の特異度欠陥修正（high・2レンズが独立実測）**: 縁は data-phase=bottom のまま .surfaced/.omega が付くため
+    深度 stage(0.36〜0.39) が終端 stage の下に二重露出していた。深度規則に `:not(.surfaced):not(.omega)` ガード
+  - **終端 stage の固定 filter（high）**: --sink 式のままだと縁で brightness≈0.19＝ほぼ黒。base 終端の言語
+    （固定値）を stage 側へ移設（surfaced=0.5/0.6/1.04・omega=0.52/0.66/1.05・追い込みは実機の目）
+  - overlay 4枚 `fetchpriority="low"`（初回 164KB が js/json と帯域競合・実測 57.5% を降格）
+  - 死に規則整理（旧 body.surfaced .hz-bg-descent＝E29 規則に常に負けていた）・E4 stale コメント是正・
+    og:image:alt / twitter:image:alt（index+lp）
+  - smoke 強化: E29 契約を regex 化（整形非依存）＋base 退場/終端ガード/終端 filter をロック・
+    E30 は og:image 群の実体パース（先頭 JPG/絶対URL/webp fallback/寸法の係り/枚数3）・fetchpriority=low ×4
+- verified   : ブラウザ実測＝全複合状態（bottom+surfaced / bottom+omega / deep+surfaced / 通常3態）で
+  写真層がちょうど1枚・終端 filter 固定値・最終ロード全リソース200。node --check OK・hazama-check 2 PASS/0 FAIL。
+  検証中の学び: **localhost 検証は SW の cache-first(ignoreSearch) が旧 css を配る**＝SW unregister＋caches 削除
+  ＋bare URL を cache:'reload' で焼き直してから測る（今後の検証手順）
+- 見送り（要判断として保留）: glitch ghost の stage 連動（「剥がれると元の塗装」と読めば現状維持も一案）・
+  transition 時定数（レンズ間で 2.2s と 1.2s の逆方向提案＝演出判断）・visibility 最適化（要 DevTools 実測）・
+  bottom.webp 75KB 再圧縮（worker＋目視＋VERSION bump 必要）
+- checks     : hazama-check 2 PASS / 0 FAIL
+- next       : 号令で push（E32）。実機の目=弧の見え/終端 filter の追い込み
+- blockers   : deploy は号令待ち
+
 ## 2026-08-02 — E31 Sensory governor production採用
 - agent      : Human＋Codex＋read-only監査agent 2系統
 - goal       : 検証済みE31 candidateをmasterへmergeし、静的Web本番としてcloseする
@@ -89,7 +114,6 @@ Hazama 自律開発 session の追記専用ログ。
 - backlog    : 変更なし。5.2 production昇格は人間が静止画限定方針とcompositor互換patch着手を承認してから
 - next       : 人間が「静止画制作限定で5.2候補を進めるか」を判断。承認後にHazama固有compositorを5.2 APIへnarrow fixし、目視比較
 - blockers   : 既存生成器のcompositor互換と最終画の採否は未完。現行キービジュアル/E29 runtimeは置換しない
-
 ## 2026-07-21 — 進化 E29 デプロイ済＋hotfix / E30 OG 堅牢化（実装/検証済み・号令待ち）
 - agent      : Fable（worker のローカル AI 画像工房を構築し「展開に合わせてキービジュアルを変化」を実装）
 - goal       : E29=背景キービジュアルが game 展開に連れて変化する「降下の弧」／E30=OG 共有プレビューの堅牢化

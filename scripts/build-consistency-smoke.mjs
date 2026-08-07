@@ -224,17 +224,35 @@ for (const st of ["drift", "bottom", "surfaced", "omega"]) {
 }
 has(html, 'class="hz-stage"', "E29 stage layer class");
 has(css, ".hz-stage {", "E29 stage layer style");
-has(css, 'body[data-phase="bottom"] .hz-stage[data-stage="bottom"]', "E29 depth crossfade rule");
-has(css, 'body.omega    .hz-stage[data-stage="omega"]', "E29 omega terminal rule");
+// E32: 文字列一致を整形非依存の regex に＋E29 の中核契約（base 退場・終端優先ガード・終端 filter）をロック。
+const hasRe = (re, label) => assert(re.test(css), `${label} missing: ${re}`);
+hasRe(/body:not\(\.surfaced\):not\(\.omega\)\[data-phase="bottom"\]\s+\.hz-stage\[data-stage="bottom"\]/, "E29 depth crossfade rule (terminal-guarded)");
+hasRe(/body:not\(\.surfaced\):not\(\.omega\)\[data-phase="drift"\]\s+\.hz-stage\[data-stage="drift"\]/, "E29 drift rule (terminal-guarded)");
+hasRe(/body\[data-phase="bottom"\]\s+\.hz-bg-descent\s*\{\s*opacity:\s*0/, "E29 base hidden while stage shows");
+hasRe(/body\.surfaced\s+\.hz-stage\[data-stage="surfaced"\]/, "E29 surfaced terminal rule");
+hasRe(/body\.omega\s+\.hz-stage\[data-stage="omega"\]/, "E29 omega terminal rule");
+hasRe(/body\.surfaced\s+\.hz-stage\[data-stage="surfaced"\]\s*\{[^}]*filter:\s*brightness/, "E32 surfaced terminal fixed filter");
+hasRe(/body\.omega\s+\.hz-stage\[data-stage="omega"\]\s*\{[^}]*filter:\s*brightness/, "E32 omega terminal fixed filter");
+// E31: overlay は帯域を奪わない（fetchpriority=low ×4・base の high は別途）
+assert((html.match(/class="hz-stage"[^>]*fetchpriority="low"/g) || []).length === 4,
+  "E32 all 4 stage overlays must carry fetchpriority=low");
 
 // E30: OG 堅牢化＝先頭 og:image は 1200×630 JPG（webp 非対応クライアント欠落対策）＋寸法宣言。
 // og-card.jpg は LP と共有（中身は E29 hero 由来で再生成済み）。webp/png は後続フォールバックで残す。
+// E32: indexOf の素朴比較（body の img でも成立し得た）を og:image 群のパースに置換＝契約を実体でロック。
 nonEmpty("assets/og-card.jpg");
-has(html, "assets/og-card.jpg", "E30 og-card referenced in index");
+const ogImages = [...html.matchAll(/property="og:image"\s+content="([^"]+)"/g)].map((m) => m[1]);
+assert(ogImages.length === 3, `E30 og:image count must stay 3 (got ${ogImages.length})`);
+assert(ogImages[0] === "https://quietbriony.github.io/hazama/assets/og-card.jpg",
+  "E30 first og:image must be the 1200x630 JPG (legacy/WhatsApp parsers take only the first)");
+assert(ogImages.some((u) => u.endsWith("hazama-descent-key.webp")), "E30 webp og:image fallback retained");
+assert(ogImages.every((u) => u.startsWith("https://quietbriony.github.io/hazama/")), "E30 og:image must be absolute URLs");
 has(html, 'property="og:image:width"', "E30 og:image width declared");
 has(html, 'property="og:image:height"', "E30 og:image height declared");
-assert(html.indexOf("assets/og-card.jpg") < html.indexOf("assets/hazama-descent-key.webp"),
-  "E30 og-card must precede webp og:image (first image wins on legacy parsers)");
+const wIdx = html.indexOf('property="og:image:width"');
+assert(wIdx > html.indexOf(ogImages[0]) && wIdx < html.indexOf(ogImages[1]),
+  "E30 og:image:width/height must bind to the first og:image (declared between 1st and 2nd)");
+has(html, 'property="og:image:alt"', "E32 og:image alt declared");
 
 // depths-shell（本文データ）: start＋ノード数＋choice到達性
 let depths;
