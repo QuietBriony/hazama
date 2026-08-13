@@ -354,6 +354,11 @@
           "ノイズが引く。予兆はある。前の周が、その予兆だった。",
           "思考のノイズが引く。理由はない、と前は書いた。今は、理由を知っていて書かない。"]
     },
+    // E36: zero_hold（伏せた夜）も周回で言葉が変わる＝入口の再読が毎周回わずかに違う呼吸になる。
+    zero_hold: {
+      0: ["伏せる。休止のつもりが、耳だけが起きている。",
+          "伏せた画面の黒に、部屋がうっすら映る。それも、編み目に見える。"]
+    },
     // 出典: depths-shell.json A lines[0] / 01-yoru1:57
     A: {
       0: ["答えはない。代わりに、世界の表皮が——また、同じ縁から剥がれはじめる。視界の縁でピクセルが浮き、鉄錆色の配線が露出する。",
@@ -1005,27 +1010,105 @@
     choicesEl.appendChild(p);
   }
 
+  // E36: 択の変奏バンク＝周回(cycle>=1)で択の文言が回る（原文も候補に含める＝NODE_VARIANTS と同じ流儀）。
+  //   キーは `${nodeId}>${to}#${kind}` ＋ deep 択は "+"（B の C,C 対のような同 to 対を区別）。
+  //   文言だけの変奏＝choice オブジェクトの機構（to/sink/dread/deep）は一切触らない。
+  //   retreat は「事務連絡」でなく「誘惑」に＝帰りたくなる言葉こそ、降りる選択を choice にする。
+  const CHOICE_VARIA = {
+    "zero>A#descend": [
+      { t: "声に応える——『まだ居たのか』", sub: "知っている声だ。対話が、また始まる" },
+      { t: "応えの代わりに、耳を澄ます", sub: "声の下に、別の音がある。下りはじめる" },
+      { t: "『誰だ』と問い返す前に、もう下りている", sub: "身体の方が先に答えた" }
+    ],
+    "zero>zero_hold#retreat": [
+      { t: "伏せて、いつもの夜に帰るふりをする", sub: "ふり、だと知っている。まだ表層。戻り道は減らない" },
+      { t: "聞こえなかったことにする", sub: "世界は付き合ってくれる。しばらくは" }
+    ],
+    "zero_hold>A#descend": [
+      { t: "沈黙が、先に負ける", sub: "下りはじめる" },
+      { t: "三度目の呼吸で、応える", sub: "最初からそうすると決めていた気もする" }
+    ],
+    "B>C#descend+": [
+      { t: "継ぎ目に指をかけ、月の裏を剥がす", sub: "描画の裏を読む＝不可逆（戻り道 −1）" },
+      { t: "割れ目の奥の、描き残しを探す", sub: "裏を読む＝不可逆（戻り道 −1）" }
+    ],
+    "B>C#descend": [
+      { t: "月には触れない。足だけ動かす", sub: "それでも沈む" },
+      { t: "見なかった側の目で、下りる", sub: "それでも沈む" }
+    ],
+    "C>B#retreat": [
+      { t: "月の明るい方へ、引き返す", sub: "まだ間に合う——気がする（戻り道 −1・沈下は残る）" },
+      { t: "開く前の記憶のまま、抱えて戻る", sub: "確かめなければ、まだ本当じゃない（戻り道 −1・沈下は残る）" }
+    ],
+    "D>E#descend+": [
+      { t: "“これだけは自分だ”の線を、指でなぞって確かめる", sub: "触れれば書き換わる＝決定的に不可逆（戻り道 −1）" }
+    ],
+    "D>E#descend": [
+      { t: "自分の輪郭は見ない。段だけ数える", sub: "沈む" }
+    ],
+    "Q>R#retreat": [
+      { t: "糸を噛み切って、外へ", sub: "外側の外側。もう、戻り方を思い出せない" }
+    ]
+  };
+
+  // E36: 選択肢の秩序ある混沌＝周回(cycle>=1)では kind グループ内の並びが worldSeed×周回×ノードで回る。
+  //   「一番上＝いつも同じ幹/読み」の習慣を崩し、多択 descend の順列（47ノード）を生かす。
+  //   グループの出現順（descend→surface→retreat 等、authored の並び）は保つ＝“ある程度”のカオス。
+  //   縁の二択・エコー門は別レンダラ（renderEdgeChoices/renderEchoChoices）＝対象外。ghost 扉は常に最後。
+  //   初見 cycle0 は authored 順そのまま（初見不変の原則）。同一周回内は同 seed＝再訪でも並びは安定。
+  function orderedChoices(node) {
+    const cs = (node.choices || []).filter((c) => !c.minCycle || state.cycle >= c.minCycle);
+    if (state.cycle < 1 || cs.length < 2) return cs;
+    const rng = mulberry32((worldSeed() ^ hashStr("order:" + state.id) ^ Math.imul(state.cycle + 1, 0x9e3779b9) ^ 0x0c4a05) >>> 0);
+    const groups = []; const byKind = new Map();
+    for (const c of cs) {
+      const k = c.kind || "?";
+      if (!byKind.has(k)) { byKind.set(k, []); groups.push(k); }
+      byKind.get(k).push(c);
+    }
+    const out = [];
+    for (const k of groups) {
+      const arr = byKind.get(k);
+      for (let i = arr.length - 1; i > 0; i--) {
+        const j = Math.floor(rng() * (i + 1));
+        const tmp = arr[i]; arr[i] = arr[j]; arr[j] = tmp;
+      }
+      for (const c of arr) out.push(c);
+    }
+    return out;
+  }
+
   function renderChoices(node) {
     choicesEl.innerHTML = "";
     onboardHint(node);           // E9: 初回だけ、最初の読みの岐路に一行
     attuneGlossHint();           // E26: 認識◆が初めて灯った時だけ、その意味を一行（一度きり）
     // E17: 周回ゲート＝minCycle を持つ選択肢は state.cycle がその値以上のときだけ出す（周回で A に第3の幹が開く）。
-    (node.choices || []).filter((c) => !c.minCycle || state.cycle >= c.minCycle).forEach((c, idx) => {
+    // E36: 並びは orderedChoices（周回で kind 内の順が回る）。filter は同関数内。
+    orderedChoices(node).forEach((c, idx) => {
       // E19: 終端を勝ち取る＝requireAttune の選択肢（Ω を貫く）は認識が満ちるまで“見える鍵”でロック。
       //   ロック中は押せず「まだ届かない（認識 N/閾値）」を見せる＝深く読めば開くが伝わる（幹/周回と直結）。
       //   浮上は requireAttune を持たない＝常に押せる安全な帰還（失敗演出にしない）。
       const locked = c.requireAttune && !isAttuned();
       // E26: その幹が"初めて開いた"周回だけ、択に一度きりの affordance（戻ってきた者が増えた択を見落とさない）。
       const newly = c.minCycle && state.cycle === c.minCycle;
+      // E36: 択の文言変奏＝周回(cycle>=1)のみ、原文含む候補から seeded pick（機構は c のまま＝表示だけ）。
+      //   locked（見える鍵）は変奏しない＝鍵の文言は約束なので固定。
+      let lead = c.t, sub = c.sub;
+      const varia = !locked && state.cycle >= 1 && CHOICE_VARIA[state.id + ">" + c.to + "#" + (c.kind || "") + (c.deep ? "+" : "")];
+      if (varia) {
+        const vr = mulberry32((worldSeed() ^ hashStr("label:" + state.id + ">" + c.to + (c.deep ? "+" : "")) ^ Math.imul(state.cycle + 1, 0x85ebca6b) ^ 0x1abe15) >>> 0);
+        const pick = pickR(vr, [null].concat(varia));
+        if (pick) { lead = pick.t || lead; sub = (pick.sub !== undefined) ? pick.sub : sub; }
+      }
       const btn = document.createElement("button");
       btn.type = "button";
       btn.className = "hz-choice " + (c.kind || "") + (locked ? " locked" : "") + (newly ? " newly" : "");
       if (!locked && c.kind === "retreat" && state.maxSink > 0.4) btn.classList.add("heavy");
-      btn.innerHTML = `<span class="lead"></span>${c.sub ? `<span class="sub"></span>` : ""}`;
-      btn.querySelector(".lead").textContent = c.t;
-      if (c.sub) btn.querySelector(".sub").textContent = locked
+      btn.innerHTML = `<span class="lead"></span>${sub ? `<span class="sub"></span>` : ""}`;
+      btn.querySelector(".lead").textContent = lead;
+      if (sub) btn.querySelector(".sub").textContent = locked
         ? `まだ届かない（認識 ${Math.round(state.attunement || 0)}/${ATTUNE.omegaThreshold}）`
-        : c.sub;
+        : sub;
       if (!locked) btn.addEventListener("click", () => {
         // E27: 押下の確定感＝選んだ択が一拍沈み、選ばれなかった択が退いてから世界が動く（REDUCED は即時＝従来）。
         choicesEl.querySelectorAll(".hz-choice").forEach((b) => { if (b !== btn) b.classList.add("unchosen"); b.disabled = true; });
@@ -2196,7 +2279,7 @@
 
   // ---------- 起動 ----------
   async function loadData() {
-    const res = await fetch("depths-shell.json?v=e35", { cache: "no-store" });
+    const res = await fetch("depths-shell.json?v=e36", { cache: "no-store" });
     if (!res.ok) throw new Error(`depths-shell HTTP ${res.status}`);
     const data = await res.json();
     if (!data || typeof data !== "object" || !data.start || !data.nodes || !data.nodes[data.start]) {
@@ -2272,7 +2355,7 @@
   function registerSlicePWA() {
     if (!("serviceWorker" in navigator)) return;
     const register = () => {
-      navigator.serviceWorker.register("sw.js?v=e35", { scope: "./", updateViaCache: "none" }).then((reg) => {
+      navigator.serviceWorker.register("sw.js?v=e36", { scope: "./", updateViaCache: "none" }).then((reg) => {
         if (typeof reg.update === "function") reg.update().catch(() => {});
       }).catch((err) => console.warn("[Hazama slice] SW register failed:", err));
     };

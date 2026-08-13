@@ -19,6 +19,28 @@ Hazama 自律開発 session の追記専用ログ。
 
 ---
 
+## 2026-08-07 — 進化 E36: 周回の変奏＝択の混沌（実装/検証済み・号令待ち）
+- agent      : Fable（ユーザー指摘「入口から入った後ずっと同じ／一番上選んでね感で分岐が出ない／
+  もっとエンタメな選択肢／ある程度のカオス／コンテンツをフル活用」への回答）
+- goal       : 入口〜降下の再読を、周回ごとに並び・文言が回る「秩序ある混沌」にする（初見は不変）
+- 実測根拠   : 「常に最初の descend」プレイヤーは 72 ノード中 29 しか踏まない（43=6割死蔵）・
+  多択 descend 47 ノードの並びが固定・zero→A 冒頭は NODE_VARIANTS 済みだが択レイヤは完全固定だった
+- shipped（?v=e36 四点同期・号令デプロイ待ち）:
+  - **orderedChoices**: cycle≥1 で kind 内 seeded shuffle（worldSeed^hashStr("order:"+id)^cycle・salt 0x0c4a05）。
+    グループ出現順・ghost 最後尾・縁/エコー門（別レンダラ）は不変。cycle0 は authored 順
+  - **CHOICE_VARIA**: 択文言の変奏バンク（入口帯 9 キー・原文も候補・`id>to#kind(+deep)` で同 to 対を区別）。
+    retreat を「誘惑」に（例: C の retreat「月の明るい方へ、引き返す／まだ間に合う——気がする」）。
+    locked（見える鍵）は変奏しない＝約束は固定。表示のみ＝choice の機構フィールド不変
+  - **NODE_VARIANTS.zero_hold** 追加（入口の再読の呼吸）
+  - smoke 契約 10 件（cycle ゲート・単一呼出＝縁/エコー除外・display-only・バンク実在）
+- verified   : ブラウザ実測＝cycle0 A: authored 順＋ghost 最後尾／cycle3 A: descend 4 本が回転・
+  再訪同順（決定論）／cycle4: 別順／cycle1 zero: 変奏文言（誘惑 retreat 含む）発火・
+  変奏ラベル押下→ A へ正常遷移（機構不変）・console 0。hazama-check 2 PASS / 0 FAIL
+- next       : 号令で push（E36）。**E37 候補=絵の変奏**（stage 画像を worldSeed×cycle で変奏セットから
+  src 選択＝機構は軽い・変奏セット生産は imagelab（worker 復帰待ち）。「絵も変えてった方がいい」対応）。
+  文言バンクは human-gate（実機の目で register 確認）後、中盤帯へ拡張可
+- blockers   : deploy は号令待ち・worker PC（絵の変奏セット生産）
+
 ## 2026-08-30 — E35 PWA更新handoff（旧CSS＋新JS混在の解消）
 - agent      : Codex＋read-only監査agent 3系統
 - goal       : 公開済みE31/E32へE33/E34 release packetを統合する最終監査で見つかった、旧SW初回更新時の旧CSS＋新JS混在経路を閉じる

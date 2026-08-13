@@ -272,6 +272,13 @@ Codex / Claude Code が同じ順番で作業を継続するための薄いエン
   route・storage・depths schema・音色は不変（`?v=e35`）。公開済みE31/E32を正本としてE33〜E35を統合し、
   2026-08-30の明示承認に基づく公開release packetとした
 
+- **進化 E36（2026-08・周回の変奏＝択の混沌）**: 「入口から入った後の展開がずっと同じ／一番上を選んでね感」への回答。
+  cycle≥1 で (1) **択の並びが kind 内 seeded shuffle で回る**（worldSeed×周回×ノード・多択 descend 47ノードの順列が
+  生きる・グループ順と ghost 最後尾は不変＝“ある程度”のカオス） (2) **択の文言が CHOICE_VARIA バンクから回る**
+  （原文も候補・入口帯 9キー・retreat は「事務連絡」→「誘惑」へ） (3) zero_hold にも NODE_VARIANTS。
+  初見 cycle0 は authored のまま（初見不変）・決定論（同周回=同順）・機構（to/sink/deep）不変＝表示だけ・
+  縁の二択/エコー門は対象外。版 `?v=e36`・smoke 契約10件
+
 ## Status / Rules
 
 このリポジトリは**稼働中の本番作品**（没入版単一ビルド）です。旧「Music スタックの参照用」位置づけは終了。

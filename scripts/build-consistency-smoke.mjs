@@ -386,6 +386,19 @@ assert(wIdx > html.indexOf(ogImages[0]) && wIdx < html.indexOf(ogImages[1]),
   "E30 og:image:width/height must bind to the first og:image (declared between 1st and 2nd)");
 has(html, 'property="og:image:alt"', "E32 og:image alt declared");
 
+// E36: 周回の変奏＝択の並び（kind 内 seeded shuffle）＋択の文言（CHOICE_VARIA バンク）＋zero_hold 変奏。
+// 初見 cycle0 不変・決定論（worldSeed 系）・機構（to/sink/deep）不変・縁/エコー門は対象外、を契約でロック。
+has(js, "const CHOICE_VARIA", "E36 choice varia bank");
+has(js, "function orderedChoices", "E36 ordered choices fn");
+assert(/function orderedChoices[\s\S]{0,400}?state\.cycle < 1/.test(js), "E36 shuffle must be cycle-gated (cycle0 = authored order)");
+assert((js.match(/orderedChoices\(/g) || []).length === 2, "E36 orderedChoices used exactly once (renderChoices only — edge/echo excluded)");
+assert(/state\.cycle >= 1 && CHOICE_VARIA\[/.test(js), "E36 label varia must be cycle-gated");
+has(js, '"zero>A#descend"', "E36 varia key format (entry band)");
+has(js, "月の明るい方へ、引き返す", "E36 seductive retreat variant");
+has(js, "zero_hold: {", "E36 zero_hold node variants");
+// 変奏は表示だけ＝choose(c) に渡る choice オブジェクトの機構フィールドへは触れない（t/sub の再代入が無いこと）
+assert(!/c\.t\s*=|c\.sub\s*=/.test(js), "E36 varia must not mutate choice objects (display-only lead/sub)");
+
 // depths-shell（本文データ）: start＋ノード数＋choice到達性
 let depths;
 try { depths = JSON.parse(read("depths-shell.json")); } catch { failures.push("depths-shell.json invalid JSON"); }
