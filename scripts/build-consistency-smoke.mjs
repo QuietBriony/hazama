@@ -399,6 +399,19 @@ has(js, "zero_hold: {", "E36 zero_hold node variants");
 // 変奏は表示だけ＝choose(c) に渡る choice オブジェクトの機構フィールドへは触れない（t/sub の再代入が無いこと）
 assert(!/c\.t\s*=|c\.sub\s*=/.test(js), "E36 varia must not mutate choice objects (display-only lead/sub)");
 
+// E37: 絵の変奏＝背景写真セット（降下の弧5枚）が worldSeed×周回で丸ごと回る。
+// セットB 実体＋sw precache＋picker の cycle ゲート（cycle0=正典セット・HTML 既定 src と一致）を契約でロック。
+for (const st of ["key", "drift", "bottom", "surfaced", "omega"]) {
+  nonEmpty(`assets/hazama-descent-${st}-b.webp`);
+  has(sw, `assets/hazama-descent-${st}-b.webp`, `E37 sw precache set-B ${st}`);
+}
+has(js, "const ART_SETS", "E37 art set bank");
+has(js, "function applyArtSet", "E37 art set picker");
+assert(/function applyArtSet[\s\S]{0,400}?c < 1 \? ""/.test(js), "E37 picker must be cycle-gated (cycle0 = canonical set)");
+has(js, "applyArtSet();", "E37 picker wired into applyCycleSkin");
+// HTML 既定 src は正典セットのまま（JS 死亡時/初回ペイント＝従来どおり）
+assert(!/hazama-descent-key-b\.webp/.test(html), "E37 html default src must stay canonical set");
+
 // depths-shell（本文データ）: start＋ノード数＋choice到達性
 let depths;
 try { depths = JSON.parse(read("depths-shell.json")); } catch { failures.push("depths-shell.json invalid JSON"); }

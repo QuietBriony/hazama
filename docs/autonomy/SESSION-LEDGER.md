@@ -19,6 +19,29 @@ Hazama 自律開発 session の追記専用ログ。
 
 ---
 
+## 2026-08-14 — 進化 E37: 絵の変奏＋seed 混合バグ2件の検出/修正（実装/検証済み・号令待ち）
+- agent      : Fable（worker 復帰を確認し、「絵も変えてった方がいい」の変奏セット生産→統合まで自走）
+- goal       : E29 降下の弧の背景写真セットが周回で丸ごと回る（cycle0 は正典固定）
+- shipped（?v=e37 四点同期・号令デプロイ待ち）:
+  - **セットB 生産**（imagelab）: 承認 hero(seed123) から img2img(strength0.45, seed999) で「同じ場所の
+    別の夜」base_b → 既存 chain（drift/bottom は連鎖・終端は base から分岐）→ 1500×900 webp ×5。
+    **全数目視検収**（E29 hotfix の教訓）＝5枚とも弧の役割を保ち光/密度が別
+  - **applyArtSet**（applyCycleSkin 内）: worldSeed×hashStr("artset:"+cycle) で ART_SETS ["", "-b"] を
+    決定論 pick・base＋stage4 の src を同期書き替え。cycle0="" 固定＝HTML 既定と一致（JS 死亡時同見え）。
+    E29 クロスフェード CSS（class/data-stage 参照）に非干渉。セットB 5枚も sw precache（offline 一貫）
+  - **seed 混合バグ2件（E36/E37 共通の学び）**: (1) cycle 項を worldSeed と同定数 imul(0x9e3779b9) で
+    XOR していた＝**完全相殺で周回不変**（E36 の probe は legacy.cycles desync で回転して見えた＝実フローでは
+    回っていなかった） (2) 異定数に変えても imul 対は下位ビット相関で**先頭 draw が縞**（実測 BBBBBB…）。
+    **修正＝cycle 項は hashStr で拡散**（orderedChoices / label varia / applyArtSet の3箇所）
+  - smoke E37 契約 8 件（セットB 実体/precache・picker の cycle ゲート・HTML 既定 src 正典維持）
+- verified   : クリーン spiral からの実フロー（zero 再入で cycle++）＝c0 正典・周回で A/B 混合
+  （c3,5,10,12,13=B）・**5枚常に同期**（probe の「不整合」は includes('-b') が "-bottom" に誤ヒットする
+  検査側バグと確定・実ダンプで反証）・現行セット全ロード・E36 並び回転も実フロー確認・console 0・
+  hazama-check 2 PASS / 0 FAIL
+- next       : 号令で push（E36＋E37）。セットC 以降は imagelab で同レシピ増産可（ART_SETS に足すだけ）。
+  変奏の実機の目（絵の切り替わり頻度・セットB の register）は human-gate
+- blockers   : deploy は号令待ち
+
 ## 2026-08-07 — 進化 E36: 周回の変奏＝択の混沌（実装/検証済み・号令待ち）
 - agent      : Fable（ユーザー指摘「入口から入った後ずっと同じ／一番上選んでね感で分岐が出ない／
   もっとエンタメな選択肢／ある程度のカオス／コンテンツをフル活用」への回答）

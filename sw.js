@@ -6,7 +6,7 @@
    - cache prefix=hazama-pwa- ＝旧 forward 版 cache(hazama-pwa-v2.45 等)を activate で掃除し更新。
 ========================================================= */
 
-const VERSION = "hazama-pwa-e36";
+const VERSION = "hazama-pwa-e37";
 const RELEASE = VERSION.replace("hazama-pwa-", "");
 const CACHE_PREFIX = "hazama-pwa-";
 const STATIC_CACHE = `${VERSION}-static`;
@@ -33,7 +33,12 @@ const OPTIONAL_PRECACHE_URLS = [
   "assets/hazama-descent-drift.webp",
   "assets/hazama-descent-bottom.webp",
   "assets/hazama-descent-surfaced.webp",
-  "assets/hazama-descent-omega.webp"
+  "assets/hazama-descent-omega.webp",
+  "assets/hazama-descent-key-b.webp",
+  "assets/hazama-descent-drift-b.webp",
+  "assets/hazama-descent-bottom-b.webp",
+  "assets/hazama-descent-surfaced-b.webp",
+  "assets/hazama-descent-omega-b.webp"
 ];
 
 self.addEventListener("install", (event) => {

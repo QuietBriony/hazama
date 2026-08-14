@@ -842,6 +842,25 @@
     // c=0 は明示的に 0＝初回の見えを 1px も変えない（剰余式は c=0 でも -10/-4 を返すため guard が要る）。
     root.setProperty("--cycle-hue", (c === 0 ? 0 : ((c * 7) % 21) - 10) + "deg");
     root.setProperty("--cycle-pan", (c === 0 ? 0 : ((c * 13) % 9) - 4) + "%");
+    applyArtSet();
+  }
+
+  // E37: 絵の変奏＝周回で背景写真セット（E29 降下の弧 5枚）が丸ごと回る。worldSeed×周回の決定論。
+  //   セットは imagelab の img2img 派生（同じ場所の別の夜）＝弧の役割（base/drift/bottom/surfaced/omega）は保つ。
+  //   cycle0 は正典セット固定（初見不変・HTML 既定 src とも一致＝JS 死亡時も同じ見え）。
+  //   src の書き替えのみ＝E29 のクロスフェード CSS（class/data-stage 参照）には非干渉。
+  const ART_SETS = ["", "-b"];
+  function applyArtSet() {
+    const c = state.cycle | 0;
+    // 注意: cycle 項は hashStr で拡散する。worldSeed と同定数の imul は XOR 相殺で周回不変になり、
+    //   異定数でも imul 対は下位ビットが相関して先頭 draw が縞になる（実測 BBBBBB…）＝hashStr が正解。
+    const rng = mulberry32((worldSeed() ^ hashStr("artset:" + c) ^ 0xa87f5e) >>> 0);
+    const suffix = c < 1 ? "" : pickR(rng, ART_SETS);
+    const base = document.querySelector(".hz-bg-descent");
+    if (base) base.src = "assets/hazama-descent-key" + suffix + ".webp";
+    document.querySelectorAll(".hz-stage").forEach((img) => {
+      img.src = "assets/hazama-descent-" + img.dataset.stage + suffix + ".webp";
+    });
   }
 
   // E8: below(∞) 以外の深い層へも稀に「別の観測の痕跡」を漂着させる＝Ωまで潜らない大多数にも届かせる
@@ -1059,7 +1078,8 @@
   function orderedChoices(node) {
     const cs = (node.choices || []).filter((c) => !c.minCycle || state.cycle >= c.minCycle);
     if (state.cycle < 1 || cs.length < 2) return cs;
-    const rng = mulberry32((worldSeed() ^ hashStr("order:" + state.id) ^ Math.imul(state.cycle + 1, 0x9e3779b9) ^ 0x0c4a05) >>> 0);
+    // cycle 項は hashStr で拡散（worldSeed の imul 群との相殺/縞を避ける・applyArtSet と同じ教訓）。
+    const rng = mulberry32((worldSeed() ^ hashStr("order:" + state.id + ":" + state.cycle) ^ 0x0c4a05) >>> 0);
     const groups = []; const byKind = new Map();
     for (const c of cs) {
       const k = c.kind || "?";
@@ -1096,7 +1116,7 @@
       let lead = c.t, sub = c.sub;
       const varia = !locked && state.cycle >= 1 && CHOICE_VARIA[state.id + ">" + c.to + "#" + (c.kind || "") + (c.deep ? "+" : "")];
       if (varia) {
-        const vr = mulberry32((worldSeed() ^ hashStr("label:" + state.id + ">" + c.to + (c.deep ? "+" : "")) ^ Math.imul(state.cycle + 1, 0x85ebca6b) ^ 0x1abe15) >>> 0);
+        const vr = mulberry32((worldSeed() ^ hashStr("label:" + state.id + ">" + c.to + (c.deep ? "+" : "") + ":" + state.cycle) ^ 0x1abe15) >>> 0);
         const pick = pickR(vr, [null].concat(varia));
         if (pick) { lead = pick.t || lead; sub = (pick.sub !== undefined) ? pick.sub : sub; }
       }
@@ -2279,7 +2299,7 @@
 
   // ---------- 起動 ----------
   async function loadData() {
-    const res = await fetch("depths-shell.json?v=e36", { cache: "no-store" });
+    const res = await fetch("depths-shell.json?v=e37", { cache: "no-store" });
     if (!res.ok) throw new Error(`depths-shell HTTP ${res.status}`);
     const data = await res.json();
     if (!data || typeof data !== "object" || !data.start || !data.nodes || !data.nodes[data.start]) {
@@ -2355,7 +2375,7 @@
   function registerSlicePWA() {
     if (!("serviceWorker" in navigator)) return;
     const register = () => {
-      navigator.serviceWorker.register("sw.js?v=e36", { scope: "./", updateViaCache: "none" }).then((reg) => {
+      navigator.serviceWorker.register("sw.js?v=e37", { scope: "./", updateViaCache: "none" }).then((reg) => {
         if (typeof reg.update === "function") reg.update().catch(() => {});
       }).catch((err) => console.warn("[Hazama slice] SW register failed:", err));
     };
