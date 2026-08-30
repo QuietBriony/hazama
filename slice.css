@@ -398,14 +398,20 @@ body[data-tension="high"] .hz-scene { animation: hz-shudder 2.6s ease-in-out inf
   75% { transform: translateX(0.6px); }
 }
 
-/* 選択肢：scene の下に固定された別トラック（flex:0 0 auto）。本文と重ならない。
-   上端に短いフェードを置き、スクロールする本文がボタンへ溶け込むように消える。 */
+/* 選択肢：scene の下の別トラック。短い画面や周回後の多択では帯の内側だけをscrollし、
+   footerの下へ選択肢を失わない。通常の2択は高さ上限未満なので見えは従来どおり。 */
 .hz-choices {
   position: relative;
   flex: 0 0 auto;
+  min-height: 0;
+  max-height: min(56dvh, 34rem);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scroll-padding-block: 12px;
   display: flex; flex-direction: column; gap: 10px;
   padding: 12px 0 max(14px, env(safe-area-inset-bottom));
   background: var(--bg);
+  -webkit-overflow-scrolling: touch;
 }
 .hz-choices::before {
   content: ""; position: absolute; left: 0; right: 0; top: -34px; height: 34px;
@@ -495,6 +501,9 @@ body[data-tension="high"] .hz-scene { animation: hz-shudder 2.6s ease-in-out inf
   display: inline-flex; align-items: center;
   cursor: pointer;
 }
+/* E33: [hidden] のUA規則を display:inline-flex が上書きしないよう固定。
+   音chipは「沈む」までは描画・focus対象のどちらにも出さない。 */
+.hz-chip[hidden] { display: none; }
 .hz-chip[aria-pressed="true"] { color: var(--accent); border-color: var(--accent); }
 .hz-chip-quiet { border-color: transparent; }
 .hz-status { margin-left: auto; font-size: 0.72rem; color: var(--ink-faint); letter-spacing: 0.08em; }
@@ -522,6 +531,7 @@ body[data-tension="high"] .hz-scene { animation: hz-shudder 2.6s ease-in-out inf
 }
 .hz-gate-enter:active { background: var(--accent); color: #02040a; }
 .hz-gate-note { margin-top: 2.4em; font-size: 0.72rem; color: var(--ink-faint); }
+.hz-gate-note.is-error { font-size: 0.8rem; line-height: 1.6; color: var(--warn); }
 
 /* ============================================================================
    R5 — バスキア × 沈下サイバーパンク（生の手の痕跡が冷たい構造を突き破る）

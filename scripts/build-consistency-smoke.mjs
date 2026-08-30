@@ -3,6 +3,9 @@
    forward 一式・slice/ 重複は撤去済み。ここで build の整合を依存なしで一括検証する。 */
 import { existsSync, readFileSync, statSync } from "node:fs";
 import path from "node:path";
+import vm from "node:vm";
+import "./audio-governor-smoke.mjs";
+import "./sensory-frame-smoke.mjs";
 
 const root = process.cwd();
 const failures = [];
@@ -35,9 +38,64 @@ const fetchV = (js.match(/depths-shell\.json\?v=([a-z0-9.]+)/) || [])[1];
 assert(fetchV === jsV, `slice.js depths fetch version mismatch: fetch=${fetchV} index=${jsV}`);
 const swV = (sw.match(/const VERSION = "hazama-pwa-([a-z0-9.]+)"/) || [])[1];
 assert(swV === jsV, `sw.js cache version mismatch: sw=${swV} index=${jsV}`);
+const bootSwV = (html.match(/const SW_URL = "sw\.js\?v=([a-z0-9.]+)"/) || [])[1];
+const bootRuntimeV = (html.match(/const RUNTIME_URL = "slice\.js\?v=([a-z0-9.]+)"/) || [])[1];
+const runtimeSwV = (js.match(/serviceWorker\.register\("sw\.js\?v=([a-z0-9.]+)"/) || [])[1];
+assert(bootSwV === jsV, `boot SW version mismatch: sw=${bootSwV} index=${jsV}`);
+assert(bootRuntimeV === jsV, `boot runtime version mismatch: runtime=${bootRuntimeV} index=${jsV}`);
+assert(runtimeSwV === jsV, `runtime SW registration version mismatch: sw=${runtimeSwV} index=${jsV}`);
+const bootScript = (html.match(/<script>\s*([\s\S]*?)\s*<\/script>/i) || [])[1];
+assert(Boolean(bootScript), "inline boot script missing");
+if (bootScript) {
+  try { new vm.Script(bootScript, { filename: "index-inline-boot.js" }); }
+  catch (err) { failures.push(`inline boot script syntax: ${err.message}`); }
+}
 assert(!html.includes("preview"), "production index.html should not say preview");
 for (const layer of ["hz-bg-garden", "hz-bg-mandala", "hz-glitch", "hz-scanline", "hz-vignette"]) has(html, layer, "immersive art layer");
 for (const el of ['id="scene"', 'id="choices"', 'id="gate-enter"', 'id="attune"', 'rel="manifest"']) has(html, el, "index element");
+has(html, 'id="gate" class="hz-gate" aria-busy="true"', "E32 gate load state");
+has(html, 'class="hz-gate-title" aria-hidden="true"', "E32 decorative title hidden from assistive tech");
+has(html, 'aria-describedby="gate-note"', "E32 entry audio/load description");
+has(html, 'id="gate-note" class="hz-gate-note" role="status" aria-live="polite"', "E32 visible gate load status");
+has(html, 'id="a11y-state" class="hz-sr-only" role="status" aria-live="polite" aria-atomic="true"', "E33 gauge state live summary");
+has(html, "window.__hazamaArmRetry = armRetry", "E33 shared boot/data retry handler");
+has(html, 'label.textContent = "再試行"', "E33 retry control label");
+has(html, "window.location.reload()", "E33 retry action reloads the static shell");
+has(html, 'navigator.serviceWorker.controller.scriptURL === expectedController', "E32 current-controller version guard");
+has(html, 'navigator.serviceWorker.addEventListener("controllerchange", onControllerChange)', "E32 old SW takeover wait");
+const takeoverBody = (html.match(/const onControllerChange = \(\) => \{[\s\S]*?\n      \};/) || [""])[0];
+has(takeoverBody, "finish(() => window.location.reload())", "E34 old SW takeover reloads the complete shell");
+assert(!takeoverBody.includes("startRuntime"), "E34 old-controller navigation must not mix old CSS with current runtime");
+assert(!/<script\s+[^>]*src=["']slice\.js\?v=/i.test(html), "E32 runtime must wait for SW takeover instead of direct script load");
+has(js, 'gateEl.setAttribute("inert", "")', "E32 departed gate inert state");
+has(js, 'gateEl.setAttribute("aria-hidden", "true")', "E32 departed gate accessibility state");
+assert(js.indexOf('gb.addEventListener("click", enter') < js.indexOf('gb.disabled = false', js.indexOf("loadData().then")),
+  "E32 gate must enable only after click listener wiring");
+const loadCatch = (js.match(/loadData\(\)\.then\([\s\S]*?\n  \}\);/) || [""])[0];
+has(loadCatch, 'window.__hazamaArmRetry("深度データを読み込めません。再試行してください。")',
+  "E33 failed depth load routes to retry control");
+has(loadCatch, "gb.disabled = false", "E33 fallback retry control is enabled");
+assert(!loadCatch.includes('$("scene").textContent'), "E32 failed boot must not duplicate the gate live announcement");
+assert(/\.hz-chip\[hidden\]\s*\{[^}]*display:\s*none/.test(css),
+  "E33 hidden audio chip must not render or enter the focus order before descent");
+const gateErrorCss = (css.match(/\.hz-gate-note\.is-error\s*\{[^}]*\}/) || [""])[0];
+has(gateErrorCss, "font-size: 0.8rem", "E33 readable boot error size");
+has(gateErrorCss, "color: var(--warn)", "E33 contrasted boot error color");
+const choicesCss = (css.match(/\.hz-choices\s*\{[\s\S]*?\n\}/) || [""])[0];
+for (const contract of ["flex: 0 0 auto", "min-height: 0", "max-height: min(56dvh, 34rem)", "overflow-y: auto", "overscroll-behavior: contain"]) {
+  has(choicesCss, contract, `E33 short-viewport choices ${contract}`);
+}
+has(js, "function queueA11yState", "E33 gauge state summary renderer");
+for (const renderer of ["renderChoices", "renderEchoChoices", "renderEdgeChoices"]) {
+  const body = (js.match(new RegExp(`function ${renderer}\\([^)]*\\) \\{[\\s\\S]*?\\n  \\}`)) || [""])[0];
+  assert((body.match(/queueA11yState\(\)/g) || []).length === 1,
+    `E33 gauge summary must run exactly once in ${renderer}`);
+}
+assert((js.match(/^    queueA11yState\(\);/gm) || []).length === 3,
+  "E33 gauge summary must have exactly three renderer call-sites");
+has(js, "if (b && a11yStateTimer)", "E33 stale gauge summary cancellation on next scene");
+has(js, "戻り道 ${state.returnPaths}本。認識 ${lit}/${need}", "E33 gauge summary values");
+has(js, "window.__hazamaArmRetry", "E33 depth-load retry handoff");
 
 // slice.js: 認識/Ωゲート(逆統合の核)＋二極終端＋認識インジケータ
 has(js, "function gainRecognition", "recognition gain");
@@ -46,7 +104,6 @@ has(js, "function renderEdge", "edge terminal");
 has(js, "浮上 — 表層へ帰る", "two-pole surface ending");
 has(js, "深度Ω 到達", "omega ending");
 has(js, "function renderAttune", "recognition indicator");
-has(js, 'navigator.serviceWorker.register("sw.js")', "sw registration");
 assert(css.includes(".hz-attune"), "slice.css recognition indicator style");
 
 // E1: 記憶（spiral 層）＋縁の二択＋縁カード
@@ -143,6 +200,19 @@ has(js, "function setAxis", "E21 per-trunk audio axis");
 has(js, "function breath", "E21 edge breath (呼気)");
 has(js, "Audio.setAxis(state.activeTrunk)", "E21 axis set at trunk fork");
 has(js, "Audio.breath(attuned)", "E21 breath at edge");
+
+// E31: production audio governor（単一AudioContextのままmobile budget・peak guard・lifecycleを強化）。
+has(js, "const AUDIO_BUDGETS", "E31 production audio tier budgets");
+has(js, 'window.matchMedia("(pointer: coarse)")', "E31 coarse-pointer light tier");
+has(js, "createDynamicsCompressor", "E31 master compressor guardrail");
+has(js, "function suspendForVisibility", "E31 hidden-page audio suspend");
+has(js, "function dispose", "E31 pagehide audio dispose");
+has(js, "Audio.suspendForVisibility()", "E31 visibility lifecycle wiring");
+has(js, "Audio.dispose()", "E31 pagehide lifecycle wiring");
+has(js, "dryGain.gain.value = 0.85", "E31 preserves the production dry gain");
+assert(!js.includes('import "./tools/sensory') && !js.includes('fetch("tools/sensory')
+  && !/\bnew\s+Tone\b/.test(js) && !/\bTone\.(?:Player|Transport|Oscillator)\b/.test(js),
+  "E31 production audio remains dependency-free and single-runtime");
 // E19: 終端を勝ち取る＝reborn の Ω 貫きは認識が満ちるまで“見える鍵”でロック。賭けて勝ち取った時だけ Ω 終端。
 assert(/requireAttune && !isAttuned\(\)/.test(js), "E19 Ω wager choice locked until attuned");
 assert(/attuned = isAttuned\(\) && state\.wagered/.test(js), "E19 omega ending requires the wager");
@@ -196,7 +266,83 @@ if (manifest) {
 
 // service worker（root スコープ・旧cache掃除prefix・build一式を precache）
 has(sw, 'const CACHE_PREFIX = "hazama-pwa-"', "sw cache prefix");
-for (const url of ["index.html", "slice.js", "slice.css", "depths-shell.json", "manifest.webmanifest"]) has(sw, url, `sw precache ${url}`);
+for (const url of ["index.html", "depths-shell.json", "manifest.webmanifest"]) has(sw, url, `sw precache ${url}`);
+has(sw, '`slice.js?v=${RELEASE}`', "sw precache versioned slice.js");
+has(sw, '`slice.css?v=${RELEASE}`', "sw precache versioned slice.css");
+has(sw, "const CORE_PRECACHE_URLS", "sw atomic core precache list");
+has(sw, "const OPTIONAL_PRECACHE_URLS", "sw optional visual precache list");
+has(sw, "cache.addAll(CORE_PRECACHE_URLS).then", "sw core precache rejects install atomically");
+const corePrecache = (sw.match(/const CORE_PRECACHE_URLS = \[[\s\S]*?\n\];/) || [""])[0];
+for (const core of ['"./"', '"index.html"', '`slice.css?v=${RELEASE}`', '`slice.js?v=${RELEASE}`', '"depths-shell.json"']) {
+  has(corePrecache, core, `sw required core ${core}`);
+}
+assert(!corePrecache.includes(".catch"), "sw core precache failure must reject install and preserve the active cache");
+const optionalPrecache = (sw.match(/const OPTIONAL_PRECACHE_URLS = \[[\s\S]*?\n\];/) || [""])[0];
+assert(optionalPrecache.includes("icons/") && optionalPrecache.includes("assets/"),
+  "sw optional precache should contain visual extras");
+assert((sw.match(/matchCachedRequest\(request, \{ ignoreSearch: true \}\)/g) || []).length === 1,
+  "sw ignoreSearch must be limited to depths offline fallback");
+const staticFetchBranch = (sw.match(/if \(url\.origin === self\.location\.origin\) \{[\s\S]*?\n  \}/) || [""])[0];
+assert(staticFetchBranch && !staticFetchBranch.includes("ignoreSearch"),
+  "sw versioned static assets must use exact cache matches");
+
+// E32: core欠損時はinstallを失敗させ、旧Hazama cacheを消すactivateへ進ませない。
+// 画像・iconだけの欠損はbest-effortでinstallを通す。実network/filesystemは使わないVM検証。
+async function simulateSwInstall({ failCore = false, failOptional = false } = {}) {
+  const handlers = {};
+  const deleted = [];
+  let skipWaitingCalls = 0;
+  let optionalAttempts = 0;
+  const cache = {
+    addAll: async () => { if (failCore) throw new Error("core miss"); },
+    add: async () => { optionalAttempts += 1; if (failOptional) throw new Error("optional miss"); },
+    put: async () => {}
+  };
+  const cacheApi = {
+    open: async () => cache,
+    keys: async () => ["hazama-pwa-e30-static", "hazama-pwa-e30-runtime", "hazama-pwa-e32-static", "music-cache"],
+    delete: async (key) => { deleted.push(key); return true; },
+    match: async () => null
+  };
+  const worker = {
+    location: { origin: "https://example.test" },
+    clients: { claim: async () => {} },
+    skipWaiting: async () => { skipWaitingCalls += 1; },
+    addEventListener: (type, handler) => { handlers[type] = handler; }
+  };
+  vm.runInNewContext(sw, {
+    self: worker,
+    caches: cacheApi,
+    console: { log() {}, warn() {}, error() {} },
+    URL,
+    Promise
+  });
+
+  let installPromise = Promise.resolve();
+  handlers.install({ waitUntil: (promise) => { installPromise = Promise.resolve(promise); } });
+  let installResolved = true;
+  try { await installPromise; } catch { installResolved = false; }
+  if (installResolved) {
+    let activatePromise = Promise.resolve();
+    handlers.activate({ waitUntil: (promise) => { activatePromise = Promise.resolve(promise); } });
+    await activatePromise;
+  }
+  return { installResolved, skipWaitingCalls, optionalAttempts, deleted };
+}
+
+const coreMiss = await simulateSwInstall({ failCore: true });
+assert(!coreMiss.installResolved, "sw core miss must reject install");
+assert(coreMiss.skipWaitingCalls === 0, "sw core miss must not skip waiting");
+assert(coreMiss.deleted.length === 0, "sw core miss must preserve the active Hazama caches");
+const optionalMiss = await simulateSwInstall({ failOptional: true });
+assert(optionalMiss.installResolved && optionalMiss.skipWaitingCalls === 1,
+  "sw optional visual miss should keep the complete core install usable");
+assert(optionalMiss.optionalAttempts > 0, "sw optional precache path should be exercised");
+assert(optionalMiss.deleted.includes("hazama-pwa-e30-static") && optionalMiss.deleted.includes("hazama-pwa-e30-runtime"),
+  "sw successful install should retire old Hazama caches");
+assert(optionalMiss.deleted.includes("hazama-pwa-e32-static"),
+  "sw successful install should retire the immediately previous Hazama cache");
+assert(!optionalMiss.deleted.includes("music-cache"), "sw must not delete non-Hazama caches");
 
 // アイコン/アセット実体
 for (const a of ["icons/icon-96.png", "icons/icon-192.png", "icons/icon-512.png", "icons/icon-512-maskable.png", "icons/apple-touch-icon.png", "assets/hazama-descent-key.webp"]) nonEmpty(a);

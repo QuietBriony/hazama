@@ -14,6 +14,7 @@ Hazama は、沈むほど戻りにくい「降下する対話」の没入型静�
 - `assets/hazama-descent-key.webp` : キービジュアル（E29〜: base=surface。`hazama-descent-{drift,bottom,surfaced,omega}.webp` の4枚が深度/終端で差し替わる「降下の弧」・`og-card.jpg` は共有 OG カード）
 - 検証: `scripts/hazama-check.mjs`（`autonomy-docs` ＋ `build-consistency` の2本）
 - 制作候補: `docs/BLENDER-AUTHORING.md`（WorkerPC Blender 5.2をrepo外の静止画制作実行器に限定。runtime非依存）
+- 感覚統合: `docs/SENSORY-RESPONSE-CANDIDATE.md`（E31 production governor、本編未配線のSensory Frame＋native Web Audio試聴lab）
 
 > 旧 forward 実装（Gate Run 資源ゲーム・Music ブリッジ・v2.x 系）と `slice/` 重複・別プレビュー repo は
 > 整理・撤去済み。履歴は git に保全（ロールバック: `f8763f2` 没入初版 / `7d5def9` forward v2.45 /
@@ -245,6 +246,23 @@ Codex / Claude Code が同じ順番で作業を継続するための薄いエン
 - **進化 E30（2026-07・OG 堅牢化）**: og:image の先頭を 1200×630 JPG（`assets/og-card.jpg`・width/height 宣言）に
   ＝webp を読まない WhatsApp/旧クライアントでの共有プレビュー欠落を防ぐ。webp/png は後続フォールバックで併記。
   og-card は E29 hero から再生成し LP と共有。runtime 挙動不変・smoke 契約5件（`?v=e30`）
+- **進化 E31（2026-08・Sensory governor）**: 既存の単一Web Audioを保ったまま、coarse pointerは
+  light budget、reduced-motionは持続音なしへ。master compressor、hidden suspend＋明示再開、pagehide disposeを追加。
+  新verb・外部音源・dependency・storage/schema変更なし。2026-08-02にproduction採用を人間が明示承認（`?v=e31`）
+- **進化 E32（2026-08・release packet polish）**: 表紙にload/failure statusを出し、装飾タイトルの重複読み上げと
+  enter後もaccessibility treeへ残る不可視表紙を解消。旧PWA cacheからの初回更新は新SW takeover後にruntimeを読み、
+  以後のversion付きassetはexact cacheに固定。core precacheが欠ける更新はactivateせず旧offline shellを温存する。
+  Sensory Frame smokeを単一checkへ収録し、退役済みcheck helperも整理。
+  route・storage・depths schema・音色は不変（`?v=e32`）。
+- **進化 E33（2026-08・closeout polish）**: `hidden`な音chipを`.hz-chip`の`display:inline-flex`が表紙下へ
+  漏らしていたCSS競合を解消し、「沈む」前は描画・focus対象の双方から確実に除外。短い画面／周回後の多択は
+  選択帯だけをscroll可能にし、起動失敗は高コントラストな「再試行」操作から回復可能にした。装飾ゲージの
+  戻り道・認識・観測者は、値が変わった時だけ単一live regionへ要約。inline boot構文とboot/runtime/SWのversion一致も
+  固定値に依存しないsmoke契約へした。route・storage・depths schema・音色は不変（`?v=e33`）。
+- **進化 E34（2026-08・PWA更新handoff）**: 旧SWからの初回更新で旧CSSと新JSが混在する経路を塞ぎ、
+  新SW takeover後はゲーム開始前の入口で一度だけ自動reloadしてCSS/JSを同版へ揃える。fresh/current版はreloadせず、
+  route・storage・depths schema・音色は不変（`?v=e34`）。E31→E34はworking treeで検証済みのrelease packetで、
+  commit / push / 公開反映は未実施
 
 ## Status / Rules
 

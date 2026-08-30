@@ -19,6 +19,89 @@ Hazama 自律開発 session の追記専用ログ。
 
 ---
 
+## 2026-08-30 — E34 PWA更新handoff（旧CSS＋新JS混在の解消）
+- agent      : Codex＋read-only監査agent 3系統
+- goal       : E31→E33 release packetの最終監査で見つかった、旧E30 SWからの初回更新だけ旧CSSと新JSが混在する経路を閉じる
+- shipped    :
+  - `index.html`: 旧controllerからE34へtakeoverした時は同一navigationでruntimeを開始せず、ゲーム開始前の入口で一度だけ自動reload。fresh load／現行E34 controllerでは従来どおり即runtime開始
+  - `scripts/build-consistency-smoke.mjs`: old-controller経路がreloadし、同一navigationで`startRuntime`しない契約を追加
+  - `index.html` / `slice.js` / `sw.js`: runtime/PWAを`e34`へ同期。route・`hazama_spiral_v1`・depths schema・音色は不変
+- checks     : `node --check`（slice/SW/build-consistency）PASS／`hazama-check` 2 PASS / 0 FAIL / 0 SKIP／`git diff --check` PASS。実PlaywrightでE30 controller＋E30 CSSを保持したoriginへE34を差し替え、試験navigation 1回＋handoff自動reload 1回で安定（追加loopなし）。最終controller/CSS/JSは全てE34、表紙audio chip `display:none`、入口有効、console error/warning 0
+- backlog    : HZ-BL-015はE34 working tree検証済みの`ready`を維持。`done`／公開済みにはしない
+- next       : 明示指示があればE31→E34 packetをgit反映。その後はHZ-BL-002の5〜8分taste passと端末固有の耳、HZ-BL-001の実機PWA install/offlineを人間が確認
+- blockers   : commit / push / releaseは未指示。HZ-BL-001 / HZ-BL-002 / HZ-BL-012はhuman-gate
+- note       : update検証用のHTTP server／browser sessionは終了。repo内に生成されたPlaywright作業物はrepo外の一時ディレクトリへ退避済み
+
+## 2026-08-29 — E33 closeout polish（回復導線・短画面・進行a11y）
+- agent      : Codex＋read-only監査agent 3系統
+- goal       : E31→E32 release packetを実画面で再監査し、世界観やpublic contractを動かさずcloseout blockerを閉じる
+- shipped    :
+  - `slice.css`: `.hz-chip[hidden]`を明示して、表紙下へ漏れていた音chipを描画・focus対象から除外
+  - `slice.css`: 短いviewport／周回後の多択だけ`#choices`内部を縦scroll可能にし、通常2択の高さと見えは維持
+  - `index.html` / `slice.js` / `slice.css`: 起動・depth読込失敗を高コントラストなstatus＋有効な「再試行」へ変え、standalone PWAでも同一画面からreload回復可能に
+  - `index.html` / `slice.js`: 装飾gaugeは`aria-hidden`のまま、戻り道・認識・観測者を単一のpolite/atomic live regionへ値変化時だけ要約。次の本文開始時は遅延中の旧要約を破棄
+  - `scripts/build-consistency-smoke.mjs`: inline bootを`vm.Script`で構文検証し、boot/runtime/SWのversionを固定値なしで照合。retry・hidden・短画面・3 rendererのa11y要約契約も固定
+  - `index.html` / `slice.js` / `sw.js`: runtime/PWAを`e33`へ同期。route・`hazama_spiral_v1`・depths schema・音色は不変
+- checks     : `node --check`（slice/check/SW）PASS／`audio-governor-smoke` PASS／`sensory-frame-smoke` PASS／`hazama-check` 2 PASS / 0 FAIL / 0 SKIP／`git diff --check` PASS。実Chrome fresh originでdesktop表紙→最初の択、320×480通常2択（clip/不要scrollなし）、cycle3 Aの5択（pointer/Tab＋Enterで最下択からB_other到達）、depths JSON 404→「再試行」→復旧、進行SR要約の値一致・重複なしをPASS。実ブラウザwarning/errorなし
+- backlog    : HZ-BL-015はE33 working tree検証済みの`ready`を維持。`done`／公開済みにはしない
+- next       : 明示指示があればE31→E33 packetをgit反映。その後はHZ-BL-002の5〜8分taste passと端末固有の耳、HZ-BL-001の実機PWA install/offlineを人間が確認
+- blockers   : git反映は未指示。HZ-BL-001 / HZ-BL-002 / HZ-BL-012はhuman-gate
+- note       : commit / push / releaseは未実施。untrackedのcandidate doc・smoke 2本・`tools/sensory/`も同じpacketの構成物で、将来git反映する際は除外しない
+
+## 2026-08-29 — E32 release packet polish（入口a11y・cache・単一check整合）
+- agent      : Codex＋read-only監査agent 3系統
+- goal       : E31 governor working treeを推測の見た目変更なしで磨き、公開前に残っていた入口・cache・検証記録の穴を閉じる
+- shipped    :
+  - `index.html` / `slice.js`: 表紙にvisibleなload/failure statusと`aria-busy`を追加。装飾タイトルを`aria-hidden`、降下後の不可視表紙を`inert`＋`aria-hidden`へ
+  - `index.html` / `slice.js` / `sw.js`: 既存E31 cacheが旧JSを返す実ブラウザ再現を受け、runtime/PWAを`e32`へ同期。旧controller時は新SW takeover後にruntimeを読み、以後はversion付きassetをexact-match cache。core precacheはatomicにし、欠損時はactivate／旧cache削除を行わない
+  - `slice.js`: 復元・描画・click listener配線後だけ入口を有効化し、例外時はdisabledへ戻してgate live regionだけで失敗を通知
+  - `scripts/build-consistency-smoke.mjs`: `sensory-frame-smoke`を単一checkへ収録し、入口a11y契約も固定
+  - `scripts/hazama-check.mjs` / `docs/autonomy/browser-smoke-fallback.md`: 退役済みnetwork helperを除去し、現行script一覧を修正
+  - in-app browser: desktopと390×844／320×568を確認。横overflowなし、択80px高、最初の択へfocus着地、enter後のinert/aria-hiddenを確認
+  - in-app browser PWA matrix: 同一originでE30 SW/cacheを保持したまま配信物だけE32へ差し替え、1 navigation内でE32 runtimeへtakeover（追加reloadなし）。必須`slice.js`を404にした失敗注入ではtakeoverせず入口disabled／旧cache温存、復旧後はE32へ移行。E32再訪はruntime 1本・loopなし、server停止後のoffline reloadから最初の択までPASS
+- checks     : `node --check`（slice/check/SW）PASS／`audio-governor-smoke` PASS／`sensory-frame-smoke` PASS／`hazama-check` 2 PASS / 0 FAIL / 0 SKIP（SW VMでcore miss reject・optional miss許容・非Hazama cache温存を含む）／`git diff --check` PASS／E30→E32 SW normal・failure recovery・offline browser PASS
+- backlog    : HZ-BL-015はproduction採用承認＋E32 working tree検証済みの`ready`へ整合。commit/push/release済みとは扱わない
+- next       : 明示指示があればE32 packetをgit反映。その後、HZ-BL-002の5〜8分taste passをmobile実機の耳（音量・疲労感・hide→明示再開）と合わせ、PWA install/offlineもhuman確認
+- blockers   : git反映は未指示。端末固有の音とPWA install/offlineはhuman-gate
+- note       : 2026-08-02記録の「production merge」は人間の採用承認を指す過去表現で、実際のcommit / push / 公開反映を意味しない
+
+## 2026-08-02 — E31 Sensory governor production採用
+- agent      : Human＋Codex＋read-only監査agent 2系統
+- goal       : 検証済みE31 candidateをmasterへmergeし、静的Web本番としてcloseする
+- shipped    :
+  - ユーザーが`codex/hazama-sensory-governor`のproduction mergeを明示承認
+  - 既存の単一`Audio`へmobile light／reduced-motion static、compressor、hidden suspend＋明示再開、pagehide disposeだけを統合
+  - E31 version/PWA同期と、tools-only Sensory Frame／native Web Audio試聴labを同じrelease packetへ収録
+- checks     : `node --check slice.js` PASS／`audio-governor-smoke` PASS／`sensory-frame-smoke` PASS／`hazama-check` 2 PASS / 0 FAIL / 0 SKIP／`git diff --check` PASS／route・storage key・depths schema不変／監査blockerなし
+- backlog    : HZ-BL-015 done（2026-08-02 production採用承認）
+- next       : productionをmobile実機で観察し、端末固有の音量・疲労感に問題が出た場合だけ別itemでnarrow tune
+- blockers   : なし。内蔵browserのlocalhost許可拒否で実画面QAは未実施だが、ユーザーはその状態を含めmergeを明示承認
+
+## 2026-08-02 — E31 Sensory governor candidate branch適用
+- agent      : Codex＋read-only監査agent 3系統
+- goal       : tools-only Sensory Responseを、既存音色を守ったproduction governorとしてnarrow統合する
+- shipped    :
+  - HZ-BL-015をwip claim。`docs/SENSORY-RESPONSE-CANDIDATE.md`へE31最小範囲を確定
+  - 初回は既存`Audio` singleton内だけでmobile tier、compressor、visibility suspend/明示再開、pagehide disposeを行い、新verb・二重context・外部依存は見送る
+  - 隔離candidateで実装した`tools/sensory/e31-sensory-governor.patch`を、ユーザーが作成した`codex/hazama-sensory-governor`へ適用。masterは未変更
+- checks     : branch上で`node --check slice.js` PASS／`audio-governor-smoke` PASS／`sensory-frame-smoke` PASS／`hazama-check` 2 PASS / 0 FAIL / 0 SKIP／`git diff --check` PASS／read-only再監査blockerなし。内蔵browserのlocalhost許可拒否により実画面mobile QAはSKIP
+- backlog    : HZ-BL-015 `wip — Codex 2026-08-02（E31 candidate branch適用・自動検証済み／mobile実機の耳gate待ち）`
+- next       : 同一Wi-Fiのmobile実機で表示、音量、疲労感、hide→明示再開を確認し、このcandidateの採否を人間が判断
+- blockers   : コードblockerなし。音の体感と端末差はhuman-gateのため、確認前にmergeしない
+
+## 2026-08-02 — Sensory Response tools-only candidate（本編未配線）
+- agent      : Codex
+- goal       : Three.js browser-game事例とMusic Stackの設計知から、Hazamaの静的runtimeと内製Web Audio境界を守った最小の感覚統合candidateを作る
+- shipped    :
+  - `docs/SENSORY-RESPONSE-CANDIDATE.md`: Sensory Frame v1、production governor、音の動詞、負荷tier、Music/Three.js/Blender境界、production採用gate
+  - `tools/sensory/hazama-sensory-frame.mjs`: depth/dread/density/axis/phase/seed/tierを決定論的・immutableなaudio/visual budgetへ翻訳する純粋モデル
+  - `tools/sensory/sensory-audio-lab.{html,mjs}`: native Web Audioだけのスマホ優先試聴面。浅部/深部/浮上/Ωのquick scene、safe-area、48px以上の操作、mobile light既定、sticky停止、compressor guardrail、visibility suspend、明示停止/破棄、6 verb
+  - `scripts/sensory-frame-smoke.mjs`: clamp、決定論、単調関係、tier/reduced-motion、quick scene同期、coarse pointer light既定、immutable、依存不在を検証
+- checks     : sensory-frame smoke PASS／autonomy-docs PASS／build-consistency PASS／`git diff --check` PASS。LAN IPv4経由でHTML/module HTTP 200。内蔵browser backend 0件のためスマホ幅の実描画はSKIPし、実機human gateへ
+- backlog    : HZ-BL-015をP2 open（tools-only candidate / human試聴待ち）として追加
+- next       : 人間が同一Wi-Fiのスマホlabで4場面を聴き、残すverbを選んだ後だけ専用runtime branchで`slice.js`へnarrow統合
+- blockers   : 音色・音量・疲労感はhuman-gate。現sandboxは`.git` read-onlyでcandidate branch作成不可のため、production runtimeは無変更
+
 ## 2026-07-24 — Hazama Blender生成器の5.2 compositor narrow compatibility patch
 - agent      : Codex
 - goal       : ユーザー承認後、前sessionで検出した `Scene.node_tree` 差分だけを修正し、5.2共通制作runtime候補でHazama固有生成器をcompositor込み完走させる

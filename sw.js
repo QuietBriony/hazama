@@ -2,22 +2,28 @@
    Hazama 狭間 (root = 没入版/逆統合) — Service Worker
    - root スコープ /hazama/ で動作（相対パスのみ）。
    - HTML と depths-shell.json は network-first（デプロイ伝播を速く）。
-   - 同一オリジン静的アセットは cache-first（version query は無視）。
+   - 同一オリジン静的アセットは exact-version cache-first。
    - cache prefix=hazama-pwa- ＝旧 forward 版 cache(hazama-pwa-v2.45 等)を activate で掃除し更新。
 ========================================================= */
 
-const VERSION = "hazama-pwa-e30";
+const VERSION = "hazama-pwa-e34";
+const RELEASE = VERSION.replace("hazama-pwa-", "");
 const CACHE_PREFIX = "hazama-pwa-";
 const STATIC_CACHE = `${VERSION}-static`;
 const RUNTIME_CACHE = `${VERSION}-runtime`;
 
-const PRECACHE_URLS = [
+// runtime shellは原子的に更新する。coreが一つでも欠けたらinstallを失敗させ、
+// 現在activeなHazama worker/cacheを温存する。視覚assetだけはbest-effort。
+const CORE_PRECACHE_URLS = [
   "./",
   "index.html",
-  "slice.css",
-  "slice.js",
+  `slice.css?v=${RELEASE}`,
+  `slice.js?v=${RELEASE}`,
   "depths-shell.json",
-  "manifest.webmanifest",
+  "manifest.webmanifest"
+];
+
+const OPTIONAL_PRECACHE_URLS = [
   "icons/icon-96.png",
   "icons/icon-192.png",
   "icons/icon-512.png",
@@ -34,11 +40,13 @@ self.addEventListener("install", (event) => {
   event.waitUntil(
     caches.open(STATIC_CACHE)
       .then((cache) =>
-        Promise.all(
-          PRECACHE_URLS.map((url) =>
-            cache.add(url).catch((err) => {
-              console.warn("[Hazama slice SW] precache miss:", url, err);
-            })
+        cache.addAll(CORE_PRECACHE_URLS).then(() =>
+          Promise.all(
+            OPTIONAL_PRECACHE_URLS.map((url) =>
+              cache.add(url).catch((err) => {
+                console.warn("[Hazama slice SW] precache miss:", url, err);
+              })
+            )
           )
         )
       )
@@ -120,7 +128,7 @@ self.addEventListener("fetch", (event) => {
 
   if (url.origin === self.location.origin) {
     event.respondWith(
-      matchCachedRequest(request, { ignoreSearch: true }).then((cached) => {
+      matchCachedRequest(request).then((cached) => {
         if (cached) return cached;
         return fetch(request).then((response) => putIfOk(STATIC_CACHE, request, response));
       })

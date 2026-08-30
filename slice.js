@@ -140,7 +140,15 @@
   const sceneEl = $("scene");
   // E6(監査): aria-live(polite) の #scene は reveal 中に行ごと append すると SR が過多読み上げになる。
   // reveal 開始で aria-busy=true、確定(choices 表示)で false＝SR は1ノードを一括で読む。
-  const setBusy = (b) => { if (sceneEl) sceneEl.setAttribute("aria-busy", b ? "true" : "false"); };
+  let a11yStateTimer = 0;
+  const setBusy = (b) => {
+    if (sceneEl) sceneEl.setAttribute("aria-busy", b ? "true" : "false");
+    // E33: 次の本文が始まったら、直前choicesから遅延中の進行要約を破棄する。
+    if (b && a11yStateTimer) {
+      window.clearTimeout(a11yStateTimer);
+      a11yStateTimer = 0;
+    }
+  };
   const choicesEl = $("choices");
   const sinkFill = $("sink-fill");
   const returnPathsEl = $("return-paths");
@@ -744,6 +752,24 @@
     }
   }
 
+  // E33: 視覚ゲージは装飾のまま保ち、同じ進行値を一つのlive regionへ要約する。
+  // sceneの本文と同時に多重読み上げしないよう、choices確定後に値が変わった時だけ遅延更新。
+  let a11yStateText = "";
+  function queueA11yState() {
+    const el = $("a11y-state");
+    if (!el) return;
+    const need = ATTUNE.omegaThreshold;
+    const lit = Math.min(Math.round(state.attunement || 0), need);
+    const next = `戻り道 ${state.returnPaths}本。認識 ${lit}/${need}${isAttuned() ? "、合致" : ""}。観測者 ${Math.max(1, state.observer)}。`;
+    if (next === a11yStateText) return;
+    window.clearTimeout(a11yStateTimer);
+    a11yStateTimer = window.setTimeout(() => {
+      a11yStateTimer = 0;
+      a11yStateText = next;
+      el.textContent = next;
+    }, 260);
+  }
+
   // A4: phase 跨ぎの句読点（一度だけの強い破断）。深くなる方向の跨ぎでだけ呼ぶ。
   //  - body.phase-break を 900ms（タイマーで除去・多重発火は先勝ち＝走行中は撃ち直さない）。
   //  - 既存バースト機構を借りる: Glitch.hardBreak() が glitch-hard＋leak-on（--leak-rgb はランダム）を
@@ -1039,6 +1065,7 @@
     // ボタンを積んで scene が縮んだ“後”に最新行を底へ。重なりはレイアウトで防止済み、
     // ここは「最後の行を選択肢の真上に見せる」ための追従（ユーザーが上に居れば奪わない）。
     setBusy(false);              // E6: 本文＋選択肢が出揃った＝SR は1ノードを一括で読む
+    queueA11yState();            // E33: 本文live regionの後に、変化した進行値だけを一度読む
     Follow.stick();
   }
 
@@ -1125,6 +1152,7 @@
         if (i === 0 && document.activeElement === document.body) b.focus({ preventScroll: true });
       }, REDUCED ? 0 : 120 + i * 150));
     setBusy(false);              // E6: 本文＋エコー門が出揃った
+    queueA11yState();            // E33: 門が確定してから進行値を一度だけ読む
     Follow.stick();
   }
 
@@ -1328,6 +1356,7 @@
         if (i === 0 && document.activeElement === document.body) b.focus({ preventScroll: true });
       }, REDUCED ? 0 : 200 + i * 160));
     setBusy(false);              // E6: 縁が出揃った
+    queueA11yState();            // E33: 結末本文と競合させず、最後の進行値を読む
     Follow.stick();
   }
 
@@ -1381,14 +1410,25 @@
   //  - 圧(dread)で鼓動が速く・重く。core は描かない＝音でも"解決音"は鳴らさない。
   //  - below 周回ごとに setColor(seed) で detune/うねりを微妙にずらす＝底なしの質感差。
   const Audio = (() => {
-    let ctx = null, master = null, filter = null, dryGain = null, conv = null, wetGain = null;
+    let ctx = null, master = null, compressor = null, filter = null, dryGain = null, conv = null, wetGain = null;
     let lfo = null, lfoGain = null, drones = [], pulseTimer = null, on = false, playing = false;
+    let suspendedByVisibility = false;
     // depth=深度(rank/沈下の濃い方・0..1) / dread=圧(0..1) / density=観測者の多声(0..1)。
     // depth.html のリアクティブ設計（深さ→音域/cutoff/残響、多声→密度、圧→不協和/鼓動）を
     // 同一document の内製エンジンへ畳み込んだ信号。menace=浅は馴染む/深で威圧。
     let cur = { depth: 0, dread: 0, density: 0 }, colorSeed = 0, baseCents = 0;
     let axisCents = 0, axisCut = 0, axisWobble = 0;   // E21: 幹ごとの音の軸色オフセット（fail-safe=0=従来の地）
     const supported = () => !!(window.AudioContext || window.webkitAudioContext);
+    // E31: desktopの既存音は維持し、coarse pointerだけ持続音/IR budgetを下げる。
+    // reduced-motionは自動drone/pulseを作らず、実手勢のtransientだけを残す。
+    const AUDIO_BUDGETS = Object.freeze({
+      full:   Object.freeze({ partials: 6, impulseSeconds: 2.8, wetScale: 1, pulse: true }),
+      light:  Object.freeze({ partials: 3, impulseSeconds: 0.8, wetScale: 0.45, pulse: true }),
+      static: Object.freeze({ partials: 0, impulseSeconds: 0, wetScale: 0, pulse: false })
+    });
+    const coarsePointer = !!window.matchMedia && window.matchMedia("(pointer: coarse)").matches;
+    const audioTier = REDUCED ? "static" : coarsePointer ? "light" : "full";
+    const audioBudget = AUDIO_BUDGETS[audioTier];
 
     // 倍音: ratio=基音比, base=常時gain, bloom=深度で開く量, diss=不協和(dread で開く)
     const PARTIALS = [
@@ -1416,25 +1456,33 @@
       ctx = new C();
       master = ctx.createGain(); master.gain.value = 0.0001;
       master.gain.setTargetAtTime(0.26, ctx.currentTime + 0.05, 0.8);
-      master.connect(ctx.destination);
+      // E31: guardrail。音圧を稼がず、既存layerが重なった瞬間のpeakだけを受ける。
+      compressor = ctx.createDynamicsCompressor();
+      compressor.threshold.value = -18; compressor.knee.value = 12; compressor.ratio.value = 4;
+      compressor.attack.value = 0.006; compressor.release.value = 0.25;
+      master.connect(compressor); compressor.connect(ctx.destination);
       filter = ctx.createBiquadFilter(); filter.type = "lowpass"; filter.frequency.value = 1700; filter.Q.value = 0.8;
       dryGain = ctx.createGain(); dryGain.gain.value = 0.85;
       filter.connect(dryGain); dryGain.connect(master);
       // 合成IR の残響（"空間"）。wet は深いほど増える。
-      conv = ctx.createConvolver(); conv.buffer = makeImpulse(2.8, 2.6);
-      wetGain = ctx.createGain(); wetGain.gain.value = 0.0001;
-      filter.connect(conv); conv.connect(wetGain); wetGain.connect(master);
+      if (audioBudget.impulseSeconds > 0) {
+        conv = ctx.createConvolver(); conv.buffer = makeImpulse(audioBudget.impulseSeconds, 2.6);
+        wetGain = ctx.createGain(); wetGain.gain.value = 0.0001;
+        filter.connect(conv); conv.connect(wetGain); wetGain.connect(master);
+      }
       // 共有 LFO：全 partial の detune を揺らす（うねり）。
-      lfo = ctx.createOscillator(); lfo.type = "sine"; lfo.frequency.value = 0.06;
-      lfoGain = ctx.createGain(); lfoGain.gain.value = 4; lfo.connect(lfoGain); lfo.start();
-      PARTIALS.forEach((spec) => {
-        const osc = ctx.createOscillator(), g = ctx.createGain();
-        osc.type = spec.type; osc.frequency.value = 70 * spec.ratio;
-        g.gain.value = spec.base; osc.connect(g); g.connect(filter);
-        lfoGain.connect(osc.detune); osc.start();
-        drones.push({ osc, g, spec });
-      });
-      on = true; playing = true; schedulePulse(); apply(true);
+      if (audioBudget.partials > 0) {
+        lfo = ctx.createOscillator(); lfo.type = "sine"; lfo.frequency.value = 0.06;
+        lfoGain = ctx.createGain(); lfoGain.gain.value = 4; lfo.connect(lfoGain); lfo.start();
+        PARTIALS.slice(0, audioBudget.partials).forEach((spec) => {
+          const osc = ctx.createOscillator(), g = ctx.createGain();
+          osc.type = spec.type; osc.frequency.value = 70 * spec.ratio;
+          g.gain.value = spec.base; osc.connect(g); g.connect(filter);
+          lfoGain.connect(osc.detune); osc.start();
+          drones.push({ osc, g, spec });
+        });
+      }
+      on = true; playing = true; suspendedByVisibility = false; schedulePulse(); apply(true);
       // 実手勢の中で resume()＝モバイルでも解禁される（同一document の context なので通る）。
       if (ctx.state !== "running") ctx.resume();
     }
@@ -1443,7 +1491,11 @@
     function toggle() {
       if (!on) return start();
       playing = !playing;
-      try { if (playing) ctx.resume(); else ctx.suspend(); } catch (e) {}
+      suspendedByVisibility = false;
+      try {
+        if (playing) { ctx.resume(); schedulePulse(); }
+        else { clearPulse(); ctx.suspend(); }
+      } catch (e) {}
     }
     function apply(now) {
       if (!on || !ctx) return;
@@ -1465,12 +1517,17 @@
       });
       filter.frequency.setTargetAtTime(Math.max(280, cutoff), t, slow);
       master.gain.setTargetAtTime(0.24 + d * 0.06, t, 0.8);
-      wetGain.gain.setTargetAtTime(0.1 + s * 0.34, t, 1.8);            // 深いほど広い残響
-      lfo.frequency.setTargetAtTime(0.05 + s * 0.1, t, 1.8);
-      lfoGain.gain.setTargetAtTime(3 + s * 10 + dens * 4 + (colorSeed % 5) + axisWobble, t, 1.8); // うねり幅（cents）＋E21 幹の揺れ
+      if (wetGain) wetGain.gain.setTargetAtTime((0.1 + s * 0.34) * audioBudget.wetScale, t, 1.8); // 深いほど広い残響
+      if (lfo) lfo.frequency.setTargetAtTime(0.05 + s * 0.1, t, 1.8);
+      if (lfoGain) lfoGain.gain.setTargetAtTime(3 + s * 10 + dens * 4 + (colorSeed % 5) + axisWobble, t, 1.8); // うねり幅（cents）＋E21 幹の揺れ
+    }
+    function clearPulse() {
+      if (pulseTimer) clearInterval(pulseTimer);
+      pulseTimer = null;
     }
     function schedulePulse() {
-      if (pulseTimer) clearInterval(pulseTimer);
+      clearPulse();
+      if (!audioBudget.pulse || !on || !playing || document.hidden) return;
       pulseTimer = setInterval(() => beat(0.5), Math.max(440, Math.round(1150 - cur.dread * 680))); // 圧で鼓動が速い
     }
     function beat(amp) {
@@ -1557,10 +1614,40 @@
       g.gain.setTargetAtTime(0.0001, t + 2.8, 2.0);                  // ゆっくり吐く＝呼気
       o.connect(g); g.connect(filter); o.start(t); o.stop(t + 6.0);
     }
+    // E31: hiddenから勝手に鳴り直さない。再開は既存chipの実手勢だけ。
+    function suspendForVisibility() {
+      if (!on || !ctx || !playing) return false;
+      playing = false; suspendedByVisibility = true; clearPulse();
+      try { const pending = ctx.suspend(); if (pending && pending.catch) pending.catch(() => {}); } catch (e) {}
+      return true;
+    }
+    // E31: pagehide/BFCacheでも単一AudioContextを閉じ、次の実手勢で再生成可能にする。
+    function dispose() {
+      clearPulse();
+      const closing = ctx;
+      drones.forEach(({ osc, g }) => {
+        try { osc.stop(); } catch (e) {}
+        try { osc.disconnect(); g.disconnect(); } catch (e) {}
+      });
+      try { if (lfo) lfo.stop(); } catch (e) {}
+      try { if (lfo) lfo.disconnect(); if (lfoGain) lfoGain.disconnect(); } catch (e) {}
+      try { if (filter) filter.disconnect(); if (dryGain) dryGain.disconnect(); } catch (e) {}
+      try { if (conv) conv.disconnect(); if (wetGain) wetGain.disconnect(); } catch (e) {}
+      try { if (master) master.disconnect(); if (compressor) compressor.disconnect(); } catch (e) {}
+      ctx = null; master = null; compressor = null; filter = null; dryGain = null; conv = null; wetGain = null;
+      lfo = null; lfoGain = null; drones = []; on = false; playing = false; suspendedByVisibility = false;
+      try {
+        if (closing && closing.state !== "closed") {
+          const pending = closing.close(); if (pending && pending.catch) pending.catch(() => {});
+        }
+      } catch (e) {}
+    }
     return {
-      start, toggle, pulseOnce: (a) => beat(a), glitchHit, setAxis, breath,
+      start, toggle, pulseOnce: (a) => beat(a), glitchHit, setAxis, breath, suspendForVisibility, dispose,
       get on() { return on; },
       get playing() { return playing; }, // 鳴らす意図（チップ表示の正）
+      get suspendedByVisibility() { return suspendedByVisibility; },
+      get tier() { return audioTier; },
       setColor: (seed) => { colorSeed = seed; apply(false); },
       update: (depth, dread, density) => {
         const prev = cur.dread;
@@ -2093,19 +2180,29 @@
     const chip = $("audio-toggle");
     function label() {
       if (!chip) return;
-      chip.textContent = Audio.playing ? "♪ 鳴っている" : "♪ 鳴らす";
+      chip.textContent = Audio.suspendedByVisibility ? "♪ 再開" : Audio.playing ? "♪ 鳴っている" : "♪ 鳴らす";
       chip.setAttribute("aria-pressed", Audio.playing ? "true" : "false");
     }
     // 「沈む」タップ（実手勢・同一document）の中で呼ばれる＝ここで resume が通る。
     function startPrimary() { if (chip) chip.hidden = false; Audio.start(); label(); }
     function cycle() { Audio.toggle(); label(); }
+    document.addEventListener("visibilitychange", () => {
+      if (document.hidden && Audio.suspendForVisibility()) label();
+    });
+    window.addEventListener("pagehide", () => { Audio.dispose(); label(); });
+    window.addEventListener("pageshow", label);
     return { startPrimary, cycle };
   })();
 
   // ---------- 起動 ----------
   async function loadData() {
-    const res = await fetch("depths-shell.json?v=e30", { cache: "no-store" });
-    DATA = await res.json();
+    const res = await fetch("depths-shell.json?v=e34", { cache: "no-store" });
+    if (!res.ok) throw new Error(`depths-shell HTTP ${res.status}`);
+    const data = await res.json();
+    if (!data || typeof data !== "object" || !data.start || !data.nodes || !data.nodes[data.start]) {
+      throw new Error("depths-shell schema unavailable");
+    }
+    DATA = data;
   }
   // ---------- 動く表紙（R6：タイトルも state/seed に応じて動く・静止でない） ----------
   // ゲート表示中、背後に反転ガーデンを薄く宿し（gate 背景は半透明）、グリッジが時折タイトルを裂き、
@@ -2138,6 +2235,11 @@
     // E6(監査): enter 後はゲートボタンをタブ順から外す（不可視 opacity:0 のまま残ると
     // キーボードの Tab が最初の選択肢でなく見えないボタンへ着地し、focus が迷子になる）。
     const geBtn = $("gate-enter"); if (geBtn) geBtn.disabled = true;
+    // E32 polish: opacity 0 の表紙を accessibility tree からも退場させる。
+    // disabled → inert → aria-hidden の順で、押下直後の focus を不可視領域へ残さない。
+    gateEl.setAttribute("inert", "");
+    gateEl.setAttribute("aria-hidden", "true");
+    gateEl.setAttribute("aria-busy", "false");
     Spiral.consumeCycleBump();       // 前セッションで降下していた時だけ、ここで周回が一つ深まる
     applyCycleSkin();                // B4: consume 後の cycle で表紙スキンを取り直す
     buildReturnPaths();
@@ -2166,20 +2268,23 @@
   // garden(depth, dread, seed): A3 構図モード検証用＝seed を変えて #garden を直接描き直す。
   window.__hz = { go: renderNode, choose, state, isAttuned, edge: renderEdge, card: (a) => EdgeCard.draw(a == null ? isAttuned() : !!a), garden: (depth, dread, seed) => Garden.update(depth, dread, seed), get sink() { return sinkNorm(); }, get attunement() { return state.attunement; } };
 
-  // R4: PWA — slice をインストール/オフライン対応に。サブパス /hazama/slice/ スコープ（相対 sw.js）。
+  // R4: PWA — 単一buildをインストール/オフライン対応に。/hazama/ スコープ（相対 sw.js）。
   function registerSlicePWA() {
     if (!("serviceWorker" in navigator)) return;
-    window.addEventListener("load", () => {
-      navigator.serviceWorker.register("sw.js").then((reg) => {
+    const register = () => {
+      navigator.serviceWorker.register("sw.js?v=e34", { scope: "./", updateViaCache: "none" }).then((reg) => {
         if (typeof reg.update === "function") reg.update().catch(() => {});
       }).catch((err) => console.warn("[Hazama slice] SW register failed:", err));
-    });
+    };
+    // E32 boot loader may append this runtime after window.load while an older SW hands over.
+    if (document.readyState === "complete") register();
+    else window.addEventListener("load", register, { once: true });
   }
   registerSlicePWA();
 
   loadData().then(() => {
     const gb = $("gate-enter");
-    gb.disabled = false;
+    const gateNote = $("gate-note");
     // E1: 記憶（spiral 層）を読む。戻ってきた観測者には表紙が応える＝庭は前回の続きから組まれ、
     // 入口の言葉が変わる。周回の加算は enter（「沈む」の実タップ）まで保留。
     const returning = Spiral.load();
@@ -2206,8 +2311,28 @@
     // 「沈む」の実タップ＝同一document の手勢。この中で enter()→Audio.start()→resume() が走る
     // ＝モバイルで AudioContext を堅牢に解禁できる（cross-document iframe・全画面オーバーレイは廃止）。
     gb.addEventListener("click", enter, { once: false });
+    // すべての復元・描画・listener配線が成功してから、最後に入口をreadyへする。
+    if (gateNote) gateNote.textContent = "音あり推奨・片手で読める縦長";
+    gateEl.setAttribute("aria-busy", "false");
+    gb.disabled = false;
   }).catch((e) => {
-    $("scene").textContent = "深度データの読み込みに失敗しました。再読み込みしてください。";
+    const gb = $("gate-enter");
+    const gateNote = $("gate-note");
+    if (typeof window.__hazamaArmRetry === "function") {
+      window.__hazamaArmRetry("深度データを読み込めません。再試行してください。");
+    } else {
+      if (gateNote) {
+        gateNote.textContent = "深度データを読み込めません。再試行してください。";
+        gateNote.classList.add("is-error");
+      }
+      if (gb) {
+        const label = gb.querySelector("span");
+        if (label) label.textContent = "再試行";
+        gb.disabled = false;
+        gb.addEventListener("click", () => window.location.reload(), { once: true });
+      }
+      gateEl.setAttribute("aria-busy", "false");
+    }
     console.warn("[Hazama slice] load failed:", e);
   });
 })();
