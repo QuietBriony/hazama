@@ -53,49 +53,49 @@ if (bootScript) {
 assert(!html.includes("preview"), "production index.html should not say preview");
 for (const layer of ["hz-bg-garden", "hz-bg-mandala", "hz-glitch", "hz-scanline", "hz-vignette"]) has(html, layer, "immersive art layer");
 for (const el of ['id="scene"', 'id="choices"', 'id="gate-enter"', 'id="attune"', 'rel="manifest"']) has(html, el, "index element");
-has(html, 'id="gate" class="hz-gate" aria-busy="true"', "E32 gate load state");
-has(html, 'class="hz-gate-title" aria-hidden="true"', "E32 decorative title hidden from assistive tech");
-has(html, 'aria-describedby="gate-note"', "E32 entry audio/load description");
-has(html, 'id="gate-note" class="hz-gate-note" role="status" aria-live="polite"', "E32 visible gate load status");
-has(html, 'id="a11y-state" class="hz-sr-only" role="status" aria-live="polite" aria-atomic="true"', "E33 gauge state live summary");
-has(html, "window.__hazamaArmRetry = armRetry", "E33 shared boot/data retry handler");
-has(html, 'label.textContent = "再試行"', "E33 retry control label");
-has(html, "window.location.reload()", "E33 retry action reloads the static shell");
-has(html, 'navigator.serviceWorker.controller.scriptURL === expectedController', "E32 current-controller version guard");
-has(html, 'navigator.serviceWorker.addEventListener("controllerchange", onControllerChange)', "E32 old SW takeover wait");
+has(html, 'id="gate" class="hz-gate" aria-busy="true"', "E33 gate load state");
+has(html, 'class="hz-gate-title" aria-hidden="true"', "E33 decorative title hidden from assistive tech");
+has(html, 'aria-describedby="gate-note"', "E33 entry audio/load description");
+has(html, 'id="gate-note" class="hz-gate-note" role="status" aria-live="polite"', "E33 visible gate load status");
+has(html, 'id="a11y-state" class="hz-sr-only" role="status" aria-live="polite" aria-atomic="true"', "E34 gauge state live summary");
+has(html, "window.__hazamaArmRetry = armRetry", "E34 shared boot/data retry handler");
+has(html, 'label.textContent = "再試行"', "E34 retry control label");
+has(html, "window.location.reload()", "E34 retry action reloads the static shell");
+has(html, 'navigator.serviceWorker.controller.scriptURL === expectedController', "E33 current-controller version guard");
+has(html, 'navigator.serviceWorker.addEventListener("controllerchange", onControllerChange)', "E33 old SW takeover wait");
 const takeoverBody = (html.match(/const onControllerChange = \(\) => \{[\s\S]*?\n      \};/) || [""])[0];
-has(takeoverBody, "finish(() => window.location.reload())", "E34 old SW takeover reloads the complete shell");
-assert(!takeoverBody.includes("startRuntime"), "E34 old-controller navigation must not mix old CSS with current runtime");
-assert(!/<script\s+[^>]*src=["']slice\.js\?v=/i.test(html), "E32 runtime must wait for SW takeover instead of direct script load");
-has(js, 'gateEl.setAttribute("inert", "")', "E32 departed gate inert state");
-has(js, 'gateEl.setAttribute("aria-hidden", "true")', "E32 departed gate accessibility state");
+has(takeoverBody, "finish(() => window.location.reload())", "E35 old SW takeover reloads the complete shell");
+assert(!takeoverBody.includes("startRuntime"), "E35 old-controller navigation must not mix old CSS with current runtime");
+assert(!/<script\s+[^>]*src=["']slice\.js\?v=/i.test(html), "E33 runtime must wait for SW takeover instead of direct script load");
+has(js, 'gateEl.setAttribute("inert", "")', "E33 departed gate inert state");
+has(js, 'gateEl.setAttribute("aria-hidden", "true")', "E33 departed gate accessibility state");
 assert(js.indexOf('gb.addEventListener("click", enter') < js.indexOf('gb.disabled = false', js.indexOf("loadData().then")),
-  "E32 gate must enable only after click listener wiring");
+  "E33 gate must enable only after click listener wiring");
 const loadCatch = (js.match(/loadData\(\)\.then\([\s\S]*?\n  \}\);/) || [""])[0];
 has(loadCatch, 'window.__hazamaArmRetry("深度データを読み込めません。再試行してください。")',
-  "E33 failed depth load routes to retry control");
-has(loadCatch, "gb.disabled = false", "E33 fallback retry control is enabled");
-assert(!loadCatch.includes('$("scene").textContent'), "E32 failed boot must not duplicate the gate live announcement");
+  "E34 failed depth load routes to retry control");
+has(loadCatch, "gb.disabled = false", "E34 fallback retry control is enabled");
+assert(!loadCatch.includes('$("scene").textContent'), "E33 failed boot must not duplicate the gate live announcement");
 assert(/\.hz-chip\[hidden\]\s*\{[^}]*display:\s*none/.test(css),
-  "E33 hidden audio chip must not render or enter the focus order before descent");
+  "E34 hidden audio chip must not render or enter the focus order before descent");
 const gateErrorCss = (css.match(/\.hz-gate-note\.is-error\s*\{[^}]*\}/) || [""])[0];
-has(gateErrorCss, "font-size: 0.8rem", "E33 readable boot error size");
-has(gateErrorCss, "color: var(--warn)", "E33 contrasted boot error color");
+has(gateErrorCss, "font-size: 0.8rem", "E34 readable boot error size");
+has(gateErrorCss, "color: var(--warn)", "E34 contrasted boot error color");
 const choicesCss = (css.match(/\.hz-choices\s*\{[\s\S]*?\n\}/) || [""])[0];
 for (const contract of ["flex: 0 0 auto", "min-height: 0", "max-height: min(56dvh, 34rem)", "overflow-y: auto", "overscroll-behavior: contain"]) {
-  has(choicesCss, contract, `E33 short-viewport choices ${contract}`);
+  has(choicesCss, contract, `E34 short-viewport choices ${contract}`);
 }
-has(js, "function queueA11yState", "E33 gauge state summary renderer");
+has(js, "function queueA11yState", "E34 gauge state summary renderer");
 for (const renderer of ["renderChoices", "renderEchoChoices", "renderEdgeChoices"]) {
   const body = (js.match(new RegExp(`function ${renderer}\\([^)]*\\) \\{[\\s\\S]*?\\n  \\}`)) || [""])[0];
   assert((body.match(/queueA11yState\(\)/g) || []).length === 1,
-    `E33 gauge summary must run exactly once in ${renderer}`);
+    `E34 gauge summary must run exactly once in ${renderer}`);
 }
 assert((js.match(/^    queueA11yState\(\);/gm) || []).length === 3,
-  "E33 gauge summary must have exactly three renderer call-sites");
-has(js, "if (b && a11yStateTimer)", "E33 stale gauge summary cancellation on next scene");
-has(js, "戻り道 ${state.returnPaths}本。認識 ${lit}/${need}", "E33 gauge summary values");
-has(js, "window.__hazamaArmRetry", "E33 depth-load retry handoff");
+  "E34 gauge summary must have exactly three renderer call-sites");
+has(js, "if (b && a11yStateTimer)", "E34 stale gauge summary cancellation on next scene");
+has(js, "戻り道 ${state.returnPaths}本。認識 ${lit}/${need}", "E34 gauge summary values");
+has(js, "window.__hazamaArmRetry", "E34 depth-load retry handoff");
 
 // slice.js: 認識/Ωゲート(逆統合の核)＋二極終端＋認識インジケータ
 has(js, "function gainRecognition", "recognition gain");
@@ -286,7 +286,7 @@ const staticFetchBranch = (sw.match(/if \(url\.origin === self\.location\.origin
 assert(staticFetchBranch && !staticFetchBranch.includes("ignoreSearch"),
   "sw versioned static assets must use exact cache matches");
 
-// E32: core欠損時はinstallを失敗させ、旧Hazama cacheを消すactivateへ進ませない。
+// E33: core欠損時はinstallを失敗させ、旧Hazama cacheを消すactivateへ進ませない。
 // 画像・iconだけの欠損はbest-effortでinstallを通す。実network/filesystemは使わないVM検証。
 async function simulateSwInstall({ failCore = false, failOptional = false } = {}) {
   const handlers = {};
@@ -356,17 +356,35 @@ for (const st of ["drift", "bottom", "surfaced", "omega"]) {
 }
 has(html, 'class="hz-stage"', "E29 stage layer class");
 has(css, ".hz-stage {", "E29 stage layer style");
-has(css, 'body[data-phase="bottom"] .hz-stage[data-stage="bottom"]', "E29 depth crossfade rule");
-has(css, 'body.omega    .hz-stage[data-stage="omega"]', "E29 omega terminal rule");
+// E32: 文字列一致を整形非依存の regex に＋E29 の中核契約（base 退場・終端優先ガード・終端 filter）をロック。
+const hasRe = (re, label) => assert(re.test(css), `${label} missing: ${re}`);
+hasRe(/body:not\(\.surfaced\):not\(\.omega\)\[data-phase="bottom"\]\s+\.hz-stage\[data-stage="bottom"\]/, "E29 depth crossfade rule (terminal-guarded)");
+hasRe(/body:not\(\.surfaced\):not\(\.omega\)\[data-phase="drift"\]\s+\.hz-stage\[data-stage="drift"\]/, "E29 drift rule (terminal-guarded)");
+hasRe(/body\[data-phase="bottom"\]\s+\.hz-bg-descent\s*\{\s*opacity:\s*0/, "E29 base hidden while stage shows");
+hasRe(/body\.surfaced\s+\.hz-stage\[data-stage="surfaced"\]/, "E29 surfaced terminal rule");
+hasRe(/body\.omega\s+\.hz-stage\[data-stage="omega"\]/, "E29 omega terminal rule");
+hasRe(/body\.surfaced\s+\.hz-stage\[data-stage="surfaced"\]\s*\{[^}]*filter:\s*brightness/, "E32 surfaced terminal fixed filter");
+hasRe(/body\.omega\s+\.hz-stage\[data-stage="omega"\]\s*\{[^}]*filter:\s*brightness/, "E32 omega terminal fixed filter");
+// E31: overlay は帯域を奪わない（fetchpriority=low ×4・base の high は別途）
+assert((html.match(/class="hz-stage"[^>]*fetchpriority="low"/g) || []).length === 4,
+  "E32 all 4 stage overlays must carry fetchpriority=low");
 
 // E30: OG 堅牢化＝先頭 og:image は 1200×630 JPG（webp 非対応クライアント欠落対策）＋寸法宣言。
 // og-card.jpg は LP と共有（中身は E29 hero 由来で再生成済み）。webp/png は後続フォールバックで残す。
+// E32: indexOf の素朴比較（body の img でも成立し得た）を og:image 群のパースに置換＝契約を実体でロック。
 nonEmpty("assets/og-card.jpg");
-has(html, "assets/og-card.jpg", "E30 og-card referenced in index");
+const ogImages = [...html.matchAll(/property="og:image"\s+content="([^"]+)"/g)].map((m) => m[1]);
+assert(ogImages.length === 3, `E30 og:image count must stay 3 (got ${ogImages.length})`);
+assert(ogImages[0] === "https://quietbriony.github.io/hazama/assets/og-card.jpg",
+  "E30 first og:image must be the 1200x630 JPG (legacy/WhatsApp parsers take only the first)");
+assert(ogImages.some((u) => u.endsWith("hazama-descent-key.webp")), "E30 webp og:image fallback retained");
+assert(ogImages.every((u) => u.startsWith("https://quietbriony.github.io/hazama/")), "E30 og:image must be absolute URLs");
 has(html, 'property="og:image:width"', "E30 og:image width declared");
 has(html, 'property="og:image:height"', "E30 og:image height declared");
-assert(html.indexOf("assets/og-card.jpg") < html.indexOf("assets/hazama-descent-key.webp"),
-  "E30 og-card must precede webp og:image (first image wins on legacy parsers)");
+const wIdx = html.indexOf('property="og:image:width"');
+assert(wIdx > html.indexOf(ogImages[0]) && wIdx < html.indexOf(ogImages[1]),
+  "E30 og:image:width/height must bind to the first og:image (declared between 1st and 2nd)");
+has(html, 'property="og:image:alt"', "E32 og:image alt declared");
 
 // depths-shell（本文データ）: start＋ノード数＋choice到達性
 let depths;

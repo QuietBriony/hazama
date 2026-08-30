@@ -82,17 +82,17 @@ Hazama 自律開発の作業待ち行列。
 - scope    : runtime(audio) / verify
 - agent    : either
 - human-gate: approved — 2026-08-02にユーザーがproduction mergeを明示承認（実機試聴済みとの記録ではない）
-- status   : ready — E31 production採用承認＋E34 PWA handoff polish自動検証済み（git反映は明示指示待ち）
+- status   : done — E31 production採用・公開済み。E33〜E35 follow-upも自動検証し、2026-08-30の明示承認で公開
 - source   : Three.js browser-game事例＋Music Stack設計harvest（2026-08-02）
 - detail   : `docs/SENSORY-RESPONSE-CANDIDATE.md` と `tools/sensory/` にSensory Frame純粋モデルと
   native Web Audio試聴labを置き、E31では既存の単一
   `Audio`にmobile light／reduced-motion static、compressor、visibility lifecycleだけをnarrow統合。
   Tone/CDN/sample/storage/通信なし。public route/storage/depths schemaは変更せず、version/PWAを同期。
-  E32 polishで表紙load status＋enter後inert/aria-hiddenを加え、Sensory Frame smokeも単一checkへ収録。
-  E33 closeout polishで、`hidden`な音chipがCSSの`display:inline-flex`により表紙へ漏れる競合を塞ぎ、
+  E33 polishで表紙load status＋enter後inert/aria-hiddenを加え、Sensory Frame smokeも単一checkへ収録。
+  E34 closeout polishで、`hidden`な音chipがCSSの`display:inline-flex`により表紙へ漏れる競合を塞ぎ、
   短画面の多択scroll、失敗時の再試行、視覚ゲージのSR要約を追加。inline bootの構文とversion handoffも
-  固定値に依存しないsmoke契約へした。E34では旧SW更新時の旧CSS＋新JS混在を、takeover後の入口reloadで防いだ。
-  採用判断済みだが、commit/push/releaseは別途の明示指示まで行わない。端末固有の音量差が見つかった場合だけ別itemでnarrow tuneする。
+  固定値に依存しないsmoke契約へした。E35では旧SW更新時の旧CSS＋新JS混在を、takeover後の入口reloadで防いだ。
+  公開済みE32（終端描画・OG修正）も保持。端末固有の音量差が見つかった場合だけ別itemでnarrow tuneする。
 
 ## Ready Prompts
 

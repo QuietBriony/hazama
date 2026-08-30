@@ -143,7 +143,7 @@
   let a11yStateTimer = 0;
   const setBusy = (b) => {
     if (sceneEl) sceneEl.setAttribute("aria-busy", b ? "true" : "false");
-    // E33: 次の本文が始まったら、直前choicesから遅延中の進行要約を破棄する。
+    // E34: 次の本文が始まったら、直前choicesから遅延中の進行要約を破棄する。
     if (b && a11yStateTimer) {
       window.clearTimeout(a11yStateTimer);
       a11yStateTimer = 0;
@@ -752,7 +752,7 @@
     }
   }
 
-  // E33: 視覚ゲージは装飾のまま保ち、同じ進行値を一つのlive regionへ要約する。
+  // E34: 視覚ゲージは装飾のまま保ち、同じ進行値を一つのlive regionへ要約する。
   // sceneの本文と同時に多重読み上げしないよう、choices確定後に値が変わった時だけ遅延更新。
   let a11yStateText = "";
   function queueA11yState() {
@@ -1065,7 +1065,7 @@
     // ボタンを積んで scene が縮んだ“後”に最新行を底へ。重なりはレイアウトで防止済み、
     // ここは「最後の行を選択肢の真上に見せる」ための追従（ユーザーが上に居れば奪わない）。
     setBusy(false);              // E6: 本文＋選択肢が出揃った＝SR は1ノードを一括で読む
-    queueA11yState();            // E33: 本文live regionの後に、変化した進行値だけを一度読む
+    queueA11yState();            // E34: 本文live regionの後に、変化した進行値だけを一度読む
     Follow.stick();
   }
 
@@ -1152,7 +1152,7 @@
         if (i === 0 && document.activeElement === document.body) b.focus({ preventScroll: true });
       }, REDUCED ? 0 : 120 + i * 150));
     setBusy(false);              // E6: 本文＋エコー門が出揃った
-    queueA11yState();            // E33: 門が確定してから進行値を一度だけ読む
+    queueA11yState();            // E34: 門が確定してから進行値を一度だけ読む
     Follow.stick();
   }
 
@@ -1356,7 +1356,7 @@
         if (i === 0 && document.activeElement === document.body) b.focus({ preventScroll: true });
       }, REDUCED ? 0 : 200 + i * 160));
     setBusy(false);              // E6: 縁が出揃った
-    queueA11yState();            // E33: 結末本文と競合させず、最後の進行値を読む
+    queueA11yState();            // E34: 結末本文と競合させず、最後の進行値を読む
     Follow.stick();
   }
 
@@ -2196,7 +2196,7 @@
 
   // ---------- 起動 ----------
   async function loadData() {
-    const res = await fetch("depths-shell.json?v=e34", { cache: "no-store" });
+    const res = await fetch("depths-shell.json?v=e35", { cache: "no-store" });
     if (!res.ok) throw new Error(`depths-shell HTTP ${res.status}`);
     const data = await res.json();
     if (!data || typeof data !== "object" || !data.start || !data.nodes || !data.nodes[data.start]) {
@@ -2235,7 +2235,7 @@
     // E6(監査): enter 後はゲートボタンをタブ順から外す（不可視 opacity:0 のまま残ると
     // キーボードの Tab が最初の選択肢でなく見えないボタンへ着地し、focus が迷子になる）。
     const geBtn = $("gate-enter"); if (geBtn) geBtn.disabled = true;
-    // E32 polish: opacity 0 の表紙を accessibility tree からも退場させる。
+    // E33 polish: opacity 0 の表紙を accessibility tree からも退場させる。
     // disabled → inert → aria-hidden の順で、押下直後の focus を不可視領域へ残さない。
     gateEl.setAttribute("inert", "");
     gateEl.setAttribute("aria-hidden", "true");
@@ -2272,11 +2272,11 @@
   function registerSlicePWA() {
     if (!("serviceWorker" in navigator)) return;
     const register = () => {
-      navigator.serviceWorker.register("sw.js?v=e34", { scope: "./", updateViaCache: "none" }).then((reg) => {
+      navigator.serviceWorker.register("sw.js?v=e35", { scope: "./", updateViaCache: "none" }).then((reg) => {
         if (typeof reg.update === "function") reg.update().catch(() => {});
       }).catch((err) => console.warn("[Hazama slice] SW register failed:", err));
     };
-    // E32 boot loader may append this runtime after window.load while an older SW hands over.
+    // E33 boot loader may append this runtime after window.load while an older SW hands over.
     if (document.readyState === "complete") register();
     else window.addEventListener("load", register, { once: true });
   }

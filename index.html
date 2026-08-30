@@ -9,8 +9,8 @@
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="Hazama" />
-  <!-- E4: リンク共有プレビュー（OG/Twitter）。og:image は絶対URL必須＝本番 Pages を指す。
-       webp 非対応のパーサ向けに png（icon-512）を二枚目として併記（先頭が優先される）。 -->
+  <!-- E4→E30: リンク共有プレビュー（OG/Twitter）。og:image は絶対URL必須＝本番 Pages を指す。
+       画像は三段: JPG(og-card) → hero webp → png(icon-512)。詳細は下の E30 コメント。 -->
   <meta property="og:type" content="website" />
   <meta property="og:title" content="Hazama 狭間" />
   <meta property="og:description" content="沈むほど戻りにくい。認識が合う者だけがΩへ潜る、没入の降下対話。" />
@@ -20,14 +20,16 @@
   <meta property="og:image" content="https://quietbriony.github.io/hazama/assets/og-card.jpg" />
   <meta property="og:image:width" content="1200" />
   <meta property="og:image:height" content="630" />
+  <meta property="og:image:alt" content="奈落の縁に立つフードの人影と、遠くの小さなランタンの灯" />
   <meta property="og:image" content="https://quietbriony.github.io/hazama/assets/hazama-descent-key.webp" />
   <meta property="og:image" content="https://quietbriony.github.io/hazama/icons/icon-512.png" />
   <meta name="twitter:card" content="summary_large_image" />
   <meta name="twitter:image" content="https://quietbriony.github.io/hazama/assets/og-card.jpg" />
+  <meta name="twitter:image:alt" content="奈落の縁に立つフードの人影と、遠くの小さなランタンの灯" />
   <link rel="manifest" href="manifest.webmanifest" />
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png" />
   <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png" />
-  <link rel="stylesheet" href="slice.css?v=e34" />
+  <link rel="stylesheet" href="slice.css?v=e35" />
 </head>
 <body data-phase="surface">
   <div class="hz-bg" aria-hidden="true">
@@ -35,10 +37,10 @@
     <!-- E29 降下の弧：base(surface) の上に深度/終端の写真層を重ね、既存 data-phase / body.surfaced|omega に
          opacity クロスフェード＝世界が「降りるほど溶け・縁で浮上/Ωに割れる」を1枚でなく段で描く。
          base が常に見える＝JS無効/reduced/初回ペイントで従来と同一（後方互換）。 -->
-    <img class="hz-stage" data-stage="drift"    src="assets/hazama-descent-drift.webp"    alt="" aria-hidden="true" decoding="async" />
-    <img class="hz-stage" data-stage="bottom"   src="assets/hazama-descent-bottom.webp"   alt="" aria-hidden="true" decoding="async" />
-    <img class="hz-stage" data-stage="surfaced" src="assets/hazama-descent-surfaced.webp" alt="" aria-hidden="true" decoding="async" />
-    <img class="hz-stage" data-stage="omega"    src="assets/hazama-descent-omega.webp"    alt="" aria-hidden="true" decoding="async" />
+    <img class="hz-stage" data-stage="drift"    src="assets/hazama-descent-drift.webp"    alt="" aria-hidden="true" decoding="async" fetchpriority="low" />
+    <img class="hz-stage" data-stage="bottom"   src="assets/hazama-descent-bottom.webp"   alt="" aria-hidden="true" decoding="async" fetchpriority="low" />
+    <img class="hz-stage" data-stage="surfaced" src="assets/hazama-descent-surfaced.webp" alt="" aria-hidden="true" decoding="async" fetchpriority="low" />
+    <img class="hz-stage" data-stage="omega"    src="assets/hazama-descent-omega.webp"    alt="" aria-hidden="true" decoding="async" fetchpriority="low" />
     <!-- 反転重森ガーデン（R6）：深く潜るほど"世界の輪郭が溶け"、サイバーパンク×重森三玲の
          枯山水（砂紋/石組/市松苔）が色相反転（自然色を180°反転＝不気味）して progressive に露出する。
          構図は分岐エンジンの信号（周回/到達深度/弾かれ履歴/ランク）= worldSeed で再生成。
@@ -94,11 +96,11 @@
   </div>
 
   <script>
-    // E34: 既存SWはversion queryを無視して旧CSS/runtimeを返し得るため、
+    // E35: 既存SWはversion queryを無視して旧CSS/runtimeを返し得るため、
     // controller takeover後は入口のまま一度reloadし、CSS/JSを同じ版で読む。fresh/current loadは待たせない。
     (() => {
-      const SW_URL = "sw.js?v=e34";
-      const RUNTIME_URL = "slice.js?v=e34";
+      const SW_URL = "sw.js?v=e35";
+      const RUNTIME_URL = "slice.js?v=e35";
       const expectedController = new URL(SW_URL, document.baseURI).href;
       const gate = document.getElementById("gate");
       const gateButton = document.getElementById("gate-enter");
