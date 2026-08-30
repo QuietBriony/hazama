@@ -52,6 +52,15 @@ Playwright は本リポジトリの必須依存ではなく、このファイル
 - [ ] 再度タップで再開する。
 - [ ] 一時停止・再開後もゲームの進行に支障がない（無害）。
 
+### 7. PWA 更新・offline
+
+- [ ] 旧版の Service Worker / cache を残した同一 origin へ新版を配信し、サイトデータを消さず1回だけ再読み込みする。
+- [ ] 表紙が「更新を確認中…」からreadyへ戻り、追加reloadなしで新版runtimeの「沈む」が機能する。
+- [ ] 更新中に必須runtimeを取得できない場合は入口をdisabledの失敗表示に留め、旧Hazama cacheを削除しない。配信復旧後のreloadで新版へ移行する。
+- [ ] そのまま再訪してruntimeが二重起動せず、更新loopも起きない。
+- [ ] 一度onlineで開いた後に静的サーバを止め、offline reloadから「沈む」→最初の択まで進める。
+- [ ] Hazama以外の同一origin cacheを削除していない。
+
 ## 記録
 
 手動確認の結果は session 内で `docs/autonomy/SESSION-LEDGER.md` への書き込みが
@@ -72,3 +81,5 @@ Playwright は本リポジトリの必須依存ではなく、このファイル
 - `scripts/hazama-check.mjs`
 - `scripts/autonomy-docs-smoke.mjs`
 - `scripts/build-consistency-smoke.mjs`
+- `scripts/audio-governor-smoke.mjs`（`build-consistency` から自動実行）
+- `scripts/sensory-frame-smoke.mjs`（`build-consistency` から自動実行）

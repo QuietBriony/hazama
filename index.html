@@ -29,7 +29,7 @@
   <link rel="manifest" href="manifest.webmanifest" />
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png" />
   <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png" />
-  <link rel="stylesheet" href="slice.css?v=e32" />
+  <link rel="stylesheet" href="slice.css?v=e35" />
 </head>
 <body data-phase="surface">
   <div class="hz-bg" aria-hidden="true">
@@ -73,6 +73,7 @@
       <div id="return-paths" class="hz-return-paths"></div>
       <div id="attune" class="hz-attune" hidden></div>
     </div>
+    <div id="a11y-state" class="hz-sr-only" role="status" aria-live="polite" aria-atomic="true"></div>
 
     <section id="scene" class="hz-scene" aria-live="polite"></section>
     <section id="choices" class="hz-choices"></section>
@@ -83,17 +84,91 @@
     <span id="status" class="hz-status"></span>
   </footer>
 
-  <div id="gate" class="hz-gate">
+  <div id="gate" class="hz-gate" aria-busy="true">
     <div class="hz-gate-inner">
       <h1 class="hz-sr-only">Hazama 狭間</h1>
-      <div class="hz-gate-title" data-text="Hazama">Hazama</div>
+      <div class="hz-gate-title" aria-hidden="true" data-text="Hazama">Hazama</div>
 
       <p class="hz-gate-sub">狭間（あわい）<br>沈むほど、戻り道は細くなる。</p>
-      <button id="gate-enter" class="hz-gate-enter" type="button" disabled><span>沈む</span></button>
-      <p class="hz-gate-note">音あり推奨・片手で読める縦長</p>
+      <button id="gate-enter" class="hz-gate-enter" type="button" aria-describedby="gate-note" disabled><span>沈む</span></button>
+      <p id="gate-note" class="hz-gate-note" role="status" aria-live="polite">深度を読み込み中…</p>
     </div>
   </div>
 
-  <script src="slice.js?v=e32"></script>
+  <script>
+    // E35: 既存SWはversion queryを無視して旧CSS/runtimeを返し得るため、
+    // controller takeover後は入口のまま一度reloadし、CSS/JSを同じ版で読む。fresh/current loadは待たせない。
+    (() => {
+      const SW_URL = "sw.js?v=e35";
+      const RUNTIME_URL = "slice.js?v=e35";
+      const expectedController = new URL(SW_URL, document.baseURI).href;
+      const gate = document.getElementById("gate");
+      const gateButton = document.getElementById("gate-enter");
+      const gateNote = document.getElementById("gate-note");
+      let runtimeStarted = false;
+      let retryArmed = false;
+
+      const armRetry = (message) => {
+        if (gateNote) {
+          gateNote.textContent = message;
+          gateNote.classList.add("is-error");
+        }
+        if (gate) gate.setAttribute("aria-busy", "false");
+        if (!gateButton) return;
+        const label = gateButton.querySelector("span");
+        if (label) label.textContent = "再試行";
+        gateButton.disabled = false;
+        if (retryArmed) return;
+        retryArmed = true;
+        gateButton.addEventListener("click", (event) => {
+          event.preventDefault();
+          event.stopImmediatePropagation();
+          window.location.reload();
+        }, { once: true, capture: true });
+      };
+      window.__hazamaArmRetry = armRetry;
+      const failBoot = armRetry;
+      const startRuntime = () => {
+        if (runtimeStarted) return;
+        runtimeStarted = true;
+        const script = document.createElement("script");
+        script.src = RUNTIME_URL;
+        script.onerror = () => failBoot("起動データを読み込めません。再試行してください。");
+        document.body.appendChild(script);
+      };
+
+      if (!("serviceWorker" in navigator) || !navigator.serviceWorker.controller) {
+        startRuntime();
+        return;
+      }
+      if (navigator.serviceWorker.controller.scriptURL === expectedController) {
+        startRuntime();
+        return;
+      }
+
+      if (gateNote) gateNote.textContent = "更新を確認中…";
+      let settled = false;
+      const finish = (callback) => {
+        if (settled) return;
+        settled = true;
+        window.clearTimeout(timeoutId);
+        navigator.serviceWorker.removeEventListener("controllerchange", onControllerChange);
+        callback();
+      };
+      const onControllerChange = () => {
+        const controller = navigator.serviceWorker.controller;
+        if (controller && controller.scriptURL === expectedController) {
+          finish(() => window.location.reload());
+        }
+      };
+      const timeoutId = window.setTimeout(() => {
+        finish(() => failBoot("更新を適用できません。通信を確認して再試行してください。"));
+      }, 10000);
+      navigator.serviceWorker.addEventListener("controllerchange", onControllerChange);
+      navigator.serviceWorker.register(SW_URL, { scope: "./", updateViaCache: "none" })
+        .then(onControllerChange)
+        .catch(() => finish(() => failBoot("更新を適用できません。通信を確認して再試行してください。")));
+    })();
+  </script>
 </body>
 </html>

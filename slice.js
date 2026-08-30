@@ -140,7 +140,15 @@
   const sceneEl = $("scene");
   // E6(監査): aria-live(polite) の #scene は reveal 中に行ごと append すると SR が過多読み上げになる。
   // reveal 開始で aria-busy=true、確定(choices 表示)で false＝SR は1ノードを一括で読む。
-  const setBusy = (b) => { if (sceneEl) sceneEl.setAttribute("aria-busy", b ? "true" : "false"); };
+  let a11yStateTimer = 0;
+  const setBusy = (b) => {
+    if (sceneEl) sceneEl.setAttribute("aria-busy", b ? "true" : "false");
+    // E34: 次の本文が始まったら、直前choicesから遅延中の進行要約を破棄する。
+    if (b && a11yStateTimer) {
+      window.clearTimeout(a11yStateTimer);
+      a11yStateTimer = 0;
+    }
+  };
   const choicesEl = $("choices");
   const sinkFill = $("sink-fill");
   const returnPathsEl = $("return-paths");
@@ -744,6 +752,24 @@
     }
   }
 
+  // E34: 視覚ゲージは装飾のまま保ち、同じ進行値を一つのlive regionへ要約する。
+  // sceneの本文と同時に多重読み上げしないよう、choices確定後に値が変わった時だけ遅延更新。
+  let a11yStateText = "";
+  function queueA11yState() {
+    const el = $("a11y-state");
+    if (!el) return;
+    const need = ATTUNE.omegaThreshold;
+    const lit = Math.min(Math.round(state.attunement || 0), need);
+    const next = `戻り道 ${state.returnPaths}本。認識 ${lit}/${need}${isAttuned() ? "、合致" : ""}。観測者 ${Math.max(1, state.observer)}。`;
+    if (next === a11yStateText) return;
+    window.clearTimeout(a11yStateTimer);
+    a11yStateTimer = window.setTimeout(() => {
+      a11yStateTimer = 0;
+      a11yStateText = next;
+      el.textContent = next;
+    }, 260);
+  }
+
   // A4: phase 跨ぎの句読点（一度だけの強い破断）。深くなる方向の跨ぎでだけ呼ぶ。
   //  - body.phase-break を 900ms（タイマーで除去・多重発火は先勝ち＝走行中は撃ち直さない）。
   //  - 既存バースト機構を借りる: Glitch.hardBreak() が glitch-hard＋leak-on（--leak-rgb はランダム）を
@@ -1039,6 +1065,7 @@
     // ボタンを積んで scene が縮んだ“後”に最新行を底へ。重なりはレイアウトで防止済み、
     // ここは「最後の行を選択肢の真上に見せる」ための追従（ユーザーが上に居れば奪わない）。
     setBusy(false);              // E6: 本文＋選択肢が出揃った＝SR は1ノードを一括で読む
+    queueA11yState();            // E34: 本文live regionの後に、変化した進行値だけを一度読む
     Follow.stick();
   }
 
@@ -1125,6 +1152,7 @@
         if (i === 0 && document.activeElement === document.body) b.focus({ preventScroll: true });
       }, REDUCED ? 0 : 120 + i * 150));
     setBusy(false);              // E6: 本文＋エコー門が出揃った
+    queueA11yState();            // E34: 門が確定してから進行値を一度だけ読む
     Follow.stick();
   }
 
@@ -1328,6 +1356,7 @@
         if (i === 0 && document.activeElement === document.body) b.focus({ preventScroll: true });
       }, REDUCED ? 0 : 200 + i * 160));
     setBusy(false);              // E6: 縁が出揃った
+    queueA11yState();            // E34: 結末本文と競合させず、最後の進行値を読む
     Follow.stick();
   }
 
@@ -2167,8 +2196,13 @@
 
   // ---------- 起動 ----------
   async function loadData() {
-    const res = await fetch("depths-shell.json?v=e32", { cache: "no-store" });
-    DATA = await res.json();
+    const res = await fetch("depths-shell.json?v=e35", { cache: "no-store" });
+    if (!res.ok) throw new Error(`depths-shell HTTP ${res.status}`);
+    const data = await res.json();
+    if (!data || typeof data !== "object" || !data.start || !data.nodes || !data.nodes[data.start]) {
+      throw new Error("depths-shell schema unavailable");
+    }
+    DATA = data;
   }
   // ---------- 動く表紙（R6：タイトルも state/seed に応じて動く・静止でない） ----------
   // ゲート表示中、背後に反転ガーデンを薄く宿し（gate 背景は半透明）、グリッジが時折タイトルを裂き、
@@ -2201,6 +2235,11 @@
     // E6(監査): enter 後はゲートボタンをタブ順から外す（不可視 opacity:0 のまま残ると
     // キーボードの Tab が最初の選択肢でなく見えないボタンへ着地し、focus が迷子になる）。
     const geBtn = $("gate-enter"); if (geBtn) geBtn.disabled = true;
+    // E33 polish: opacity 0 の表紙を accessibility tree からも退場させる。
+    // disabled → inert → aria-hidden の順で、押下直後の focus を不可視領域へ残さない。
+    gateEl.setAttribute("inert", "");
+    gateEl.setAttribute("aria-hidden", "true");
+    gateEl.setAttribute("aria-busy", "false");
     Spiral.consumeCycleBump();       // 前セッションで降下していた時だけ、ここで周回が一つ深まる
     applyCycleSkin();                // B4: consume 後の cycle で表紙スキンを取り直す
     buildReturnPaths();
@@ -2229,20 +2268,23 @@
   // garden(depth, dread, seed): A3 構図モード検証用＝seed を変えて #garden を直接描き直す。
   window.__hz = { go: renderNode, choose, state, isAttuned, edge: renderEdge, card: (a) => EdgeCard.draw(a == null ? isAttuned() : !!a), garden: (depth, dread, seed) => Garden.update(depth, dread, seed), get sink() { return sinkNorm(); }, get attunement() { return state.attunement; } };
 
-  // R4: PWA — slice をインストール/オフライン対応に。サブパス /hazama/slice/ スコープ（相対 sw.js）。
+  // R4: PWA — 単一buildをインストール/オフライン対応に。/hazama/ スコープ（相対 sw.js）。
   function registerSlicePWA() {
     if (!("serviceWorker" in navigator)) return;
-    window.addEventListener("load", () => {
-      navigator.serviceWorker.register("sw.js").then((reg) => {
+    const register = () => {
+      navigator.serviceWorker.register("sw.js?v=e35", { scope: "./", updateViaCache: "none" }).then((reg) => {
         if (typeof reg.update === "function") reg.update().catch(() => {});
       }).catch((err) => console.warn("[Hazama slice] SW register failed:", err));
-    });
+    };
+    // E33 boot loader may append this runtime after window.load while an older SW hands over.
+    if (document.readyState === "complete") register();
+    else window.addEventListener("load", register, { once: true });
   }
   registerSlicePWA();
 
   loadData().then(() => {
     const gb = $("gate-enter");
-    gb.disabled = false;
+    const gateNote = $("gate-note");
     // E1: 記憶（spiral 層）を読む。戻ってきた観測者には表紙が応える＝庭は前回の続きから組まれ、
     // 入口の言葉が変わる。周回の加算は enter（「沈む」の実タップ）まで保留。
     const returning = Spiral.load();
@@ -2269,8 +2311,28 @@
     // 「沈む」の実タップ＝同一document の手勢。この中で enter()→Audio.start()→resume() が走る
     // ＝モバイルで AudioContext を堅牢に解禁できる（cross-document iframe・全画面オーバーレイは廃止）。
     gb.addEventListener("click", enter, { once: false });
+    // すべての復元・描画・listener配線が成功してから、最後に入口をreadyへする。
+    if (gateNote) gateNote.textContent = "音あり推奨・片手で読める縦長";
+    gateEl.setAttribute("aria-busy", "false");
+    gb.disabled = false;
   }).catch((e) => {
-    $("scene").textContent = "深度データの読み込みに失敗しました。再読み込みしてください。";
+    const gb = $("gate-enter");
+    const gateNote = $("gate-note");
+    if (typeof window.__hazamaArmRetry === "function") {
+      window.__hazamaArmRetry("深度データを読み込めません。再試行してください。");
+    } else {
+      if (gateNote) {
+        gateNote.textContent = "深度データを読み込めません。再試行してください。";
+        gateNote.classList.add("is-error");
+      }
+      if (gb) {
+        const label = gb.querySelector("span");
+        if (label) label.textContent = "再試行";
+        gb.disabled = false;
+        gb.addEventListener("click", () => window.location.reload(), { once: true });
+      }
+      gateEl.setAttribute("aria-busy", "false");
+    }
     console.warn("[Hazama slice] load failed:", e);
   });
 })();

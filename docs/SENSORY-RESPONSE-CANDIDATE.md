@@ -1,7 +1,7 @@
 # Hazama Sensory Response candidate
 
-Status: **E31 governor production採用 / Sensory Frame・labはtools-only**  
-Audit date: 2026-08-02  
+Status: **E31 governor production採用 / Sensory Frame・labはtools-only**
+Audit date: 2026-08-02
 Human gate: **2026-08-02 production merge承認済み（mobile実機試聴済みとの記録ではない）**
 
 ## 結論

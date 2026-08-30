@@ -249,7 +249,6 @@ Codex / Claude Code が同じ順番で作業を継続するための薄いエン
 - **進化 E31（2026-08・Sensory governor）**: 既存の単一Web Audioを保ったまま、coarse pointerは
   light budget、reduced-motionは持続音なしへ。master compressor、hidden suspend＋明示再開、pagehide disposeを追加。
   新verb・外部音源・dependency・storage/schema変更なし。2026-08-02にproduction採用を人間が明示承認（`?v=e31`）
-
 - **進化 E32（2026-08・レビュー輪の是正）**: E29-30 に opus×4 レンズの独立レビューを当て、客観・低リスクのみ実装。
   (1) **終端の特異度欠陥修正**＝縁で深度 stage が終端 stage の下に二重露出していたのを `:not(.surfaced):not(.omega)`
   ガードで解消（2 レンズが独立に実測・修正案は注入検証済み） (2) **終端 stage の固定 filter**＝--sink 式のままだと
@@ -258,6 +257,20 @@ Codex / Claude Code が同じ順番で作業を継続するための薄いエン
   (5) og:image:alt/twitter:image:alt 追加 (6) smoke の E29/E30 契約を regex 化・実体パース化で強化。
   見送り=glitch ghost の stage 連動・transition 時定数・bottom.webp 再圧縮（実機の目/worker 待ち）。
   版 `?v=e32`（Codex の E31=sensory governor が e31 を先取）・全複合状態（phase×終端）をブラウザ実測で担当1枚のみ表示を確認
+- **進化 E33（2026-08・release packet polish）**: 表紙にload/failure statusを出し、装飾タイトルの重複読み上げと
+  enter後もaccessibility treeへ残る不可視表紙を解消。旧PWA cacheからの初回更新は新SW takeover後にruntimeを読み、
+  以後のversion付きassetはexact cacheに固定。core precacheが欠ける更新はactivateせず旧offline shellを温存する。
+  Sensory Frame smokeを単一checkへ収録し、退役済みcheck helperも整理。
+  route・storage・depths schema・音色は不変（`?v=e33`）。
+- **進化 E34（2026-08・closeout polish）**: `hidden`な音chipを`.hz-chip`の`display:inline-flex`が表紙下へ
+  漏らしていたCSS競合を解消し、「沈む」前は描画・focus対象の双方から確実に除外。短い画面／周回後の多択は
+  選択帯だけをscroll可能にし、起動失敗は高コントラストな「再試行」操作から回復可能にした。装飾ゲージの
+  戻り道・認識・観測者は、値が変わった時だけ単一live regionへ要約。inline boot構文とboot/runtime/SWのversion一致も
+  固定値に依存しないsmoke契約へした。route・storage・depths schema・音色は不変（`?v=e34`）。
+- **進化 E35（2026-08・PWA更新handoff）**: 旧SWからの初回更新で旧CSSと新JSが混在する経路を塞ぎ、
+  新SW takeover後はゲーム開始前の入口で一度だけ自動reloadしてCSS/JSを同版へ揃える。fresh/current版はreloadせず、
+  route・storage・depths schema・音色は不変（`?v=e35`）。公開済みE31/E32を正本としてE33〜E35を統合し、
+  2026-08-30の明示承認に基づく公開release packetとした
 
 ## Status / Rules
 
