@@ -19,6 +19,29 @@ Hazama 自律開発 session の追記専用ログ。
 
 ---
 
+## 2026-09-04 — 進化 E38: 変奏の錨（レビュー輪→客観是正・号令待ち）
+- agent      : Fable（「磨き進めて」＝レビュー輪。opus×4→529、sonnet×4→429 で agent は全滅。以後は
+  Fable が Node 実測＋コード精読で代行＝agent の再起動は制限を食うので打ち切り）
+- goal       : E36（択の混沌）/E37（絵の変奏）の新面積を客観レビューし、低リスクのみ是正
+- 実測（Fable）: 起動時 Spiral.load 後に applyCycleSkin 呼出あり／200 周回でセットB 49-54%・最長連 7-9・
+  label pick 一様／CHOICE_VARIA キー衝突は現バンク未使用の中盤対のみ（M>N 等 13 件・要注意として記録）／
+  既存 seed（Route.seedFor・applyCycle）は worldSeed と XOR しない独立 seed＝相殺なし
+- 確定欠陥→修正:
+  - **picker seed の transient 依存**: worldSeed() は rank/maxRank を含む。applyArtSet は renderNode 内で
+    rank 更新より前に走るため rank=直前ノード（reborn=27・縁の再降下=0・リロード=0）→同じ周回で絵セットが
+    経路/リロードで変わる。orderedChoices/label も同周回内で maxRank が伸びた後の再訪で揺れる。
+    →3 picker とも `hashStr("hazama:world") ^ hashStr("<tag>:...:"+cycle) ^ salt`＝周回錨・transient 非依存
+  - zero>zero_hold の retreat 変奏2 の sub が「戻り道は減らない」を欠落→復元
+  - smoke: 回帰契約（picker は worldSeed()/Math.imul(cycle) 不使用・HTML はセットB 参照なし）＋E37 regex 窓 900
+- 見送り/記録: src 差し替え時の視覚は HTML 仕様上「pending request 中は current image を保持」＝空白フラッシュ
+  なし（SW precache 済みなら即時）。周回≥1 のリロードで base の fetchpriority=high 先読み（正典）が無駄になり
+  -b の表示が僅かに遅れる＝許容。キー衝突 13 件は変奏を足す時に `@index` で分岐する設計メモ
+- checks     : node --check OK・hazama-check 2 PASS / 0 FAIL（E38 契約込み）・ブラウザ実走（下記 verified）
+- verified   : ブラウザ実走（?v=e38・クリーン spiral）＝同じ cycle3 に reborn 経由(rank27)と縁の再降下(rank0)で入って絵セット/A の並びが**同一**／同一周回内で maxRank 26・rank 20 に伸ばして A へ戻っても並び**不変**／cycle4 では別セット・別順（対照）／cycle0 は正典／**リロード後も cycle4＝セットB 維持・5枚同期**（旧実装では rank0 で戻り得た）／console 0
+- next       : 号令で push（E36〜E38）。実機の目＝変奏文言の register・セットB の切り替わり頻度
+- blockers   : deploy は号令待ち
+- note       : 当初 E33/E34/E35 として実装・検証したが、push 前の fetch で Codex が同番号（E33 入口a11y／E34 closeout／E35 PWA handoff・48b88f6）を先取していたため、origin/master へ rebase し **E36/E37/E38 に採番し直し**（版は `?v=e38`・5点同期＝css link／boot SW_URL／RUNTIME_URL／depths fetch／SW 登録／SW VERSION）。衝突解決＝runtime 3ファイルは Codex の構造（inline boot・atomic core precache・schema 検証）を採り版だけ更新、セットB 資産は OPTIONAL_PRECACHE へ。各 replay で smoke 2 PASS を確認
+
 ## 2026-08-14 — 進化 E37: 絵の変奏＋seed 混合バグ2件の検出/修正（実装/検証済み・号令待ち）
 - agent      : Fable（worker 復帰を確認し、「絵も変えてった方がいい」の変奏セット生産→統合まで自走）
 - goal       : E29 降下の弧の背景写真セットが周回で丸ごと回る（cycle0 は正典固定）

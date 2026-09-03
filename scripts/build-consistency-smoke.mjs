@@ -407,10 +407,25 @@ for (const st of ["key", "drift", "bottom", "surfaced", "omega"]) {
 }
 has(js, "const ART_SETS", "E37 art set bank");
 has(js, "function applyArtSet", "E37 art set picker");
-assert(/function applyArtSet[\s\S]{0,400}?c < 1 \? ""/.test(js), "E37 picker must be cycle-gated (cycle0 = canonical set)");
+assert(/function applyArtSet[\s\S]{0,900}?c < 1 \? ""/.test(js), "E37 picker must be cycle-gated (cycle0 = canonical set)");
 has(js, "applyArtSet();", "E37 picker wired into applyCycleSkin");
 // HTML 既定 src は正典セットのまま（JS 死亡時/初回ペイント＝従来どおり）
 assert(!/hazama-descent-key-b\.webp/.test(html), "E37 html default src must stay canonical set");
+assert(!/hazama-descent-[a-z]+-b\.webp/.test(html), "E37/E38 html must not reference any set-B asset (stage overlays included)");
+
+// E38: picker の seed 規約＝周回錨（transient 非依存）＋hashStr 拡散。回帰防止:
+//  (1) 3 picker とも worldSeed() を参照しない（rank/maxRank で同周回の見えが揺れる）
+//  (2) cycle 項に Math.imul を使わない（worldSeed 定数との XOR 相殺／imul 対の先頭 draw 縞）
+const pickerSrc = (name, span) => { const i = js.indexOf(name); return i < 0 ? "" : js.slice(i, i + span); };
+for (const [name, span] of [["function applyArtSet", 900], ["function orderedChoices", 1100]]) {
+  const src = pickerSrc(name, span);
+  assert(src.length > 0, `E38 picker present: ${name}`);
+  assert(!/worldSeed\(/.test(src), `E38 ${name} must not depend on worldSeed() (transient rank/maxRank)`);
+  assert(!/Math\.imul\((state\.cycle|c) \+ 1/.test(src), `E38 ${name} must diffuse cycle via hashStr, not imul`);
+}
+const labelLine = (js.match(/const vr = mulberry32\([^\n]*/) || [""])[0];
+assert(labelLine.includes('hashStr("label:') && !labelLine.includes("worldSeed(") && !labelLine.includes("Math.imul("),
+  "E38 label varia seed must be cycle-anchored hashStr (no worldSeed/imul)");
 
 // depths-shell（本文データ）: start＋ノード数＋choice到達性
 let depths;

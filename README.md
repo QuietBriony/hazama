@@ -287,6 +287,14 @@ Codex / Claude Code が同じ順番で作業を継続するための薄いエン
   異定数でも imul 対の下位ビット相関で先頭 draw が縞になる問題＝**cycle 項は hashStr で拡散**が正解
   （E36 の並び/文言 salt も同修正）。版 `?v=e37`・全周回で5枚同期/決定論/ロードをブラウザ実測
 
+- **進化 E38（2026-09・変奏の錨）**: E36/E37 のレビュー輪（agent は API 制限で全滅→Fable が数値検証で代行）で確定した
+  客観欠陥を是正。**(1) picker の seed が worldSeed の transient 項（rank/maxRank）を含んでいた**＝同じ周回でも
+  reborn 経由(rank27)/縁の再降下(rank0)/リロード(rank0)で絵セットが変わり、同一周回内で深く潜った後の再訪で択の並びも
+  揺れる→3 picker とも **「周回（×ノード）」だけに錨**（`hashStr("hazama:world") ^ hashStr(tag:cycle)`）。
+  (2) zero の retreat 変奏 sub に「戻り道は減らない」の機構情報を復元。(3) smoke に回帰契約（picker は worldSeed()/
+  imul(cycle) を使わない・HTML はセットB 資産を一切参照しない）。200 周回実測: セットB≈50%・最長連 7-9・文言一様。
+  版 `?v=e38`
+
 ## Status / Rules
 
 このリポジトリは**稼働中の本番作品**（没入版単一ビルド）です。旧「Music スタックの参照用」位置づけは終了。
