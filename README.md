@@ -83,7 +83,8 @@ node scripts/hazama-check.mjs
 - `build-consistency` : 単一ビルドの実体検証 — 必須/撤去ファイル、`?v=` と `sw.js` cache の version 同期、
   没入シェル構造、認識/Ωゲート・二極終端、spiral 記憶（transient を保存していないこと）、
   認識2.0 契約（ECHO_BANK≥15・全キー実在・deep≥10・表層侵食・エコー門）、
-  縁の二択と縁カード、README/AGENTS が存在しない scripts を案内していないこと、depths グラフ到達性
+  縁の二択と縁カード、出現中の連打・古い画面の遅延処理・reduced-motion下の単一選択、
+  README/AGENTS が存在しない scripts を案内していないこと、depths グラフ到達性
 
 `0 FAIL` が commit 前提（`AGENTS.md` 参照）。
 
@@ -300,6 +301,12 @@ Codex / Claude Code が同じ順番で作業を継続するための薄いエン
   正規 URL `https://quietbriony.github.io/hazama/` と一行コピーを添える。画像＋URLの組み合わせに非対応なら
   従来の画像共有、Web Share非対応ならPNG保存へ戻る。組み合わせ判定自体が例外になる実装もfiles-onlyへ閉じる。
   自動送信・route・storage・depths schema・音色は不変（`?v=e39`）
+
+- **進化 E40（2026-09・選択確定の一回性）**: 押下後の140msに別の択の出現タイマーが重なると、
+  disabled が解除され二重遷移・エコー門の二重採点が起きる競合を是正。全択を `confirmThen` に揃え、
+  受理時に既存の描画トークンを進めて古い出現予約を無効化する。遅延確定も画面が同じ時だけ実行。
+  `scripts/choice-commit-smoke.mjs` が実際のrendererを時刻制御して連打・画面交代・reduced・Ωロックを検証。
+  通常時の一拍とreducedの即時確定を維持（`?v=e40`）。
 
 ## Status / Rules
 

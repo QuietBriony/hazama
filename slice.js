@@ -1104,6 +1104,7 @@
   }
 
   function renderChoices(node) {
+    const myToken = revealToken;
     choicesEl.innerHTML = "";
     onboardHint(node);           // E9: 初回だけ、最初の読みの岐路に一行
     attuneGlossHint();           // E26: 認識◆が初めて灯った時だけ、その意味を一行（一度きり）
@@ -1134,18 +1135,13 @@
       if (sub) btn.querySelector(".sub").textContent = locked
         ? `まだ届かない（認識 ${Math.round(state.attunement || 0)}/${ATTUNE.omegaThreshold}）`
         : sub;
-      if (!locked) btn.addEventListener("click", () => {
-        // E27: 押下の確定感＝選んだ択が一拍沈み、選ばれなかった択が退いてから世界が動く（REDUCED は即時＝従来）。
-        choicesEl.querySelectorAll(".hz-choice").forEach((b) => { if (b !== btn) b.classList.add("unchosen"); b.disabled = true; });
-        btn.classList.add("chosen");
-        if (REDUCED) return choose(c);
-        window.setTimeout(() => choose(c), 140);
-      }, { once: true });
+      if (!locked) btn.addEventListener("click", () => confirmThen(btn, () => choose(c)), { once: true });
       else btn.setAttribute("aria-disabled", "true");
       btn.disabled = true;                 // E14: appear タイマー前の暴発タップ防止＝reveal 中に固定位置の choices 帯を反射タップしても発火しない
       choicesEl.appendChild(btn);
       const appear = REDUCED ? 0 : 120 + idx * 150 + (c.kind === "retreat" ? state.maxSink * 800 : 0);
       window.setTimeout(() => {
+        if (myToken !== revealToken || !choicesEl.contains(btn)) return;
         btn.classList.add("in"); if (!locked) btn.disabled = false;   // E19: ロックは解錠しない
         // E25: ノード遷移でフォーカスが body へ落ちる穴を塞ぐ＝最初の押せる択が有効化した時、フォーカス喪失時のみ移す。
         //   マウス/タッチは activeElement=body かつ focus-visible 非表示＝見えは不変。キーボード/SR/スイッチだけ効く。
@@ -1168,7 +1164,9 @@
       gbtn.setAttribute("aria-disabled", "true");
       choicesEl.appendChild(gbtn);
       const gAppear = REDUCED ? 0 : 120 + choicesEl.querySelectorAll(".hz-choice").length * 150;
-      window.setTimeout(() => gbtn.classList.add("in"), gAppear);
+      window.setTimeout(() => {
+        if (myToken === revealToken && choicesEl.contains(gbtn)) gbtn.classList.add("in");
+      }, gAppear);
     }
     // ボタンを積んで scene が縮んだ“後”に最新行を底へ。重なりはレイアウトで防止済み、
     // ここは「最後の行を選択肢の真上に見せる」ための追従（ユーザーが上に居れば奪わない）。
@@ -1177,13 +1175,18 @@
     Follow.stick();
   }
 
-  // E28: 押下の確定感をエコー門・縁の択にも＝操作言語の統一（renderChoices と同じ chosen/unchosen・140ms）。
+  // E28/E40: 通常・エコー門・縁の全択に共通の確定（chosen/unchosen・140ms）。
   //   fn は一拍後に実行（REDUCED は即時＝従来）。退場は .hz-choice のみ（縁カード chip は対象外）。
+  //   受理時に世代を進め、まだ出現中の他択がタイマーで再び有効になるのを防ぐ。
   function confirmThen(btn, fn) {
+    if (btn.disabled || !choicesEl.contains(btn) || choicesEl.querySelector(".chosen")) return;
+    const myToken = ++revealToken;
     choicesEl.querySelectorAll(".hz-choice").forEach((b) => { if (b !== btn) b.classList.add("unchosen"); b.disabled = true; });
     btn.classList.add("chosen");
     if (REDUCED) return fn();
-    window.setTimeout(fn, 140);
+    window.setTimeout(() => {
+      if (myToken === revealToken && choicesEl.contains(btn)) fn();
+    }, 140);
   }
 
   // エコー門に真候補（訪問済み断片）があるか＝門を出せるか。renderNode の割り込み判定に使う。
@@ -1204,6 +1207,7 @@
   // 選抜・並びは worldSeed^hashStr("echo:"+id) の mulberry32 で決定論（同じ周回・状態なら同じ門）。
   // 真＝訪問済み(detoursSeen 優先, なければ visits)から1つ／偽＝未訪問から2つ。クリックで結果ビート→通常 choices。
   function renderEchoChoices(node, id) {
+    const myToken = revealToken;
     const rng = mulberry32((worldSeed() ^ hashStr("echo:" + id)) >>> 0);
     const keys = Object.keys(ECHO_BANK).filter((k) => k !== id);
     // 真候補: detoursSeen 該当を優先、なければ visits 済み。
@@ -1255,6 +1259,7 @@
     mk(id === "Z" ? "目を閉じ、Ωへ" : "目を逸らし、先へ", "echo-skip", () => echoResolve(node, id, null));
     choicesEl.querySelectorAll(".hz-choice").forEach((b, i) =>
       window.setTimeout(() => {
+        if (myToken !== revealToken || !choicesEl.contains(b)) return;
         b.classList.add("in"); b.disabled = false;
         // E28: 門でも focus 着地（E25 と同条件＝喪失時のみ・キーボード/SR だけに効く）。
         if (i === 0 && document.activeElement === document.body) b.focus({ preventScroll: true });
@@ -1432,6 +1437,7 @@
   // 縁の選択（E1）: 二極どちらの結末でも、次は「記憶を抱えて沈み直す」か「すべて忘れる」かの二択。
   // 周回は restart でなく再降下で深まる＝spiral 層（周回/認識/痕跡）は、忘れない限り消えない。
   function renderEdgeChoices(attuned) {
+    const myToken = revealToken;
     choicesEl.innerHTML = "";
     const mk = (kind, lead, sub, fn) => {
       const btn = document.createElement("button");
@@ -1459,6 +1465,7 @@
     choicesEl.appendChild(row);
     choicesEl.querySelectorAll(".hz-choice").forEach((b, i) =>
       window.setTimeout(() => {
+        if (myToken !== revealToken || !choicesEl.contains(b)) return;
         b.classList.add("in");
         // E28: 縁（終端）でも focus 着地＝キーボード/SR が結末の二択へ迷わず届く（喪失時のみ・見え不変）。
         if (i === 0 && document.activeElement === document.body) b.focus({ preventScroll: true });
@@ -2315,7 +2322,7 @@
 
   // ---------- 起動 ----------
   async function loadData() {
-    const res = await fetch("depths-shell.json?v=e39", { cache: "no-store" });
+    const res = await fetch("depths-shell.json?v=e40", { cache: "no-store" });
     if (!res.ok) throw new Error(`depths-shell HTTP ${res.status}`);
     const data = await res.json();
     if (!data || typeof data !== "object" || !data.start || !data.nodes || !data.nodes[data.start]) {
@@ -2391,7 +2398,7 @@
   function registerSlicePWA() {
     if (!("serviceWorker" in navigator)) return;
     const register = () => {
-      navigator.serviceWorker.register("sw.js?v=e39", { scope: "./", updateViaCache: "none" }).then((reg) => {
+      navigator.serviceWorker.register("sw.js?v=e40", { scope: "./", updateViaCache: "none" }).then((reg) => {
         if (typeof reg.update === "function") reg.update().catch(() => {});
       }).catch((err) => console.warn("[Hazama slice] SW register failed:", err));
     };

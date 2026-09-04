@@ -134,6 +134,15 @@ handoff 前の確認は `docs/autonomy/closeout-checklist.md` を使います。
 
 ## Done
 
+### HZ-BL-017 — 選択肢出現と確定待ちの競合 ✅ 2026-09-05
+- scope: runtime(narrow) / smoke
+- E39の実ブラウザで、最初の択を押した後の140ms内に別の択の出現タイマーが発火すると、
+  disabledが解除され二重選択できることを再現。深度Bは遷移2回・沈下+4、エコー門は認識12→11。
+- 通常・エコー門・縁で確定を共有し、受理時に古い描画予約を失効。出現・遅延確定はトークンと
+  現在のDOM所属を確認する。修正後は同じ条件で遷移1回・沈下+3、エコー門の認識12を維持。
+- `scripts/choice-commit-smoke.mjs`を単一checkへ収録。既存実装でFAILを確認後、修正でPASS。
+  入口→Ω→再降下、浮上→忘却、320px幅、offline降下も確認。`?v=e40`。
+
 ### HZ-BL-016 — 縁カード共有の帰還リンク ✅ 2026-09-04
 - scope: runtime(narrow) / smoke
 - 実ブラウザとコード監査で、縁カードの Web Share が画像＋title だけで正規 URL を payload に含めず、

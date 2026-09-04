@@ -19,6 +19,25 @@ Hazama 自律開発 session の追記専用ログ。
 
 ---
 
+## 2026-09-05 — E40 選択肢の出現タイマーによる二重遷移・二重採点を修正
+- agent      : Codex / GPT-6（Astra・単一会話）
+- goal       : E39から自律ランを1回進め、実際の選択操作で再現できる進行不具合を閉じる
+- evidence   : 実Chromiumのproduction rendererに時刻制御を掛け、択生成後200msで第1択、270msで第2択を押下。
+  E39は出現callbackがdisabledを戻し、B→Cが2回（沈下+4）、Qの正答後に誤答も採点（認識10→12→11）。
+  修正後は同条件で第2択がdisabledを保ち、遷移1回（沈下+3）、Qは10→12→12。
+- shipped    : `slice.js`で全択をconfirmThenに統一。押下時のrevealToken更新と出現/確定callbackの世代・DOM確認で一回性を保証。
+  `scripts/choice-commit-smoke.mjs`を`build-consistency`へ組込み。index/runtime/SWはe40同期。README/BACKLOG更新。
+- checks     : 旧実装でchoice-commit smoke FAILを確認→修正後PASS。通常/echoの押下時刻3条件、古い画面の
+  遅延確定・focus移動、次の選択の有効性、通常/echo/縁のreduced即時確定、未出現・Ωロックを検証。
+  `node scripts/hazama-check.mjs`: 2 PASS / 0 FAIL / 0 SKIP。
+- browser    : 実UIクリックによるreduced-motion通しプレイ＝zero→A〜Z（Q/Zエコー門skip）→Omega→reborn→Ω終端、
+  認識12・cycle0。再降下でzero/cycle1へ、Aで3択＋ghost1。未達reborn→浮上→忘却はcycle0/認識0。
+  非reducedは押下直後chosen・未遷移、待ち後1遷移。320×568で全通過点の横overflowなし、撮影確認、
+  CSS/JS/SW e40一致、offline reload→沈む→A、console error/warning 0。これはagent検証で実機taste/耳の採否ではない。
+- backlog    : HZ-BL-017 added and done。HZ-BL-001 / 002 / 012のhuman-gateは継続
+- next       : 人間による5〜8分のtaste pass、端末でのPWA install、音の体感確認
+- release    : 前回承認されたcommit / push / 公開までの継続。E36〜E39の実装を保持してE40を積む
+
 ## 2026-09-04 — E39 縁カード共有にクリック可能な帰還路
 - agent      : Codex / gpt-5.6-sol（単一会話）
 - goal       : 「大きい一言から自走」の1 sessionとして、既存契約内で外向き循環に最も効く最小の穴を閉じる

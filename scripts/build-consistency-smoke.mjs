@@ -6,6 +6,7 @@ import path from "node:path";
 import vm from "node:vm";
 import "./audio-governor-smoke.mjs";
 import "./sensory-frame-smoke.mjs";
+import "./choice-commit-smoke.mjs";
 
 const root = process.cwd();
 const failures = [];
