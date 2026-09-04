@@ -369,6 +369,23 @@ body.omega    .hz-stage[data-stage="omega"] {
 /* シーン本文：ここが内部スクロール領域。choices とは別トラックなので本文がボタンに被らない。
    ::before の margin-top:auto で「本文が短い時は下寄せ（沈下の手触り）／長い時は上から素直にスクロール」
    を両立する（flex+overflow の“上端が掴めない”バグを回避する定番手法）。 */
+.hz-reading-tools {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  flex: 0 0 auto; min-height: 44px;
+  border-bottom: 1px solid var(--line);
+}
+.hz-reading-tools[hidden] { display: none; }
+.hz-reading-place {
+  min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  color: var(--ink-dim); font-size: 0.74rem; letter-spacing: 0.04em;
+}
+#reveal-now { flex: 0 0 auto; }
+#reveal-now:disabled { opacity: 0.38; cursor: default; }
+.hz-edge-reflection { border-left: 2px solid var(--accent); padding-left: 1em; }
+.hz-edge-record { color: var(--ink-dim); font-size: 0.8rem; line-height: 1.9; }
+.hz-edge-record summary { cursor: pointer; min-height: 44px; display: list-item; align-content: center; }
+.hz-edge-record summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+.hz-edge-record p { margin: 0.4em 0 0; }
 .hz-scene {
   flex: 1 1 auto;
   min-height: 0;
@@ -399,6 +416,8 @@ body.omega    .hz-stage[data-stage="omega"] {
 
 /* 危険局面：本文がわずかに震える（reduced-motion で無効化） */
 body[data-tension="high"] .hz-scene { animation: hz-shudder 2.6s ease-in-out infinite; }
+/* E41: 結末は読み返しと記録操作の場。道中の揺れをここで止め、操作対象を静止させる。 */
+body.omega .hz-scene, body.surfaced .hz-scene { animation: none; }
 @keyframes hz-shudder {
   0%,100% { transform: translateX(0); }
   25% { transform: translateX(-0.6px); }
@@ -526,9 +545,10 @@ body[data-tension="high"] .hz-scene { animation: hz-shudder 2.6s ease-in-out inf
   transition: opacity .9s ease;
 }
 .hz-gate.gone { opacity: 0; pointer-events: none; }
-.hz-gate-inner { text-align: center; padding: 24px; max-width: 420px; }
+.hz-gate-inner { text-align: center; padding: 24px; max-width: 440px; max-height: 100%; overflow-y: auto; }
 .hz-gate-title { font-size: 2.6rem; letter-spacing: 0.5em; margin: 0 0 0.6em; color: var(--ink); text-indent: 0.5em; }
 .hz-gate-sub { color: var(--ink-dim); line-height: 2; margin: 0 0 2em; }
+.hz-gate-guide { color: var(--ink-dim); font-size: 0.82rem; line-height: 1.9; margin: -0.8em 0 1.8em; }
 .hz-gate-enter {
   font: inherit; font-size: 1.05rem; letter-spacing: 0.4em; text-indent: 0.4em;
   color: var(--accent);

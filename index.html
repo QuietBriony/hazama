@@ -29,7 +29,7 @@
   <link rel="manifest" href="manifest.webmanifest" />
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png" />
   <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png" />
-  <link rel="stylesheet" href="slice.css?v=e40" />
+  <link rel="stylesheet" href="slice.css?v=e41" />
 </head>
 <body data-phase="surface">
   <div class="hz-bg" aria-hidden="true">
@@ -75,6 +75,10 @@
     </div>
     <div id="a11y-state" class="hz-sr-only" role="status" aria-live="polite" aria-atomic="true"></div>
 
+    <div id="reading-tools" class="hz-reading-tools" hidden>
+      <span id="reading-place" class="hz-reading-place"></span>
+      <button id="reveal-now" class="hz-chip hz-chip-quiet" type="button" aria-controls="scene choices" disabled>全文を表示</button>
+    </div>
     <section id="scene" class="hz-scene" aria-live="polite"></section>
     <section id="choices" class="hz-choices"></section>
   </main>
@@ -90,6 +94,7 @@
       <div class="hz-gate-title" aria-hidden="true" data-text="Hazama">Hazama</div>
 
       <p class="hz-gate-sub">狭間（あわい）<br>沈むほど、戻り道は細くなる。</p>
+      <p class="hz-gate-guide">読む。選ぶ。視たものを、覚えておく。<br>どう読むかで、降りる道と結末が変わる。<br>最初の旅は、Ωに届くか、浮上するまで。</p>
       <button id="gate-enter" class="hz-gate-enter" type="button" aria-describedby="gate-note" disabled><span>沈む</span></button>
       <p id="gate-note" class="hz-gate-note" role="status" aria-live="polite">深度を読み込み中…</p>
     </div>
@@ -99,8 +104,8 @@
     // E35: 既存SWはversion queryを無視して旧CSS/runtimeを返し得るため、
     // controller takeover後は入口のまま一度reloadし、CSS/JSを同じ版で読む。fresh/current loadは待たせない。
     (() => {
-      const SW_URL = "sw.js?v=e40";
-      const RUNTIME_URL = "slice.js?v=e40";
+      const SW_URL = "sw.js?v=e41";
+      const RUNTIME_URL = "slice.js?v=e41";
       const expectedController = new URL(SW_URL, document.baseURI).href;
       const gate = document.getElementById("gate");
       const gateButton = document.getElementById("gate-enter");

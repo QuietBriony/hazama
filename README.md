@@ -6,14 +6,15 @@ Hazama は、沈むほど戻りにくい「降下する対話」の没入型静�
 
 ## 構成（単一ビルド）
 
-- `index.html` : エントリーポイント（没入シェル＝9層アート＋本文＋選択＋認識インジケータ）
-- `slice.js` : エンジン（reveal 本文・沈下/認識/Ωゲート・エコー門・二極終端・反転ガーデン/曼荼羅/グリッジ・内製Audio・below∞生成・spiral 記憶・縁カード）
+- `index.html` : エントリーポイント（没入シェル＝9層アート＋本文＋選択＋認識インジケータ・初回ガイド・全文表示）
+- `slice.js` : エンジン（reveal/全文表示・沈下/認識/Ωゲート・エコー門・二極終端と振り返り・反転ガーデン/曼荼羅/グリッジ・内製Audio・below∞生成・spiral 記憶・縁カード）
 - `slice.css` : スタイル
-- `depths-shell.json` : 深度本文データ（depthMeta v0 スキーマ・沈下スパイン・42ノード）
+- `depths-shell.json` : 深度本文データ（depthMeta v0 スキーマ・沈下スパイン・72ノード）
 - `manifest.webmanifest` / `sw.js` / `icons/` : PWA install / offline shell（cache prefix `hazama-pwa-`）
 - `assets/hazama-descent-key.webp` : キービジュアル（E29〜: base=surface。`hazama-descent-{drift,bottom,surfaced,omega}.webp` の4枚が深度/終端で差し替わる「降下の弧」・`og-card.jpg` は共有 OG カード）
 - 検証: `scripts/hazama-check.mjs`（`autonomy-docs` ＋ `build-consistency` の2本）
 - 制作候補: `docs/BLENDER-AUTHORING.md`（WorkerPC Blender 5.2をrepo外の静止画制作実行器に限定。runtime非依存）
+- 体験版候補: [E41 初見テスト](docs/playtest/steam-demo-candidate-e41.md)（既存Web版の初回２ルート・人間の評価待ち。Steam提出用ビルドではない）
 - 感覚統合: `docs/SENSORY-RESPONSE-CANDIDATE.md`（E31 production governor、本編未配線のSensory Frame＋native Web Audio試聴lab）
 
 > 旧 forward 実装（Gate Run 資源ゲーム・Music ブリッジ・v2.x 系）と `slice/` 重複・別プレビュー repo は
@@ -49,6 +50,8 @@ PNG カードに描く（worldSeed 決定論＝同じ縁は同じカード）。
 ## 操作の要点
 
 - 表紙の「沈む」で開始（音あり推奨・このタップで内製 Web Audio が解禁される）
+- 「全文を表示」で、その画面の残りの本文を読む。初見でも使用でき、読んでいる位置を保つ。
+  選択やエコー門の採点は進めない。既読の本文タップによる早送りも引き続き使える
 - 各深度では「どう読むか」を選ぶ（認識2.0 — E3）:
   - 構造で読む（descend）＝沈む。**深い構造読み（編み目をなぞる・問いを立てる類）だけが認識を育てる**。
     ただ下りるだけの降下は育たない。戻り道 −1 のことがある
@@ -307,6 +310,12 @@ Codex / Claude Code が同じ順番で作業を継続するための薄いエン
   受理時に既存の描画トークンを進めて古い出現予約を無効化する。遅延確定も画面が同じ時だけ実行。
   `scripts/choice-commit-smoke.mjs` が実際のrendererを時刻制御して連打・画面交代・reduced・Ωロックを検証。
   通常時の一拍とreducedの即時確定を維持（`?v=e40`）。
+
+- **進化 E41（2026-09・初回体験を体験版候補へ）**: 入口で遊びの約束を伝え、初見から使える
+  「全文を表示」と現在深度を追加。既定の演出、既読タップ、読んでいる位置、門と選択の一回性を保つ。
+  終端は降りた道と帰り方を振り返り、数値を開閉式の記録へ。認識合致で任意浮上した人を「未達」と呼ばない。
+  `scripts/reading-control-smoke.mjs`で初見/既読/古い予約/エコー門/reduced/終端３状態を検証。
+  所要10〜15分は人間で確かめる目標であり、販売品質・面白さを検証済みという意味ではない（`?v=e41`）。
 
 ## Status / Rules
 

@@ -26,6 +26,18 @@ Hazama 自律開発の作業待ち行列。
 
 ## P1
 
+### HZ-BL-018 — Steamに向けた初回体験の検証
+- priority : P1
+- scope    : runtime / verify
+- agent    : either
+- human-gate: yes
+- status   : 実装済 — E41初見テスト待ち
+- source   : 2026-09-05 ユーザーの「Steamで売り出せる品質にできるか」→体験版候補を進める指示
+- detail   : 入口・自分のペースで読む操作・選択に応じた終端の振り返りを整え、既存２ルートを
+  初見5〜10人で確認する。`docs/playtest/steam-demo-candidate-e41.md`を今回の手順とする。
+  10〜15分は目標。現在の経路には長短があり、演出待ちの机上集計を人間のプレイ時間と混同しない。
+  エージェントの動作検証だけでは面白さ・販売品質・需要をDoneにしない。Steam提出/料金支払は未実施。
+
 ### HZ-BL-001 — PWA install / offline human pass
 - priority : P1
 - scope    : verify

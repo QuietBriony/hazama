@@ -19,6 +19,32 @@ Hazama 自律開発 session の追記専用ログ。
 
 ---
 
+## 2026-09-05 — E41 既存の初回２ルートをSteamに向けた体験版候補へ
+- agent      : Codex / GPT-6 Astra（単一会話・ユーザーのMax設定を変更せず継続）
+- goal       : 「Steamで販売できる品質にできるか」への次段階として、既存の初回体験の入口・読む操作・終わり方を整える
+- evidence   : 原文とreveal式の机上集計＝構造29ノード/6,476文字/演出待ち約11.0分、身体13ノード/3,065文字/約4.6分。
+  人間の読了時間ではないため、一律10〜15分と宣伝しない。本文の水増しや販売需要の推定はしない。
+- shipped    : 入口の３行ガイド、現在深度、初見でも押せる「全文を表示」。既定の演出と既読タップを保ち、
+  読んでいる位置を維持。表示操作は選択・認識・門採点を進めない。終端にも同じ操作を用意。
+  降りた道と終わり方の振り返り、開閉式の記録、ここで一度終えてよい案内を追加。
+  認識が合致していても自発的に浮上した人を「まだ届かない」と呼んでいた文面を区別。
+  実UIの記録開閉が本文shudderの影響で安定しなかったため、結末に限り本文の揺れを止める。
+- scope      : public route / hazama_spiral_v1 / depths schema / 本文72ノード / バランス数値 / 音源は不変。
+  新モード・保存キー・解析送信・依存・実行時AIなし。index/runtime/SWをe41へ同期。
+- checks     : `node scripts/hazama-check.mjs`: 2 PASS / 0 FAIL / 0 SKIP。`node --check slice.js`、`git diff --check` PASS。
+  新しい`reading-control-smoke`はproduction rendererで初見・途中表示・古い予約・既読タップ・echo維持・reduced・終端３状態を確認。
+  E40の二重選択回帰も引き続きPASS。
+- browser    : 通常motionの実UIで構造→Q/Z門skip→Ω（認識12・29ノード）、身体→Z門skip→任意浮上
+  （認識8・13ノード）。全文表示前後で進行不変。零章５段落/A12段落保持、読書位置維持、320×568の
+  全通過点で横overflowなし・44px操作。1280×800/320×568の画像確認、記録開閉をマウス/Enterで確認。
+  再降下cycle1→Aの３択、未達Ωロック→浮上→忘却、e41 CSS/JS/SW一致、offline reload→全文表示→A、
+  reducedで全表示不要、Space操作と不可視表紙へのfocus回避を確認。通しプレイのconsole error 0。
+  途中のローカル再検証では同版PWAの旧CSSが残ったため、専用localhostテストprofileのHazama cacheだけを更新して再検証した。
+- backlog    : HZ-BL-018を追加＝実装/agent検証済み・初見テスト待ち。手順は`docs/playtest/steam-demo-candidate-e41.md`。
+  HZ-BL-001 / 002 / 012の実機・taste・耳のhuman-gateは継続。人間の評価をDoneにしない。
+- next       : 初見5〜10人の了承を得たテストで、選択の理解・止めた場所・結末の納得・再プレイ理由を確認する。
+- release    : 既存Web版の更新範囲。Steamアカウント作成、料金支払、PC包装、提出、Steam公開は未実施。
+
 ## 2026-09-05 — E40 選択肢の出現タイマーによる二重遷移・二重採点を修正
 - agent      : Codex / GPT-6（Astra・単一会話）
 - goal       : E39から自律ランを1回進め、実際の選択操作で再現できる進行不具合を閉じる

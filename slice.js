@@ -142,6 +142,7 @@
   // reveal 開始で aria-busy=true、確定(choices 表示)で false＝SR は1ノードを一括で読む。
   let a11yStateTimer = 0;
   const setBusy = (b) => {
+    clearReadingControl();   // E41: 前画面の全文表示操作を、本文開始/読了どちらでも畳む。
     if (sceneEl) sceneEl.setAttribute("aria-busy", b ? "true" : "false");
     // E34: 次の本文が始まったら、直前choicesから遅延中の進行要約を破棄する。
     if (b && a11yStateTimer) {
@@ -154,6 +155,29 @@
   const returnPathsEl = $("return-paths");
   const observerEl = $("observer-count");
   const gateEl = $("gate");
+
+  // E41: 演出は既定のまま。初見でも、明示ボタンなら自分のペースで読める。
+  // 本文の全表示と「物語の選択」は別操作。読み方の設定/途中位置を永続化しない。
+  let readingFinish = null;
+  function clearReadingControl() {
+    readingFinish = null;
+    const button = $("reveal-now");
+    if (button) button.disabled = true;
+    if (sceneSkipHandler) {
+      sceneEl.removeEventListener("click", sceneSkipHandler);
+      sceneSkipHandler = null;
+    }
+  }
+  function armReadingControl(finish) {
+    readingFinish = finish;
+    const button = $("reveal-now");
+    if (button) button.disabled = false;
+  }
+  function showReadingPlace(title) {
+    const place = $("reading-place");
+    if (place) { place.textContent = title; place.title = title; }
+  }
+  $("reveal-now").addEventListener("click", () => { if (readingFinish) readingFinish(); });
 
   const WHO_CLASS = { n: "", voice: "voice", self: "self", body: "body", cold: "cold", danger: "danger", scrawl: "scrawl" };
 
@@ -183,7 +207,7 @@
     // 最下部へ自力で戻ったら追従再開。programmatic な吸着でも near-bottom なので true を保つ
     // ＝吸着が自分で自分を解除しない。
     sceneEl.addEventListener("scroll", () => { if (atBottom()) following = true; }, { passive: true });
-    return { stick, reset };
+    return { stick, reset, release };
   })();
 
   // ---------- 深度∞ 手続き的断片（§4-6: UCM 9軸から決定論生成） ----------
@@ -903,6 +927,7 @@
       node = applyCycle(id, node);                             // 主要ノードも巡回/再訪で変異
     }
     state.id = id;
+    showReadingPlace(node.title || "降下の途中");
     state.steps++;
     if (typeof RANK[id] === "number") state.rank = RANK[id]; // 未登録ノードは直前の深さを保つ
     if (state.rank > state.legacy.maxRank) state.legacy.maxRank = state.rank; // 到達深度を持ち越す
@@ -930,27 +955,31 @@
       return p;
     };
 
-    // E27: 既読の再訪（周回≥1 or 再訪ノード）だけ、reveal 中の本文タップで残りを即点灯し選択肢を出す＝
-    //   replay に積もる待ちを断つ。初見は常に沈下の速度（タップは効かない＝遅さが主題）。REDUCED は元々即時。
-    //   scroll ドラッグでは発火しない click で拾う。ヒントは出さない（発見も曖昧さの内）。
+    // E41: 初見の本文タップは依然無効。明示的な「全文を表示」だけが演出待ちを切り上げる。
+    // E27 の既読タップも同じ一回性を共有。文字を出しても進行/認識/門の採点は進めない。
     let appended = 0;
-    if (sceneSkipHandler) { sceneEl.removeEventListener("click", sceneSkipHandler); sceneSkipHandler = null; }
-    if (!REDUCED && (state.cycle >= 1 || (state.visits[id] || 0) > 1)) {
-      sceneSkipHandler = () => {
+    if (!REDUCED) {
+      const finish = () => {
         if (myToken !== revealToken) return;   // 古いノードの残骸＝何もしない（次の張り替えで消える）
         revealToken++;                          // 予約済みの行/文字/choices タイマーを全て無効化
-        sceneEl.removeEventListener("click", sceneSkipHandler); sceneSkipHandler = null;
+        clearReadingControl();
+        const readingTop = sceneEl.scrollTop;
+        Follow.release();                       // 全文追加で未読の末尾へ飛ばさず、読んでいた位置を保つ。
         sceneEl.querySelectorAll(".ch").forEach((s) => s.classList.add("lit"));
         for (let i = appended; i < lines.length; i++) {
           const p = mkLine(lines[i]);
           p.textContent = lines[i].t; p.classList.add("shown");
           sceneEl.appendChild(p);
         }
-        Follow.stick();
         if (ECHO_GATES.includes(id) && state.echoDone[id] !== state.cycle && echoTruthAvail(id)) renderEchoChoices(node, id);
         else renderChoices(node);
+        sceneEl.scrollTop = readingTop;
       };
-      sceneEl.addEventListener("click", sceneSkipHandler);
+      armReadingControl(finish);
+      if (state.cycle >= 1 || (state.visits[id] || 0) > 1) {
+        sceneSkipHandler = finish;
+        sceneEl.addEventListener("click", sceneSkipHandler);
+      }
     }
 
     lines.forEach((line) => {
@@ -1376,12 +1405,18 @@
     Audio.breath(attuned);   // E21: 縁の呼気（解決音ではない息・未解禁なら no-op）
     sceneEl.innerHTML = ""; choicesEl.innerHTML = "";
     setBusy(true);               // E6: 縁の結末文＋選択が出揃うまで SR を抑制
+    showReadingPlace(attuned ? "ひとつの結末 — 深度Ω" : "ひとつの結末 — 浮上");
     Follow.reset();
     const sank = state.returnPaths <= 1;
     // 帰還の極（未達）＝失敗演出にしない。光のほうへ浮上して帰る、視たものを抱えたまま。
     // E14: Ω 側(sankLines/heldLines) と対称に、浮上側も二極化＝戻り道がほぼ尽きた者（深く潜って戻った）と
     //      認識が薄いまま手前で戻った者を、同じ3行で帰さない。「視たものを抱える」骨格は両方が共有。
-    const SURFACE_LINES = sank ? [
+    const SURFACE_LINES = isAttuned() ? [
+      // E41: 届く認識を持ちながら帰る選択を「未達」と呼ばない。
+      { who: "cold", t: "核へは、届く。それでも、ここで帰ると決めた。" },
+      { who: "n", t: "賭けずに、光のほうへ浮上する。これも、あなたが選んだ結末だ。" },
+      { who: "self", t: "視たものは、消えない。次の入口は、一段、深い。" }
+    ] : sank ? [
       // 深く潜って戻り道がほぼ尽きた者：核には届かず、しかし深部の手触りを抱えて帰る。
       { who: "cold", t: "核へは、まだ降りられない。" },
       { who: "n", t: "戻り道はもう細い——けれど、あなたは光のほうへ浮上する。" },
@@ -1394,44 +1429,72 @@
     ];
     const lines = attuned ? (sank ? DATA.edge.sankLines : DATA.edge.heldLines) : SURFACE_LINES;
     let delay = 0;
+    let appended = 0;
     const revealMs = REDUCED ? 0 : 52;
+    const appendLine = (line) => {
+      const p = document.createElement("p");
+      p.className = "hz-line " + (WHO_CLASS[line.who] || "") + " shown";
+      p.textContent = line.t;
+      sceneEl.appendChild(p);
+      appended++;
+      Follow.stick();
+    };
     (lines || []).forEach((line) => {
       if (REDUCED) {
-        const p = document.createElement("p");
-        p.className = "hz-line " + (WHO_CLASS[line.who] || "");
-        p.textContent = line.t; p.classList.add("shown");
-        sceneEl.appendChild(p); Follow.stick();
+        appendLine(line);
         return;
       }
       window.setTimeout(() => {
         if (myToken !== revealToken) return;
-        const p = document.createElement("p");
-        p.className = "hz-line " + (WHO_CLASS[line.who] || "");
-        p.textContent = line.t; p.style.opacity = "0";
-        sceneEl.appendChild(p);
-        p.style.transition = "opacity 1.5s ease"; p.classList.add("shown"); p.style.opacity = "1";
-        Follow.stick();
+        appendLine(line);
       }, delay);
       delay += line.t.length * revealMs + 520 + (line.gap || 0);
     });
     window.setTimeout(() => {
       if (myToken !== revealToken) return;
-      const card = document.createElement("p");
-      card.className = "hz-line cold";
-      card.style.cssText = "margin-top:2em;font-size:0.8rem;line-height:1.9;";
-      const lit = Math.round(state.maxSink * 8);
-      const head = attuned ? "― 深度Ω 到達・外殻踏破 ―" : "― 浮上 — 表層へ帰る ―";
-      card.textContent = `${head}  認識: ${Math.round(state.attunement || 0)}/${ATTUNE.omegaThreshold}${attuned ? "（合致）" : "（深く読み、視たものを覚えているほど降りられる）"} / 到達深度: ${"▮".repeat(lit)}${"▯".repeat(8 - lit)} / 残った戻り道: ${state.returnPaths}/${RETURN_PATHS_START} / 観測者: ${state.observer} / 抗った: ${state.resisted} ・ 戻れなかった: ${state.refused} / 周回: ${state.cycle} / 降り方: ${state.activeTrunk === "soma" ? "身体" : state.activeTrunk === "reso" ? "流れ" : state.activeTrunk === "casc" ? "崩壊" : state.activeTrunk === "other" ? "並行" : "構造"}`;
-      sceneEl.appendChild(card); card.classList.add("shown");
-      const more = document.createElement("p");
-      more.className = "hz-line"; more.style.cssText = "margin-top:0.6em;font-size:0.78rem;color:#6b7682;";
-      more.textContent = attuned
-        ? "観測OSは終わらない。再起動すれば、また零章から——だが、底は最後まで無い。"
-        : "戻れた——それも、ひとつの結末だ。再起動すれば、また零章から潜れる。";
-      sceneEl.appendChild(more); more.classList.add("shown");
-      renderEdgeChoices(attuned);
-      Follow.stick();
+      renderEndingRecord(attuned);
     }, delay + 400);
+    if (!REDUCED) armReadingControl(() => {
+      if (myToken !== revealToken) return;
+      revealToken++;
+      clearReadingControl();
+      const readingTop = sceneEl.scrollTop;
+      Follow.release();
+      for (let i = appended; i < (lines || []).length; i++) appendLine(lines[i]);
+      renderEndingRecord(attuned);
+      sceneEl.scrollTop = readingTop;
+    });
+  }
+
+  function endingReflection(attuned) {
+    const route = { soma: "身体", reso: "流れ", casc: "崩壊", other: "並行" }[state.activeTrunk] || "構造";
+    if (attuned) return `あなたは、${route}の道を通って核の外周へ届いた。深く受け取ったものが認識になり、最後に、その先へ踏み込むことを選んだ。`;
+    if (isAttuned()) return `あなたは、${route}の道を通り、核へ届く認識を抱えて帰った。届かなかったのではない。ここで浮上することを選んだ。`;
+    return `あなたは、${route}の道を通って浮上した。今の認識では、核の外周には届かない。視たものは、次の降下へ持ち越せる。`;
+  }
+
+  function renderEndingRecord(attuned) {
+    const reflection = document.createElement("p");
+    reflection.className = "hz-line shown hz-edge-reflection";
+    reflection.textContent = endingReflection(attuned);
+    sceneEl.appendChild(reflection);
+    const record = document.createElement("details");
+    record.className = "hz-edge-record";
+    const summary = document.createElement("summary");
+    summary.textContent = "降下と記憶の記録";
+    record.appendChild(summary);
+    const card = document.createElement("p");
+    const lit = Math.round(state.maxSink * 8);
+    const head = attuned ? "― 深度Ω 到達・外殻踏破 ―" : "― 浮上 — 表層へ帰る ―";
+    card.textContent = `${head}  認識: ${Math.round(state.attunement || 0)}/${ATTUNE.omegaThreshold}${attuned ? "（合致）" : "（深く読み、視たものを覚えているほど降りられる）"} / 到達深度: ${"▮".repeat(lit)}${"▯".repeat(8 - lit)} / 残った戻り道: ${state.returnPaths}/${RETURN_PATHS_START} / 観測者: ${state.observer} / 抗った: ${state.resisted} ・ 戻れなかった: ${state.refused} / 周回: ${state.cycle} / 降り方: ${state.activeTrunk === "soma" ? "身体" : state.activeTrunk === "reso" ? "流れ" : state.activeTrunk === "casc" ? "崩壊" : state.activeTrunk === "other" ? "並行" : "構造"}`;
+    record.appendChild(card);
+    sceneEl.appendChild(record);
+    const more = document.createElement("p");
+    more.className = "hz-line"; more.style.cssText = "margin-top:0.6em;font-size:0.78rem;color:#6b7682;";
+    more.textContent = "ここまでが、ひとつの降下。ここで画面を閉じてもいい。もう一度沈めば、同じ入口を、記憶を抱えて読み直せる。";
+    sceneEl.appendChild(more); more.classList.add("shown");
+    renderEdgeChoices(attuned);
+    Follow.stick();
   }
 
   // 縁の選択（E1）: 二極どちらの結末でも、次は「記憶を抱えて沈み直す」か「すべて忘れる」かの二択。
@@ -2322,7 +2385,7 @@
 
   // ---------- 起動 ----------
   async function loadData() {
-    const res = await fetch("depths-shell.json?v=e40", { cache: "no-store" });
+    const res = await fetch("depths-shell.json?v=e41", { cache: "no-store" });
     if (!res.ok) throw new Error(`depths-shell HTTP ${res.status}`);
     const data = await res.json();
     if (!data || typeof data !== "object" || !data.start || !data.nodes || !data.nodes[data.start]) {
@@ -2366,6 +2429,7 @@
     gateEl.setAttribute("inert", "");
     gateEl.setAttribute("aria-hidden", "true");
     gateEl.setAttribute("aria-busy", "false");
+    $("reading-tools").hidden = false;
     Spiral.consumeCycleBump();       // 前セッションで降下していた時だけ、ここで周回が一つ深まる
     applyCycleSkin();                // B4: consume 後の cycle で表紙スキンを取り直す
     buildReturnPaths();
@@ -2398,7 +2462,7 @@
   function registerSlicePWA() {
     if (!("serviceWorker" in navigator)) return;
     const register = () => {
-      navigator.serviceWorker.register("sw.js?v=e40", { scope: "./", updateViaCache: "none" }).then((reg) => {
+      navigator.serviceWorker.register("sw.js?v=e41", { scope: "./", updateViaCache: "none" }).then((reg) => {
         if (typeof reg.update === "function") reg.update().catch(() => {});
       }).catch((err) => console.warn("[Hazama slice] SW register failed:", err));
     };
