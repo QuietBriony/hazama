@@ -134,6 +134,13 @@ handoff 前の確認は `docs/autonomy/closeout-checklist.md` を使います。
 
 ## Done
 
+### HZ-BL-016 — 縁カード共有の帰還リンク ✅ 2026-09-04
+- scope: runtime(narrow) / smoke
+- 実ブラウザとコード監査で、縁カードの Web Share が画像＋title だけで正規 URL を payload に含めず、
+  受け取った側のクリック可能な帰還路が欠けることを確認。対応端末では画像＋一行コピー＋正規 URL を共有し、
+  組み合わせ非対応は従来の画像共有、Web Share 非対応は PNG 保存へ fail-safe。カード内の既存 URL 表記も保持。
+- public route / `hazama_spiral_v1` / depths schema / 音 / 自動外部送信は不変。`?v=e39`。
+
 ### HZ-BL-011 — spiral 記憶のエッジ堅牢化 ✅ 2026-07-07
 - scope: smoke / runtime(narrow)
 - E4 で実装済みだった spiral guard（`hazama_spiral_v1`）を Hermes が独立検証。

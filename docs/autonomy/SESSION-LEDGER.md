@@ -19,6 +19,19 @@ Hazama 自律開発 session の追記専用ログ。
 
 ---
 
+## 2026-09-04 — E39 縁カード共有にクリック可能な帰還路
+- agent      : Codex / gpt-5.6-sol（単一会話）
+- goal       : 「大きい一言から自走」の1 sessionとして、既存契約内で外向き循環に最も効く最小の穴を閉じる
+- shipped    :
+  - `slice.js`: 縁カードの対応 Web Share payload に画像＋一行コピー＋正規 URL を同梱。組み合わせ非対応は従来の画像共有、Web Share非対応はPNG保存へ fail-safe
+  - `scripts/build-consistency-smoke.mjs`: 正規URL・file+URL payload・files-only fallback契約を追加
+  - `index.html` / `slice.js` / `sw.js`: E36〜E38を保持してruntime/PWAを`e39`へ同期。READMEとBACKLOGへE39を記録
+- checks     : `node --check`（slice/SW/build-consistency）PASS／`hazama-check` 2 PASS / 0 FAIL / 0 SKIP／`git diff --check` PASS。
+  実Playwrightで画像＋文＋URL payload、組み合わせ非対応と`canShare`例外時のfiles-only fallback、SW/CSS/JS e39一致、320×568横overflowなし・chip 44px、offline reload、console error/warning 0
+- backlog    : HZ-BL-016 added and done
+- next       : HZ-BL-002の5〜8分taste pass、HZ-BL-001の実機PWA、HZ-BL-012の耳gate
+- blockers   : human-gate 3件は維持。commit / push / releaseは2026-09-04の明示号令に基づく
+
 ## 2026-09-04 — 進化 E38: 変奏の錨（レビュー輪→客観是正・号令待ち）
 - agent      : Fable（「磨き進めて」＝レビュー輪。opus×4→529、sonnet×4→429 で agent は全滅。以後は
   Fable が Node 実測＋コード精読で代行＝agent の再起動は制限を食うので打ち切り）

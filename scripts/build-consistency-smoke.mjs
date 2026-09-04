@@ -169,6 +169,11 @@ const edgeCardBody = (js.match(/const EdgeCard = \(\(\) => \{[\s\S]*?\n  \}\)\(\
 assert(edgeCardBody.length > 0, "E13 EdgeCard IIFE present");
 assert(/if \(attuned\)[\s\S]*createRadialGradient/.test(edgeCardBody), "E13 EdgeCard axis-light branches on attuned");
 assert(edgeCardBody.includes("159,208,219"), "E13 EdgeCard omega core glow color present");
+// E39: 画像共有を受け取った先から作品へ戻れるよう、対応 Web Share payload に正規 URL を添える。
+// 組み合わせ非対応なら従来の files-only payload、Web Share 非対応なら PNG 保存を維持する。
+assert(edgeCardBody.includes('const SHARE_URL = "https://quietbriony.github.io/hazama/"'), "E39 EdgeCard canonical share URL present");
+assert(/const shareData = \{[\s\S]*?files: \[file\][\s\S]*?url: SHARE_URL/.test(edgeCardBody), "E39 EdgeCard share payload carries file and URL");
+assert(edgeCardBody.includes("navigator.canShare(shareData)"), "E39 EdgeCard preserves files-only fallback when combined share is unsupported");
 // E14: 「すべて忘れる」が縁の他方（再降下）と対称＝忘却の破断ビート＋Audio.glitchHit＋遅延 restart。
 const forgetBody = (js.match(/function forgetAll\(\)[\s\S]*?\n  \}/) || [""])[0];
 assert(forgetBody.includes("Spiral.wipe()"), "E14 forgetAll still wipes spiral");

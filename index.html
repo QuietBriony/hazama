@@ -29,7 +29,7 @@
   <link rel="manifest" href="manifest.webmanifest" />
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png" />
   <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png" />
-  <link rel="stylesheet" href="slice.css?v=e38" />
+  <link rel="stylesheet" href="slice.css?v=e39" />
 </head>
 <body data-phase="surface">
   <div class="hz-bg" aria-hidden="true">
@@ -99,8 +99,8 @@
     // E35: 既存SWはversion queryを無視して旧CSS/runtimeを返し得るため、
     // controller takeover後は入口のまま一度reloadし、CSS/JSを同じ版で読む。fresh/current loadは待たせない。
     (() => {
-      const SW_URL = "sw.js?v=e38";
-      const RUNTIME_URL = "slice.js?v=e38";
+      const SW_URL = "sw.js?v=e39";
+      const RUNTIME_URL = "slice.js?v=e39";
       const expectedController = new URL(SW_URL, document.baseURI).href;
       const gate = document.getElementById("gate");
       const gateButton = document.getElementById("gate-enter");

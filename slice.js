@@ -2131,10 +2131,11 @@
   // ---------- 縁カード（E1: 結末サマリの画像化・共有） ----------
   // 縁の結果（二極・認識・到達深度・周回）を 1080×1350 の canvas に決定論で描く
   // （worldSeed＝同じ縁は同じカード）。Web Share が files を受ける環境では share sheet、
-  // それ以外は PNG 保存。外部送信はしない＝外へ出すかどうかは常にユーザーの手。
+  // 対応先には正規 URL も添える。それ以外は PNG 保存。外部送信はしない＝外へ出すかどうかは常にユーザーの手。
   // 載せるのは集計値のみ（本文・raw テキストは載せない）。
   const EdgeCard = (() => {
     const W = 1080, H = 1350;
+    const SHARE_URL = "https://quietbriony.github.io/hazama/";
     const FONT = '"Hiragino Sans","Yu Gothic","Noto Sans JP",system-ui,sans-serif';
     function draw(attuned) {
       const cv = document.createElement("canvas");
@@ -2258,7 +2259,17 @@
       if (!blob) return;
       const file = new File([blob], `hazama-edge-c${state.cycle}.png`, { type: "image/png" });
       if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
-        try { await navigator.share({ files: [file], title: "Hazama 狭間" }); return; }
+        const shareData = {
+          files: [file],
+          title: "Hazama 狭間",
+          text: "沈むほど、戻り道は細くなる。",
+          url: SHARE_URL
+        };
+        // 組み合わせ非対応の実装では従来の画像共有を維持する。カード自体にも URL は描画済み。
+        let payload = { files: [file], title: "Hazama 狭間" };
+        try { if (navigator.canShare(shareData)) payload = shareData; }
+        catch (e) {} // canShare の組み合わせ判定自体が未実装でも files-only を守る
+        try { await navigator.share(payload); return; }
         catch (e) { if (e && e.name === "AbortError") return; }   // キャンセルは保存に落とさない
       }
       const a = document.createElement("a");
@@ -2304,7 +2315,7 @@
 
   // ---------- 起動 ----------
   async function loadData() {
-    const res = await fetch("depths-shell.json?v=e38", { cache: "no-store" });
+    const res = await fetch("depths-shell.json?v=e39", { cache: "no-store" });
     if (!res.ok) throw new Error(`depths-shell HTTP ${res.status}`);
     const data = await res.json();
     if (!data || typeof data !== "object" || !data.start || !data.nodes || !data.nodes[data.start]) {
@@ -2380,7 +2391,7 @@
   function registerSlicePWA() {
     if (!("serviceWorker" in navigator)) return;
     const register = () => {
-      navigator.serviceWorker.register("sw.js?v=e38", { scope: "./", updateViaCache: "none" }).then((reg) => {
+      navigator.serviceWorker.register("sw.js?v=e39", { scope: "./", updateViaCache: "none" }).then((reg) => {
         if (typeof reg.update === "function") reg.update().catch(() => {});
       }).catch((err) => console.warn("[Hazama slice] SW register failed:", err));
     };
