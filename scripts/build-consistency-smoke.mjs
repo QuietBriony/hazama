@@ -8,6 +8,7 @@ import "./audio-governor-smoke.mjs";
 import "./sensory-frame-smoke.mjs";
 import "./choice-commit-smoke.mjs";
 import "./reading-control-smoke.mjs";
+import "./reading-settings-smoke.mjs";
 
 const root = process.cwd();
 const failures = [];

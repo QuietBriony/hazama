@@ -19,6 +19,8 @@
   "use strict";
 
   const REDUCED = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  // E42: 読む/聴くためのページ内設定。spiral記憶とは分離し、storageへは書かない。
+  const Preferences = { fullText: false, textScale: 1, sound: true };
   const RETURN_PATHS_START = 5;
   const SINK_SCALE = 22; // sink値→0..1正規化（縁でほぼ1）
   // 抗う/戻るの作法（尺度＝観測者数＝物語深度）:
@@ -910,6 +912,7 @@
   function renderNode(id) {
     let node = DATA.nodes[id];
     if (!node) return;
+    const instant = REDUCED || Preferences.fullText;
     const firstEver = state.steps === 0;                       // 起動直後の最初の1ノードはめくらない
     // 周回(reborn→zero)で cycle を深める＝同じ入口でも巡るほどテキストも“通る筋”も変わる。
     if (id === (DATA.start || "zero") && state.steps > 0) {
@@ -939,9 +942,10 @@
     setBusy(true);               // E6: reveal 中は SR 読み上げを抑制（choices 表示で解除）
     choicesEl.innerHTML = "";
     Follow.reset();              // 新ノード：追従ON・最上部から（行は下から積み上がる）
+    if (instant) Follow.release(); // E42: 最初から全文を出す場合は未読の先頭から読む。
     if (!firstEver) Peel.play(); // 塗装剥がれ：各遷移で層が一枚めくれて降りる
     const myToken = ++revealToken;
-    const revealMs = REDUCED ? 0 : (34 + state.dread * 64);
+    const revealMs = instant ? 0 : (34 + state.dread * 64);
     let delay = 0;
 
     // 抗い/戻るの結果ビート（あれば本文の先頭に差す。一度きり）。
@@ -958,7 +962,7 @@
     // E41: 初見の本文タップは依然無効。明示的な「全文を表示」だけが演出待ちを切り上げる。
     // E27 の既読タップも同じ一回性を共有。文字を出しても進行/認識/門の採点は進めない。
     let appended = 0;
-    if (!REDUCED) {
+    if (!instant) {
       const finish = () => {
         if (myToken !== revealToken) return;   // 古いノードの残骸＝何もしない（次の張り替えで消える）
         revealToken++;                          // 予約済みの行/文字/choices タイマーを全て無効化
@@ -984,7 +988,7 @@
 
     lines.forEach((line) => {
       const chars = [...line.t];
-      if (REDUCED) {
+      if (instant) {
         const p = mkLine(line);
         p.textContent = line.t; p.classList.add("shown");
         sceneEl.appendChild(p); Follow.stick();
@@ -1010,7 +1014,7 @@
       delay += chars.length * revealMs + 360 + (line.gap || 0);
     });
 
-    const choiceDelay = REDUCED ? 150 : delay + 220;
+    const choiceDelay = instant ? 150 : delay + 220;
     window.setTimeout(() => {
       if (myToken !== revealToken) return;
       // E27: 通常到達なら早送りハンドラを畳む（choices 表示後の scene タップで二重描画しない）。
@@ -1392,6 +1396,7 @@
   // ---------- 縁（増分の終わり。沈みきり/辛うじて で分岐） ----------
   function renderEdge() {
     const myToken = ++revealToken;
+    const instant = REDUCED || Preferences.fullText;
     const attuned = isAttuned() && state.wagered;   // R2/E19: Ω は「核を賭けて貫いた(wager)」かつ認識合致の時だけ。賭けない/未達は浮上。
     state.dread = attuned ? 1 : 0.4;
     applyAtmosphere({ tension: attuned ? "high" : "low" });
@@ -1407,6 +1412,7 @@
     setBusy(true);               // E6: 縁の結末文＋選択が出揃うまで SR を抑制
     showReadingPlace(attuned ? "ひとつの結末 — 深度Ω" : "ひとつの結末 — 浮上");
     Follow.reset();
+    if (instant) Follow.release();
     const sank = state.returnPaths <= 1;
     // 帰還の極（未達）＝失敗演出にしない。光のほうへ浮上して帰る、視たものを抱えたまま。
     // E14: Ω 側(sankLines/heldLines) と対称に、浮上側も二極化＝戻り道がほぼ尽きた者（深く潜って戻った）と
@@ -1430,7 +1436,7 @@
     const lines = attuned ? (sank ? DATA.edge.sankLines : DATA.edge.heldLines) : SURFACE_LINES;
     let delay = 0;
     let appended = 0;
-    const revealMs = REDUCED ? 0 : 52;
+    const revealMs = instant ? 0 : 52;
     const appendLine = (line) => {
       const p = document.createElement("p");
       p.className = "hz-line " + (WHO_CLASS[line.who] || "") + " shown";
@@ -1440,7 +1446,7 @@
       Follow.stick();
     };
     (lines || []).forEach((line) => {
-      if (REDUCED) {
+      if (instant) {
         appendLine(line);
         return;
       }
@@ -1454,7 +1460,7 @@
       if (myToken !== revealToken) return;
       renderEndingRecord(attuned);
     }, delay + 400);
-    if (!REDUCED) armReadingControl(() => {
+    if (!instant) armReadingControl(() => {
       if (myToken !== revealToken) return;
       revealToken++;
       clearReadingControl();
@@ -1588,7 +1594,8 @@
   //  - 圧(dread)で鼓動が速く・重く。core は描かない＝音でも"解決音"は鳴らさない。
   //  - below 周回ごとに setColor(seed) で detune/うねりを微妙にずらす＝底なしの質感差。
   const Audio = (() => {
-    let ctx = null, master = null, compressor = null, filter = null, dryGain = null, conv = null, wetGain = null;
+    let ctx = null, master = null, compressor = null, outputVolume = null, filter = null, dryGain = null, conv = null, wetGain = null;
+    let volume = 1; // 圧で変動するmasterとは別の最終音量。既定1＝従来の音を変えない。
     let lfo = null, lfoGain = null, drones = [], pulseTimer = null, on = false, playing = false;
     let suspendedByVisibility = false;
     // depth=深度(rank/沈下の濃い方・0..1) / dread=圧(0..1) / density=観測者の多声(0..1)。
@@ -1638,7 +1645,8 @@
       compressor = ctx.createDynamicsCompressor();
       compressor.threshold.value = -18; compressor.knee.value = 12; compressor.ratio.value = 4;
       compressor.attack.value = 0.006; compressor.release.value = 0.25;
-      master.connect(compressor); compressor.connect(ctx.destination);
+      outputVolume = ctx.createGain(); outputVolume.gain.value = volume;
+      master.connect(compressor); compressor.connect(outputVolume); outputVolume.connect(ctx.destination);
       filter = ctx.createBiquadFilter(); filter.type = "lowpass"; filter.frequency.value = 1700; filter.Q.value = 0.8;
       dryGain = ctx.createGain(); dryGain.gain.value = 0.85;
       filter.connect(dryGain); dryGain.connect(master);
@@ -1666,6 +1674,11 @@
     }
     // playing は「鳴らす意図」を表す（ctx.suspend/resume は非同期で state 反映が遅れるため、
     // チップ表示はこの意図フラグを正にする）。
+    function setVolume(value) {
+      if (!Number.isFinite(value)) return;
+      volume = Math.max(0, Math.min(1, value));
+      if (ctx && outputVolume) outputVolume.gain.setTargetAtTime(volume, ctx.currentTime, 0.04);
+    }
     function toggle() {
       if (!on) return start();
       playing = !playing;
@@ -1812,7 +1825,8 @@
       try { if (filter) filter.disconnect(); if (dryGain) dryGain.disconnect(); } catch (e) {}
       try { if (conv) conv.disconnect(); if (wetGain) wetGain.disconnect(); } catch (e) {}
       try { if (master) master.disconnect(); if (compressor) compressor.disconnect(); } catch (e) {}
-      ctx = null; master = null; compressor = null; filter = null; dryGain = null; conv = null; wetGain = null;
+      try { if (outputVolume) outputVolume.disconnect(); } catch (e) {}
+      ctx = null; master = null; compressor = null; outputVolume = null; filter = null; dryGain = null; conv = null; wetGain = null;
       lfo = null; lfoGain = null; drones = []; on = false; playing = false; suspendedByVisibility = false;
       try {
         if (closing && closing.state !== "closed") {
@@ -1821,7 +1835,8 @@
       } catch (e) {}
     }
     return {
-      start, toggle, pulseOnce: (a) => beat(a), glitchHit, setAxis, breath, suspendForVisibility, dispose,
+      start, toggle, setVolume, pulseOnce: (a) => beat(a), glitchHit, setAxis, breath, suspendForVisibility, dispose,
+      get volume() { return volume; },
       get on() { return on; },
       get playing() { return playing; }, // 鳴らす意図（チップ表示の正）
       get suspendedByVisibility() { return suspendedByVisibility; },
@@ -2369,23 +2384,75 @@
     const chip = $("audio-toggle");
     function label() {
       if (!chip) return;
-      chip.textContent = Audio.suspendedByVisibility ? "♪ 再開" : Audio.playing ? "♪ 鳴っている" : "♪ 鳴らす";
+      chip.textContent = Audio.suspendedByVisibility ? "♪ 再開" : Audio.playing ? (Audio.volume === 0 ? "♪ 音量0" : "♪ 鳴っている") : "♪ 鳴らす";
       chip.setAttribute("aria-pressed", Audio.playing ? "true" : "false");
+      const sound = $("settings-sound");
+      if (sound && entered) sound.checked = Audio.playing;
     }
     // 「沈む」タップ（実手勢・同一document）の中で呼ばれる＝ここで resume が通る。
-    function startPrimary() { if (chip) chip.hidden = false; Audio.start(); label(); }
-    function cycle() { Audio.toggle(); label(); }
+    function startPrimary() { if (chip) chip.hidden = false; if (Preferences.sound) Audio.start(); label(); }
+    function cycle() { Audio.toggle(); Preferences.sound = Audio.playing; label(); }
+    function setEnabled(enabled) {
+      Preferences.sound = !!enabled;
+      // 表紙での設定はAudioContextを起動しない。進行中は明示操作の中でのみ再開する。
+      if (entered && Audio.playing !== Preferences.sound) Audio.toggle();
+      label();
+    }
     document.addEventListener("visibilitychange", () => {
       if (document.hidden && Audio.suspendForVisibility()) label();
     });
     window.addEventListener("pagehide", () => { Audio.dispose(); label(); });
     window.addEventListener("pageshow", label);
-    return { startPrimary, cycle };
+    return { startPrimary, cycle, setEnabled, label };
   })();
+
+  function setupReadingSettings() {
+    const dialog = $("settings-dialog");
+    const size = $("settings-size"), reading = $("settings-reading");
+    const sound = $("settings-sound"), volume = $("settings-volume");
+    let opener = null;
+    const sync = () => {
+      size.value = String(Preferences.textScale);
+      reading.value = REDUCED || Preferences.fullText ? "full" : "reveal";
+      reading.disabled = !!REDUCED;
+      sound.checked = entered ? Audio.playing : Preferences.sound;
+      const percent = Math.round(Audio.volume * 100);
+      volume.value = String(percent);
+      volume.setAttribute("aria-valuetext", percent + "%");
+      $("settings-volume-value").textContent = percent + "%";
+    };
+    [$("settings-gate"), $("settings-open")].forEach((button) => {
+      button.disabled = false;
+      button.addEventListener("click", () => {
+        if (dialog.open) return;
+        opener = button;
+        sync();
+        dialog.showModal();
+      });
+    });
+    dialog.addEventListener("close", () => { if (opener && opener.isConnected) opener.focus({ preventScroll: true }); });
+    size.addEventListener("change", () => {
+      const scale = Number(size.value);
+      if (![1, 1.15, 1.3].includes(scale)) return sync();
+      Preferences.textScale = scale;
+      document.documentElement.style.setProperty("--reading-scale", String(scale));
+      Follow.release();
+    });
+    reading.addEventListener("change", () => {
+      Preferences.fullText = reading.value === "full";
+      if (Preferences.fullText && readingFinish) readingFinish();
+    });
+    sound.addEventListener("change", () => { Music.setEnabled(sound.checked); sync(); });
+    volume.addEventListener("input", () => {
+      Audio.setVolume(Number(volume.value) / 100);
+      Music.label();
+      sync();
+    });
+  }
 
   // ---------- 起動 ----------
   async function loadData() {
-    const res = await fetch("depths-shell.json?v=e41", { cache: "no-store" });
+    const res = await fetch("depths-shell.json?v=e42", { cache: "no-store" });
     if (!res.ok) throw new Error(`depths-shell HTTP ${res.status}`);
     const data = await res.json();
     if (!data || typeof data !== "object" || !data.start || !data.nodes || !data.nodes[data.start]) {
@@ -2430,6 +2497,7 @@
     gateEl.setAttribute("aria-hidden", "true");
     gateEl.setAttribute("aria-busy", "false");
     $("reading-tools").hidden = false;
+    $("settings-open").hidden = false;
     Spiral.consumeCycleBump();       // 前セッションで降下していた時だけ、ここで周回が一つ深まる
     applyCycleSkin();                // B4: consume 後の cycle で表紙スキンを取り直す
     buildReturnPaths();
@@ -2453,6 +2521,7 @@
   }
 
   $("audio-toggle").addEventListener("click", () => Music.cycle());
+  setupReadingSettings();
 
   // 開発用フック（プレビュー検証専用）: 任意ノードへ跳ぶ／状態を読む／縁・カードを直接出す。
   // garden(depth, dread, seed): A3 構図モード検証用＝seed を変えて #garden を直接描き直す。
@@ -2462,7 +2531,7 @@
   function registerSlicePWA() {
     if (!("serviceWorker" in navigator)) return;
     const register = () => {
-      navigator.serviceWorker.register("sw.js?v=e41", { scope: "./", updateViaCache: "none" }).then((reg) => {
+      navigator.serviceWorker.register("sw.js?v=e42", { scope: "./", updateViaCache: "none" }).then((reg) => {
         if (typeof reg.update === "function") reg.update().catch(() => {});
       }).catch((err) => console.warn("[Hazama slice] SW register failed:", err));
     };

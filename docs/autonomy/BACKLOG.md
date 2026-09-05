@@ -146,6 +146,16 @@ handoff 前の確認は `docs/autonomy/closeout-checklist.md` を使います。
 
 ## Done
 
+### HZ-BL-019 — 体験版候補の読む/聴く設定 ✅ 2026-09-05
+- scope: runtime / smoke / verify
+- source: E41後の「進めて」＝初見テスト前にPCでも自分の読み方・音量で遊べる状態へ
+- 表紙とプレイ中から文字サイズ（本文/択/説明文）、自動全文表示、音のオン/オフ、音量を変更。
+  native dialogで背景を隔離し、閉じる/Escのfocus復帰と短画面のscrollを確認。
+- ページ内設定のみ。storage/原文/ルート/バランスは不変。音量はcompressor後で最大1倍、
+  深度・glitch・再生再開がユーザー指定を上書きしない。無音開始とOS reduced-motionの優先を維持。
+- production codeを使う設定/音量/自動全文smokeと、PC/320px実ブラウザで確認。`?v=e42`。
+  HZ-BL-018の初見評価、HZ-BL-001/002/012の実機・taste・耳は未完了のまま。
+
 ### HZ-BL-017 — 選択肢出現と確定待ちの競合 ✅ 2026-09-05
 - scope: runtime(narrow) / smoke
 - E39の実ブラウザで、最初の択を押した後の140ms内に別の択の出現タイマーが発火すると、

@@ -41,7 +41,7 @@ function harness(reduced = false) {
     document: { createElement: () => new Element(), body: new Element() },
     $: (id) => id === "reveal-now" ? button : place,
     sceneEl: scene, choicesEl: new Element(), readingFinish: null, sceneSkipHandler: null, revealToken: 0,
-    REDUCED: reduced, RANK: { zero: 0, A: 1, Q: 17 }, WHO_CLASS: {}, ECHO_GATES: ["Q"], ATTUNE: { omegaThreshold: 6 }, RETURN_PATHS_START: 5,
+    REDUCED: reduced, Preferences: { fullText: false }, RANK: { zero: 0, A: 1, Q: 17 }, WHO_CLASS: {}, ECHO_GATES: ["Q"], ATTUNE: { omegaThreshold: 6 }, RETURN_PATHS_START: 5,
     window: { setTimeout(fn, delay = 0) { timers.set(++nextTimer, { fn, at: now + delay }); return nextTimer; } },
     applyCycle: (_id, n) => n, maybeForeignDrift: (_id, n) => n, applyCycleSkin() {}, applyAtmosphere() {},
     Spiral: { save() { saves++; } }, Follow: { reset() { scene.scrollTop = 0; }, stick() {}, release() {} }, Peel: { play() {} },
@@ -110,3 +110,14 @@ for (const [recognition, wagered, phrase] of [[6, true, "核の外周へ届い�
   }
 }
 console.log("reading-control smoke PASS (first read, stale timers, echo, replay, reduced motion, three ending states)");
+
+for (const target of ["zero", "Q", "edge"]) {
+  const h = harness(); h.context.Preferences.fullText = true;
+  if (target === "edge") h.context.renderEdge(); else h.context.renderNode(target);
+  assert.equal(h.button.disabled, true, "automatic full text does not require the reveal button");
+  assert.equal(h.scene.querySelectorAll(".ch").length, 0, "automatic full text creates no hidden characters");
+  h.advance(30000);
+  assert.deepEqual(h.choices, [target === "Q" ? "echo" : target === "edge" ? "edge" : "normal"]);
+  assert.equal(h.state.attunement, 0, "full-text preference never scores a choice");
+}
+console.log("automatic full-text smoke PASS (normal, echo, ending)");

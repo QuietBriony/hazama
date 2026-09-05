@@ -16,6 +16,7 @@
   --sink: 0;               /* 0..1 沈下。背景の暗さに使う */
   --cycle-hue: 0deg;       /* B4: 周回スキンの色相ずれ。JS(applyCycleSkin)が更新。cycle=0 は 0deg */
   --cycle-pan: 0%;         /* B4: 周回スキンの横パン。JS が更新。cycle=0 は 0% */
+  --reading-scale: 1;      /* E42: 本文/択の拡大。ページ内だけの設定＝保存しない。 */
 }
 
 * { box-sizing: border-box; }
@@ -399,7 +400,9 @@ body.omega    .hz-stage[data-stage="omega"] {
 .hz-scene::before { content: ""; margin-top: auto; }
 .hz-line {
   margin: 0;
-  font-size: clamp(1.02rem, 1rem + 0.8vw, 1.34rem);
+  /* E42: 拡大時、末尾の閉じ括弧が字送り幅を越えても横scrollを作らない余白。 */
+  padding-right: 0.6em;
+  font-size: calc(clamp(1.02rem, 1rem + 0.8vw, 1.34rem) * var(--reading-scale));
   line-height: 1.95;
   letter-spacing: 0.02em;
   color: var(--ink);
@@ -458,10 +461,11 @@ body.omega .hz-scene, body.surfaced .hz-scene { animation: none; }
   opacity: 0; transform: translateY(8px);
 }
 .hz-choice.in { opacity: 1; transform: none; }
+.hz-choice .lead { font-size: calc(1em * var(--reading-scale)); }
 .hz-choice:active { background: rgba(127,182,196,0.12); }
 .hz-choice .sub {
   display: block; margin-top: 5px;
-  font-size: 0.78rem; color: var(--ink-dim); letter-spacing: 0.03em;
+  font-size: calc(0.78rem * var(--reading-scale)); color: var(--ink-dim); letter-spacing: 0.03em;
 }
 /* 進む手＝沈む。退避手＝深いほど重く・遅くなる。 */
 .hz-choice.descend { border-color: rgba(196,107,90,0.35); }
@@ -509,7 +513,7 @@ body.omega .hz-scene, body.surfaced .hz-scene { animation: none; }
 /* ---------- フッタ ---------- */
 .hz-footer {
   position: relative; z-index: 2;
-  display: flex; align-items: center; gap: 10px;
+  display: flex; align-items: center; flex-wrap: wrap; gap: 8px;
   /* E25: 左右も safe-area 尊重（横持ちノッチで chip/status がノッチ下へ潜らない）。 */
   padding: 8px max(18px, env(safe-area-inset-right)) max(8px, env(safe-area-inset-bottom)) max(18px, env(safe-area-inset-left));
   border-top: 1px solid rgba(127,182,196,0.08);
@@ -559,6 +563,36 @@ body.omega .hz-scene, body.surfaced .hz-scene { animation: none; }
 .hz-gate-enter:active { background: var(--accent); color: #02040a; }
 .hz-gate-note { margin-top: 2.4em; font-size: 0.72rem; color: var(--ink-faint); }
 .hz-gate-note.is-error { font-size: 0.8rem; line-height: 1.6; color: var(--warn); }
+.hz-gate-settings { margin-top: 12px; }
+.hz-gate-settings + .hz-gate-note { margin-top: 1em; }
+
+/* E42: native dialogのtop layerで、背景の択/表紙とfocusを隔離する。 */
+.hz-settings {
+  color: var(--ink); background: #0a1018; border: 1px solid var(--line);
+  border-radius: 16px; padding: 24px;
+  width: min(440px, calc(100vw - 24px)); max-height: calc(100dvh - 24px);
+  overflow-y: auto; overscroll-behavior: contain; color-scheme: dark;
+}
+.hz-settings::backdrop { background: rgba(0, 0, 0, 0.78); }
+.hz-settings-heading {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  position: sticky; top: 0; z-index: 1; padding-bottom: 8px; background: #0a1018;
+  box-shadow: 0 -24px 0 #0a1018; /* scroll中もdialog上余白へ本文を透かさない */
+}
+.hz-settings .hz-chip { color: var(--ink); }
+.hz-settings h2 { margin: 0; font-size: 1.08rem; font-weight: 500; }
+.hz-settings p { font-size: 0.82rem; line-height: 1.8; color: #a1aebc; }
+.hz-settings-field { display: flex; flex-direction: column; gap: 8px; margin-top: 20px; font-size: 0.9rem; }
+.hz-settings select {
+  width: 100%; min-height: 44px; padding: 8px 10px;
+  color: var(--ink); background: #101923; border: 1px solid var(--line); border-radius: 6px; font: inherit;
+}
+.hz-settings input { accent-color: var(--accent); }
+.hz-settings input[type="range"] { width: 100%; min-height: 44px; margin: 0; }
+.hz-settings input[type="checkbox"] { width: 20px; height: 20px; margin: 0; }
+.hz-settings-sound { display: flex; align-items: center; gap: 10px; min-height: 44px; margin-top: 16px; font-size: 0.9rem; }
+.hz-settings output { float: right; color: var(--accent); }
+.hz-settings :is(input, select):focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
 
 /* ============================================================================
    R5 — バスキア × 沈下サイバーパンク（生の手の痕跡が冷たい構造を突き破る）

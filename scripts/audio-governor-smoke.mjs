@@ -146,6 +146,35 @@ assert.equal(full.timers.size, 1, "full schedules one pulse timer");
 full.audio.start();
 assert.equal(full.contexts.length, 1, "repeated start does not create a second context");
 
+// E42: a final volume stage preserves compression and applies to every layer.
+const fullOutput = full.contexts[0].compressors[0].connections[0];
+assert.equal(fullOutput.kind, "gain", "volume follows the existing compressor");
+assert.equal(fullOutput.connections[0], full.contexts[0].destination, "no output bypasses final volume");
+assert.equal(fullOutput.gain.value, 1, "100% preserves the previous level");
+full.audio.setVolume(0.35);
+full.audio.update(1, 1, 1);
+full.audio.glitchHit(1);
+assert.equal(fullOutput.gain.value, 0.35, "depth/glitch changes must not override user volume");
+full.audio.setVolume(NaN); full.audio.setVolume(Infinity);
+assert.equal(full.audio.volume, 0.35, "invalid volume leaves the last valid level");
+full.audio.setVolume(-1);
+assert.equal(fullOutput.gain.value, 0, "lower bound is silence");
+full.audio.setVolume(2);
+assert.equal(fullOutput.gain.value, 1, "volume never boosts beyond the previous level");
+full.audio.setVolume(0.2);
+full.audio.dispose();
+assert.equal(fullOutput.connections.length, 0, "dispose disconnects the volume stage");
+full.audio.start();
+assert.equal(full.contexts[1].compressors[0].connections[0].gain.value, 0.2, "in-page volume survives audio recreation");
+full.audio.dispose();
+
+const quietStart = createHarness();
+quietStart.audio.setVolume(0);
+assert.equal(quietStart.contexts.length, 0, "setting volume on the cover does not start sound");
+quietStart.audio.start();
+assert.equal(quietStart.contexts[0].compressors[0].connections[0].gain.value, 0, "zero volume is applied before audio starts");
+quietStart.audio.dispose();
+
 const light = createHarness({ coarse: true });
 light.audio.start();
 assert.equal(light.audio.tier, "light");

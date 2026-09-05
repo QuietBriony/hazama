@@ -19,6 +19,28 @@ Hazama 自律開発 session の追記専用ログ。
 
 ---
 
+## 2026-09-05 — E42 読む・聴く設定で初見テスト前の操作環境を整える
+- agent      : Codex（単一会話・モデル/推論設定は変更せず継続）
+- goal       : 既存の体験版候補を、文字の読みやすさと無音開始を選んで試せるようにする
+- shipped    : 表紙/プレイ中のnative dialogから文字サイズ（標準/115%/130%）、自動全文表示、
+  音のオン/オフ、音量0〜100%を変更。Esc/閉じるで元のボタンへfocusを戻し、短画面でも閉じる操作を固定。
+  全文表示は先頭から読め、途中で切り替えても選択・認識・エコー門の採点を進めない。
+  音量は既存compressor後の最終gainで絞り、100%が従来値。深度変化/再生再開でも指定値を保つ。
+  表紙の音オフはAudioContextを起動しない。非表示による一時停止は音量変更だけでは解除しない。
+- scope      : 設定はページ内だけで再読み込み時に標準へ戻す。public route / hazama_spiral_v1 / depths schema /
+  本文72ノード / バランス数値は不変。保存キー・依存・音源・解析送信の追加なし。index/runtime/SWはe42同期。
+- checks     : `node scripts/hazama-check.mjs`: 2 PASS / 0 FAIL / 0 SKIP。`node --check slice.js`、`git diff --check` PASS。
+  production settings/Musicを読む新しい`reading-settings-smoke`、Audio音量境界/再生成、通常/門/終端の自動全文表示を検証。
+- browser    : 実Chromiumで320×568/1280×800の設定画面、キーボード操作・focus復帰、115%/130%文字、
+  自動全文/演出への切替、無音開始、実AudioContextの0%/35% gain、音量維持、既存音ボタンとの同期、
+  再読み込みで設定リセット、OS reduced優先、offline reload→設定→降下を確認。設定操作はspiralを変更しない。
+  130%/自動全文/無音の実UIで構造29ノード→Ω（認識12）と身体13ノード→任意浮上（認識8）、
+  再降下cycle1まで確認。Qの日本語閉じ括弧が拡大時に2pxはみ出す欠陥は、行末の余白を確保して修正。
+  修正後は両ルートの全通過点で横overflowなし。PC/短画面/両結末を画像確認、console error 0。
+- backlog    : HZ-BL-019 added and done。HZ-BL-018の初見テストとHZ-BL-001 / 002 / 012のhuman-gateは継続。
+- next       : 初見5〜10人の了承を得たテストで、選択の理解・止めた場所・結末の納得・再プレイ理由を確認する。
+- release    : 承認済みの既存Web版更新の継続。Steamアカウント/支払/PC包装/提出/Steam公開は未実施。
+
 ## 2026-09-05 — E41 既存の初回２ルートをSteamに向けた体験版候補へ
 - agent      : Codex / GPT-6 Astra（単一会話・ユーザーのMax設定を変更せず継続）
 - goal       : 「Steamで販売できる品質にできるか」への次段階として、既存の初回体験の入口・読む操作・終わり方を整える
