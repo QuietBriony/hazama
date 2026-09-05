@@ -20,7 +20,7 @@
 
   const REDUCED = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   // E42: 読む/聴くためのページ内設定。spiral記憶とは分離し、storageへは書かない。
-  const Preferences = { fullText: false, textScale: 1, sound: true };
+  const Preferences = { fullText: false, textScale: 1, sound: true, readingComfort: false };
   // E43: 翻訳は表示だけの射影。原文/ノード/seed/進行/保存を変更しない。
   const Locale = (() => {
     let language = "ja", pack = null;
@@ -247,19 +247,27 @@
   //     慣性スクロールと競合せず、rAF にも依存しない（非表示/スクロール中の rAF 間引きで止まらない）。
   const Follow = (() => {
     const NEAR = 64; // px: これ以内なら「最下部に居る」とみなす（慣性の揺れに対する許容）
-    let following = true;
+    let following = true, lastScrollTop = 0;
     const atBottom = () => sceneEl.scrollHeight - sceneEl.scrollTop - sceneEl.clientHeight <= NEAR;
     // 吸着は行追加/選択肢表示の時だけ（1文字ごとではない）＝低頻度。よって同期 scrollTop で十分で、
     // rAF に依存しない（rAF はタブ非表示やスクロール中に間引かれ、追従が止まる事故の元）。
-    function stick() { if (following) sceneEl.scrollTop = sceneEl.scrollHeight; }
+    function stick() { if (following) { sceneEl.scrollTop = sceneEl.scrollHeight; lastScrollTop = sceneEl.scrollTop; } }
     // 新ノード開始：追従ON＋最上部から（reveal は下から積み上がる）。
-    function reset() { following = true; sceneEl.scrollTop = 0; }
+    function reset() { following = true; sceneEl.scrollTop = 0; lastScrollTop = 0; }
     const release = () => { following = false; };            // 実手勢＝追従を即解除
     sceneEl.addEventListener("wheel", release, { passive: true });
     sceneEl.addEventListener("touchmove", release, { passive: true });
-    // 最下部へ自力で戻ったら追従再開。programmatic な吸着でも near-bottom なので true を保つ
-    // ＝吸着が自分で自分を解除しない。
-    sceneEl.addEventListener("scroll", () => { if (atBottom()) following = true; }, { passive: true });
+    sceneEl.addEventListener("keydown", (event) => {
+      if (event.target === sceneEl && ["ArrowUp", "ArrowDown", "PageUp", "PageDown", "Home", "End", " "].includes(event.key)) release();
+    }); // E44: keyboard scrolling is a reading gesture too; preserve the browser's default scroll.
+    // E44: 上へ読んでいる途中はnear-bottomでも再吸着しない。Home/wheelの滑らかな移動の
+    // 最初の数pxで追従が再開し、次の段落へ引き戻す競合を防ぐ。下へ戻った時だけ再開する。
+    sceneEl.addEventListener("scroll", () => {
+      const top = sceneEl.scrollTop;
+      if (top < lastScrollTop) following = false;
+      else if (atBottom()) following = true;
+      lastScrollTop = top;
+    }, { passive: true });
     return { stick, reset, release };
   })();
 
@@ -1570,7 +1578,7 @@
     record.appendChild(card);
     sceneEl.appendChild(record);
     const more = document.createElement("p");
-    more.className = "hz-line"; more.style.cssText = "margin-top:0.6em;font-size:0.78rem;color:#6b7682;";
+    more.className = "hz-line hz-edge-more";
     more.textContent = tr("ここまでが、ひとつの降下。ここで画面を閉じてもいい。もう一度沈めば、同じ入口を、記憶を抱えて読み直せる。");
     sceneEl.appendChild(more); more.classList.add("shown");
     renderEdgeChoices(attuned);
@@ -1582,21 +1590,25 @@
   function renderEdgeChoices(attuned) {
     const myToken = revealToken;
     choicesEl.innerHTML = "";
-    const mk = (kind, lead, sub, fn) => {
+    const mk = (kind, lead, sub, fn, needsConfirmation = false) => {
       const btn = document.createElement("button");
       btn.type = "button";
       btn.className = "hz-choice " + kind;
       btn.innerHTML = `<span class="lead"></span><span class="sub"></span>`;
       btn.querySelector(".lead").textContent = tr(lead);
       btn.querySelector(".sub").textContent = tr(sub);
-      btn.addEventListener("click", () => confirmThen(btn, fn), { once: true });   // E28: 縁の二択にも確定感
+      btn.addEventListener("click", () => needsConfirmation ? ForgetGuard.ask(btn) : confirmThen(btn, fn), { once: !needsConfirmation });
+      if (needsConfirmation) {
+        btn.setAttribute("aria-haspopup", "dialog");
+        btn.setAttribute("aria-controls", "forget-dialog");
+      }
       choicesEl.appendChild(btn);
       return btn;
     };
     mk("descend", "縁から、もう一度沈む",
       tr("視たものを抱えたまま、零章へ——周回が一つ深まる（{cycle}）", { cycle: state.cycle + 1 }), descendAgain);
     mk("retreat", "すべて忘れる",
-      "周回・認識・痕跡を消す。次は、初めてになる", forgetAll);
+      "周回・認識・痕跡を消す。次は、初めてになる", forgetAll, true);
     // 縁カード: 結末サマリを画像で外へ（share か PNG 保存）。物語の選択ではないので chip として小さく。
     const row = document.createElement("div");
     row.style.cssText = "display:flex;justify-content:center;padding:2px 0 4px;";
@@ -1617,6 +1629,33 @@
     queueA11yState();            // E34: 結末本文と競合させず、最後の進行値を読む
     Follow.stick();
   }
+
+  // E44: 忘却は二段階。確認を開くだけ/取り消しでは択も記憶も確定させない。
+  const ForgetGuard = (() => {
+    const dialog = $("forget-dialog");
+    let pending = null;
+    const current = (request) => request && request.token === revealToken &&
+      choicesEl.contains(request.button) && !request.button.disabled && !choicesEl.querySelector(".chosen");
+    if (dialog) {
+      dialog.addEventListener("cancel", () => { dialog.returnValue = "cancel"; });
+      dialog.addEventListener("close", () => {
+        const request = pending;
+        pending = null;
+        if (!current(request)) return; // 古い結末の確認で、新しい周回の記憶を消さない。
+        if (dialog.returnValue === "forget") confirmThen(request.button, forgetAll);
+        else request.button.focus({ preventScroll: true });
+      });
+    }
+    function ask(button) {
+      const request = { button, token: revealToken };
+      if (!current(request) || !dialog || dialog.open || pending || typeof dialog.showModal !== "function") return;
+      pending = request;
+      dialog.returnValue = "cancel"; // Escや再表示で、前回の破棄回答を再利用しない。
+      try { dialog.showModal(); }
+      catch (_) { pending = null; } // 確認を開けない場合も記憶は消さない。
+    }
+    return { ask };
+  })();
 
   // 再降下: transient（沈下/圧/戻り道/観測者/抗い）は新しく、spiral 層は保つ。
   // steps を保つ＝renderNode(zero) が周回を一つ深める（in-session の reborn→zero と同じ経路）。
@@ -2484,11 +2523,13 @@
     const dialog = $("settings-dialog");
     const size = $("settings-size"), reading = $("settings-reading");
     const sound = $("settings-sound"), volume = $("settings-volume");
+    const comfort = $("settings-comfort");
     let opener = null;
     const sync = () => {
       size.value = String(Preferences.textScale);
       reading.value = REDUCED || Preferences.fullText ? "full" : "reveal";
       reading.disabled = !!REDUCED;
+      comfort.checked = Preferences.readingComfort;
       sound.checked = entered ? Audio.playing : Preferences.sound;
       const percent = Math.round(Audio.volume * 100);
       volume.value = String(percent);
@@ -2516,6 +2557,11 @@
       Preferences.fullText = reading.value === "full";
       if (Preferences.fullText && readingFinish) readingFinish();
     });
+    comfort.addEventListener("change", () => {
+      Preferences.readingComfort = comfort.checked;
+      document.body.classList.toggle("reading-comfort", Preferences.readingComfort);
+      Follow.release(); // 見た目の切替で読んでいた位置を奪わない。
+    });
     sound.addEventListener("change", () => { Music.setEnabled(sound.checked); sync(); });
     volume.addEventListener("input", () => {
       Audio.setVolume(Number(volume.value) / 100);
@@ -2536,7 +2582,7 @@
     // 翻訳が取得できなくても日本語の起動は止めない。言語は表紙での明示選択・保存しない。
     const controller = new AbortController();
     const timer = window.setTimeout(() => controller.abort(), 8000);
-    fetch("locales/en.json?v=e43", { signal: controller.signal }).then((response) => {
+    fetch("locales/en.json?v=e44", { signal: controller.signal }).then((response) => {
       if (!response.ok) throw new Error("English catalog HTTP " + response.status);
       return response.json();
     }).then((data) => {
@@ -2548,7 +2594,7 @@
   }
 
   async function loadData() {
-    const res = await fetch("depths-shell.json?v=e43", { cache: "no-store" });
+    const res = await fetch("depths-shell.json?v=e44", { cache: "no-store" });
     if (!res.ok) throw new Error(`depths-shell HTTP ${res.status}`);
     const data = await res.json();
     if (!data || typeof data !== "object" || !data.start || !data.nodes || !data.nodes[data.start]) {
@@ -2593,6 +2639,7 @@
     gateEl.setAttribute("aria-hidden", "true");
     gateEl.setAttribute("aria-busy", "false");
     $("reading-tools").hidden = false;
+    sceneEl.tabIndex = 0;             // 表紙ではtab対象外。開始後はPageUp/Down等で本文を読める。
     $("settings-open").hidden = false;
     Spiral.consumeCycleBump();       // 前セッションで降下していた時だけ、ここで周回が一つ深まる
     applyCycleSkin();                // B4: consume 後の cycle で表紙スキンを取り直す
@@ -2627,7 +2674,7 @@
   function registerSlicePWA() {
     if (!("serviceWorker" in navigator)) return;
     const register = () => {
-      navigator.serviceWorker.register("sw.js?v=e43", { scope: "./", updateViaCache: "none" }).then((reg) => {
+      navigator.serviceWorker.register("sw.js?v=e44", { scope: "./", updateViaCache: "none" }).then((reg) => {
         if (typeof reg.update === "function") reg.update().catch(() => {});
       }).catch((err) => console.warn("[Hazama slice] SW register failed:", err));
     };

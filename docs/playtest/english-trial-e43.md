@@ -3,6 +3,10 @@
 2026-09-05。日英の試遊を並行して進めるための、小さな翻訳試作。
 翻訳の自然さ・面白さ・需要の人間による検証は未完了。Steam向け完成版ではない。
 
+E44でも本文の翻訳範囲は同じ。追加したReading focusと忘却の確認画面は英訳済み。
+Reading focusは明瞭な文字/操作と静かな背景を選ぶ表示設定で、文字送り・音・記憶・進行を変えない。
+Forget everythingは確認を開くだけ。Keep my memories/Escで取り消し、Erase memories and start anewで初めて消去する。
+
 ## 対象と非対象
 
 - 表紙で `Language / 言語 → English (trial)` を選び、`Descend` で開始する。

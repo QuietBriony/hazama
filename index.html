@@ -29,7 +29,7 @@
   <link rel="manifest" href="manifest.webmanifest" />
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png" />
   <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png" />
-  <link rel="stylesheet" href="slice.css?v=e43" />
+  <link rel="stylesheet" href="slice.css?v=e44" />
 </head>
 <body data-phase="surface">
   <div class="hz-bg" aria-hidden="true">
@@ -80,7 +80,7 @@
       <button id="reveal-now" class="hz-chip hz-chip-quiet" type="button" aria-controls="scene choices" data-i18n disabled>全文を表示</button>
     </div>
     <p id="locale-notice" class="hz-locale-notice" hidden></p>
-    <section id="scene" class="hz-scene" aria-live="polite"></section>
+    <section id="scene" class="hz-scene" aria-live="polite" aria-labelledby="reading-place" tabindex="-1"></section>
     <section id="choices" class="hz-choices"></section>
   </main>
 
@@ -122,6 +122,8 @@
         <select id="settings-reading"><option value="reveal" data-i18n>演出あり</option><option value="full" data-i18n>最初から全文を表示</option></select>
       </label>
       <p class="hz-settings-hint" data-i18n>OSの視覚効果軽減を使っている場合、文字は常に全文表示になります。</p>
+      <label class="hz-settings-sound"><input id="settings-comfort" type="checkbox" aria-describedby="settings-comfort-note"> <span data-i18n>読書優先</span></label>
+      <p id="settings-comfort-note" class="hz-settings-hint" data-i18n>文字と操作をくっきり表示し、背景の明滅・揺れを抑えます。文字送りは別の設定です。</p>
       <label class="hz-settings-sound"><input id="settings-sound" type="checkbox" checked> <span data-i18n>音を鳴らす</span></label>
       <div class="hz-settings-field">
         <label for="settings-volume"><span data-i18n>音量</span> <output id="settings-volume-value" for="settings-volume">100%</output></label>
@@ -131,12 +133,23 @@
     </form>
   </dialog>
 
+  <dialog id="forget-dialog" class="hz-settings hz-confirm" aria-labelledby="forget-title" aria-describedby="forget-note">
+    <form method="dialog">
+      <h2 id="forget-title" data-i18n>記憶をすべて忘れますか？</h2>
+      <p id="forget-note" data-i18n>このブラウザに残した周回・認識・痕跡を消します。取り消せません。</p>
+      <div class="hz-confirm-actions">
+        <button class="hz-chip" type="submit" value="cancel" autofocus data-i18n>記憶を残す</button>
+        <button class="hz-chip hz-confirm-destructive" type="submit" value="forget" data-i18n>すべて忘れて始める</button>
+      </div>
+    </form>
+  </dialog>
+
   <script>
     // E35: 既存SWはversion queryを無視して旧CSS/runtimeを返し得るため、
     // controller takeover後は入口のまま一度reloadし、CSS/JSを同じ版で読む。fresh/current loadは待たせない。
     (() => {
-      const SW_URL = "sw.js?v=e43";
-      const RUNTIME_URL = "slice.js?v=e43";
+      const SW_URL = "sw.js?v=e44";
+      const RUNTIME_URL = "slice.js?v=e44";
       const expectedController = new URL(SW_URL, document.baseURI).href;
       const gate = document.getElementById("gate");
       const gateButton = document.getElementById("gate-enter");

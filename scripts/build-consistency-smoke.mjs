@@ -117,6 +117,16 @@ has(js, "function descendAgain", "descend-again (cycle deepen)");
 has(js, "縁から、もう一度沈む", "edge re-descend label");
 has(js, "すべて忘れる", "edge forget label");
 has(js, "const EdgeCard", "edge share card");
+// E44: safe destructive confirmation + keyboard-scrollable narrative, no new save fields.
+has(html, 'aria-labelledby="reading-place" tabindex="-1"', "E44 cover keeps the inactive story out of Tab order");
+has(js, "sceneEl.tabIndex = 0", "E44 active story is keyboard-scrollable");
+const forgetDialog = (html.match(/<dialog id="forget-dialog"[\s\S]*?<\/dialog>/) || [""])[0];
+has(forgetDialog, 'aria-describedby="forget-note"', "E44 memory erasure warning is associated with dialog");
+has(forgetDialog, 'value="cancel" autofocus', "E44 non-destructive choice receives initial focus");
+has(forgetDialog, 'value="forget"', "E44 erasure requires an explicit destructive answer");
+assert(!/value="forget"[^>]*autofocus/.test(forgetDialog), "E44 destructive answer cannot be the default");
+has(html, 'id="settings-comfort"', "E44 opt-in reading focus control");
+has(css, "body.reading-comfort .hz-scene", "E44 isolated reading focus styling");
 // transient（戻り道/圧/観測者/エコー門発火）は保存しない＝spiral 層の save に紛れ込んだら fail
 const saveBody = (js.match(/function save\(\) \{[\s\S]*?\n    \}/) || [""])[0];
 assert(saveBody.includes("localStorage.setItem"), "spiral save writes localStorage");

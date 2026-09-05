@@ -30,9 +30,14 @@ function harness(reduced = false) {
     dispose() { this.playing = false; }
   };
   const document = new Element(); document.documentElement = { style: { setProperty: (k, v) => { styles[k] = v; } } };
+  const bodyClasses = new Set();
+  document.body = { classList: {
+    toggle(name, enabled) { if (enabled) bodyClasses.add(name); else bodyClasses.delete(name); },
+    contains(name) { return bodyClasses.has(name); }
+  } };
   const context = vm.createContext({
     $, document, window: new Element(), Audio: audio, REDUCED: reduced, entered: false,
-    Preferences: { textScale: 1, fullText: false, sound: true }, Follow: { release() {} },
+    Preferences: { textScale: 1, fullText: false, sound: true, readingComfort: false }, Follow: { release() {} },
     localStorage: new Proxy({}, { get() { throw new Error("settings must not access storage"); } })
   });
   context.readingFinish = () => { finishCount++; context.readingFinish = null; };
@@ -45,6 +50,15 @@ h.$("settings-gate").emit("click");
 assert.equal(h.$("settings-dialog").open, true);
 assert.equal(h.$("settings-size").value, "1");
 assert.equal(h.$("settings-reading").value, "reveal");
+assert.equal(h.$("settings-comfort").checked, false, "reading focus is opt-in");
+for (const enabled of [true, false, true]) {
+  h.$("settings-comfort").checked = enabled; h.$("settings-comfort").emit("change");
+  assert.equal(h.context.Preferences.readingComfort, enabled);
+  assert.equal(h.document.body.classList.contains("reading-comfort"), enabled);
+  assert.equal(h.context.Preferences.fullText, false, "reading focus must not change text reveal");
+  assert.equal(h.finishCount, 0, "reading focus must not skip the current text");
+  assert.equal(h.audio.playing, false, "reading focus must not start audio");
+}
 assert.equal(h.$("settings-volume-value").textContent, "100%");
 h.$("settings-gate").emit("click");
 assert.deepEqual(h.calls, ["modal"], "reopening an open modal is harmless and never starts audio");
@@ -64,6 +78,9 @@ assert.equal(h.$("settings-volume")["aria-valuetext"], "35%");
 assert.deepEqual(h.calls, ["modal"], "sound/volume on the cover cannot start audio");
 h.$("settings-dialog").open = false; h.$("settings-dialog").emit("close");
 assert.equal(h.$("settings-gate").focused, true, "closing returns focus to the opener");
+h.$("settings-comfort").checked = false;
+h.$("settings-gate").emit("click");
+assert.equal(h.$("settings-comfort").checked, true, "reopening syncs the in-page preference");
 h.context.entered = true; h.context.music.startPrimary();
 assert.equal(h.audio.playing, false, "sound-off before entry stays silent");
 h.$("settings-sound").checked = true; h.$("settings-sound").emit("change");
@@ -84,4 +101,7 @@ const reduced = harness(true);
 reduced.$("settings-gate").emit("click");
 assert.equal(reduced.$("settings-reading").disabled, true, "OS reduced motion cannot be overridden by the text setting");
 assert.equal(reduced.$("settings-reading").value, "full");
-console.log("reading-settings smoke PASS (session-only, bounds, modal focus, no surprise audio, volume/mute sync, reduced motion)");
+reduced.$("settings-comfort").checked = true; reduced.$("settings-comfort").emit("change");
+assert.equal(reduced.$("settings-reading").disabled, true, "reading focus cannot override OS reduced motion");
+assert.equal(harness().context.Preferences.readingComfort, false, "a new session restores the original presentation");
+console.log("reading-settings smoke PASS (session-only reading focus, bounds, modal focus, no surprise audio, volume/mute sync, reduced motion)");

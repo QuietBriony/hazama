@@ -19,6 +19,42 @@ Hazama 自律開発 session の追記専用ログ。
 
 ---
 
+## 2026-09-05 — E44 忘却の誤操作を防ぎ、読み戻せる読書優先表示へ
+- agent      : Codex（単一会話・モデル/推論設定は変更せず継続）
+- goal       : 「あなたの基準で、steam あげるレベル磨き進めて」に対し、実際の操作で見つけた喪失リスクと読書の妨げを修正する
+- baseline   : master / 49a85d5、originと一致・clean。`node scripts/hazama-check.mjs`: 2 PASS / 0 FAIL / 0 SKIP。
+  AGENTS/STACK-INDEX/AUTONOMOUS-RUN/BACKLOG/最新ledger/COLLAB、締めにcloseout/harness checklistを確認。
+- evidence   : Chromiumの実UIで、E43の忘却一回だけで保存記憶が変わり、確認画面がないことを再現。
+  深度終端のcold/操作説明/設定ボタンはrgb(92,102,113)、背面は動く半透明アートで読みづらさがある。
+  E44実装中の通常字送りテストでは、Homeで上へ読んでも次の段落がscrollTopを400pxへ戻す問題を再現した。
+- shipped    : 忘却のnative dialog（警告/残す/消して始める）を追加。初期focusは残す側、Esc/取り消しで元の操作へ戻る。
+  開くだけでは選択を確定せず、取り消しても再表示可能。古い描画世代/無効な元のボタン/close待ち/連打を検査し、
+  確認を開けない環境は記憶を消さない。明示確認後は既存の忘却の一拍と再開始を維持する。
+  「読む・聴く設定」に読書優先を追加。本文に不透明な背面を置き、文字/操作を明瞭にし、背景の明滅/揺れを抑える。
+  本文に名前とTab移動を追加。キーによる読書と、near-bottomでも上へ動いている間の追従解除を実装。
+  新操作の英訳、READMEと試遊案内のE44追随、production smokeの回帰ケースも追加。
+- scope      : index/slice.js/slice.css/sw/locales/en、既存smoke4本、README/playtest/autonomy文書。
+  読書優先は既定オフ・ページ内のみ。文字送り/音は独立。public route / hazama_spiral_v1 / depths schema /
+  本文72ノード / 選択肢 / 認識等の数値 / seed / 音エンジンは不変。依存・新保存キー・音源・外部送信の追加なし。
+  index/runtime/catalog/SWをe44同期。英語本文は従来の初回身体14ノードの範囲を維持する。
+- checks     : `node scripts/hazama-check.mjs`: 2 PASS / 0 FAIL / 0 SKIP。slice/SW/変更smokeの構文と`git diff --check` PASS。
+  実コードで忘却cancel/Esc/reopen/連打/古いscene/close予約/非対応dialog、設定分離・再表示、
+  scrollキー7種/近接位置から上へ戻す操作/下へ戻った時の追従再開を確認。従来の音/字送り/翻訳/選択回帰もPASS。
+- browser    : Playwright CLIの隔離Chromiumで、日本語身体13点→任意浮上（認識8）、英語身体13点→エコー正答→Ω（10）、
+  英語受動身体13点→Ωロック/浮上（0）、日本語構造29点→Ω（12）。全通過点で320×568/130%の横overflowなし。
+  確認の初期focus、背景の非操作性、Esc/標準Enterによる保存維持、再表示、明示消去→cycle0/認識0、
+  取り消し後の再降下→cycle1/認識10を実UIで確認。設定の切替はstate/保存を変更しない。
+  読書優先の終端cold/補足/忘却説明/footer色は不透明な#09111aに対して約10.55:1（この4要素のみの測定）。
+  既定表示への復帰と補足文の従来サイズを確認。日英の設定・終端・確認を320×568/1280×800で画像確認。
+  通常字送りは1/36文字の点灯途中を確認し、Home後の次段落追加でもscrollTop0を保持。強い演出のCSS診断では
+  読書優先で揺れ/7背景層を抑制、オフで元の演出へ復帰。無音設定でAudioContext生成0、page error0。
+  e44-staticの英語cacheを確認後、offline reload→記憶保持→英語/読書優先→再降下を確認。
+  途中の検証側の誤り（native dialogのbrowser chromeへのTab移動、cache名の-static漏れ）を修正して再実行しPASS。
+- backlog    : HZ-BL-022 added and done（実装/agent検証）。HZ-BL-018 / 020 / 001 / 002 / 012の人間gateは未完了。
+- next       : 初回体験の磨きと並行して、Windows配布候補の起動/更新/終了・保存の扱いを決める。保存契約や依存を変える包装は別途確認する。
+- blockers   : 人間の面白さ/訳の採否/耳/実機PWAの証拠は未取得。全編英訳、PC配布ビルド、Steamの審査/発売は未完了。
+- release    : 承認済みの既存Web版更新の継続。Steam登録/支払/提出/公開、募集/送信/録画、別task、automationは行わない。
+
 ## 2026-09-05 — 参加者向け日英案内とWindowsの英訳チェックを整える
 - agent      : Codex（単一会話・モデル/推論設定は変更せず継続）
 - goal       : E43後の「推奨進めて」に対し、まず一人に渡せる試遊案内と返答の扱いを整える

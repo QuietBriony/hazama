@@ -6,6 +6,30 @@ import vm from "node:vm";
 import { localeSource } from "./reading-locale-smoke.mjs";
 
 const source = readFileSync(new URL("../slice.js", import.meta.url), "utf8");
+const followSource = source.match(/  const Follow = \(\(\) => \{[\s\S]*?\n  \}\)\(\);/)?.[0];
+assert.ok(followSource, "production scroll-follow controller exists");
+for (const key of ["ArrowUp", "ArrowDown", "PageUp", "PageDown", "Home", "End", " "]) {
+  const listeners = new Map();
+  const sceneEl = { scrollHeight: 1000, clientHeight: 200, scrollTop: 100, addEventListener: (type, fn) => listeners.set(type, fn) };
+  let scrollTop = 100;
+  Object.defineProperty(sceneEl, "scrollTop", { get: () => scrollTop, set: (value) => { scrollTop = Math.max(0, Math.min(800, value)); } });
+  const context = vm.createContext({ sceneEl });
+  vm.runInContext(followSource + "\nglobalThis.follow = Follow;", context);
+  listeners.get("keydown")({ target: sceneEl, key, preventDefault() { throw new Error("native scrolling must be preserved"); } });
+  context.follow.stick();
+  assert.equal(sceneEl.scrollTop, 100, `${key}: reading with keys releases automatic following`);
+  sceneEl.scrollTop = 800; listeners.get("scroll")(); context.follow.stick();
+  assert.equal(sceneEl.scrollTop, 800, `${key}: reaching the bottom restores following`);
+  context.follow.reset();
+  listeners.get("keydown")({ target: sceneEl, key: "Tab" }); context.follow.stick();
+  assert.equal(sceneEl.scrollTop, 800, "Tab traversal must not alter automatic following");
+  context.follow.reset();
+  listeners.get("keydown")({ target: {}, key }); context.follow.stick();
+  assert.equal(sceneEl.scrollTop, 800, "keys on a child control must not be consumed as story navigation");
+  sceneEl.scrollTop = 790; listeners.get("scroll")();
+  context.follow.stick();
+  assert.equal(sceneEl.scrollTop, 790, "upward scrolling near the bottom must not reactivate following");
+}
 const names = ["clearReadingControl", "armReadingControl", "showReadingPlace", "renderNode", "renderEdge", "endingReflection", "renderEndingRecord"];
 const production = names.map((name) => {
   const match = source.match(new RegExp(`  function ${name}\\([^)]*\\) \\{[\\s\\S]*?\\n  \\}`));

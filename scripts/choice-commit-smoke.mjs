@@ -6,6 +6,8 @@ import vm from "node:vm";
 import { localeSource } from "./reading-locale-smoke.mjs";
 
 const source = readFileSync(new URL("../slice.js", import.meta.url), "utf8");
+const forgetGuard = source.match(/  const ForgetGuard = \(\(\) => \{[\s\S]*?\n  \}\)\(\);/)?.[0];
+assert.ok(forgetGuard, "production forget confirmation must be available");
 const names = ["renderChoices", "confirmThen", "renderEchoChoices", "renderEdgeChoices"];
 const renderers = names.map((name) => {
   const match = source.match(new RegExp(`  function ${name}\\([^)]*\\) \\{[\\s\\S]*?\\n  \\}`));
@@ -13,7 +15,7 @@ const renderers = names.map((name) => {
   return match[0];
 }).join("\n");
 
-function harness(reduced = false) {
+function harness(reduced = false, dialogMode = "native") {
   let now = 0, nextTimer = 0;
   const timers = new Map(), actions = [];
   class Element {
@@ -40,6 +42,9 @@ function harness(reduced = false) {
     querySelector(selector) { return this.querySelectorAll(selector)[0] || null; }
     setAttribute() {}
     addEventListener(event, fn, options) { this.listeners.set(event, { fn, once: options?.once }); }
+    emit(event) { this.listeners.get(event)?.fn(); }
+    showModal() { this.open = true; this.opens = (this.opens || 0) + 1; }
+    close(value) { this.open = false; if (value !== undefined) this.returnValue = value; this.emit("close"); }
     click() {
       if (this.disabled) return;
       const listener = this.listeners.get("click");
@@ -51,8 +56,11 @@ function harness(reduced = false) {
   const document = { body: new Element(), createElement: () => new Element() };
   document.activeElement = document.body;
   const choicesEl = new Element(), sceneEl = new Element();
+  const dialog = dialogMode === "missing" ? null : new Element();
+  if (dialogMode === "unsupported") dialog.showModal = undefined;
+  if (dialogMode === "throws") dialog.showModal = () => { throw new Error("cannot show"); };
   const context = vm.createContext({
-    document, choicesEl, sceneEl, REDUCED: reduced, revealToken: 0,
+    document, choicesEl, sceneEl, REDUCED: reduced, revealToken: 0, $: () => dialog,
     window: { setTimeout(fn, delay = 0) { timers.set(++nextTimer, { fn, at: now + delay }); return nextTimer; } },
     state: { id: "B", cycle: 0, maxSink: 0, attunement: 0, visits: { B: 1 }, legacy: { detoursSeen: [] } },
     ATTUNE: { omegaThreshold: 6 }, CHOICE_VARIA: {}, ECHO_BANK: { B: "seen", C: "unseen", D: "unseen too" },
@@ -63,7 +71,7 @@ function harness(reduced = false) {
     choose: (choice) => actions.push(choice.t), echoResolve: (_node, _id, truth) => actions.push(truth),
     descendAgain: () => actions.push("descend"), forgetAll: () => actions.push("forget"), EdgeCard: { share() {} }
   });
-  vm.runInContext(localeSource + "\n" + renderers, context);
+  vm.runInContext(localeSource + "\n" + renderers + "\n" + forgetGuard, context);
   const node = { choices: [
     { t: "first", to: "C", kind: "descend" },
     { t: "second", to: "D", kind: "descend" },
@@ -85,7 +93,7 @@ function harness(reduced = false) {
     }
     now = end;
   }
-  return { context, choicesEl, document, actions, render, advance };
+  return { context, choicesEl, document, dialog, actions, render, advance };
 }
 
 for (const kind of ["normal", "echo"]) {
@@ -129,4 +137,47 @@ assert.equal(locked.actions.length, 0, "unrevealed choice must not fire");
 locked.advance(1000); lockedButtons[2].click(); locked.advance(140);
 assert.equal(locked.actions.length, 0, "locked Omega choice must stay locked");
 
-console.log("choice-commit smoke PASS (staggered clicks, stale scenes, reduced motion, locks)");
+// E44: the actual edge renderer and guard must never erase on an opening/cancel.
+for (const reduced of [false, true]) {
+  const h = harness(reduced), buttons = h.render("edge");
+  h.advance(1000);
+  const token = h.context.revealToken;
+  buttons[1].click(); buttons[1].click();
+  assert.equal(h.dialog.opens, 1, "rapid open clicks cannot replace the pending request");
+  assert.equal(h.dialog.returnValue, "cancel", "every opening defaults to keeping memory");
+  assert.equal(h.context.revealToken, token, "opening confirmation must not commit a choice");
+  assert.ok(buttons.every((button) => !button.disabled));
+  assert.equal(h.choicesEl.querySelector(".chosen"), null);
+  h.dialog.open = false; // Native close dispatch can be queued after the open attribute clears.
+  buttons[1].click();
+  assert.equal(h.dialog.opens, 1, "a queued close must finish before another request can replace it");
+  h.dialog.close("cancel"); h.advance(1000);
+  assert.deepEqual(h.actions, []);
+  assert.equal(h.document.activeElement, buttons[1], "cancel returns to the original forget control");
+  buttons[1].click();
+  h.dialog.returnValue = "forget"; h.dialog.emit("cancel"); h.dialog.close();
+  assert.deepEqual(h.actions, [], "Escape cannot reuse a destructive return value");
+  buttons[1].click(); h.dialog.close("forget"); h.dialog.emit("close"); buttons[1].click();
+  h.advance(1000);
+  assert.deepEqual(h.actions, ["forget"], "only explicit confirmation erases, exactly once");
+}
+for (const stale of ["token", "detached", "disabled", "chosen"]) {
+  const h = harness(), buttons = h.render("edge");
+  h.advance(1000); buttons[1].click();
+  if (stale === "token") h.context.revealToken++;
+  if (stale === "detached") h.choicesEl.innerHTML = "";
+  if (stale === "disabled") buttons[1].disabled = true;
+  if (stale === "chosen") buttons[0].classList.add("chosen");
+  h.document.activeElement = h.document.body;
+  h.dialog.close("forget"); h.advance(1000);
+  assert.deepEqual(h.actions, [], `${stale}: stale confirmation cannot erase another scene`);
+  assert.equal(h.document.activeElement, h.document.body, `${stale}: stale dialog cannot steal focus`);
+}
+for (const mode of ["missing", "unsupported", "throws"]) {
+  const h = harness(false, mode), buttons = h.render("edge");
+  h.advance(1000); buttons[1].click(); h.advance(1000);
+  assert.deepEqual(h.actions, [], `${mode}: unavailable confirmation must fail closed`);
+  buttons[0].click(); h.advance(1000);
+  assert.deepEqual(h.actions, ["descend"], `${mode}: memory-preserving descent remains playable`);
+}
+console.log("choice-commit smoke PASS (staggered clicks, stale scenes, reduced motion, locks, safe forget/cancel/reopen)");

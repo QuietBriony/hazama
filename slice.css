@@ -387,6 +387,7 @@ body.omega    .hz-stage[data-stage="omega"] {
 .hz-edge-record summary { cursor: pointer; min-height: 44px; display: list-item; align-content: center; }
 .hz-edge-record summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
 .hz-edge-record p { margin: 0.4em 0 0; }
+.hz-line.hz-edge-more { margin-top: 0.6em; font-size: 0.78rem; color: #6b7682; }
 .hz-scene {
   flex: 1 1 auto;
   min-height: 0;
@@ -398,6 +399,7 @@ body.omega    .hz-stage[data-stage="omega"] {
   -webkit-overflow-scrolling: touch;
 }
 .hz-scene::before { content: ""; margin-top: auto; }
+.hz-scene:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
 .hz-line {
   margin: 0;
   /* E42: 拡大時、末尾の閉じ括弧が字送り幅を越えても横scrollを作らない余白。 */
@@ -613,6 +615,11 @@ html:lang(en) .hz-attune { text-orientation: mixed; }
 .hz-settings-sound { display: flex; align-items: center; gap: 10px; min-height: 44px; margin-top: 16px; font-size: 0.9rem; }
 .hz-settings output { float: right; color: var(--accent); }
 .hz-settings :is(input, select):focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+.hz-confirm { color: #dce5ed; }
+.hz-confirm h2 { line-height: 1.6; }
+.hz-confirm-actions { display: flex; flex-direction: column; gap: 12px; margin-top: 24px; }
+.hz-confirm-actions .hz-chip { width: 100%; min-height: 48px; padding: 12px; white-space: normal; text-align: center; color: #dce5ed; line-height: 1.6; }
+.hz-confirm-actions .hz-confirm-destructive { border-color: #d49180; color: #ffc5b4; background: #281916; }
 
 /* ============================================================================
    R5 — バスキア × 沈下サイバーパンク（生の手の痕跡が冷たい構造を突き破る）
@@ -919,6 +926,27 @@ body.glitch-hard .hz-gate-title::after  { animation: hz-tl-after-glitch .18s ste
 .hz-choice.unchosen { opacity: 0.3; transition: opacity .14s ease; }
 .hz-choice.ghost { opacity: 0.38; }
 .hz-choice.ghost .lead { color: var(--ink-dim); letter-spacing: 0.05em; }
+
+/* E44: opt-inの読書優先。進行・文字送り・音量は変えず、文字と背景を分ける。 */
+body.reading-comfort {
+  --ink: #e2eaf1; --ink-dim: #b4c3d2; --ink-faint: #9cacbd;
+  --accent: #a1d6e3; --warn: #f0ad98; --hand-red: #f0ad98;
+  --line: #506377;
+}
+body.reading-comfort .hz-scene { background: #09111a; border-radius: 8px; padding-inline: 12px; animation: none !important; }
+body.reading-comfort :is(.hz-reading-tools, .hz-footer, .hz-choices) { background: #09111a; }
+body.reading-comfort .hz-edge-more { color: var(--ink-dim); font-size: calc(0.78rem * var(--reading-scale)); }
+body.reading-comfort .hz-choice:is(.heavy, .locked, .ghost).in:not(.unchosen) { opacity: 1; }
+body.reading-comfort .hz-choice.locked .sub { color: var(--ink-dim); }
+body.reading-comfort .hz-line.scrawl { transform: none; opacity: 1; text-shadow: none; }
+body.reading-comfort .hz-line.foreign::after { color: var(--ink-dim); opacity: 1; }
+body.reading-comfort :is(.hz-onboard, .hz-onboard-echo) { opacity: 1; }
+body.reading-comfort :is(.hz-bg-garden, .hz-bg-mandala, .hz-bg-grid, .hz-bg-abyss, .hz-bg-leak, .hz-glitch, .hz-vignette, .hz-scanline, .hz-grain, .hz-peel) { display: none !important; }
+body.reading-comfort .hz-bg::after,
+body.reading-comfort .hz-gate-title::before,
+body.reading-comfort .hz-gate-title::after { display: none; }
+body.reading-comfort .hz-bg,
+body.reading-comfort :is(.hz-bg-descent, .hz-stage, .hz-observer, .hz-attune, .hz-choice.newly, .hz-gate-title) { animation: none !important; transition: none !important; }
 @media (prefers-reduced-motion: reduce) {
   .hz-choice.chosen, .hz-choice.unchosen { transition: none; }
 }

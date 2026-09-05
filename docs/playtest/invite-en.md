@@ -17,7 +17,7 @@ Would you try a little of it and tell us how it felt? We are not asking for a po
   You can stop earlier, for any reason. You do not have to reach an ending.
 - There are flickering visuals and sound. Stop if they are uncomfortable.
   **Reading & sound** lets you change text size, show all text immediately or turn sound off, even before starting.
-  You can also use your system's reduced-motion setting.
+  **Reading focus** makes text clearer and reduces background flicker and movement. Your system's reduced-motion setting is also supported.
 - If you have played Hazama before, please mention that afterward. You do not need to erase your memories for the test.
 
 ## After you stop
@@ -47,4 +47,4 @@ There is no response form on this page, and no request to post a public review.
 
 </details>
 
-Trial invitation: prepared for E43 / 2026-09-05
+Trial invitation: prepared for E44 / 2026-09-05
