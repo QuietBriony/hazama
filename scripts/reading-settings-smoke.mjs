@@ -2,6 +2,7 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import vm from "node:vm";
+import { localeSource } from "./reading-locale-smoke.mjs";
 
 const source = readFileSync(new URL("../slice.js", import.meta.url), "utf8");
 const settings = source.match(/  function setupReadingSettings\(\) \{[\s\S]*?\n  \}/)?.[0];
@@ -35,7 +36,7 @@ function harness(reduced = false) {
     localStorage: new Proxy({}, { get() { throw new Error("settings must not access storage"); } })
   });
   context.readingFinish = () => { finishCount++; context.readingFinish = null; };
-  vm.runInContext(music + "\n" + settings + "\nsetupReadingSettings(); globalThis.music = Music;", context);
+  vm.runInContext(localeSource + "\n" + music + "\n" + settings + "\nsetupReadingSettings(); globalThis.music = Music;", context);
   return { $, context, audio, calls, document, styles, get finishCount() { return finishCount; } };
 }
 

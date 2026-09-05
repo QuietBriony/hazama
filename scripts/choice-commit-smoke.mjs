@@ -3,6 +3,7 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import vm from "node:vm";
+import { localeSource } from "./reading-locale-smoke.mjs";
 
 const source = readFileSync(new URL("../slice.js", import.meta.url), "utf8");
 const names = ["renderChoices", "confirmThen", "renderEchoChoices", "renderEdgeChoices"];
@@ -62,7 +63,7 @@ function harness(reduced = false) {
     choose: (choice) => actions.push(choice.t), echoResolve: (_node, _id, truth) => actions.push(truth),
     descendAgain: () => actions.push("descend"), forgetAll: () => actions.push("forget"), EdgeCard: { share() {} }
   });
-  vm.runInContext(renderers, context);
+  vm.runInContext(localeSource + "\n" + renderers, context);
   const node = { choices: [
     { t: "first", to: "C", kind: "descend" },
     { t: "second", to: "D", kind: "descend" },

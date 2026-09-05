@@ -29,7 +29,7 @@
   <link rel="manifest" href="manifest.webmanifest" />
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png" />
   <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png" />
-  <link rel="stylesheet" href="slice.css?v=e42" />
+  <link rel="stylesheet" href="slice.css?v=e43" />
 </head>
 <body data-phase="surface">
   <div class="hz-bg" aria-hidden="true">
@@ -77,15 +77,16 @@
 
     <div id="reading-tools" class="hz-reading-tools" hidden>
       <span id="reading-place" class="hz-reading-place"></span>
-      <button id="reveal-now" class="hz-chip hz-chip-quiet" type="button" aria-controls="scene choices" disabled>全文を表示</button>
+      <button id="reveal-now" class="hz-chip hz-chip-quiet" type="button" aria-controls="scene choices" data-i18n disabled>全文を表示</button>
     </div>
+    <p id="locale-notice" class="hz-locale-notice" hidden></p>
     <section id="scene" class="hz-scene" aria-live="polite"></section>
     <section id="choices" class="hz-choices"></section>
   </main>
 
   <footer class="hz-footer">
     <button id="audio-toggle" class="hz-chip" type="button" hidden>♪ 鳴らす</button>
-    <button id="settings-open" class="hz-chip" type="button" aria-haspopup="dialog" aria-controls="settings-dialog" hidden>読む・聴く設定</button>
+    <button id="settings-open" class="hz-chip" type="button" aria-haspopup="dialog" aria-controls="settings-dialog" data-i18n hidden>読む・聴く設定</button>
     <span id="status" class="hz-status"></span>
   </footer>
 
@@ -94,34 +95,39 @@
       <h1 class="hz-sr-only">Hazama 狭間</h1>
       <div class="hz-gate-title" aria-hidden="true" data-text="Hazama">Hazama</div>
 
-      <p class="hz-gate-sub">狭間（あわい）<br>沈むほど、戻り道は細くなる。</p>
-      <p class="hz-gate-guide">読む。選ぶ。視たものを、覚えておく。<br>どう読むかで、降りる道と結末が変わる。<br>最初の旅は、Ωに届くか、浮上するまで。</p>
-      <button id="gate-enter" class="hz-gate-enter" type="button" aria-describedby="gate-note" disabled><span>沈む</span></button>
-      <div class="hz-gate-settings"><button id="settings-gate" class="hz-chip hz-chip-quiet" type="button" aria-haspopup="dialog" aria-controls="settings-dialog" disabled>読む・聴く設定</button></div>
-      <p id="gate-note" class="hz-gate-note" role="status" aria-live="polite">深度を読み込み中…</p>
+      <p class="hz-gate-sub" data-i18n>狭間（あわい）
+沈むほど、戻り道は細くなる。</p>
+      <p class="hz-gate-guide"><span data-i18n>読む。選ぶ。視たものを、覚えておく。</span><br><span data-i18n>どう読むかで、降りる道と結末が変わる。</span><br><span data-i18n>最初の旅は、Ωに届くか、浮上するまで。</span></p>
+      <label class="hz-language" for="gate-language">Language / 言語
+        <select id="gate-language" aria-describedby="language-note" disabled><option value="ja">日本語</option><option value="en" disabled>English (trial)</option></select>
+      </label>
+      <p id="language-note" class="hz-language-note" data-i18n>英語試作は初回の「身体の道」が対象です。他の道・周回の変奏・画像カードは日本語が残ります。言語は開始前に選べます。再読み込みで日本語に戻ります。</p>
+      <button id="gate-enter" class="hz-gate-enter" type="button" aria-describedby="gate-note" disabled><span data-i18n>沈む</span></button>
+      <div class="hz-gate-settings"><button id="settings-gate" class="hz-chip hz-chip-quiet" type="button" aria-haspopup="dialog" aria-controls="settings-dialog" data-i18n disabled>読む・聴く設定</button></div>
+      <p id="gate-note" class="hz-gate-note" role="status" aria-live="polite" data-i18n>深度を読み込み中…</p>
     </div>
   </div>
 
   <dialog id="settings-dialog" class="hz-settings" aria-labelledby="settings-title" aria-describedby="settings-note">
     <form method="dialog">
       <div class="hz-settings-heading">
-        <h2 id="settings-title">読む・聴く設定</h2>
-        <button class="hz-chip" type="submit" autofocus>閉じる</button>
+        <h2 id="settings-title" data-i18n>読む・聴く設定</h2>
+        <button class="hz-chip" type="submit" autofocus data-i18n>閉じる</button>
       </div>
-      <p id="settings-note">設定はこのページ内で有効です。再読み込みで標準に戻ります。周回・認識・痕跡は変えません。</p>
-      <label class="hz-settings-field" for="settings-size">本文・選択肢の文字
-        <select id="settings-size"><option value="1">標準</option><option value="1.15">大きめ（115%）</option><option value="1.3">大きい（130%）</option></select>
+      <p id="settings-note" data-i18n>設定はこのページ内で有効です。再読み込みで標準に戻ります。周回・認識・痕跡は変えません。</p>
+      <label class="hz-settings-field" for="settings-size"><span data-i18n>本文・選択肢の文字</span>
+        <select id="settings-size"><option value="1" data-i18n>標準</option><option value="1.15" data-i18n>大きめ（115%）</option><option value="1.3" data-i18n>大きい（130%）</option></select>
       </label>
-      <label class="hz-settings-field" for="settings-reading">文字送り
-        <select id="settings-reading"><option value="reveal">演出あり</option><option value="full">最初から全文を表示</option></select>
+      <label class="hz-settings-field" for="settings-reading"><span data-i18n>文字送り</span>
+        <select id="settings-reading"><option value="reveal" data-i18n>演出あり</option><option value="full" data-i18n>最初から全文を表示</option></select>
       </label>
-      <p class="hz-settings-hint">OSの視覚効果軽減を使っている場合、文字は常に全文表示になります。</p>
-      <label class="hz-settings-sound"><input id="settings-sound" type="checkbox" checked> 音を鳴らす</label>
+      <p class="hz-settings-hint" data-i18n>OSの視覚効果軽減を使っている場合、文字は常に全文表示になります。</p>
+      <label class="hz-settings-sound"><input id="settings-sound" type="checkbox" checked> <span data-i18n>音を鳴らす</span></label>
       <div class="hz-settings-field">
-        <label for="settings-volume">音量 <output id="settings-volume-value" for="settings-volume">100%</output></label>
+        <label for="settings-volume"><span data-i18n>音量</span> <output id="settings-volume-value" for="settings-volume">100%</output></label>
         <input id="settings-volume" type="range" min="0" max="100" step="5" value="100" aria-valuetext="100%">
       </div>
-      <p class="hz-settings-hint">音は「沈む」のあとに鳴ります。0%で無音、100%がこれまでの音量です。</p>
+      <p class="hz-settings-hint" data-i18n>音は「沈む」のあとに鳴ります。0%で無音、100%がこれまでの音量です。</p>
     </form>
   </dialog>
 
@@ -129,8 +135,8 @@
     // E35: 既存SWはversion queryを無視して旧CSS/runtimeを返し得るため、
     // controller takeover後は入口のまま一度reloadし、CSS/JSを同じ版で読む。fresh/current loadは待たせない。
     (() => {
-      const SW_URL = "sw.js?v=e42";
-      const RUNTIME_URL = "slice.js?v=e42";
+      const SW_URL = "sw.js?v=e43";
+      const RUNTIME_URL = "slice.js?v=e43";
       const expectedController = new URL(SW_URL, document.baseURI).href;
       const gate = document.getElementById("gate");
       const gateButton = document.getElementById("gate-enter");

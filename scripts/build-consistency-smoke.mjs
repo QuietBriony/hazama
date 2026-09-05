@@ -9,6 +9,7 @@ import "./sensory-frame-smoke.mjs";
 import "./choice-commit-smoke.mjs";
 import "./reading-control-smoke.mjs";
 import "./reading-settings-smoke.mjs";
+import "./reading-locale-smoke.mjs";
 
 const root = process.cwd();
 const failures = [];

@@ -3,6 +3,7 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import vm from "node:vm";
+import { localeSource } from "./reading-locale-smoke.mjs";
 
 const source = readFileSync(new URL("../slice.js", import.meta.url), "utf8");
 const names = ["clearReadingControl", "armReadingControl", "showReadingPlace", "renderNode", "renderEdge", "endingReflection", "renderEndingRecord"];
@@ -52,7 +53,7 @@ function harness(reduced = false) {
   for (const [name, kind] of [["renderChoices", "normal"], ["renderEchoChoices", "echo"], ["renderEdgeChoices", "edge"]]) {
     context[name] = () => { context.setBusy(false); choices.push(kind); };
   }
-  vm.runInContext(production + "\n" + buttonListener, context);
+  vm.runInContext(localeSource + "\n" + production + "\n" + buttonListener, context);
   function advance(ms) {
     const end = now + ms;
     for (;;) {

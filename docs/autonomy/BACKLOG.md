@@ -26,6 +26,19 @@ Hazama 自律開発の作業待ち行列。
 
 ## P1
 
+### HZ-BL-020 — 英語の身体ルート試作と英語話者の検証
+- priority : P1
+- scope    : runtime / verify
+- agent    : either
+- human-gate: yes
+- status   : 実装済 — E43英語話者の試遊・訳の採否待ち
+- source   : 人の試遊と翻訳を並行させる提案への「磨き進めて」
+- detail   : 日本語の原文/分岐/保存/seedを変えず、表紙で日英を選ぶ。初回の身体の道から共有終端まで、
+  UI/本文/選択/全エコー候補を英語化。他の道・周回変奏・共有画像の未訳は明示し、選択を制限しない。
+  英文での文字送り・改行・小画面・offline・取得失敗fallbackと日本語回帰をagent確認する。
+  `docs/playtest/english-trial-e43.md`で英語話者に自然さ/声の違い/選択の理解/結末を確認するまでDoneにしない。
+  全編/多言語/Steamの英語対応表示/英語ストアページ/外部の募集や送信は今回の範囲外。
+
 ### HZ-BL-018 — Steamに向けた初回体験の検証
 - priority : P1
 - scope    : runtime / verify

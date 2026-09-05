@@ -6,7 +6,7 @@
    - cache prefix=hazama-pwa- ＝旧 forward 版 cache(hazama-pwa-v2.45 等)を activate で掃除し更新。
 ========================================================= */
 
-const VERSION = "hazama-pwa-e42";
+const VERSION = "hazama-pwa-e43";
 const RELEASE = VERSION.replace("hazama-pwa-", "");
 const CACHE_PREFIX = "hazama-pwa-";
 const STATIC_CACHE = `${VERSION}-static`;
@@ -24,6 +24,7 @@ const CORE_PRECACHE_URLS = [
 ];
 
 const OPTIONAL_PRECACHE_URLS = [
+  `locales/en.json?v=${RELEASE}`,
   "icons/icon-96.png",
   "icons/icon-192.png",
   "icons/icon-512.png",

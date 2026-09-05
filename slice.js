@@ -21,6 +21,57 @@
   const REDUCED = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   // E42: 読む/聴くためのページ内設定。spiral記憶とは分離し、storageへは書かない。
   const Preferences = { fullText: false, textScale: 1, sound: true };
+  // E43: 翻訳は表示だけの射影。原文/ノード/seed/進行/保存を変更しない。
+  const Locale = (() => {
+    let language = "ja", pack = null;
+    const originals = new WeakMap();
+    function install(data) {
+      if (!data || data.version !== 1 || !Array.isArray(data.coveredNodes) ||
+          !data.coveredNodes.every((id) => typeof id === "string") ||
+          !data.strings || Array.isArray(data.strings) || typeof data.strings !== "object" ||
+          !data.coveredNodes.includes("zero") ||
+          !["沈む", "全文を表示", "読む・聴く設定"].every((key) => Object.hasOwn(data.strings, key)) ||
+          !Object.values(data.strings).every((value) => typeof value === "string" && value.trim())) {
+        throw new Error("English catalog unavailable");
+      }
+      pack = data;
+    }
+    const translated = (source) => !!pack && Object.hasOwn(pack.strings, source);
+    function text(source, values = {}) {
+      const result = language === "en" && translated(source) ? pack.strings[source] : source;
+      return String(result).replace(/\{(\w+)\}/g, (match, key) => Object.hasOwn(values, key) ? String(values[key]) : match);
+    }
+    function line(source) {
+      if (language === "ja") return source;
+      return { ...source, t: text(source.t), _source: source.t, _lang: translated(source.t) ? "en" : "ja" };
+    }
+    function rate(item, base) {
+      // 英文の文字数増加だけで待ち時間を倍増させない。元の段落の呼吸を上限にする。
+      return item._lang === "en" ? base * Math.min(1, [...item._source].length / Math.max(1, [...item.t].length)) : base;
+    }
+    function select(value) {
+      if (value !== "ja" && (value !== "en" || !pack)) return false;
+      language = value;
+      document.documentElement.lang = language;
+      document.querySelectorAll("[data-i18n]").forEach((el) => {
+        if (!originals.has(el)) originals.set(el, el.textContent);
+        el.textContent = language === "ja" ? originals.get(el) : text(el.getAttribute("data-i18n-text") || originals.get(el));
+      });
+      return true;
+    }
+    function notice(lines) {
+      const note = $("locale-notice");
+      if (!note) return;
+      note.hidden = language !== "en";
+      if (!note.hidden) note.textContent = lines.some((item) => item._lang === "ja")
+        ? "English trial · This scene includes untranslated Japanese."
+        : "English trial · First Body descent translated.";
+    }
+    return { install, text, line, rate, select, notice, translated,
+      covers: (id) => id === "__edge" || !!pack?.coveredNodes.includes(id),
+      get english() { return language === "en"; } };
+  })();
+  const tr = (source, values) => Locale.text(source, values);
   const RETURN_PATHS_START = 5;
   const SINK_SCALE = 22; // sink値→0..1正規化（縁でほぼ1）
   // 抗う/戻るの作法（尺度＝観測者数＝物語深度）:
@@ -177,7 +228,7 @@
   }
   function showReadingPlace(title) {
     const place = $("reading-place");
-    if (place) { place.textContent = title; place.title = title; }
+    if (place) { place.textContent = tr(title); place.title = tr(title); place.lang = Locale.english && Locale.translated(title) ? "en" : "ja"; }
   }
   $("reveal-now").addEventListener("click", () => { if (readingFinish) readingFinish(); });
 
@@ -751,7 +802,7 @@
   function renderObserver() {
     if (!observerEl) return;
     const n = Math.max(1, state.observer);
-    observerEl.textContent = "私".repeat(Math.min(n, 6)) + (n > 6 ? "…" : "");
+    observerEl.textContent = tr("私").repeat(Math.min(n, 6)) + (n > 6 ? "…" : "");
     observerEl.dataset.count = String(n);
     observerEl.classList.toggle("deep", n > 6);
   }
@@ -766,7 +817,7 @@
     el.hidden = false;
     const need = ATTUNE.omegaThreshold;
     const lit = Math.min(a, need);
-    el.textContent = "認識 " + "◆".repeat(lit) + "◇".repeat(Math.max(0, need - lit)) + (isAttuned() ? " 合致" : "");
+    el.textContent = tr("認識") + " " + "◆".repeat(lit) + "◇".repeat(Math.max(0, need - lit)) + (isAttuned() ? " " + tr("合致") : "");
     el.classList.toggle("attuned", isAttuned());
     // E25: 認識が実際に増えた瞬間だけ一度パルス＝deep 構造読みが「効いた」feedback（echo門の +2 も拾う）。
     if (lit > _attuneLit) { el.classList.remove("pulse"); void el.offsetWidth; el.classList.add("pulse"); }
@@ -779,7 +830,7 @@
     if (!el) return;
     const lg = state.legacy;
     if (state.cycle > 0 || lg.surfaceBounces > 0 || lg.detoursSeen.length > 0) {
-      el.textContent = `周回 ${state.cycle} · 別ルート ${lg.surfaceBounces} · 分岐 ${lg.detoursSeen.length}`;
+      el.textContent = tr("周回 {cycle} · 別ルート {bounces} · 分岐 {detours}", { cycle: state.cycle, bounces: lg.surfaceBounces, detours: lg.detoursSeen.length });
     }
   }
 
@@ -791,7 +842,9 @@
     if (!el) return;
     const need = ATTUNE.omegaThreshold;
     const lit = Math.min(Math.round(state.attunement || 0), need);
-    const next = `戻り道 ${state.returnPaths}本。認識 ${lit}/${need}${isAttuned() ? "、合致" : ""}。観測者 ${Math.max(1, state.observer)}。`;
+    const next = Locale.english
+      ? `Ways back: ${state.returnPaths}. Attunement: ${lit}/${need}${isAttuned() ? ", aligned" : ""}. Observers: ${Math.max(1, state.observer)}.`
+      : `戻り道 ${state.returnPaths}本。認識 ${lit}/${need}${isAttuned() ? "、合致" : ""}。観測者 ${Math.max(1, state.observer)}。`;
     if (next === a11yStateText) return;
     window.clearTimeout(a11yStateTimer);
     a11yStateTimer = window.setTimeout(() => {
@@ -949,13 +1002,15 @@
     let delay = 0;
 
     // 抗い/戻るの結果ビート（あれば本文の先頭に差す。一度きり）。
-    const lines = state.resistBeat ? [state.resistBeat].concat(node.lines || []) : (node.lines || []);
+    const lines = (state.resistBeat ? [state.resistBeat].concat(node.lines || []) : (node.lines || [])).map(Locale.line);
     state.resistBeat = null;
+    Locale.notice(lines);
 
     const mkLine = (line) => {
       const p = document.createElement("p");
       p.className = "hz-line " + (WHO_CLASS[line.who] || "") + (line.cross ? " cross" : "") + (line.foreign ? " foreign" : "");
-      if (line.foreign && line.mark) p.dataset.mark = line.mark;   // E7: 別の観測の痕跡マーカー
+      p.lang = line._lang || "ja";
+      if (line.foreign && line.mark) p.dataset.mark = Locale.english ? line.mark.replace("・深度", "· Depth ").replace("Ω 到達", "Ω").replace("浮上", "Surface") : line.mark;
       return p;
     };
 
@@ -988,6 +1043,7 @@
 
     lines.forEach((line) => {
       const chars = [...line.t];
+      const lineRevealMs = Locale.rate(line, revealMs);
       if (instant) {
         const p = mkLine(line);
         p.textContent = line.t; p.classList.add("shown");
@@ -1008,10 +1064,10 @@
         Follow.stick();          // 追従中のみ最新行を選択肢直上へ（ユーザーが上に居れば奪わない）
         // 文字の点灯は opacity のみ＝高さ不変。スクロール追従は不要（カクつき源を断つ）。
         p.querySelectorAll(".ch").forEach((s, i) => {
-          window.setTimeout(() => { if (myToken === revealToken) s.classList.add("lit"); }, i * revealMs);
+          window.setTimeout(() => { if (myToken === revealToken) s.classList.add("lit"); }, i * lineRevealMs);
         });
       }, delay);
-      delay += chars.length * revealMs + 360 + (line.gap || 0);
+      delay += chars.length * lineRevealMs + 360 + (line.gap || 0);
     });
 
     const choiceDelay = instant ? 150 : delay + 220;
@@ -1045,7 +1101,7 @@
     p.className = "hz-onboard";
     p.setAttribute("role", "note");
     p.setAttribute("aria-live", "polite");   // E25: 唯一の明示ヒントを SR にも届ける
-    p.textContent = "——どう読むかで、どこまで降りられるかが決まる。深く読むほど、深く。";
+    p.textContent = tr("——どう読むかで、どこまで降りられるかが決まる。深く読むほど、深く。");
     choicesEl.appendChild(p);    // choices の先頭＝ボタンの上
   }
 
@@ -1061,7 +1117,7 @@
     p.className = "hz-onboard";
     p.setAttribute("role", "note");
     p.setAttribute("aria-live", "polite");
-    p.textContent = "——ひとつ、灯った。視た分だけ、深く降りられる。";
+    p.textContent = tr("——ひとつ、灯った。視た分だけ、深く降りられる。");
     choicesEl.appendChild(p);
   }
 
@@ -1164,10 +1220,19 @@
       btn.className = "hz-choice " + (c.kind || "") + (locked ? " locked" : "") + (newly ? " newly" : "");
       if (!locked && c.kind === "retreat" && state.maxSink > 0.4) btn.classList.add("heavy");
       btn.innerHTML = `<span class="lead"></span>${sub ? `<span class="sub"></span>` : ""}`;
-      btn.querySelector(".lead").textContent = lead;
-      if (sub) btn.querySelector(".sub").textContent = locked
-        ? `まだ届かない（認識 ${Math.round(state.attunement || 0)}/${ATTUNE.omegaThreshold}）`
-        : sub;
+      btn.querySelector(".lead").textContent = tr(lead);
+      btn.querySelector(".lead").lang = Locale.english && Locale.translated(lead) ? "en" : "ja";
+      if (sub) {
+        const label = locked ? "まだ届かない（認識 {value}/{need}）" : sub;
+        const el = btn.querySelector(".sub");
+        el.textContent = tr(label, { value: Math.round(state.attunement || 0), need: ATTUNE.omegaThreshold });
+        el.lang = Locale.english && Locale.translated(label) ? "en" : "ja";
+      }
+      if (Locale.english && !Locale.covers(c.to)) {
+        const tag = document.createElement("span");
+        tag.className = "hz-language-tag"; tag.textContent = "Japanese text ahead";
+        btn.appendChild(tag);
+      }
       if (!locked) btn.addEventListener("click", () => confirmThen(btn, () => choose(c)), { once: true });
       else btn.setAttribute("aria-disabled", "true");
       btn.disabled = true;                 // E14: appear タイマー前の暴発タップ防止＝reveal 中に固定位置の choices 帯を反射タップしても発火しない
@@ -1191,8 +1256,8 @@
       gbtn.type = "button";
       gbtn.className = "hz-choice locked ghost";
       gbtn.innerHTML = `<span class="lead"></span><span class="sub"></span>`;
-      gbtn.querySelector(".lead").textContent = "――別の降り方";
-      gbtn.querySelector(".sub").textContent = "まだ、開かない。周回した者だけに開く。";
+      gbtn.querySelector(".lead").textContent = tr("――別の降り方");
+      gbtn.querySelector(".sub").textContent = tr("まだ、開かない。周回した者だけに開く。");
       gbtn.disabled = true;
       gbtn.setAttribute("aria-disabled", "true");
       choicesEl.appendChild(gbtn);
@@ -1263,15 +1328,15 @@
     // Q は降下中の試問、Z は外殻の最果てでの最後の問い＝門の言葉も体感の重さを纏う。
     const intro = document.createElement("p");
     intro.className = "hz-line cold shown";
-    intro.textContent = id === "Z"
+    intro.textContent = tr(id === "Z"
       ? "——外殻の最果て。視てきたものを、ここで問う。"
-      : "——降下の記憶を、指でなぞる。どれを、視た。";
+      : "——降下の記憶を、指でなぞる。どれを、視た。");
     sceneEl.appendChild(intro); Follow.stick();
     if (!echoOnboarded) {   // E10: 初回だけ、選ぶ前に stakes を一行
       echoOnboardPending = true;
       const g = document.createElement("p");
       g.className = "hz-line cold shown hz-onboard-echo";
-      g.textContent = "——視たものだけが、ここを通る。借り物の記憶は、効かない。";
+      g.textContent = tr("——視たものだけが、ここを通る。借り物の記憶は、効かない。");
       sceneEl.appendChild(g); Follow.stick();
     }
 
@@ -1281,13 +1346,13 @@
       btn.type = "button";
       btn.className = "hz-choice echo" + (extraClass ? " " + extraClass : "");
       btn.innerHTML = `<span class="lead"></span>`;
-      btn.querySelector(".lead").textContent = lead;
+      btn.querySelector(".lead").textContent = tr(lead);
       btn.addEventListener("click", () => confirmThen(btn, fn), { once: true });   // E28: 押下の確定感を門にも
       btn.disabled = true;                 // E14: 暴発タップ防止
       choicesEl.appendChild(btn);
       return btn;
     };
-    frags.forEach((f) => mk("『" + ECHO_BANK[f.key] + "』", "", () => echoResolve(node, id, f.truth)));
+    frags.forEach((f) => mk(Locale.english ? "“" + tr(ECHO_BANK[f.key]) + "”" : "『" + ECHO_BANK[f.key] + "』", "", () => echoResolve(node, id, f.truth)));
     // E14: skip ラベルも id 別＝Z は「Ω へ抜ける」が等価＝Z 限定で「目を閉じ、Ωへ」。
     mk(id === "Z" ? "目を閉じ、Ωへ" : "目を逸らし、先へ", "echo-skip", () => echoResolve(node, id, null));
     choicesEl.querySelectorAll(".hz-choice").forEach((b, i) =>
@@ -1330,7 +1395,7 @@
     if (beat) {
       const p = document.createElement("p");
       p.className = "hz-line " + (WHO_CLASS[beat.who] || "") + " shown";
-      p.textContent = beat.t;
+      p.textContent = tr(beat.t);
       sceneEl.appendChild(p); Follow.stick();
     }
     renderAttune(); Spiral.save();
@@ -1433,7 +1498,8 @@
       { who: "n", t: "認識が満ちていない——けれど、それは失敗じゃない。" },
       { who: "self", t: "あなたは光のほうへ浮上する。視たものを、抱えたまま。" }
     ];
-    const lines = attuned ? (sank ? DATA.edge.sankLines : DATA.edge.heldLines) : SURFACE_LINES;
+    const lines = (attuned ? (sank ? DATA.edge.sankLines : DATA.edge.heldLines) : SURFACE_LINES).map(Locale.line);
+    Locale.notice(lines);
     let delay = 0;
     let appended = 0;
     const revealMs = instant ? 0 : 52;
@@ -1441,6 +1507,7 @@
       const p = document.createElement("p");
       p.className = "hz-line " + (WHO_CLASS[line.who] || "") + " shown";
       p.textContent = line.t;
+      p.lang = line._lang || "ja";
       sceneEl.appendChild(p);
       appended++;
       Follow.stick();
@@ -1454,7 +1521,7 @@
         if (myToken !== revealToken) return;
         appendLine(line);
       }, delay);
-      delay += line.t.length * revealMs + 520 + (line.gap || 0);
+      delay += [...line.t].length * Locale.rate(line, revealMs) + 520 + (line.gap || 0);
     });
     window.setTimeout(() => {
       if (myToken !== revealToken) return;
@@ -1474,6 +1541,12 @@
 
   function endingReflection(attuned) {
     const route = { soma: "身体", reso: "流れ", casc: "崩壊", other: "並行" }[state.activeTrunk] || "構造";
+    if (Locale.english) {
+      const name = tr(route);
+      if (attuned) return `You followed the ${name} path to the core's perimeter. What you took in deeply became attunement. At the end, you chose to step beyond.`;
+      if (isAttuned()) return `You followed the ${name} path and returned with enough attunement to reach the core. It was not beyond you. You chose to surface here.`;
+      return `You followed the ${name} path back to the surface. Your present attunement cannot reach the core's perimeter. What you have seen can travel with you into the next descent.`;
+    }
     if (attuned) return `あなたは、${route}の道を通って核の外周へ届いた。深く受け取ったものが認識になり、最後に、その先へ踏み込むことを選んだ。`;
     if (isAttuned()) return `あなたは、${route}の道を通り、核へ届く認識を抱えて帰った。届かなかったのではない。ここで浮上することを選んだ。`;
     return `あなたは、${route}の道を通って浮上した。今の認識では、核の外周には届かない。視たものは、次の降下へ持ち越せる。`;
@@ -1487,17 +1560,18 @@
     const record = document.createElement("details");
     record.className = "hz-edge-record";
     const summary = document.createElement("summary");
-    summary.textContent = "降下と記憶の記録";
+    summary.textContent = tr("降下と記憶の記録");
     record.appendChild(summary);
     const card = document.createElement("p");
     const lit = Math.round(state.maxSink * 8);
     const head = attuned ? "― 深度Ω 到達・外殻踏破 ―" : "― 浮上 — 表層へ帰る ―";
     card.textContent = `${head}  認識: ${Math.round(state.attunement || 0)}/${ATTUNE.omegaThreshold}${attuned ? "（合致）" : "（深く読み、視たものを覚えているほど降りられる）"} / 到達深度: ${"▮".repeat(lit)}${"▯".repeat(8 - lit)} / 残った戻り道: ${state.returnPaths}/${RETURN_PATHS_START} / 観測者: ${state.observer} / 抗った: ${state.resisted} ・ 戻れなかった: ${state.refused} / 周回: ${state.cycle} / 降り方: ${state.activeTrunk === "soma" ? "身体" : state.activeTrunk === "reso" ? "流れ" : state.activeTrunk === "casc" ? "崩壊" : state.activeTrunk === "other" ? "並行" : "構造"}`;
+    if (Locale.english) card.textContent = `${attuned ? "Depth Ω reached" : "Returned to the surface"} · Attunement: ${Math.round(state.attunement || 0)}/${ATTUNE.omegaThreshold} · Depth: ${"▮".repeat(lit)}${"▯".repeat(8 - lit)} · Ways back: ${state.returnPaths}/${RETURN_PATHS_START} · Observers: ${state.observer} · Resisted: ${state.resisted} · Refused: ${state.refused} · Cycle: ${state.cycle}`;
     record.appendChild(card);
     sceneEl.appendChild(record);
     const more = document.createElement("p");
     more.className = "hz-line"; more.style.cssText = "margin-top:0.6em;font-size:0.78rem;color:#6b7682;";
-    more.textContent = "ここまでが、ひとつの降下。ここで画面を閉じてもいい。もう一度沈めば、同じ入口を、記憶を抱えて読み直せる。";
+    more.textContent = tr("ここまでが、ひとつの降下。ここで画面を閉じてもいい。もう一度沈めば、同じ入口を、記憶を抱えて読み直せる。");
     sceneEl.appendChild(more); more.classList.add("shown");
     renderEdgeChoices(attuned);
     Follow.stick();
@@ -1513,14 +1587,14 @@
       btn.type = "button";
       btn.className = "hz-choice " + kind;
       btn.innerHTML = `<span class="lead"></span><span class="sub"></span>`;
-      btn.querySelector(".lead").textContent = lead;
-      btn.querySelector(".sub").textContent = sub;
+      btn.querySelector(".lead").textContent = tr(lead);
+      btn.querySelector(".sub").textContent = tr(sub);
       btn.addEventListener("click", () => confirmThen(btn, fn), { once: true });   // E28: 縁の二択にも確定感
       choicesEl.appendChild(btn);
       return btn;
     };
     mk("descend", "縁から、もう一度沈む",
-      `視たものを抱えたまま、零章へ——周回が一つ深まる（${state.cycle + 1}）`, descendAgain);
+      tr("視たものを抱えたまま、零章へ——周回が一つ深まる（{cycle}）", { cycle: state.cycle + 1 }), descendAgain);
     mk("retreat", "すべて忘れる",
       "周回・認識・痕跡を消す。次は、初めてになる", forgetAll);
     // 縁カード: 結末サマリを画像で外へ（share か PNG 保存）。物語の選択ではないので chip として小さく。
@@ -1528,7 +1602,7 @@
     row.style.cssText = "display:flex;justify-content:center;padding:2px 0 4px;";
     const chip = document.createElement("button");
     chip.type = "button"; chip.className = "hz-chip";
-    chip.textContent = "縁を画像で残す";
+    chip.textContent = tr("縁を画像で残す");
     chip.addEventListener("click", () => EdgeCard.share(attuned, chip));
     row.appendChild(chip);
     choicesEl.appendChild(row);
@@ -1565,7 +1639,7 @@
     choicesEl.innerHTML = "";              // 「もう一度沈む / すべて忘れる / 縁を画像で残す」を消す＝選択は確定
     const p = document.createElement("p");
     p.className = "hz-line cold shown";
-    p.textContent = "——縁が、足の下でほどける。もう一度、沈む。";
+    p.textContent = tr("——縁が、足の下でほどける。もう一度、沈む。");
     sceneEl.appendChild(p); Follow.stick();
     Audio.pulseOnce(1);                    // 沈む脈（未解禁なら no-op）＝reborn→zero と同じ降下音
     window.setTimeout(() => renderNode(DATA.start || "zero"), REDUCED ? 400 : 1400);
@@ -1580,7 +1654,7 @@
     choicesEl.innerHTML = "";              // 「縁から、もう一度沈む / すべて忘れる」を消す＝選択は確定
     const p = document.createElement("p");
     p.className = "hz-line cold shown";
-    p.textContent = "——消えた。周回も、認識も、痕跡も。次は、初めてになる。";
+    p.textContent = tr("——消えた。周回も、認識も、痕跡も。次は、初めてになる。");
     sceneEl.appendChild(p); Follow.stick();
     Audio.glitchHit(0.6);                  // 忘却の破断音（未解禁なら no-op）
     window.setTimeout(restart, REDUCED ? 400 : 1400);
@@ -2361,7 +2435,7 @@
       a.href = URL.createObjectURL(blob); a.download = file.name;
       document.body.appendChild(a); a.click(); a.remove();
       window.setTimeout(() => URL.revokeObjectURL(a.href), 4000);
-      if (chip) { chip.textContent = "残した"; window.setTimeout(() => { chip.textContent = "縁を画像で残す"; }, 2000); }
+      if (chip) { chip.textContent = tr("残した"); window.setTimeout(() => { chip.textContent = tr("縁を画像で残す"); }, 2000); }
     }
     return { share, draw };
   })();
@@ -2384,7 +2458,7 @@
     const chip = $("audio-toggle");
     function label() {
       if (!chip) return;
-      chip.textContent = Audio.suspendedByVisibility ? "♪ 再開" : Audio.playing ? (Audio.volume === 0 ? "♪ 音量0" : "♪ 鳴っている") : "♪ 鳴らす";
+      chip.textContent = tr(Audio.suspendedByVisibility ? "♪ 再開" : Audio.playing ? (Audio.volume === 0 ? "♪ 音量0" : "♪ 鳴っている") : "♪ 鳴らす");
       chip.setAttribute("aria-pressed", Audio.playing ? "true" : "false");
       const sound = $("settings-sound");
       if (sound && entered) sound.checked = Audio.playing;
@@ -2451,8 +2525,30 @@
   }
 
   // ---------- 起動 ----------
+  function setupLanguage() {
+    const select = $("gate-language");
+    select.disabled = false;
+    select.addEventListener("change", () => {
+      if (entered) return;
+      if (!Locale.select(select.value)) select.value = "ja";
+      Music.label();
+    });
+    // 翻訳が取得できなくても日本語の起動は止めない。言語は表紙での明示選択・保存しない。
+    const controller = new AbortController();
+    const timer = window.setTimeout(() => controller.abort(), 8000);
+    fetch("locales/en.json?v=e43", { signal: controller.signal }).then((response) => {
+      if (!response.ok) throw new Error("English catalog HTTP " + response.status);
+      return response.json();
+    }).then((data) => {
+      Locale.install(data);
+      select.querySelector('[value="en"]').disabled = false;
+    }).catch(() => {
+      $("language-note").textContent = "英語データを読み込めません。日本語では遊べます。 / English unavailable. Reload to retry.";
+    }).finally(() => window.clearTimeout(timer));
+  }
+
   async function loadData() {
-    const res = await fetch("depths-shell.json?v=e42", { cache: "no-store" });
+    const res = await fetch("depths-shell.json?v=e43", { cache: "no-store" });
     if (!res.ok) throw new Error(`depths-shell HTTP ${res.status}`);
     const data = await res.json();
     if (!data || typeof data !== "object" || !data.start || !data.nodes || !data.nodes[data.start]) {
@@ -2531,7 +2627,7 @@
   function registerSlicePWA() {
     if (!("serviceWorker" in navigator)) return;
     const register = () => {
-      navigator.serviceWorker.register("sw.js?v=e42", { scope: "./", updateViaCache: "none" }).then((reg) => {
+      navigator.serviceWorker.register("sw.js?v=e43", { scope: "./", updateViaCache: "none" }).then((reg) => {
         if (typeof reg.update === "function") reg.update().catch(() => {});
       }).catch((err) => console.warn("[Hazama slice] SW register failed:", err));
     };
@@ -2550,17 +2646,22 @@
     applyCycleSkin();          // B4: 読み込んだ周回で表紙スキン(--cycle-hue/pan)を立てる（cycle=0 は従来どおり）
     if (returning) {
       const sub = document.querySelector(".hz-gate-sub");
-      if (sub) sub.innerHTML = "また、来た。<br>入口は、前より一段、深い。";
+      if (sub) sub.textContent = "また、来た。\n入口は、前より一段、深い。";
       // E8: 戻ってきた観測者の表紙に、別の観測の痕跡がひとつ漂う（種・決定論＝あなたは最初の一人ではない）。
       const foreign = Drift.pick((worldSeed() ^ 0x7a3b1c9d) >>> 0);
       const inner = document.querySelector(".hz-gate-inner");
       if (foreign && inner) {
         const p = document.createElement("p");
         p.className = "hz-gate-drift";
-        p.textContent = "「" + foreign.t + "」";
+        const quote = document.createElement("span");
+        quote.setAttribute("data-i18n", ""); quote.setAttribute("data-i18n-text", foreign.t);
+        quote.textContent = "「" + foreign.t + "」";
+        p.appendChild(quote);
         const m = document.createElement("span");
         m.className = "hz-gate-drift-mark";
         m.textContent = "― 別の観測の痕跡 " + foreign.mark + " ―";
+        m.setAttribute("data-i18n", "");
+        m.setAttribute("data-i18n-text", "— A trace of another observation " + foreign.mark.replace("・深度", "· Depth ").replace("Ω 到達", "Ω").replace("浮上", "Surface") + " —");
         p.appendChild(document.createElement("br"));
         p.appendChild(m);
         inner.appendChild(p);
@@ -2572,6 +2673,7 @@
     gb.addEventListener("click", enter, { once: false });
     // すべての復元・描画・listener配線が成功してから、最後に入口をreadyへする。
     if (gateNote) gateNote.textContent = "音あり推奨・片手で読める縦長";
+    setupLanguage();
     gateEl.setAttribute("aria-busy", "false");
     gb.disabled = false;
   }).catch((e) => {

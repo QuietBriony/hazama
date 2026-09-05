@@ -564,6 +564,26 @@ body.omega .hz-scene, body.surfaced .hz-scene { animation: none; }
 .hz-gate-note { margin-top: 2.4em; font-size: 0.72rem; color: var(--ink-faint); }
 .hz-gate-note.is-error { font-size: 0.8rem; line-height: 1.6; color: var(--warn); }
 .hz-gate-settings { margin-top: 12px; }
+.hz-gate-sub { white-space: pre-line; }
+.hz-language { display: flex; justify-content: center; align-items: center; gap: 10px; margin: 18px 0 0; font-size: 0.8rem; color: var(--ink); }
+.hz-language select { max-width: 55%; min-height: 44px; padding: 8px; color: var(--ink); background: #101923; border: 1px solid var(--line); border-radius: 6px; font: inherit; color-scheme: dark; }
+.hz-language select:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+.hz-language-note { max-width: 38em; margin: 8px auto 16px; font-size: 0.72rem; line-height: 1.6; color: #a1aebc; }
+.hz-locale-notice { flex: 0 0 auto; margin: 4px 0 0; color: #a1aebc; font-size: 0.72rem; line-height: 1.45; }
+.hz-locale-notice[hidden] { display: none; }
+.hz-language-tag { display: block; margin-top: 5px; font-size: 0.72rem; color: #b1bac6; }
+html:lang(en) .hz-line:lang(en) { line-height: 1.65; letter-spacing: 0.01em; overflow-wrap: anywhere; }
+html:lang(en) .hz-choice { line-height: 1.5; overflow-wrap: anywhere; }
+html:lang(en) .hz-gate-guide { line-height: 1.6; }
+html:lang(en) .hz-line.foreign::after { content: "Trace of another observation " attr(data-mark); }
+html:lang(en) .hz-attune { text-orientation: mixed; }
+@media (max-height: 700px) {
+  .hz-gate-inner { padding: 18px; }
+  .hz-gate-sub { margin-bottom: 1em; }
+  .hz-gate-guide { margin: 0 0 0.7em; }
+  .hz-language { margin-top: 8px; }
+  .hz-language-note { line-height: 1.45; margin-bottom: 10px; }
+}
 .hz-gate-settings + .hz-gate-note { margin-top: 1em; }
 
 /* E42: native dialogのtop layerで、背景の択/表紙とfocusを隔離する。 */
