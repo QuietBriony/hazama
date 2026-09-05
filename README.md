@@ -16,6 +16,7 @@ Hazama は、沈むほど戻りにくい「降下する対話」の没入型静�
 - 検証: `scripts/hazama-check.mjs`（`autonomy-docs` ＋ `build-consistency` の2本）
 - 制作候補: `docs/BLENDER-AUTHORING.md`（WorkerPC Blender 5.2をrepo外の静止画制作実行器に限定。runtime非依存）
 - 体験版候補: [E41 初見テスト](docs/playtest/steam-demo-candidate-e41.md)（既存Web版の初回２ルート・人間の評価待ち。Steam提出用ビルドではない）
+- 人に渡す試遊案内: [日本語](docs/playtest/invite-ja.md) / [English](docs/playtest/invite-en.md)。実施側は[最初のラウンド](docs/playtest/first-round.md)へ（準備済み・人間の結果は未取得）
 - 感覚統合: `docs/SENSORY-RESPONSE-CANDIDATE.md`（E31 production governor、本編未配線のSensory Frame＋native Web Audio試聴lab）
 
 > 旧 forward 実装（Gate Run 資源ゲーム・Music ブリッジ・v2.x 系）と `slice/` 重複・別プレビュー repo は

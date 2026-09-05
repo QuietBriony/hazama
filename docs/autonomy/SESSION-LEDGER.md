@@ -19,6 +19,27 @@ Hazama 自律開発 session の追記専用ログ。
 
 ---
 
+## 2026-09-05 — 参加者向け日英案内とWindowsの英訳チェックを整える
+- agent      : Codex（単一会話・モデル/推論設定は変更せず継続）
+- goal       : E43後の「推奨進めて」に対し、まず一人に渡せる試遊案内と返答の扱いを整える
+- scope      : docs / smokeのみ。README、docs/playtest、BACKLOG/ledger、reading-locale/autonomy-docs smoke。
+  runtime / public route / 本文 / 保存 / 音 / カタログ / PWAは変更しない。公開ゲームの版はE43のまま。
+- evidence   : 開始時masterはclean。baselineは1 PASS / 1 FAIL。Git checkout後のindex.htmlはCRLF、
+  カタログの改行キーはLFのため、reading-localeが表紙の訳あり文を「missing」と誤判定していた。
+  ブラウザのtextContentと同じ改行正規化を検証側だけへ適用し、LF/CRLF/CRの全形式を回帰確認する。
+- shipped    : `invite-ja.md` / `invite-en.md`にゲームリンク・開始/中断・設定・プレイ後3問を整理。
+  日本語には攻略を渡さず、英語は翻訳対象の実ラベル2つで案内。`first-round.md`に一人目からの進め方、
+  言語/版/初見と再訪の分離、返答と観察の区別、未確認の扱い、修正への戻し方を記載。
+  既存手順/READMEから接続し、human templateは生の回答を公開repoへ貼らず了承済み匿名要約だけに修正。
+  autonomy-docsは案内の存在・接続・英語の実選択肢ラベルをチェックする。
+- checks     : `node scripts/hazama-check.mjs`: 2 PASS / 0 FAIL / 0 SKIP。`git diff --check`と変更文書のlocal link確認PASS。
+- browser    : runtime無変更につき今回の新規ブラウザ試遊は省略。E43の前sessionの通し検証を人間の結果に置換しない。
+- backlog    : HZ-BL-021 added and done（準備/検証修正のみ）。HZ-BL-018 / 020 / 001 / 002 / 012は未完了のまま。
+- next       : 日本語の初見一人へ参加者用案内を渡し、了承範囲の返答をこの会話へ受け取って修正に戻す。
+  英語話者の指定ルート試遊も別枠で受け付ける。
+- blockers   : 募集/連絡/送信/録画/人間の試遊/回答回収は未実施。本人の反応なしに味・訳・実機/耳の採否は決めない。
+- release    : 承認済みの既存repo更新の継続。runtime版bump、Steam操作、外部フォーム、支払、別taskはなし。
+
 ## 2026-09-05 — E43 英語の身体ルート試作と日英の試遊準備
 - agent      : Codex（単一会話・モデル/推論設定は変更せず継続）
 - goal       : 日本語の初見テストと並行して、英語話者が一つの道を結末まで評価できるようにする

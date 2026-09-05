@@ -51,9 +51,17 @@ for (const item of [...data.edge.sankLines, ...data.edge.heldLines]) assert.ok(L
 const echoBank = source.match(/  const ECHO_BANK = (\{[\s\S]*?\n  \});/)?.[1];
 const echo = vm.runInNewContext("(" + echoBank + ")");
 for (const phrase of Object.values(echo)) assert.ok(L.translated(phrase), "all true AND decoy fragments must be translated");
-for (const tag of html.matchAll(/<([\w-]+)\b[^>]*\bdata-i18n(?=[\s>])[^>]*>([^<]+)<\/\1>/g)) {
-  assert.ok(L.translated(tag[2]), "missing static UI translation: " + tag[2]);
+// HTML parsing folds CRLF/CR to LF before textContent reaches Locale.select.
+// Match that boundary, not the platform-dependent bytes from a Git checkout.
+const staticTexts = (input) => [...input.replace(/\r\n?/g, "\n")
+  .matchAll(/<([\w-]+)\b[^>]*\bdata-i18n(?=[\s>])[^>]*>([^<]+)<\/\1>/g)].map(tag => tag[2]);
+const uiTexts = staticTexts(html);
+assert.ok(uiTexts.includes("狭間（あわい）\n沈むほど、戻り道は細くなる。"), "multiline cover must be checked");
+for (const newline of ["\n", "\r\n", "\r"]) {
+  const checkout = html.replace(/\r\n?/g, "\n").replace(/\n/g, newline);
+  assert.deepEqual(staticTexts(checkout), uiTexts, "UI keys must not depend on checkout line endings");
 }
+for (const field of uiTexts) assert.ok(L.translated(field), "missing static UI translation: " + field);
 L.notice([{ _lang: "ja" }]); assert.match(note.textContent, /untranslated Japanese/);
 L.notice([{ _lang: "en" }]); assert.doesNotMatch(note.textContent, /untranslated/);
 L.select("ja"); assert.equal(button.textContent, "沈む");
@@ -66,4 +74,4 @@ assert.ok(!/\b(?:state|Spiral|localStorage|fetch)\b/.test(locale), "Locale is di
 const version = source.match(/depths-shell\.json\?v=([a-z0-9.]+)/)[1];
 assert.ok(source.includes("locales/en.json?v=" + version), "catalog fetch version matches runtime");
 assert.ok(read("sw.js").includes('`locales/en.json?v=${RELEASE}`'), "optional catalog is offline-cached with its version");
-console.log("reading-locale smoke PASS (Body path, all echo candidates, fallback, display-only, pacing, version)");
+console.log("reading-locale smoke PASS (Body path, all echo candidates, fallback, display-only, pacing, version, LF/CRLF/CR)");

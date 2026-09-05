@@ -1,12 +1,15 @@
 # Human Playtest Template — Hazama 没入版
 
 5〜8 分の taste pass 用テンプレート。
-記入後 `docs/autonomy/SESSION-LEDGER.md` に貼り付ける（ledger が scope に入っている場合のみ）。
+実施側の詳細記録用。初見の参加者へは[短い日本語案内](invite-ja.md)を渡す。
+未実施の欄は埋めず、未実施とする。氏名・連絡先は記録しない。
+公開repoや`docs/autonomy/SESSION-LEDGER.md`には生の回答を貼らず、本人が公開を了承した匿名要約だけを残す
+（ledgerがscopeに入っている場合のみ）。依頼と返答の扱いは[最初の試遊ラウンド](first-round.md)を参照。
 
 ```md
 ## YYYY-MM-DD — Human Taste Pass
 
-- player   :
+- player   : 匿名ID（氏名・連絡先は不要）
 - device   :
 - browser  :
 - mode     : desktop browser / mobile browser / installed PWA / other:

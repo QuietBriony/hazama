@@ -39,9 +39,10 @@
 以下は翻訳対象の範囲を指定するテストなので、自由な経路選択や販売需要の証拠とは区別する。
 相手の了承の範囲だけ記録する。録画・募集・連絡・自動収集・外部送信は未実施。
 
-渡せる説明文（送信はしていない）:
-
-> This is an early English trial of Hazama, a short, text-led descent. Choose English (trial) on the title screen. At the first fork, take the path that lets the weave sink into your body. Beyond that, choose freely. At Ω, close the screen's light to reach an ending; the endless depths are not translated yet. You can reveal all text, change its size or turn sound off. Stop whenever you wish. We are testing the writing and the experience, not asking for a positive review.
+参加者には[短い英語案内](invite-en.md)を渡す（送信はしていない）。
+公開ゲームへのリンク、実際の選択肢ラベル、終了後の3問を一つにまとめてある。
+依頼と返答の扱いは[最初の試遊ラウンド](first-round.md)を使う。
+以下は実施側が必要に応じて追加する質問で、すべてを参加者の必須回答にはしない。
 
 終わった後に聞くこと:
 

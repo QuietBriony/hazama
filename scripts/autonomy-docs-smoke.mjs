@@ -48,13 +48,16 @@ const requiredFiles = [
   "docs/playtest/first-playable-agent-pass-2026-05-16.md",
   "docs/playtest/gate-run-balance-decision-rubric.md",
   "docs/playtest/human-playtest-template.md",
+  "docs/playtest/invite-ja.md",
+  "docs/playtest/invite-en.md",
+  "docs/playtest/first-round.md",
   "docs/COLLAB-CLAUDE-AND-CODEX.md"
 ];
 
 for (const requiredFile of requiredFiles) assertExists(requiredFile);
 
-// README は入口の core 接続のみ要求する。深い手順 docs への接続は
-// docs/autonomy/README.md（index）と STACK-INDEX.md 側で担保する（没入版単一ビルドの契約）。
+// README は自律起動の core 接続と、参加者へ渡す試遊案内の入口を要求する。
+// 深い自律手順の接続は docs/autonomy/README.md と STACK-INDEX.md 側で担保する。
 const readme = read("README.md");
 for (const needle of [
   "node scripts/hazama-check.mjs",
@@ -63,6 +66,9 @@ for (const needle of [
   "docs/autonomy/AUTONOMOUS-RUN.md",
   "docs/autonomy/BACKLOG.md",
   "docs/autonomy/SESSION-LEDGER.md",
+  "docs/playtest/invite-ja.md",
+  "docs/playtest/invite-en.md",
+  "docs/playtest/first-round.md",
   "docs/COLLAB-CLAUDE-AND-CODEX.md"
 ]) {
   assertIncludes(readme, needle, "README.md");
@@ -89,6 +95,22 @@ for (const needle of [
   "human-playtest-template.md"
 ]) {
   assertIncludes(stackIndex, needle, "docs/autonomy/STACK-INDEX.md");
+}
+
+// The English handout points to two real choices; keep its instructions in sync
+// with the catalog rather than asking participants to guess an obsolete label.
+const trialData = JSON.parse(read("depths-shell.json"));
+const trialEnglish = JSON.parse(read("locales/en.json")).strings;
+const englishInvite = read("docs/playtest/invite-en.md");
+for (const [id, to] of [["A", "B_soma"], ["Omega", "reborn"]]) {
+  const choice = trialData.nodes[id].choices.find((item) => item.to === to);
+  const label = choice && trialEnglish[choice.t];
+  assert(typeof label === "string" && label.length > 0, `English trial instruction has no catalog label: ${id} -> ${to}`);
+  if (label) assertIncludes(englishInvite, label, "docs/playtest/invite-en.md");
+}
+for (const language of ["ja", "en"]) {
+  assertIncludes(read(`docs/playtest/invite-${language}.md`), "https://quietbriony.github.io/hazama/", `invite-${language}`);
+  assertIncludes(read("docs/playtest/first-round.md"), `invite-${language}.md`, "first-round.md");
 }
 
 const backlog = read("docs/autonomy/BACKLOG.md");
