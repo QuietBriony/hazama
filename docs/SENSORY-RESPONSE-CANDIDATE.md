@@ -45,12 +45,23 @@ Audio / Mandala / Glitch / Gardenへ配っている。内製Audioも次を持つ
 ```text
 tools/sensory/
 ├─ hazama-sensory-frame.mjs  # browser非依存の純粋モデル
+├─ neural-modulator.mjs     # tools-onlyの64細胞モデル・通常揺らぎ・固定刺激列
 ├─ sensory-audio-lab.html    # 人間が聴く静的試聴面
 └─ sensory-audio-lab.mjs     # native Web Audio candidate
 
 scripts/
 └─ sensory-frame-smoke.mjs   # 決定論・境界・dependency不在
 ```
+
+2026-09-14: 同じlabに通常の揺らぎ / 64個の簡易ニューロン / 変調なしの比較を追加。
+純粋なSensory Frameは変更せず、状態を持つ変調モデルを分離した。
+初期音量35%、画面下の開始/停止、seed/reset、同じ60秒の刺激列を備える。
+`scripts/neural-modulator-smoke.mjs`も単一checkに含む。
+[比較手順・接続仕様・検証と未検証](playtest/neural-modulator-trial.md)を参照。
+ハエの実測データや学習済みモデルは不使用。本編未配線、人間の試聴は未完了。
+[スマホ向け音実験室](https://quietbriony.github.io/hazama/tools/sensory/sensory-audio-lab.html?v=neural-20260914-1)
+への更新公開は2026-09-14にユーザーが明示承認した。スマホ自身のブラウザで直接再生し、
+同じWi-FiやPCからの音声転送は不要。lab moduleだけに独立したcache versionを付け、本編E44は維持する。
 
 ローカルHTTPサーバをrepo rootで起動し、次を開く。
 
@@ -75,22 +86,9 @@ coarse pointer端末では、試聴labに限り初期tierを`light`へ下げる�
 自動端末判定ではなく、スマホ試聴の安全側の初期値であり、詳細調整から変更できる。
 `prefers-reduced-motion`が有効なら従来どおり`static`が常に優先される。
 
-WorkerPCとスマホを同じWi-Fiへ接続し、レビュー中だけrepo rootをLANへbindした
-ローカル静的HTTPサーバから、次の形で開く。
-
-```powershell
-cd C:\workspace\hazama
-python -m http.server 8000 --bind 0.0.0.0
-```
-
-```text
-http://<WorkerPCのLAN IPv4>:8000/tools/sensory/sensory-audio-lab.html
-```
-
-これは制作中の一時レビュー導線で、Hazamaのserver runtime追加ではない。公開Internetへ
-露出せず、レビュー後はサーバを停止する。接続できない場合に、このcandidateから
-Windows Firewall設定を変更しない。PC上の`127.0.0.1`確認へ戻し、ネットワーク許可は
-人間が別途判断する。
+遠隔スマホでは上のGitHub Pagesリンクを使用する。ローカル開発サーバを外部へ
+開放したり、Windows Firewall設定を変更したりする必要はない。
+自律的な揺らぎはA/Bそれぞれ「同じ刺激を60秒」で比較し、耳による評価をこの会話へ返す。
 
 ## Sensory Frame v1
 
@@ -145,6 +143,10 @@ continuous voices / transient verbs
            master gain
                 ↓
   DynamicsCompressorNode (guardrail)
+                ↓
+ user listening gain (0..1, default .35)
+                ↓
+ bounded stereo pan (supported browsers)
                 ↓
            destination
 ```

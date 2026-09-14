@@ -1,4 +1,6 @@
 import { createSensoryFrame, seededUnit } from "./hazama-sensory-frame.mjs";
+import { createBaselineModulator, createNeuralModulator, isValidModulation,
+  MODULATION_STEP_MS, NEUTRAL_MODULATION, trialAtTick } from "./neural-modulator.mjs?v=neural-20260914-1";
 
 const PARTIALS = [
   { ratio: 0.5, type: "sine", base: 0, bloom: 0.045, diss: 0 },
@@ -73,16 +75,46 @@ export class CandidateAudioEngine {
     this.lfoGain = null;
     this.partials = [];
     this.frame = null;
+    this.effectiveFrame = null;
     this.running = false;
     this.suspendedByVisibility = false;
+    this.listeningGain = null;
+    this.panner = null;
+    this.volume = 0.35;
+    this.modulationMode = "baseline";
+    this.modulation = NEUTRAL_MODULATION;
+    this.models = { baseline: createBaselineModulator(), neural: createNeuralModulator() };
+    this.modulationTimer = null;
+    this.replayTick = null;
+    this.trialCompleted = false;
+    this.replayLabel = "自由試聴";
+    this.modulationFault = "";
+    this.slowTicks = 0;
+    this.onChange = () => {};
+    this.lifecycle = 0;
+    this.stopping = null;
+    this.transients = new Set();
   }
 
   async start(frame) {
+    if (this.stopping) await this.stopping;
+    if (this.hostWindow.document?.hidden) return;
+    const generation = ++this.lifecycle;
     if (!this.context) this.#createGraph(frame);
     this.frame = frame;
+    this.resetModulation();
     this.running = true;
-    await this.context.resume();
+    const context = this.context;
+    try { await context.resume(); } catch (error) { await this.stop(); throw error; }
+    if (generation !== this.lifecycle || context !== this.context || !this.running) {
+      if (context === this.context && this.suspendedByVisibility) { try { await context.suspend(); } catch {} }
+      return;
+    }
+    if (this.hostWindow.document?.hidden) return this.suspendForVisibility();
+    this.suspendedByVisibility = false;
     this.#apply(frame, true);
+    this.#startModulation();
+    this.onChange();
   }
 
   #createGraph(frame) {
@@ -98,7 +130,14 @@ export class CandidateAudioEngine {
     this.compressor.attack.value = 0.006;
     this.compressor.release.value = 0.25;
     this.master.connect(this.compressor);
-    this.compressor.connect(this.context.destination);
+    this.listeningGain = this.context.createGain();
+    this.listeningGain.gain.value = this.volume;
+    this.compressor.connect(this.listeningGain);
+    this.panner = this.context.createStereoPanner?.() || null;
+    if (this.panner) {
+      this.listeningGain.connect(this.panner);
+      this.panner.connect(this.context.destination);
+    } else this.listeningGain.connect(this.context.destination);
 
     this.filter = this.context.createBiquadFilter();
     this.filter.type = "lowpass";
@@ -177,19 +216,115 @@ export class CandidateAudioEngine {
     if (!this.context) return;
     const previous = this.frame;
     this.frame = frame;
+    if (previous?.signals.seed !== frame.signals.seed) this.resetModulation();
     if (!previous || previous.audio.partialBudget !== frame.audio.partialBudget ||
         previous.audio.impulseSeconds !== frame.audio.impulseSeconds ||
         previous.signals.seed !== frame.signals.seed) {
       this.#rebuildContinuous(frame);
     }
     this.#apply(frame, false);
+    this.#startModulation();
+  }
+
+  setVolume(value) {
+    const number = Number(value);
+    this.volume = Number.isFinite(number) ? Math.max(0, Math.min(1, number)) : 0;
+    if (this.listeningGain) this.listeningGain.gain.setTargetAtTime(this.volume, this.context.currentTime, 0.04);
+  }
+
+  setModulationMode(mode) {
+    this.modulationMode = ["baseline", "neural", "off"].includes(mode) ? mode : "off";
+    this.modulation = NEUTRAL_MODULATION;
+    if (this.frame && this.context) this.#apply(this.frame, false);
+    this.#startModulation();
+    this.onChange();
+  }
+
+  resetModulation() {
+    const seed = this.frame?.signals.seed || 0;
+    Object.values(this.models).forEach((model) => model.reset(seed));
+    this.modulation = NEUTRAL_MODULATION;
+    this.modulationFault = "";
+    this.slowTicks = 0;
+    this.replayTick = null;
+    this.replayLabel = "自由試聴 · リセット済み";
+    this.trialCompleted = false;
+    if (this.context && this.frame) this.#apply(this.frame, false);
+    this.#startModulation();
+    this.onChange();
+  }
+
+  replayTrial() {
+    if (!this.running || this.suspendedByVisibility || this.frame?.signals.tier === "static" || this.modulationMode === "off") return;
+    this.resetModulation();
+    this.replayTick = 0;
+    this.replayLabel = "静けさ";
+    this.onChange();
+  }
+
+  #clearModulationTimer() {
+    if (this.modulationTimer !== null) this.hostWindow.clearInterval(this.modulationTimer);
+    this.modulationTimer = null;
+  }
+
+  #startModulation() {
+    this.#clearModulationTimer();
+    if (!this.running || this.suspendedByVisibility || this.context?.state !== "running"
+        || this.frame?.signals.tier === "static" || this.modulationMode === "off" || this.modulationFault) {
+      this.modulation = NEUTRAL_MODULATION;
+      return;
+    }
+    // One fixed step per tick, never a catch-up burst after a delayed frame.
+    this.modulationTimer = this.hostWindow.setInterval(() => this.advanceModulation(), MODULATION_STEP_MS);
+  }
+
+  advanceModulation() {
+    if (!this.running || this.suspendedByVisibility || this.context?.state !== "running"
+        || this.hostWindow.document?.hidden || this.modulationFault || this.modulationMode === "off"
+        || this.frame?.signals.tier === "static") return;
+    const start = this.hostWindow.performance?.now() || 0;
+    try {
+      let frame = this.frame;
+      if (this.replayTick !== null) {
+        const stage = trialAtTick(this.replayTick);
+        if (!stage) {
+          this.replayTick = null;
+          this.trialCompleted = true;
+          this.replayLabel = "60秒比較が終了 · モードを替えて再試聴できます";
+          void this.stop();
+          return;
+        }
+        this.replayLabel = `${stage.seconds.toFixed(1)} / 60秒 · ${stage.label}`;
+        frame = createSensoryFrame({ ...frame.signals, ...stage.signals });
+        this.replayTick += 1;
+      }
+      const a = this.models.baseline.step(frame.signals);
+      const b = this.models.neural.step(frame.signals);
+      if (!isValidModulation(a) || !isValidModulation(b)) throw new Error("数値の範囲外");
+      this.modulation = this.modulationMode === "neural" ? b : a;
+      this.#apply(frame, false);
+      const elapsed = (this.hostWindow.performance?.now() || 0) - start;
+      this.slowTicks = elapsed > 15 ? this.slowTicks + 1 : 0;
+      if (this.slowTicks >= 3) throw new Error("計算時間の上限");
+      if (this.modulation.tick % 5 === 0) this.onChange();
+    } catch {
+      this.modulationFault = "変調を停止しました。リセットで再試行できます。";
+      this.replayTick = null;
+      this.#clearModulationTimer();
+      this.modulation = NEUTRAL_MODULATION;
+      this.#apply(this.frame, false);
+      this.onChange();
+    }
   }
 
   #apply(frame, immediate) {
+    this.effectiveFrame = frame;
     const now = this.context.currentTime;
     const time = immediate ? 0.08 : 0.7;
+    const m = frame.signals.tier === "static" || this.modulationMode === "off" ? NEUTRAL_MODULATION : this.modulation;
     this.master.gain.setTargetAtTime(frame.audio.masterGain, now, time);
-    this.filter.frequency.setTargetAtTime(frame.audio.cutoffHz, now, time);
+    this.filter.frequency.setTargetAtTime(Math.max(280, Math.min(2540, frame.audio.cutoffHz + m.texture * 280)), now, time);
+    if (this.panner) this.panner.pan.setTargetAtTime(m.pan * 0.18, now, 0.3);
     if (this.wet) this.wet.gain.setTargetAtTime(frame.audio.wetGain, now, 1.1);
     if (this.lfo) this.lfo.frequency.setTargetAtTime(frame.audio.lfoHz, now, 1.1);
     if (this.lfoGain) this.lfoGain.gain.setTargetAtTime(frame.audio.lfoCents, now, 1.1);
@@ -197,8 +332,8 @@ export class CandidateAudioEngine {
     this.partials.forEach(({ oscillator, gain, spec }) => {
       const level = spec.base + spec.bloom * bloom * (1 + frame.signals.density * 0.7) + spec.diss * frame.signals.menace;
       oscillator.frequency.setTargetAtTime(frame.audio.baseHz * spec.ratio, now, time);
-      oscillator.detune.setTargetAtTime(frame.audio.baseDetuneCents, now, 1.2);
-      gain.gain.setTargetAtTime(Math.max(0.0001, level), now, immediate ? 0.2 : 0.8);
+      oscillator.detune.setTargetAtTime(frame.audio.baseDetuneCents + m.texture * 5, now, 1.2);
+      gain.gain.setTargetAtTime(Math.max(0.0001, level * (0.86 + m.pulse * 0.14)), now, immediate ? 0.2 : 0.3);
     });
   }
 
@@ -206,6 +341,7 @@ export class CandidateAudioEngine {
     if (!this.context || !this.running) await this.start(frame);
     else if (this.context.state !== "running") await this.resumeFromGesture(frame);
     else this.configure(frame);
+    if (!this.running || this.suspendedByVisibility || this.context?.state !== "running" || this.transients.size >= 8) return;
     const now = this.context.currentTime;
     const scale = frame.audio.transientScale;
     const recipes = {
@@ -229,6 +365,7 @@ export class CandidateAudioEngine {
     gain.connect(this.filter);
     oscillator.start(now);
     oscillator.stop(now + recipe.duration + 0.04);
+    this.#trackTransient(oscillator, [gain]);
   }
 
   #noiseBurst(frame, now) {
@@ -253,36 +390,85 @@ export class CandidateAudioEngine {
     gain.connect(this.master);
     source.start(now);
     source.stop(now + 0.1);
+    this.#trackTransient(source, [bandpass, gain]);
+  }
+
+  #trackTransient(source, nodes) {
+    const entry = { source, nodes };
+    this.transients.add(entry);
+    source.onended = () => {
+      source.disconnect();
+      nodes.forEach((node) => node.disconnect());
+      this.transients.delete(entry);
+    };
+  }
+
+  #clearTransients() {
+    this.transients.forEach(({ source, nodes }) => {
+      source.onended = null;
+      try { source.stop(); source.disconnect(); } catch {}
+      nodes.forEach((node) => { try { node.disconnect(); } catch {} });
+    });
+    this.transients.clear();
   }
 
   async suspendForVisibility() {
-    if (!this.context || !this.running || this.context.state !== "running") return;
+    this.lifecycle += 1;
+    this.#clearModulationTimer();
+    if (!this.context || !this.running) return;
     this.suspendedByVisibility = true;
-    await this.context.suspend();
+    this.#clearTransients();
+    try { await this.context.suspend(); } catch {}
+    this.onChange();
   }
 
   async resumeFromGesture(frame) {
     if (!this.context || !this.running) return this.start(frame);
+    if (this.hostWindow.document?.hidden) return;
+    const generation = ++this.lifecycle;
+    const context = this.context;
+    await context.resume();
+    if (generation !== this.lifecycle || context !== this.context || !this.running) {
+      if (context === this.context && this.suspendedByVisibility) { try { await context.suspend(); } catch {} }
+      return;
+    }
+    if (this.hostWindow.document?.hidden) return this.suspendForVisibility();
     this.suspendedByVisibility = false;
-    await this.context.resume();
     this.configure(frame);
+    this.onChange();
   }
 
-  async stop() {
-    if (!this.context) return;
+  async stop(immediate = false) {
+    if (this.stopping) {
+      if (immediate && this.context) {
+        this.#clearContinuous();
+        this.#clearTransients();
+        try { await this.context.close(); } catch {}
+      }
+      return this.stopping;
+    }
+    this.lifecycle += 1;
+    this.#clearModulationTimer();
     this.running = false;
+    this.replayTick = null;
+    this.onChange();
+    if (!this.context) return;
     const context = this.context;
     this.master.gain.setTargetAtTime(0.0001, context.currentTime, 0.06);
-    await new Promise((resolve) => this.hostWindow.setTimeout(resolve, 180));
-    this.#clearContinuous();
-    try { await context.close(); } catch {}
-    this.context = null;
-    this.master = null;
-    this.compressor = null;
-    this.filter = null;
-    this.dry = null;
-    this.frame = null;
-    this.suspendedByVisibility = false;
+    this.stopping = (async () => {
+      if (!immediate) await new Promise((resolve) => this.hostWindow.setTimeout(resolve, 180));
+      this.#clearContinuous();
+      this.#clearTransients();
+      try { await context.close(); } catch {}
+      this.context = this.master = this.compressor = this.filter = this.dry = null;
+      this.listeningGain = this.panner = this.frame = this.effectiveFrame = null;
+      this.modulation = NEUTRAL_MODULATION;
+      this.suspendedByVisibility = false;
+      this.stopping = null;
+      this.onChange();
+    })();
+    this.onChange();
+    return this.stopping;
   }
 }
 
@@ -291,9 +477,9 @@ export function setupSensoryAudioLab(doc, hostWindow) {
   const engine = new CandidateAudioEngine(hostWindow);
   let audioTransitioning = false;
   const controls = ["depth", "dread", "density", "axis", "phase", "tier"].map($);
-  const reducedMotion = hostWindow.matchMedia?.("(prefers-reduced-motion: reduce)").matches || false;
+  const motionQuery = hostWindow.matchMedia?.("(prefers-reduced-motion: reduce)");
+  let reducedMotion = motionQuery?.matches || false;
   const coarsePointer = hostWindow.matchMedia?.("(pointer: coarse)").matches || false;
-  const seed = 0x485a4c31;
   if (coarsePointer && $("tier").value === "balanced") $("tier").value = "light";
   const currentFrame = () => createSensoryFrame({
     depth: $("depth").value,
@@ -302,7 +488,7 @@ export function setupSensoryAudioLab(doc, hostWindow) {
     axis: $("axis").value,
     phase: $("phase").value || undefined,
     tier: $("tier").value,
-    seed,
+    seed: $("seed").value,
     reducedMotion
   });
   const render = () => {
@@ -330,19 +516,61 @@ export function setupSensoryAudioLab(doc, hostWindow) {
     });
     syncSceneSelection(sceneId);
     const frame = render();
+    engine.resetModulation();
     status(engine.running ? `試聴中: ${scene.label}` : `${scene.label}を選択。音はまだ停止中`);
     return frame;
   };
   const syncToggle = () => {
+    const busy = audioTransitioning || Boolean(engine.stopping);
     $("audio-toggle").textContent = !engine.running ? "試聴を始める"
       : engine.suspendedByVisibility ? "試聴を再開する" : "試聴を止める";
-    $("audio-toggle").setAttribute("aria-pressed", String(engine.running));
+    $("audio-toggle").setAttribute("aria-pressed", String(engine.running && !engine.suspendedByVisibility));
+    $("audio-toggle").disabled = busy;
+    const audible = engine.running && !engine.suspendedByVisibility && !busy;
+    doc.querySelectorAll("[data-verb]").forEach((button) => {
+      button.disabled = !audible || engine.replayTick !== null;
+    });
+    $("trial-replay").disabled = !audible || currentFrame().signals.tier === "static" || engine.modulationMode === "off";
+    const paused = engine.suspendedByVisibility ? "一時停止 · ボタンで再開" : !engine.running ? "停止中" : "試聴中";
+    const label = currentFrame().signals.tier === "static" ? "static設定 · 自律変調なし" : engine.replayLabel;
+    // Do not make a screen reader announce the simulation clock four times/sec.
+    const announcement = `${paused} · ${engine.modulationFault || label.replace(/^\d+\.\d \/ 60秒 · /, "")}`;
+    if ($("trial-status").textContent !== announcement) $("trial-status").textContent = announcement;
+    $("trial-progress").value = engine.replayTick === null ? (engine.trialCompleted ? 60 : 0) : engine.replayTick * MODULATION_STEP_MS / 1000;
+    if (!engine.running && $("status").textContent.startsWith("試聴中")) status("停止中");
+    const m = engine.modulation;
+    $("trace").textContent = JSON.stringify(engine.running && engine.effectiveFrame ? engine.effectiveFrame : currentFrame(), null, 2);
+    $("modulation-summary").textContent = `音色 ${m.texture.toFixed(2)} · 脈動 ${m.pulse.toFixed(2)} · 左右 ${m.pan.toFixed(2)}`
+      + (engine.modulationMode === "neural" ? ` · 活動 ${Math.round(m.activity * 100)}% · 慣れ ${Math.round(m.adaptation * 100)}%` : "");
   };
+  engine.onChange = syncToggle;
 
   controls.forEach((control) => control.addEventListener("input", () => {
     if (control.id !== "tier") syncSceneSelection();
     render();
+    engine.resetModulation();
   }));
+  $("seed").addEventListener("change", () => {
+    const value = Number($("seed").value);
+    $("seed").value = String(Number.isFinite(value) ? Math.max(0, Math.min(4294967295, Math.trunc(value))) : 0);
+    render();
+    engine.resetModulation();
+  });
+  $("volume").addEventListener("input", () => {
+    engine.setVolume($("volume").value);
+    $("volume").nextElementSibling.textContent = `${Math.round(engine.volume * 100)}%`;
+  });
+  doc.querySelectorAll("[data-mode]").forEach((button) => {
+    button.addEventListener("click", () => {
+      engine.setModulationMode(button.dataset.mode);
+      if (button.dataset.mode === "off") engine.resetModulation();
+      doc.querySelectorAll("[data-mode]").forEach((item) => {
+        item.setAttribute("aria-pressed", String(item.dataset.mode === engine.modulationMode));
+      });
+    });
+  });
+  $("modulation-reset").addEventListener("click", () => { render(); engine.resetModulation(); });
+  $("trial-replay").addEventListener("click", () => { engine.replayTrial(); });
   doc.querySelectorAll("[data-scene]").forEach((button) => {
     button.addEventListener("click", () => { applyScene(button.dataset.scene); });
   });
@@ -364,12 +592,13 @@ export function setupSensoryAudioLab(doc, hostWindow) {
       status(`開始できません: ${error.message}`);
     } finally {
       audioTransitioning = false;
-      $("audio-toggle").disabled = false;
       $("audio-toggle").setAttribute("aria-busy", "false");
+      syncToggle();
     }
   });
   doc.querySelectorAll("[data-verb]").forEach((button) => {
     button.addEventListener("click", async () => {
+      if (audioTransitioning || !engine.running || engine.suspendedByVisibility || engine.stopping || engine.replayTick !== null) return;
       try {
         await engine.playVerb(button.dataset.verb, render());
         status(`試聴中: ${button.textContent}`);
@@ -386,9 +615,15 @@ export function setupSensoryAudioLab(doc, hostWindow) {
       syncToggle();
     }
   });
-  hostWindow.addEventListener("pagehide", () => { void engine.stop(); }, { once: true });
+  motionQuery?.addEventListener?.("change", (event) => {
+    reducedMotion = event.matches;
+    render();
+    engine.resetModulation();
+  });
+  hostWindow.addEventListener("pagehide", () => { void engine.stop(true); });
   syncSceneSelection("shallow");
   render();
+  syncToggle();
   if (coarsePointer) status(reducedMotion ? "停止中 · OS設定によりstatic tier" : "停止中 · mobile向けlight tier");
   return engine;
 }

@@ -18,6 +18,7 @@ Hazama は、沈むほど戻りにくい「降下する対話」の没入型静�
 - 体験版候補: [E41 初見テスト](docs/playtest/steam-demo-candidate-e41.md)（既存Web版の初回２ルート・人間の評価待ち。Steam提出用ビルドではない）
 - 人に渡す試遊案内: [日本語](docs/playtest/invite-ja.md) / [English](docs/playtest/invite-en.md)。実施側は[最初のラウンド](docs/playtest/first-round.md)へ（準備済み・人間の結果は未取得）
 - 感覚統合: `docs/SENSORY-RESPONSE-CANDIDATE.md`（E31 production governor、本編未配線のSensory Frame＋native Web Audio試聴lab）
+- 神経回路風の音実験: [スマホで試聴](https://quietbriony.github.io/hazama/tools/sensory/sensory-audio-lab.html?v=neural-20260914-1) / [比較手順と接続仕様](docs/playtest/neural-modulator-trial.md)。`tools/sensory/`内で通常の揺らぎと64個の簡易回路をA/B比較。本編未配線・実際のハエの脳データは不使用・人間の試聴待ち。
 
 > 旧 forward 実装（Gate Run 資源ゲーム・Music ブリッジ・v2.x 系）と `slice/` 重複・別プレビュー repo は
 > 整理・撤去済み。履歴は git に保全（ロールバック: `f8763f2` 没入初版 / `7d5def9` forward v2.45 /
@@ -103,6 +104,7 @@ node scripts/hazama-check.mjs
   認識2.0 契約（ECHO_BANK≥15・全キー実在・deep≥10・表層侵食・エコー門）、
   縁の二択と縁カード、出現中の連打・古い画面の遅延処理・reduced-motion下の単一選択、
   README/AGENTS が存在しない scripts を案内していないこと、depths グラフ到達性
+- tools-only音実験の回帰: `scripts/sensory-frame-smoke.mjs` / `scripts/neural-modulator-smoke.mjs`も単一checkに含む。再現性・反応/回復・長時間の数値境界・停止/非表示・音量上限を確認する。音質の合格判定ではない。
 
 `0 FAIL` が commit 前提（`AGENTS.md` 参照）。
 

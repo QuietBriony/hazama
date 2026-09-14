@@ -4,6 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#04060b">
+  <link rel="icon" href="data:,">
   <title>Hazama Sensory Response Lab</title>
   <style>
     :root { color-scheme: dark; font-family: system-ui, sans-serif; background: #04060b; color: #d8e3e8; }
@@ -13,7 +14,7 @@
       max-width: 880px;
       margin: 0 auto;
       padding: max(24px, env(safe-area-inset-top)) max(18px, env(safe-area-inset-right))
-        max(72px, calc(env(safe-area-inset-bottom) + 56px)) max(18px, env(safe-area-inset-left));
+        max(230px, calc(env(safe-area-inset-bottom) + 210px)) max(18px, env(safe-area-inset-left));
       overflow-wrap: anywhere;
     }
     h1 { margin-bottom: 12px; font-size: clamp(1.45rem, 7vw, 2.3rem); letter-spacing: .045em; line-height: 1.25; }
@@ -32,12 +33,23 @@
     output { font-variant-numeric: tabular-nums; text-align: right; }
     select, button, input { font: inherit; }
     input[type="range"] { width: 100%; min-height: 44px; accent-color: #7fb6c4; }
-    select, button { min-height: 48px; border: 1px solid #49636e; border-radius: 8px; color: inherit; background: #101d25; }
+    select, button, input[type="number"] { min-height: 48px; border: 1px solid #49636e; border-radius: 8px; color: inherit; background: #101d25; }
+    input[type="number"] { width: 100%; min-width: 0; padding: 8px 10px; }
     select { width: 100%; padding: 8px 10px; }
     button { cursor: pointer; padding: 10px 14px; touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
     button:hover, button:focus-visible { border-color: #9bc8d3; background: #172b35; }
+    :focus-visible { outline: 2px solid #b7dce3; outline-offset: 3px; }
+    button:disabled { cursor: default; opacity: .5; }
+    .modes { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+    .modes button[aria-pressed="true"] { border-color: #b7dce3; background: #17313b; }
+    .trial-actions { display: grid; grid-template-columns: 2fr 1fr; gap: 8px; }
+    #modulation-summary { font-variant-numeric: tabular-nums; font-size: .88rem; }
+    progress { width: 100%; height: 12px; accent-color: #7fb6c4; }
     .verbs { display: grid; grid-template-columns: repeat(auto-fit, minmax(132px, 1fr)); gap: 10px; }
-    .audio-dock { position: sticky; bottom: max(10px, env(safe-area-inset-bottom)); z-index: 2; display: grid; gap: 8px; padding: 10px; border: 1px solid #354e59; border-radius: 10px; background: rgb(5 13 20 / 94%); box-shadow: 0 12px 30px #0009; backdrop-filter: blur(10px); }
+    .audio-dock { position: fixed; bottom: max(10px, env(safe-area-inset-bottom)); left: 50%; transform: translateX(-50%); width: calc(100% - 24px); max-width: 844px; z-index: 2; display: grid; gap: 8px; padding: 10px; border: 1px solid #354e59; border-radius: 10px; background: #050d14; box-shadow: 0 12px 30px #0009; }
+    .audio-dock .row { grid-template-columns: auto minmax(40px, 1fr) 3rem; gap: 8px; }
+    .audio-dock .row label { grid-column: auto; font-size: .88rem; }
+    button, input, select, summary { scroll-margin-bottom: 200px; scroll-margin-top: 12px; }
     #audio-toggle { width: 100%; border-color: #b76b5b; font-weight: 750; }
     #status { min-height: 1.5em; color: #9bc8d3; font-size: .92rem; }
     summary { cursor: pointer; min-height: 48px; font-weight: 750; line-height: 48px; touch-action: manipulation; }
@@ -75,21 +87,38 @@
       <p id="scene-summary" aria-live="polite">浅部 — 入口の余白と低い気配</p>
     </section>
 
-    <section class="panel" aria-labelledby="verb-heading">
+    <section class="panel" aria-labelledby="comparison-heading">
       <span class="step">Step 2</span>
+      <h2 id="comparison-heading">揺らぎの生まれ方を比べる</h2>
+      <p>同じ音源を、Aは周期＋ノイズ、Bは64個の簡易ニューロンで動かします。Bは実際のハエの脳でも、学習するAIでもありません。</p>
+      <div class="modes" role="group" aria-label="変調の比較">
+        <button type="button" data-mode="baseline" aria-pressed="true">A · 通常</button>
+        <button type="button" data-mode="neural" aria-pressed="false">B · 小回路</button>
+        <button type="button" data-mode="off" aria-pressed="false">変調なし</button>
+      </div>
+      <div class="row"><label for="seed">再現用 seed</label><input id="seed" type="number" min="0" max="4294967295" step="1" value="7" inputmode="numeric"><output></output></div>
+      <p>下の開始ボタンで音を出し、「同じ刺激を60秒」で静けさ→刺激→回復を試せます。場面選択によらない共通入力で、終了時は自動停止。AとBを一度ずつ、同じ音量で比較してください。</p>
+      <div class="trial-actions">
+        <button id="trial-replay" type="button" disabled>同じ刺激を60秒</button>
+        <button id="modulation-reset" type="button">リセット</button>
+      </div>
+      <p id="trial-status" role="status">停止中 · 開始するまで音も回路も動きません</p>
+      <progress id="trial-progress" value="0" max="60" aria-label="比較試聴の進行（秒）"></progress>
+      <p id="modulation-summary">変調待機中</p>
+      <p>揺れの大きさ・活動率は検証値です。「心地よい」「生き物らしい」は実際に聴いて判断します。比較中の場面・seed変更はリセットします。</p>
+    </section>
+
+    <section class="panel" aria-labelledby="verb-heading">
+      <span class="step">Step 3</span>
       <h2 id="verb-heading">音を始めて、動詞を聴く</h2>
       <p>端末音量を小さくして開始し、気になる動詞だけ押してください。</p>
-      <div class="audio-dock">
-        <button id="audio-toggle" type="button" aria-pressed="false" aria-describedby="status">試聴を始める</button>
-        <div id="status" role="status" aria-live="polite">停止中</div>
-      </div>
       <div class="verbs">
-        <button type="button" data-verb="enter">沈み始める</button>
-        <button type="button" data-verb="descend">降下する</button>
-        <button type="button" data-verb="resist">抗う</button>
-        <button type="button" data-verb="recognition">認識が灯る</button>
-        <button type="button" data-verb="breath">縁の呼気</button>
-        <button type="button" data-verb="forget">忘れる</button>
+        <button type="button" data-verb="enter" disabled>沈み始める</button>
+        <button type="button" data-verb="descend" disabled>降下する</button>
+        <button type="button" data-verb="resist" disabled>抗う</button>
+        <button type="button" data-verb="recognition" disabled>認識が灯る</button>
+        <button type="button" data-verb="breath" disabled>縁の呼気</button>
+        <button type="button" data-verb="forget" disabled>忘れる</button>
       </div>
     </section>
 
@@ -108,6 +137,11 @@
       <pre id="trace"></pre>
     </details>
   </main>
-  <script type="module" src="./sensory-audio-lab.mjs"></script>
+  <section class="audio-dock" aria-label="試聴の開始・停止と音量">
+    <div class="row"><label for="volume">試聴音量</label><input id="volume" type="range" min="0" max="1" step="0.01" value="0.35"><output for="volume">35%</output></div>
+    <button id="audio-toggle" type="button" aria-pressed="false" aria-describedby="status">試聴を始める</button>
+    <div id="status" role="status" aria-live="polite">停止中</div>
+  </section>
+  <script type="module" src="./sensory-audio-lab.mjs?v=neural-20260914-1"></script>
 </body>
 </html>

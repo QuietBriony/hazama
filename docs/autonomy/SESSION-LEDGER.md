@@ -19,6 +19,52 @@ Hazama 自律開発 session の追記専用ログ。
 
 ---
 
+## 2026-09-14 — 遠隔スマホ向け音実験室の公開準備
+- agent      : Codex（単一会話・別task/agentなし）
+- goal       : 「リモートのスマホから聞けないの？」への公開提案をユーザーが「おねがい」と明示承認。
+  既存GitHub Pagesのlabだけを更新し、スマホ自身のWeb Audioで試聴できるようにする。
+- baseline   : master / 0a8f9b9、fetch後originとの差分0/0。既存Pagesはmasterのrootを使うlegacy build、同commit built。
+- scope      : 直前entryのlab/model・関連smoke/docsの公開。main index/slice.js/slice.css/sw/depths/localeは変更しない。
+  LAN公開・Firewall変更・新しいホスティング・依存・音源追加なし。本編はE44を維持。
+- cache      : 既存SWはHTML network-first / 同一origin asset cache-firstのため、旧labのmoduleが残り得る。
+  lab entryとneural importを`?v=neural-20260914-1`で同期し、smokeへ回帰assertを追加。
+  変更のない純粋Sensory Frameと本編version/SW/cacheは触らない。
+- checks     : 着手時`hazama-check`: 2 PASS / 0 FAIL / 0 SKIP、`git diff --check` PASS。公開前に再実行する。
+- release    : 公開承認済み。反映・公開URLのブラウザ検証結果は完了後の新entryへ記録する。
+- next       : 公開後、A→B / B→Aの同条件60秒試聴をユーザーに依頼する。
+- blockers   : 実機スマホの音と操作、Safari、人間の耳による採否は未検証。HZ-BL-023のhuman gateは維持。
+
+## 2026-09-14 — 小回路の音の気配を同じ会話の音実験室へ
+- agent      : Codex（単一会話・別task/agentなし）
+- goal       : 「ここのチャットで続けたら？」に応じ、神経回路風の気配を本編へ戻せるtools-only A/B試作にする。
+- baseline   : master / 0a8f9b9、originと一致・clean。`hazama-check`: 2 PASS / 0 FAIL / 0 SKIP。
+  AGENTS/STACK/AUTONOMOUS-RUN/BACKLOG/最新ledger/COLLAB、Sensory candidate、締めのcloseout/harnessを確認。
+- shipped    : `tools/sensory/neural-modulator.mjs`に64細胞×6入力の簡易モデルと通常の周期/ノイズ比較器、
+  明示reset/固定50ms step/固定60秒刺激列を追加。実測コネクトーム・研究コード・重みは不使用。
+  既存labへA/B/変調なし、seed、reset、60秒比較、既定35%のuser gain、常時届く停止dockを追加。
+  同一音源経路のcutoff/detune/pulse減衰/panだけを小さく変調。反応/順応/回復を診断値として表示する。
+  traceは選択中の待機場面ではなく、比較中の実効Sensory Frameを表示する。
+  timer/voice上限、異常数値と連続遅延のneutral fallback、hide/明示resume/二重stop/遅延resume競合を検証。
+  pagehideはunload後のtimerを待たずにcloseし、短音はonendedで参照を解放・同時8音までに制限する。
+- scope      : tools/sensoryのlabと新モデル、smoke2本＋build-consistency入口、README/candidate/playtest/autonomy、
+  ローカルbrowser QA副産物のgitignore。本編index/slice.js/slice.css/sw/depths/保存/route/純粋Sensory Frameは無変更。
+  runtime version/PWA bumpなし（E44維持）。依存/音源/新保存キー/外部通信/サーバruntimeなし。
+- checks     : `hazama-check`: 2 PASS / 0 FAIL / 0 SKIP、変更JS構文・`git diff --check` PASS。
+  決定論/reset/別seed/インスタンス分離/不正入力/境界/4seedの反応・順応・回復、1時間相当72,000stepを確認。
+  1時間の数値計算は今回のNodeで約0.2秒（音処理・実時間・実機性能の証明ではない）。
+  mock engineで音量0/上限/timer一つ/静止/8短音/teardown/自動停止/異常fallback/pagehide即時closeを確認。
+- browser    : PlaywrightスキルのCLIで隔離Chromiumを操作。試聴音量0の技術検証でA/Bの60秒経路完走・自動停止、
+  A/B切替時の単一Context/timer、実AudioParam変化、reset、短音の抑制、OS reduced-motionの実行中変更を確認。
+  非表示の自然なタブ切替は自動操作環境で両タブvisibleとなりtimeout。イベント注入による実Contextのsuspend、
+  復帰時timer 0、明示resumeでtimer一つを確認（実機タブ切替済みとは扱わない）。検証側も非同期resume完了待ちを修正。
+  320×568/130%・1280×800で横overflowなし、Tab focusが停止dockに隠れず、coarse pointerはlightで起動。
+  画像を目視、page error/unhandled rejection 0・保存なし・停止後全Context closed/timer 0。
+  本編降下ループは本編差分なしのため今回は再実施せず、既存自動smokeを回帰した。
+- backlog    : HZ-BL-023 added、実装/agent検証完了・human試聴待ち。既存のSteam/訳/音/実機gateは閉じない。
+- next       : `docs/playtest/neural-modulator-trial.md`のA→B / B→A試聴結果をこの会話で受け、採用・調整・不採用を決める。
+- blockers   : 人間の耳、実機iPhone/Android/Safari、本編との同居負荷は未検証。実際のハエの脳/学習/販売品質は主張しない。
+- release    : commit/push/公開なし。127.0.0.1:8037に一時ローカルプレビューのみ。遠隔スマホ向け公開・LAN開放・Firewall変更なし。
+
 ## 2026-09-05 — E44 忘却の誤操作を防ぎ、読み戻せる読書優先表示へ
 - agent      : Codex（単一会話・モデル/推論設定は変更せず継続）
 - goal       : 「あなたの基準で、steam あげるレベル磨き進めて」に対し、実際の操作で見つけた喪失リスクと読書の妨げを修正する

@@ -1,4 +1,6 @@
-# Hazama は静的・依存ゼロ。ここで無視するのは build-time ツール(tools/blender の Python)の副産物のみ。
+# Hazama は静的・依存ゼロ。ローカル制作・ブラウザ検証の副産物のみを無視する。
 # runtime(index.html/slice.*/depths-shell.json/PWA)には何も足さない方針は不変。
 __pycache__/
 *.pyc
+/.playwright-cli/
+/output/playwright/
