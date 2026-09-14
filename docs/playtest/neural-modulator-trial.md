@@ -1,7 +1,7 @@
 # 小回路の音実験 — 接続仕様と試聴メモ
 
 Date: 2026-09-14
-Status: tools-only試作 / agent検証PASS / スマホ試聴向け公開承認済み・反映確認待ち / 人間の試聴・採否待ち（HZ-BL-023）
+Status: tools-only試作 / agent検証PASS / スマホ試聴向け公開・反映確認済み / 人間の試聴・採否待ち（HZ-BL-023）
 
 ## 何を作ったか
 
@@ -149,6 +149,20 @@ engineではミュート/上限、timer/voice上限、reset、hide→明示再�
 
 `hazama-check`: 2 PASS / 0 FAIL / 0 SKIP。`git diff --check` PASS。
 本編の降下ループ・PWA実機テストは今回は再実施していない（本編ファイルの差分なし）。
+
+### 公開後の確認（2026-09-14）
+
+- 公開commit `9099e5c`、[既存GitHub Pagesのdeployment](https://github.com/QuietBriony/hazama/actions/runs/34849576822)がsuccess。
+  HTML / lab module / neural moduleがすべてHTTP 200、内容はローカルと一致（改行を正規化）。
+  JSのContent-Typeも`text/javascript`であることを確認した。
+- 隔離Chromiumで公開前のE44 SWと旧lab moduleを実際にcacheへ残したまま新版へ遷移。
+  古いcacheを消さずにversion付き2 moduleが読み込まれ、A/B/変調なしの3ボタンを確認した。
+- 公開URLを320×568で確認し、初期Context/timer 0・音量35%・保存なし・横overflowなし。
+  音量0にして実UIからA開始→B切替→60秒試行の進行→手動停止を検証。
+  同時Context/timerは一つ、ミュートを維持し、停止後Context closed / timer 0。
+  新版のpage error / unhandled rejectionは0。画面画像を目視確認した。
+- 公開環境の上記確認は技術検証で、実機スマホや耳の評価の代わりではない。
+  A/B各60秒の完走・自動停止は、同一内容のローカル版で実施した前節の結果を参照。
 
 未検証: 人間の耳による音質・気配・疲労、実機iPhone/Androidの音と操作、Safari、
 ヘッドホン/スピーカー差、本編との同居負荷。人間gateをDoneにはしない。

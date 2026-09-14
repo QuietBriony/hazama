@@ -19,6 +19,28 @@ Hazama 自律開発 session の追記専用ログ。
 
 ---
 
+## 2026-09-14 — スマホ用の公開試聴リンクを検証して引き渡し
+- agent      : Codex（単一会話・別task/agentなし）
+- goal       : 直前の公開承認に基づき、音実験室の更新を既存GitHub Pagesへ反映し確認する。
+- shipped    : `9099e5c`をmasterへ通常push。既存Pagesのdeployment run `34849576822`は同SHAでsuccess。
+  `https://quietbriony.github.io/hazama/tools/sensory/sensory-audio-lab.html?v=neural-20260914-1`が試聴入口。
+  HTML / lab module / neural moduleはHTTP 200・ローカルと改行正規化後に内容一致、JS MIMEも正しい。
+- cache      : 公開前のE44 SWと旧moduleを隔離Chromiumへ実際に保存し、公開後に同じprofileから新版を開いた。
+  旧moduleを残したままversion付き2 moduleが読み込まれ、A/B/変調なしの3ボタンが現れることを確認。
+  既存cacheを削除せず、新SW・本編version変更なし。Pages旧build APIのcommit欄は更新が遅れたため、
+  実際のdeployment head SHA/successと配信内容の一致を公開確認の根拠にした。
+- checks     : 公開前`hazama-check`: 2 PASS / 0 FAIL / 0 SKIP、JS構文・staged diff check PASS。
+  `git diff 0a8f9b9..9099e5c`でmain index/slice.js/slice.css/sw/depths/locale/純粋Sensory Frameは差分0。
+- browser    : PlaywrightスキルのCLIで公開URLを320×568確認、初期Context/timer 0・音量35%・保存なし・横overflowなし。
+  試聴音量0でA開始→B切替→60秒試行の進行→手動停止を実UI操作し、単一Context/timer・ミュート維持、
+  停止後Context closed/timer 0を確認。新版のpage error/unhandled rejection 0、画面画像を目視確認。
+  公開前の旧labではfavicon 404のみ発生した。新版はdata faviconで解消。実機や聴感の検証ではない。
+- scope      : labと関連smoke/docsのみ。本編E44、物語・保存・ルートは不変。LAN/Firewall/新hostingは変更なし。
+  ローカル検証画像・診断スクリプトはgitignore下に保持。既存Pagesの標準処理を使用し、新workflowは追加しない。
+- backlog    : HZ-BL-023は実装・公開済、human A/B試聴・採否待ちのまま。既存の販売/翻訳/実機gateも維持。
+- next       : ユーザーのスマホで小音量からA/Bを比較し、好みと気配・疲れの短い感想をこの会話で受ける。
+- blockers   : iPhone/Android/Safari実機の音と操作、人間の耳、本編との同居負荷は未検証。
+
 ## 2026-09-14 — 遠隔スマホ向け音実験室の公開準備
 - agent      : Codex（単一会話・別task/agentなし）
 - goal       : 「リモートのスマホから聞けないの？」への公開提案をユーザーが「おねがい」と明示承認。

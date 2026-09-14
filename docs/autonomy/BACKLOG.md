@@ -96,13 +96,13 @@ Hazama 自律開発の作業待ち行列。
 - scope    : tools / smoke / verify
 - agent    : either
 - human-gate: yes
-- status   : 実装済 — 2026-09-14 agent検証完了・人間のA/B試聴と採否待ち
+- status   : 実装・公開済 — 2026-09-14 agent検証完了・人間のA/B試聴と採否待ち
 - source   : ハエのニューロン活用案と接続可能なプロンプトの相談 → 「ここのチャットで続けたら？」
 - detail   : `tools/sensory/`の既存labで通常の揺らぎと64細胞の簡易回路を同一音源・音量設定で比較。
   seed/resetと固定60秒刺激列、負荷/出力上限、明示開始/停止、非表示復帰時の手動再開を検証する。
   `docs/playtest/neural-modulator-trial.md`に接続契約・結果・試聴手順を残す。
   ハエの実測配線や学習モデルは取り込まない。本編/物語/保存/PWAは変更しない。
-  2026-09-14に遠隔スマホ向けのlab更新を既存GitHub Pagesへ公開する明示承認を受けた。
+  2026-09-14の明示承認で遠隔スマホ向けに既存GitHub Pagesへ公開し、反映と旧cacheからの更新を確認した。
   音の心地よさ・自律的な気配の採否は人間の試聴結果が出るまでDoneにしない。
 
 ### HZ-BL-012 — 音の軸色＋浮上/reborn の「呼気」
