@@ -91,6 +91,21 @@ Hazama 自律開発の作業待ち行列。
 
 ## P2
 
+### HZ-BL-024 — 本文の同じ5場面で現行音とMusic由来の反応音を比較
+- priority : P2
+- scope    : tools / smoke / verify
+- agent    : either
+- human-gate: yes
+- status   : 実装済 — 2026-09-15 agent検証完了・スマホ公開対象・本文付き試聴と採否待ち
+- source   : MusicのB/CはいいがHazama世界に合うか、という相談→同じ短い場面の比較提案へ「すすめて」
+- detail   : `tools/sensory/scene-response-lab.html`でA→B→C→B→Cの既存本文抜粋を3案で読む。
+  現行は本番Audio IIFEと完全一致を検査する切り出し。Bは短い拍動、Cは断片/余白/戻るモチーフ。
+  文字は自動送りしない。各応答は8秒未満、手動停止/非表示/中断でclose、2分の安全停止。
+  MusicのB/Cの特徴を翻訳した別試作であり、曲そのもの・Tone・回路・録音は不使用。
+  `docs/playtest/scene-response-trial.md`の条件と問いで実際に聴いてから採否を決める。
+  「B/Cともいい」はMusicでの好みの証拠で、本文付きの合格や既存HZ-BL-023の完了とは扱わない。
+  2026-09-15の継続承認により、tools-only音の試作は検証後の既存Pagesへの反映までを基本作業にする。
+
 ### HZ-BL-023 — 小さな神経回路による音の気配のA/B試聴
 - priority : P2
 - scope    : tools / smoke / verify

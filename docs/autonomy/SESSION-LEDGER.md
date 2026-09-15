@@ -19,6 +19,30 @@ Hazama 自律開発 session の追記専用ログ。
 
 ---
 
+## 2026-09-15 — 本文の同じ5場面で現行音・Bの拍動・Cの断片を比較
+- agent      : Codex（単一会話・別task/agentなし）
+- goal       : MusicのB/C好評価を受け、「曲がよい」と「Hazama世界に合う」を分けて試す。
+- baseline   : master / 8e83bd0、originとの差分0/0・clean。着手時hazama-check 2 PASS / 0 FAIL / 0 SKIP。
+- shipped    : `tools/sensory/scene-response-lab.html`ほかscene-系6ファイル、本文/現行音の一致検証、
+  `scripts/scene-response-smoke.mjs`を単一checkへ追加。既存labは新入口リンクだけ。
+  A→B→C→B→Cの既存本文抜粋を固定。選択で短い拍動/断片が現れ、再訪で変奏し、余白を残す。
+  読書の自動送りなし・音量35%既定・単一Context・24voice上限・2分停止・非表示/中断はclose。
+- checks     : `hazama-check`: 2 PASS / 0 FAIL / 0 SKIP、変更JS構文/差分check PASS。
+  音源コピーは本番IIFEと完全一致、本文もsourceと一致。開始/停止競合・遅延resume・拒否・中断を検査。
+- browser    : PlaywrightスキルのCLIでChromium、3案×5場面をUI通過。本文一致、ミュート保持、終了時
+  Context closed/timer 0、320/390pxの横overflowなし。画面画像を目視確認。hidden模擬→手動再開、
+  reduced-motionで現行の自動pulseが止まることを確認。page error/unhandled rejection 0。
+  B/C全10場面のoffline stereo44.1kHzレンダーでpeak 0.04276〜0.07434、非有限/clip 0、
+  10.5秒以降の残響約1.8e-14以下。聴感や実スマホの検証結果ではない。
+- scope      : tools-only。index/slice.js/slice.css/sw/depths/localeと本編E44、保存・進行は不変。
+  Music/Openclaw-lab無変更。曲/回路/録音/依存/新hostingなし。ローカルQAはgitignore下。
+- release    : ユーザーが「スマホで聞けるようにするかは許可不要で基本やって」と継続承認。
+  AGENTSへ対象をtools-only音試作の既存Pages反映と記録。今回も対象ファイルだけcommit/pushし、
+  公開ページ/同version assetsの配信を確認する（このentry作成時点はpush前）。
+- backlog    : HZ-BL-024追加、human試聴待ち。Musicでの「B/Cともいい」を本編採用やHZ-BL-023完了に流用しない。
+- next       : 公開URLで本文と3案を読み比べ、没入/音への注意/再訪の変化についてこの会話で感想を受ける。
+- blockers   : 実iPhone/Safari・ロック復帰・音の体感、本編視覚との同居、本文付き試聴の採否は未検証。
+
 ## 2026-09-14 — スマホ用の公開試聴リンクを検証して引き渡し
 - agent      : Codex（単一会話・別task/agentなし）
 - goal       : 直前の公開承認に基づき、音実験室の更新を既存GitHub Pagesへ反映し確認する。

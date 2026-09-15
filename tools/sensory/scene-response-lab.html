@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#080b0e">
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="./scene-response-lab.css?v=scene-20260915-1">
+  <title>世界が音で応える — Hazama 試聴</title>
+</head>
+<body>
+  <main>
+    <header>
+      <p class="eyebrow">HAZAMA / SCENE LISTENING 01</p>
+      <h1>世界が、音で応える。</h1>
+      <p class="intro">同じ5場面を、違う音で。<br>曲の良さより、文章に深く入れるか。</p>
+      <p class="note">本編未採用の試作 · 目安1〜2分 / 1案</p>
+    </header>
+
+    <section class="comparison" aria-labelledby="comparison-title">
+      <h2 id="comparison-title" tabindex="-1">音を選ぶ</h2>
+      <div class="modes" role="group" aria-label="比較する音">
+        <button type="button" data-mode="current" aria-pressed="true">現行音<span>持続する地の音</span></button>
+        <button type="button" data-mode="b" aria-pressed="false">B · 拍動<span>身体に返る</span></button>
+        <button type="button" data-mode="c" aria-pressed="false">C · 断片<span>痕跡が戻る</span></button>
+      </div>
+      <p id="mode-description" class="mode-description"></p>
+      <p class="note">切替は停止して最初から。選んだだけでは鳴りません。</p>
+    </section>
+
+    <section class="reading" aria-labelledby="scene-title">
+      <div class="scene-heading"><p id="scene-counter" class="eyebrow"></p><button id="reset" type="button" class="text-button">最初から</button></div>
+      <h2 id="scene-title" tabindex="-1"></h2>
+      <div id="scene-lines" class="prose"></div>
+      <button id="next-scene" type="button" class="next"></button>
+      <p class="note">読む速さは自由。音が止まっていても先に進めます。</p>
+    </section>
+
+    <section id="reflection" class="reflection" hidden aria-labelledby="reflection-title">
+      <p class="eyebrow">LISTEN BACK</p>
+      <h2 id="reflection-title" tabindex="-1">音は、世界の側にいた？</h2>
+      <p>文章に入れたか。音に気を取られたか。<br>戻った場所で、何かが変わって聞こえたか。</p>
+      <button id="compare-again" type="button">別の音と比べる</button>
+      <p class="note">感想はこの会話へ。ページには保存・送信しません。</p>
+    </section>
+
+    <details>
+      <summary>この比較で変えたもの</summary>
+      <p>現行音は本編の音コードを同じまま切り出したものです。乱数だけ固定し、5場面の深さ・圧・選択を与えます。背景のグリッチ演出やゲーム進行全体の再現ではありません。</p>
+      <p>B・CはMusicで聴いた曲そのものではなく、拍動・断片・余白の特徴を短い反応へ翻訳した別試作です。ハエ回路・外部音源・Musicの再生エンジンは使いません。</p>
+      <p>本文はA→B→C→B→Cの抜粋です。場面名と音の状態は比較用で、本編の認識値・分岐・セーブは動きません。各案の音量設定は共通ですが、音色や密度による大きさの感じ方までは同一ではありません。</p>
+      <p id="tier-note"></p>
+      <p>ページを離れる・画面を隠すと停止し、勝手には再開しません。連続再生は2分で自動停止します。</p>
+    </details>
+    <p class="footer"><a href="./sensory-audio-lab.html?v=neural-20260914-1">以前の揺らぎ比較へ</a></p>
+    <noscript>この試聴にはJavaScriptが必要です。</noscript>
+  </main>
+
+  <aside class="audio-dock" aria-label="音の操作">
+    <div class="volume-row"><label for="volume">音量</label><input id="volume" type="range" min="0" max="100" value="35"><output id="volume-value" for="volume">35%</output></div>
+    <button id="play-toggle" type="button">現行音で聴く</button>
+    <p id="status" role="status">停止中 · 小さな音量から始めてください</p>
+  </aside>
+  <script type="module" src="./scene-response-lab.mjs?v=scene-20260915-1"></script>
+</body>
+</html>

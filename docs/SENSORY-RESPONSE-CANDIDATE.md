@@ -1,6 +1,11 @@
 # Hazama Sensory Response candidate
 
 Status: **E31 governor production採用 / Sensory Frame・labはtools-only**
+
+2026-09-15: [本文付きの反応音比較](playtest/scene-response-trial.md)を別のtools-only入口へ追加。
+MusicでユーザーがB/Cを好評価したことを出発点に、同じ本文の抜粋へ短い拍動/断片を対応させる。
+曲・Tone.js・実測回路・再生状態を取り込むものではない。現行音は本番Audio IIFEの一致検証付きsnapshot。
+音の採否やHazamaとの親和性は新しい人間の試聴待ち。本番E44と既存の小回路labは維持する。
 Audit date: 2026-08-02
 Human gate: **2026-08-02 production merge承認済み（mobile実機試聴済みとの記録ではない）**
 
