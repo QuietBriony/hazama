@@ -1,6 +1,6 @@
 # 本文と反応音の比較 — Scene Listening 01
 
-Status: tools-only試作 / agent検証済み / 本文付きの人間試聴・採否待ち。
+Status: tools-only公開試作 / agent検証済み / 本文付きの人間試聴・採否待ち。
 
 入口: [世界が、音で応える](https://quietbriony.github.io/hazama/tools/sensory/scene-response-lab.html?v=scene-20260915-1)
 
@@ -68,3 +68,13 @@ service worker登録なし。旧labには入口リンクだけ追加。Music / O
 
 未検証: 実iPhone/Safariの音・ロック復帰、イヤホン/内蔵スピーカー差、本編の視覚との同居、
 人間の読書/疲れ/世界観の採否。HZ-BL-024はこれらの試聴待ちでありDoneにしない。
+
+## 公開確認（2026-09-15）
+
+実装commit `1db4cdcb17b050dc0248b05e60aea7e199175e22`、既存Pagesの
+[deployment 34915257081](https://github.com/QuietBriony/hazama/actions/runs/34915257081)は同SHAでsuccess。
+HTML/CSS/4 modulesの6資産はHTTP200・正しいMIME・ローカルと改行正規化後の内容一致。
+公開した旧labの入口リンクから新版へ遷移し、E44のSW制御/cacheを維持した状態で
+全3案×5場面を再検証した。新moduleはすべて同じversion queryで取得される。
+終了/切替/hidden模擬→手動再開/reduced-motion/320pxの検証も公開先でPASS。
+Contextとtimerの解放、保存なし、page error/unhandled rejection 0を確認した。

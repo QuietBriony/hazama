@@ -19,6 +19,22 @@ Hazama 自律開発 session の追記専用ログ。
 
 ---
 
+## 2026-09-15 — 本文付きの反応音比較をスマホ用Pagesへ公開・再検証
+- agent      : Codex（単一会話・別task/agentなし）
+- goal       : ユーザーの継続承認どおり、試聴ページを公開まで完了する。
+- shipped    : `1db4cdc`をmasterへ通常push。既存Pagesのdeployment `34915257081`は同SHAでsuccess。
+  `https://quietbriony.github.io/hazama/tools/sensory/scene-response-lab.html?v=scene-20260915-1`が公開入口。
+- checks     : push前後の`hazama-check`: 2 PASS / 0 FAIL / 0 SKIP、staged diff check PASS。
+  6公開資産のHTTP200・MIME・内容一致を確認。本編index/slice.js/slice.css/sw/depths/localeは差分0。
+- browser    : 公開本編のE44 SWを保持した隔離Chromiumで旧lab→新入口を実クリックし、
+  全3案×5場面と同一本文、初期無音/切替停止/終了close、hidden模擬復帰の手動再開を再検証。
+  公開先でも390/320pxの横overflowなし、reduced-motionの現行pulse抑止、エラー/新規保存0。
+  cache名前空間はhazama-pwa-e44を維持し、新規moduleはscene-20260915-1で揃う。
+- scope      : 公開はtools-only試作・smoke/docsのみ。Music/Openclaw-lab、本編E44、公開設定は不変。
+- backlog    : HZ-BL-024は実装・公開済、人間の本文付き試聴/採否待ち。既存human gateも維持。
+- next       : ユーザーがスマホで現行/B/Cを読み比べ、没入・音への注意・再訪の変化をこの会話へ返す。
+- blockers   : 実機Safari/ロック復帰と聴感・本編視覚との同居は未検証。
+
 ## 2026-09-15 — 本文の同じ5場面で現行音・Bの拍動・Cの断片を比較
 - agent      : Codex（単一会話・別task/agentなし）
 - goal       : MusicのB/C好評価を受け、「曲がよい」と「Hazama世界に合う」を分けて試す。
