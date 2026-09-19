@@ -23,6 +23,8 @@ function harness(reduced = false) {
   const $ = (id) => { if (!elements.has(id)) elements.set(id, new Element()); return elements.get(id); };
   const audio = {
     playing: false, volume: 1, suspendedByVisibility: false,
+    tier: reduced ? "static" : "full", circuitEnabled: !reduced,
+    setCircuitEnabled(enabled) { this.circuitEnabled = Boolean(enabled) && !reduced; },
     start() { this.playing = true; calls.push("start"); },
     toggle() { this.playing = !this.playing; this.suspendedByVisibility = false; calls.push("toggle"); },
     setVolume(v) { this.volume = v; },
@@ -51,6 +53,12 @@ assert.equal(h.$("settings-dialog").open, true);
 assert.equal(h.$("settings-size").value, "1");
 assert.equal(h.$("settings-reading").value, "reveal");
 assert.equal(h.$("settings-comfort").checked, false, "reading focus is opt-in");
+assert.equal(h.$("settings-circuit").checked, true);
+for (const enabled of [false, true]) {
+  h.$("settings-circuit").checked = enabled; h.$("settings-circuit").emit("change");
+  assert.equal(h.audio.circuitEnabled, enabled);
+  assert.equal(h.audio.playing, false, "circuit preference never starts audio");
+}
 for (const enabled of [true, false, true]) {
   h.$("settings-comfort").checked = enabled; h.$("settings-comfort").emit("change");
   assert.equal(h.context.Preferences.readingComfort, enabled);
@@ -100,6 +108,8 @@ assert.equal(h.$("audio-toggle").textContent, "♪ 再開");
 const reduced = harness(true);
 reduced.$("settings-gate").emit("click");
 assert.equal(reduced.$("settings-reading").disabled, true, "OS reduced motion cannot be overridden by the text setting");
+assert.equal(reduced.$("settings-circuit").disabled, true);
+assert.equal(reduced.$("settings-circuit").checked, false);
 assert.equal(reduced.$("settings-reading").value, "full");
 reduced.$("settings-comfort").checked = true; reduced.$("settings-comfort").emit("change");
 assert.equal(reduced.$("settings-reading").disabled, true, "reading focus cannot override OS reduced motion");

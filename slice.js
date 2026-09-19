@@ -1710,6 +1710,73 @@
   //  - 圧(dread)で鼓動が速く・重く。core は描かない＝音でも"解決音"は鳴らさない。
   //  - below 周回ごとに setColor(seed) で detune/うねりを微妙にずらす＝底なしの質感差。
   const Audio = (() => {
+    // E46: reduced DATA, not external runtime code. MaleCNS v1.0, CC BY 4.0.
+    // Credit: FlyEM/HHMI Janelia, Cambridge, MRC LMB, Google Research.
+    // Extraction: Denis Shiryaev / DesktopFly; distribution: Apolotary / Fly Lab.
+    // See docs/FLY-CIRCUIT-CREDITS.md and scripts/project-fly-circuit.mjs.
+    // Rows = target populations, columns = source populations. Measured graph
+    // projected to 10 groups; signs, dynamics, stimulus and sound mapping are models.
+    const FLY_ROWS = [
+      [0.232941,0,-0.008889,0,0,0,0,0,0,0],
+      [0.000511,0.021143,-0.067733,0.558812,0,0,0,0,0,0],
+      [0.054095,0.028971,-0.137912,0.000621,0,-0.000029,0,0,-0.000028,-0.000031],
+      [0.067005,0.07445,-0.150755,0.07644,0,0,0,0,-0.000346,0],
+      [0.00081,0.001295,-0.256012,0.000291,0,0,0,0,0,0],
+      [0.007701,0.001648,-0.239283,0.000365,0,-0.000158,0,0,0,0],
+      [0.033215,0.00269,-0.216899,0.000333,0,0,-0.000046,0,0,0],
+      [0.01859,0.003294,-0.160086,0.000623,0,0,0,-0.000208,0,0],
+      [0.02851,0.002536,-0.153165,0.000265,0,0,0,0,-0.000061,0],
+      [0.005461,0.002072,-0.07916,0.000097,0,0,0,0,0,-0.029161]
+    ];
+    const CIRCUIT_NEUTRAL = Object.freeze({ tick: 0, activity: 0, adaptation: 0, texture: 0, spacing: 0, wear: 0 });
+    function createFlyCircuit(seed = 0, connected = true) {
+      const cells = new Float64Array(10), fatigue = new Float64Array(10), next = new Float64Array(10);
+      let randomState = seed >>> 0, tick = 0, stimulus = 0, frame = CIRCUIT_NEUTRAL;
+      const unit = value => Number.isFinite(value) ? Math.max(0, Math.min(1, value)) : 0;
+      const signed = value => Math.max(-1, Math.min(1, value));
+      function reset(value = seed) {
+        randomState = value >>> 0; tick = stimulus = 0;
+        cells.fill(0); fatigue.fill(0); next.fill(0); frame = CIRCUIT_NEUTRAL;
+        return frame;
+      }
+      function excite(cue) {
+        const amount = { enter: .35, descend: .28, recognition: .8, return: .45, resist: 1 }[cue];
+        if (amount !== undefined) stimulus = Math.max(stimulus, amount);
+      }
+      function step(input = {}) {
+        input = input && typeof input === "object" ? input : {};
+        const depth = unit(input.depth), dread = unit(input.dread), density = unit(input.density);
+        tick = (tick + 1) % 1000000000; // Bound even a very long foreground session.
+        for (let to = 0; to < 10; to++) {
+          let recurrent = 0;
+          if (connected) for (let from = 0; from < 10; from++) recurrent += FLY_ROWS[to][from] * cells[from];
+          randomState = (Math.imul(randomState, 1664525) + 1013904223) >>> 0;
+          const noise = (randomState / 4294967296 - .5) * .03;
+          // Artificial environment, not measured sensation or physiological time.
+          const drive = to === 0 ? .12 + dread * .28 + density * .10 + stimulus * .5
+            : to === 1 ? .1 + depth * .18 + stimulus * .35 : .12;
+          const target = unit(.5 + .5 * Math.tanh(2.4 * recurrent + drive + noise - fatigue[to] * .6 - .7));
+          next[to] = unit(cells[to] + (target - cells[to]) * .16);
+        }
+        cells.set(next);
+        let activity = 0, adaptation = 0;
+        for (let i = 0; i < 10; i++) {
+          fatigue[i] = unit(fatigue[i] + (cells[i] - fatigue[i]) * .006);
+          if (i >= 4) { activity += cells[i] / 6; adaptation += fatigue[i] / 6; }
+        }
+        stimulus *= .90;
+        // Output calibration is authored. No gain boost, pitches or decisions are learned.
+        frame = Object.freeze({ tick, activity, adaptation,
+          texture: signed((activity - .20) * 8),
+          spacing: signed((cells[4] + cells[6] + cells[8] - cells[5] - cells[7] - cells[9]) * 35),
+          wear: unit(adaptation * 2) });
+        return frame;
+      }
+      return Object.freeze({ reset, excite, step, clearStimulus: () => { stimulus = 0; }, get frame() { return frame; } });
+    }
+    // End of pure circuit: no timer, audio, network, storage or game state ownership.
+    const circuit = createFlyCircuit();
+    let circuitEnabled = !REDUCED, nextBeatAt = 0;
     let ctx = null, master = null, compressor = null, outputVolume = null, filter = null, dryGain = null, conv = null, wetGain = null;
     let volume = 1; // 圧で変動するmasterとは別の最終音量。既定1＝従来の音を変えない。
     let lfo = null, lfoGain = null, drones = [], pulseTimer = null, on = false, playing = false;
@@ -1756,6 +1823,7 @@
 
     function start() {
       if (on || !supported()) return;
+      circuit.reset(colorSeed);
       const C = window.AudioContext || window.webkitAudioContext;
       ctx = new C();
       master = ctx.createGain(); master.gain.value = 0.0001;
@@ -1793,7 +1861,7 @@
       ctx.onstatechange = () => {
         if (ctx !== opening || opening.state !== "interrupted") return;
         ++audioEpoch; playing = false; suspendedByVisibility = true;
-        clearPulse(); clearTransients(); onChange();
+        clearPulse(); clearTransients(); circuit.clearStimulus(); onChange();
       };
       return resumeContext();
     }
@@ -1802,6 +1870,7 @@
     function setVolume(value) {
       if (!Number.isFinite(value)) return;
       volume = Math.max(0, Math.min(1, value));
+      if (volume === 0) { circuit.clearStimulus(); clearTransients(); }
       if (ctx && outputVolume) outputVolume.gain.setTargetAtTime(volume, ctx.currentTime, 0.04);
     }
     function toggle() {
@@ -1809,7 +1878,7 @@
       playing = !playing;
       suspendedByVisibility = false;
       if (playing) return resumeContext();
-      ++audioEpoch; clearPulse(); clearTransients(); pauseContext(ctx);
+      ++audioEpoch; clearPulse(); clearTransients(); circuit.clearStimulus(); pauseContext(ctx);
     }
     function pauseContext(context) {
       try { const pending = context.suspend(); if (pending && pending.catch) pending.catch(() => {}); } catch (e) {}
@@ -1818,7 +1887,7 @@
       const opening = ctx, epoch = ++audioEpoch;
       const failed = () => {
         if (ctx === opening && epoch === audioEpoch) {
-          playing = false; clearPulse(); clearTransients(); onChange();
+          playing = false; clearPulse(); clearTransients(); circuit.clearStimulus(); onChange();
         }
         return false;
       };
@@ -1864,7 +1933,23 @@
     function schedulePulse() {
       clearPulse();
       if (!audioBudget.pulse || !on || !playing || document.hidden) return;
-      pulseTimer = setInterval(() => beat(0.5), Math.max(440, Math.round(1150 - cur.dread * 680))); // 圧で鼓動が速い
+      const gap = Math.max(440, Math.round(1150 - cur.dread * 680));
+      if (!circuitEnabled) { pulseTimer = setInterval(() => beat(.5), gap); return; }
+      nextBeatAt = ctx.currentTime + gap / 1000;
+      // One shared 10 Hz clock, never a second simulation timer. No catch-up after a stall.
+      pulseTimer = setInterval(() => {
+        if (!ctx || ctx.state !== "running" || !playing || document.hidden || volume === 0) return;
+        const frame = circuit.step(cur);
+        if (ctx.currentTime < nextBeatAt) return;
+        beat(.5 * (1 - frame.wear * .18));
+        nextBeatAt = ctx.currentTime + gap / 1000 * (1 + frame.spacing * .08);
+      }, 100);
+    }
+    function setCircuitEnabled(value) {
+      circuitEnabled = Boolean(value) && audioTier !== "static";
+      circuit.reset(colorSeed);
+      clearTransients("response", true);
+      schedulePulse(); // Does not create/resume an AudioContext or change game state.
     }
     function beat(amp) {
       if (!on || !playing || !ctx || ctx.state !== "running" || document.hidden) return;
@@ -1903,22 +1988,26 @@
       transients.add(voice);
       sources[0].onended = () => releaseTransient(voice);
     }
-    // E45: Dの質感を既存filter/合成IR/単一compressorへ翻訳。曲/別engine/神経回路は読み込まない。
+    // E45/E46: same authored sounds and shared space; circuit changes small response details only.
     function respond(cue) {
       if (!["enter", "descend", "recognition", "return", "resist"].includes(cue)) return false;
       if (!on || !playing || !ctx || ctx.state !== "running" || document.hidden || volume === 0) return false;
       clearTransients("response", true);
+      if (circuitEnabled) circuit.excite(cue);
+      const reaction = circuitEnabled ? circuit.frame : CIRCUIT_NEUTRAL;
+      const restraint = 1 - reaction.wear * .22; // Attenuation only: habituation never raises the output.
+      const lag = reaction.spacing * .10;
       responseStep = (responseStep + 1) % 256;
       const root = (116 - cur.depth * 40) * Math.pow(2, baseCents / 1200);
       const t = ctx.currentTime + .025;
-      responseVoice("pulse", root * 1.014, t + .03, .62, .13);
+      responseVoice("pulse", root * 1.014, t + .03, .62, .13 * restraint);
       if (cue === "resist") responseVoice("pulse", root * .98, t + .37, .48, .055);
       responseVoice("body", root * 2.004, t + .38, 2.8, .026);
-      responseVoice("grain", root * 6.07, t + (cue === "resist" ? .08 : 1.18), cue === "resist" ? .42 : .8, .065);
+      responseVoice("grain", root * 6.07 * (1 + reaction.texture * .05), t + (cue === "resist" ? .08 : 1.18) + (circuitEnabled ? .1 + lag : 0), cue === "resist" ? .42 : .8, .065 * restraint);
       if (cue === "recognition" || cue === "return") {
         const returning = cue === "return";
-        responseVoice("fragment", root * 4.039, t + (returning ? 1.4 : 1.02), 3.1, returning ? .045 : .07);
-        if (audioTier === "full") responseVoice("fragment", root * 6.014, t + (returning ? 3.1 : 2.76), 2.8, returning ? .03 : .045);
+        responseVoice("fragment", root * 4.039, t + (returning ? 1.4 : 1.02) + lag, 3.1, (returning ? .045 : .07) * restraint);
+        if (audioTier === "full") responseVoice("fragment", root * 6.014, t + (returning ? 3.1 : 2.76) - lag, 2.8, (returning ? .03 : .045) * restraint);
       }
       return true;
     }
@@ -2027,13 +2116,13 @@
     // E31: hiddenから勝手に鳴り直さない。再開は既存chipの実手勢だけ。
     function suspendForVisibility() {
       if (!on || !ctx || !playing) return false;
-      ++audioEpoch; playing = false; suspendedByVisibility = true; clearPulse(); clearTransients();
+      ++audioEpoch; playing = false; suspendedByVisibility = true; clearPulse(); clearTransients(); circuit.clearStimulus();
       pauseContext(ctx);
       return true;
     }
     // E31: pagehide/BFCacheでも単一AudioContextを閉じ、次の実手勢で再生成可能にする。
     function dispose() {
-      ++audioEpoch; clearPulse(); clearTransients(); responseStep = 0;
+      ++audioEpoch; clearPulse(); clearTransients(); responseStep = 0; circuit.reset(colorSeed);
       const closing = ctx;
       if (closing) closing.onstatechange = null;
       drones.forEach(({ osc, g }) => {
@@ -2055,7 +2144,9 @@
       } catch (e) {}
     }
     return {
-      start, toggle, setVolume, pulseOnce: (a) => beat(a), respond, glitchHit, setAxis, breath, suspendForVisibility, dispose,
+      start, toggle, setVolume, setCircuitEnabled, pulseOnce: (a) => beat(a), respond, glitchHit, setAxis, breath, suspendForVisibility, dispose,
+      get circuitEnabled() { return circuitEnabled; },
+      get circuitState() { return circuit.frame; },
       set onChange(callback) { onChange = typeof callback === "function" ? callback : () => {}; },
       get transientCount() { return transients.size; },
       get volume() { return volume; },
@@ -2641,6 +2732,7 @@
     const size = $("settings-size"), reading = $("settings-reading");
     const sound = $("settings-sound"), volume = $("settings-volume");
     const comfort = $("settings-comfort");
+    const circuitToggle = $("settings-circuit");
     let opener = null;
     const sync = () => {
       size.value = String(Preferences.textScale);
@@ -2648,6 +2740,8 @@
       reading.disabled = !!REDUCED;
       comfort.checked = Preferences.readingComfort;
       sound.checked = entered ? Audio.playing : Preferences.sound;
+      circuitToggle.checked = Audio.circuitEnabled;
+      circuitToggle.disabled = Audio.tier === "static";
       const percent = Math.round(Audio.volume * 100);
       volume.value = String(percent);
       volume.setAttribute("aria-valuetext", percent + "%");
@@ -2680,6 +2774,7 @@
       Follow.release(); // 見た目の切替で読んでいた位置を奪わない。
     });
     sound.addEventListener("change", () => { Music.setEnabled(sound.checked); sync(); });
+    circuitToggle.addEventListener("change", () => { Audio.setCircuitEnabled(circuitToggle.checked); sync(); });
     volume.addEventListener("input", () => {
       Audio.setVolume(Number(volume.value) / 100);
       Music.label();
@@ -2699,7 +2794,7 @@
     // 翻訳が取得できなくても日本語の起動は止めない。言語は表紙での明示選択・保存しない。
     const controller = new AbortController();
     const timer = window.setTimeout(() => controller.abort(), 8000);
-    fetch("locales/en.json?v=e45", { signal: controller.signal }).then((response) => {
+    fetch("locales/en.json?v=e46", { signal: controller.signal }).then((response) => {
       if (!response.ok) throw new Error("English catalog HTTP " + response.status);
       return response.json();
     }).then((data) => {
@@ -2711,7 +2806,7 @@
   }
 
   async function loadData() {
-    const res = await fetch("depths-shell.json?v=e45", { cache: "no-store" });
+    const res = await fetch("depths-shell.json?v=e46", { cache: "no-store" });
     if (!res.ok) throw new Error(`depths-shell HTTP ${res.status}`);
     const data = await res.json();
     if (!data || typeof data !== "object" || !data.start || !data.nodes || !data.nodes[data.start]) {
@@ -2791,7 +2886,7 @@
   function registerSlicePWA() {
     if (!("serviceWorker" in navigator)) return;
     const register = () => {
-      navigator.serviceWorker.register("sw.js?v=e45", { scope: "./", updateViaCache: "none" }).then((reg) => {
+      navigator.serviceWorker.register("sw.js?v=e46", { scope: "./", updateViaCache: "none" }).then((reg) => {
         if (typeof reg.update === "function") reg.update().catch(() => {});
       }).catch((err) => console.warn("[Hazama slice] SW register failed:", err));
     };

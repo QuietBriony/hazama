@@ -604,6 +604,9 @@ html:lang(en) .hz-attune { text-orientation: mixed; }
 .hz-settings .hz-chip { color: var(--ink); }
 .hz-settings h2 { margin: 0; font-size: 1.08rem; font-weight: 500; }
 .hz-settings p { font-size: 0.82rem; line-height: 1.8; color: #a1aebc; }
+.hz-settings a { color: var(--accent); text-underline-offset: 0.18em; overflow-wrap: anywhere; }
+.hz-settings summary { min-height: 44px; cursor: pointer; }
+.hz-settings :is(a, summary):focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
 .hz-settings-field { display: flex; flex-direction: column; gap: 8px; margin-top: 20px; font-size: 0.9rem; }
 .hz-settings select {
   width: 100%; min-height: 44px; padding: 8px 10px;

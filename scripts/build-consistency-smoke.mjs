@@ -6,6 +6,7 @@ import path from "node:path";
 import vm from "node:vm";
 import "./audio-governor-smoke.mjs";
 import "./world-response-smoke.mjs";
+import "./fly-circuit-smoke.mjs";
 import "./sensory-frame-smoke.mjs";
 import "./scene-response-smoke.mjs";
 import "./neural-modulator-smoke.mjs";

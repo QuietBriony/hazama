@@ -19,6 +19,34 @@ Hazama 自律開発 session の追記専用ログ。
 
 ---
 
+## 2026-09-20 — E46・実測脚配線の縮約を音へ接続、八観の呼び名を整合
+- agent      : Codex（単一会話・別task/agentなし）
+- goal       : 「接続しながら磨いて」「八観設定今最適？」へ、接続実装と公開資料に基づく制作方針で応える。
+- baseline   : master / ff90848・clean、hazama-check 2 PASS / 0 FAIL / 0 SKIP。
+- branch     : codex/hazama-e46-circuit-response。同一会話で差分review、独立reviewではない。
+- shipped    : Music内の固定JSONをread-only照合し、MaleCNS脚回路1,045細胞/17,224接続を10群の係数へ縮約。
+  独自の小モデルをslice.js内で駆動し、音の間合い/擦れる音域/減衰だけに接続。共通timer一つ、増幅なし、on/off付き。
+  ミュート/停止/非表示/interruptedで凍結、disposeでreset、追計算/外部通信/保存なし。full/light/staticを維持。
+  出典・CC BY 4.0・変更内容/限界を日英で案内。設定内リンクの可読性、summary操作域/focusも改善。
+  index/slice/SW/localeの参照はe46同期。流れSの八観名2箇所だけを入口A/生成側の観察者・空・円へ揃えた。
+- checks     : hazama-check 2 PASS / 0 FAIL / 0 SKIP、構文/diff check PASS。固定source digestと縮約再現一致。
+  純粋モデル1時間相当36,000stepの境界/再現、配線ablation差0.02859、刺激差0.07940、実Audioのlifecycleを検査。
+  native OfflineAudioContext 44.1kHz/stereo/12秒 × 42条件、最大peak0.19413、非有限/clip 0、開始時mute全条件0。
+  voice最大13/11/8、持続音の維持/static有限終了。オフライン合成であり耳や実時間端末性能の合格ではない。
+- browser    : PlaywrightスキルCLI/Chromium。構造→Ω（C→B抗い/再訪）、英語身体→浮上、次周以降の流れ→Ω。
+  実表示Sの2行一致、390/320px/本文130%と日英展開出典、横overflowなし、画像を目視。
+  回路切替/pause/hidden模擬/手動再開/pagehide/再生成、保存/reload/offline入口の維持、初期無音、エラー0。
+  QAの出力先のみミュート。本文selectorのQA誤りを修正して再走。終了時全Context closed/予約音0。
+- philosophy : 原典09市場版と10曼荼羅版を区別し、改稿せず保持。空/縁起/三密は一次・専門資料を確認し、
+  docs/playtest/eight-views-steam-direction.mdへ「読む/選ぶ/戻る行為に翻訳する」設計仮説と採否ゲートを記録。
+- scope      : 原典・ルート・認識/抗いの数値・保存形式は不変。音源/外部runtime/依存/公開設定を追加しない。
+  元の大きなJSONとMusic/Fly Labコードは取り込まない。Music/Openclaw-labは無変更。生体/意識/学習/RSIではない。
+- release    : 公開範囲への問いに「接続してすすめよ」を受領し、本編反映方針を返した。既存Pagesへ公開する。
+  このentryはcommit/push前。公開後の配信と旧E45 cacheからの更新確認は次entryへ記録する。
+- backlog    : HZ-BL-026を実装/ローカル検証済・公開確認前/実機聴感待ちへ。HZ-BL-018に八観の設計仮説を接続。
+- next       : 公開後、小音量で回路on/offの沈み/曲の主張/疲れを実機確認。HZ-BL-018の初見で読む行為の理解を検証。
+- blockers   : 実iPhone/Safari・ロック復帰・実機PWA・聴感・英語話者・思想の受け取り/販売品質は人間待ち。
+
 ## 2026-09-19 — E45本編をPagesへ公開・旧E44からの更新と公開降下ループを確認
 - agent      : Codex（単一会話・別task/agentなし）
 - goal       : 今回の本編デプロイ依頼に沿って、音の統合を本番で利用できる状態まで届ける。

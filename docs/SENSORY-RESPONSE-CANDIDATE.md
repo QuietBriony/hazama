@@ -1,6 +1,12 @@
 # Hazama Sensory Response candidate
 
-Status: **E31 governor＋E45世界の応答を本編統合 / Sensory Frame・lab自体はtools-only**
+Status: **E31 governor＋E45世界の応答＋E46縮約回路を本編実装 / Sensory Frame・lab自体はtools-only**
+
+2026-09-20: ユーザーの「接続しながら磨いて」「接続してすすめよ」を受け、
+[E46の縮約回路](playtest/fly-circuit-e46.md)を既存Audioへ接続する。
+実測の脚配線を10群へ圧縮したデータ係数だけを使用。元の1,045細胞やMusicのコードを動かすものではない。
+刺激/順応/音への対応は創作で、音の間合い・擦れる音域・減衰だけを動かす。進行や認識点を決めない。
+以下の「未接続」は各日付当時の記録。現在の[出典と変更](FLY-CIRCUIT-CREDITS.md)を優先する。
 
 2026-09-19続行: ユーザーの「続けて／磨いて／本番デプロイはやらん？」を受け、
 [E45本編統合](playtest/world-audio-e45.md)へ進む。公開の依頼として扱い、実機聴感の合格とは記録しない。

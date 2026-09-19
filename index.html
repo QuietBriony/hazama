@@ -29,7 +29,7 @@
   <link rel="manifest" href="manifest.webmanifest" />
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png" />
   <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png" />
-  <link rel="stylesheet" href="slice.css?v=e45" />
+  <link rel="stylesheet" href="slice.css?v=e46" />
 </head>
 <body data-phase="surface">
   <div class="hz-bg" aria-hidden="true">
@@ -130,6 +130,14 @@
         <input id="settings-volume" type="range" min="0" max="100" step="5" value="100" aria-valuetext="100%">
       </div>
       <p class="hz-settings-hint" data-i18n>音は「沈む」のあとに鳴ります。0%で無音です。小さな音量から試してください。</p>
+      <label class="hz-settings-sound"><input id="settings-circuit" type="checkbox" checked aria-describedby="settings-circuit-note"> <span data-i18n>回路による音の気配</span></label>
+      <p id="settings-circuit-note" class="hz-settings-hint" data-i18n>音の間合いと擦れ方が、直前の刺激で少し変わります。オフで固定の応答に戻ります。視覚効果軽減時は無効です。</p>
+      <details class="hz-settings-hint">
+        <summary data-i18n>音の回路と出典</summary>
+        <p data-i18n>ハエの脚回路の実測配線を10群へ縮約しています。刺激・順応・音への対応は創作です。生きた脳や学習・意識の再現ではありません。</p>
+        <p>MaleCNS v1.0 — FlyEM (HHMI Janelia), University of Cambridge, MRC Laboratory of Molecular Biology, Google Research. Extraction: Denis Shiryaev / DesktopFly. Distribution: Apolotary / Fly Lab.</p>
+        <p><a href="https://male-cns.janelia.org/download/" target="_blank" rel="noopener noreferrer">MaleCNS</a> · <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener noreferrer">CC BY 4.0</a> · <a href="docs/FLY-CIRCUIT-CREDITS.md" target="_blank" rel="noopener noreferrer" data-i18n>変更内容と固定出典</a></p>
+      </details>
     </form>
   </dialog>
 
@@ -148,8 +156,8 @@
     // E35: 既存SWはversion queryを無視して旧CSS/runtimeを返し得るため、
     // controller takeover後は入口のまま一度reloadし、CSS/JSを同じ版で読む。fresh/current loadは待たせない。
     (() => {
-      const SW_URL = "sw.js?v=e45";
-      const RUNTIME_URL = "slice.js?v=e45";
+      const SW_URL = "sw.js?v=e46";
+      const RUNTIME_URL = "slice.js?v=e46";
       const expectedController = new URL(SW_URL, document.baseURI).href;
       const gate = document.getElementById("gate");
       const gateButton = document.getElementById("gate-enter");

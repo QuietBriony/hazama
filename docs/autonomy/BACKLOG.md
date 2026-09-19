@@ -50,6 +50,8 @@ Hazama 自律開発の作業待ち行列。
   初見5〜10人で確認する。`docs/playtest/steam-demo-candidate-e41.md`を今回の手順とする。
   10〜15分は目標。現在の経路には長短があり、演出待ちの机上集計を人間のプレイ時間と混同しない。
   エージェントの動作検証だけでは面白さ・販売品質・需要をDoneにしない。Steam提出/料金支払は未実施。
+  八観の整理・空/縁起/真言密教の設計仮説は`docs/playtest/eight-views-steam-direction.md`。
+  設定の説明量より、初見が行為を理解できるか/再訪で何を発見するかを同じ初見検証へ戻す。
 
 ### HZ-BL-001 — PWA install / offline human pass
 - priority : P1
@@ -90,6 +92,18 @@ Hazama 自律開発の作業待ち行列。
   （HZ-BL-002 のメモが前提）。
 
 ## P2
+
+### HZ-BL-026 — 実測脚配線の縮約接続と世界の反応の調整
+- priority : P2
+- scope    : runtime(audio) / smoke / verify / lore consistency
+- agent    : codex
+- human-gate: yes（実機聴感/販売品質は別）
+- status   : 実装済 — Codex 2026-09-20、10群接続・自動/ローカルブラウザ検証済／公開確認前・実機聴感待ち
+- source   : 「接続しながら磨いて」「八観設定今最適？」「接続してすすめよ」
+- detail   : MaleCNS脚部分回路の固定出典から10群へ縮約。係数だけを内製Audioへ接続し、
+  on/off比較・凍結/停止・音量不増幅・出典・生体/学習でない説明を備える。
+  新しい外部runtime/fetch/音源/保存はなし。流れSの八観名だけ入口・生成と一致させる。
+  `docs/playtest/fly-circuit-e46.md`でagent検証と実機聴感を分ける。原典・分岐・認識値は変えない。
 
 ### HZ-BL-025 — 沈む持続音と有限応答の本編統合
 - priority : P2

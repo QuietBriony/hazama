@@ -17,9 +17,11 @@ Hazama は、沈むほど戻りにくい「降下する対話」の没入型静�
 - 制作候補: `docs/BLENDER-AUTHORING.md`（WorkerPC Blender 5.2をrepo外の静止画制作実行器に限定。runtime非依存）
 - 体験版候補: [E41 初見テスト](docs/playtest/steam-demo-candidate-e41.md)（既存Web版の初回２ルート・人間の評価待ち。Steam提出用ビルドではない）
 - 人に渡す試遊案内: [日本語](docs/playtest/invite-ja.md) / [English](docs/playtest/invite-en.md)。実施側は[最初のラウンド](docs/playtest/first-round.md)へ（準備済み・人間の結果は未取得）
-- 感覚統合: `docs/SENSORY-RESPONSE-CANDIDATE.md`（E31 governor＋E45本編応答。Sensory Frame/labそのものは本編未配線） / [E45音の統合・検証](docs/playtest/world-audio-e45.md)
+- 感覚統合: `docs/SENSORY-RESPONSE-CANDIDATE.md`（E31 governor＋E45本編応答＋E46縮約回路。Sensory Frame/labの実行エンジンは未配線） / [E45音の統合・検証](docs/playtest/world-audio-e45.md) / [E46接続と検証](docs/playtest/fly-circuit-e46.md)
+- E46の回路: 実測の脚運動配線を10群へ縮約した係数を`slice.js`内で使い、音の小さな反応だけに接続。設定で固定応答と比較可能。[データ出典・変更と限界](docs/FLY-CIRCUIT-CREDITS.md)。生体/意識/神経学習/RSIの再現ではない。
+- 八観と商品方向: [設定を読む行為へ翻訳する検討](docs/playtest/eight-views-steam-direction.md)。ゲーム版の名称を揃え、空・縁起・真言密教は公開資料から設計を検討。用語追加や販売品質の合格とはしない。
 - 神経回路風の音実験: [スマホで試聴](https://quietbriony.github.io/hazama/tools/sensory/sensory-audio-lab.html?v=neural-20260914-1) / [比較手順と接続仕様](docs/playtest/neural-modulator-trial.md)。`tools/sensory/`内で通常の揺らぎと64個の簡易回路をA/B比較。本編未配線・実際のハエの脳データは不使用・人間の試聴待ち。
-- 本文と音の比較: [世界が、音で応える](https://quietbriony.github.io/hazama/tools/sensory/scene-response-lab.html?v=scene-20260919-2) / [試聴手順](docs/playtest/scene-response-trial.md)。AのE44原型・Bの拍動・Cの断片・Dの統合案は比較用に保存。本編E45はDの方向を実際の認識・再訪・抗いに合わせて内製Audioへ翻訳した。曲・ハエ回路・labの実行エンジンは取り込まない。
+- 本文と音の比較: [世界が、音で応える](https://quietbriony.github.io/hazama/tools/sensory/scene-response-lab.html?v=scene-20260919-2) / [試聴手順](docs/playtest/scene-response-trial.md)。AのE44原型・Bの拍動・Cの断片・Dの統合案は比較用に保存。本編E45でDの方向を既存Audioへ翻訳し、E46で縮約回路を音の反応に追加。曲・labの実行エンジン・外部再生には依存しない。
 
 > 旧 forward 実装（Gate Run 資源ゲーム・Music ブリッジ・v2.x 系）と `slice/` 重複・別プレビュー repo は
 > 整理・撤去済み。履歴は git に保全（ロールバック: `f8763f2` 没入初版 / `7d5def9` forward v2.45 /
@@ -361,6 +363,13 @@ Codex / Claude Code が同じ順番で作業を継続するための薄いエン
   full/light/staticのtransient上限24/12/8、終了後disconnect、停止/非表示/中断時の予約音取消、
   遅延resume競合/拒否を検証。本編・PWA・英語カタログ参照は`?v=e45`へ同期。
   本文/分岐/保存は不変。ハエ回路は未接続。公開の依頼と耳での最終評価は分けて記録する。
+
+- **進化 E46（2026-09・脚回路の縮約接続と八観の名称整合）**: MaleCNS由来の脚配線を10群へ縮約し、
+  内製Audioの音の間合い・擦れる音域・減衰へだけ接続。A由来の持続音、音の数、認識/分岐/保存は維持。
+  音量の増幅なし、10Hzの共通timer一つ、ミュート/非表示/一時停止で回路も凍結、見逃した時間は追計算しない。
+  「回路による音の気配」のon/offと日英の出典表示を追加。CC BY 4.0の出典と縮約方法を明記。
+  原典の異なる八観を混在させていた流れSの2箇所を、入口/生成側の空・円・観察者に整合。
+  本編/PWA/locale参照は`?v=e46`。音の良し悪し、宗教的な意味、売れるかは機械検証で合格にしない。
 
 ## Status / Rules
 
