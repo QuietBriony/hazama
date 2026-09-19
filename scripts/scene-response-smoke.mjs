@@ -1,7 +1,8 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
+import { createHash } from "node:crypto";
 import { VERSION, MAX_SECONDS, MODES, SCENES, responseScore } from "../tools/sensory/scene-score.mjs";
-import { MAX_VOICES, ResponseGraph, SceneAudioSession } from "../tools/sensory/scene-response-audio.mjs";
+import { MAX_VOICES, INTEGRATED_LEVELS, ResponseGraph, SceneAudioSession } from "../tools/sensory/scene-response-audio.mjs";
 
 const read = (path) => readFileSync(new URL(`../${path}`, import.meta.url), "utf8").replace(/\r\n?/g, "\n");
 const production = read("slice.js");
@@ -25,7 +26,7 @@ for (const mode of Object.keys(MODES)) {
     assert.deepEqual(score, responseScore(mode, index), "same state reproduces the same phrase");
     assert.ok(score.length < MAX_VOICES);
     for (const event of score) {
-      assert.ok(["pulse", "body", "fragment"].includes(event.kind));
+      assert.ok(["pulse", "body", "fragment", "grain"].includes(event.kind));
       [event.at, event.midi, event.duration, event.gain].forEach((v) => assert.ok(Number.isFinite(v)));
       assert.ok(event.at >= 0 && event.at + event.duration <= 8, "finite response leaves reading space");
       assert.ok(event.gain > 0 && event.gain <= .2);
@@ -35,6 +36,13 @@ for (const mode of Object.keys(MODES)) {
 }
 assert.notDeepEqual(responseScore("b", 2), responseScore("c", 2));
 assert.notDeepEqual(responseScore("c", 2), responseScore("c", 4), "revisited motif retains a different ending");
+assert.equal(createHash("sha256").update(JSON.stringify(["current", "b", "c"].map(mode =>
+  [0, 1, 2, 3, 4].map(index => responseScore(mode, index))))).digest("hex"),
+  "4f0b58f7ac32a46b872cbec204b3f6954d3680f1f67f1f51957a5a3756fc54bf", "original A/B/C scores remain unchanged");
+assert.ok(responseScore("d", 1).some(event => event.kind === "grain"));
+assert.ok(responseScore("d", 1).filter(event => event.kind === "pulse").length < responseScore("b", 1).filter(event => event.kind === "pulse").length);
+assert.ok(responseScore("d", 4).find(event => event.kind === "body").midi < responseScore("d", 0).find(event => event.kind === "body").midi, "integrated response pitch follows the sinking bed");
+Object.values(INTEGRATED_LEVELS).forEach(value => assert.ok(value > 0 && value <= 1));
 assert.throws(() => responseScore("neural", 0));
 assert.throws(() => responseScore("b", -1));
 assert.throws(() => responseScore("b", NaN));
@@ -96,13 +104,20 @@ const session = new SceneAudioSession(host, doc);
 assert.equal(contexts.length, 0, "no AudioContext before a user gesture");
 assert.equal(session.volume, .35);
 for (const mode of Object.keys(MODES)) {
+  const before = contexts.length;
   assert.equal(await session.start(mode, 0), true);
+  assert.equal(contexts.length, before + 1, "all layers share one native context, including D");
   const ctx = session.context;
+  if (mode === "d") assert.ok(session.current && session.graph, "integrated condition has both the real A bed and responses");
   assert.equal(await session.start(mode, 0), false, "cannot double-start");
   session.setVolume(0); session.applyScene(1);
-  assert.equal(session.current?.volume ?? session.graph.output.gain.value, 0, "scene state never overrides mute");
+  if (session.current) assert.equal(session.current.volume, 0, "scene state never overrides bed mute");
+  if (session.graph) assert.equal(session.graph.output.gain.value, 0, "scene state never overrides response mute");
   session.setVolume(99);
   assert.equal(session.volume, 1);
+  session.applyScene(2);
+  if (session.current) assert.equal(session.current.volume, mode === "d" ? INTEGRATED_LEVELS.bed : 1, "fixed bed headroom, not increased by pressure");
+  if (session.graph) assert.equal(session.graph.output.gain.value, mode === "d" ? INTEGRATED_LEVELS.response : 1, "fixed response headroom");
   session.setVolume(NaN);
   assert.equal(session.volume, 0, "invalid volume fails silent");
   session.setVolume(.35);
@@ -137,7 +152,7 @@ let finishResume;
 class DelayedContext extends Context {
   resume() { return new Promise((resolve) => { finishResume = () => { if (this.state !== "closed") this.state = "running"; resolve(); }; }); }
 }
-for (const mode of ["current", "b", "c"]) {
+for (const mode of Object.keys(MODES)) {
   const race = new SceneAudioSession({ ...host, AudioContext: DelayedContext }, doc);
   const starting = race.start(mode, 0);
   assert.equal(race.pending, true);
@@ -152,6 +167,16 @@ const rejected = new SceneAudioSession({ ...host, AudioContext: RejectedContext 
 await assert.rejects(rejected.start("current", 0), /denied/);
 assert.equal(rejected.context, null);
 assert.equal(timers.size, 0);
+
+for (const tier of ["light", "static"]) {
+  const limited = new SceneAudioSession({ ...host, matchMedia: query => ({ matches:
+    tier === "light" ? query.includes("pointer: coarse") : query.includes("prefers-reduced-motion") }) }, doc);
+  await limited.start("d", 2);
+  assert.equal(limited.current.tier, tier, "D respects the existing production tier");
+  assert.equal(timers.size, tier === "light" ? 2 : 1, "no automatic pulse under reduced motion");
+  assert.ok(limited.graph.voices.size > 0, "explicit-action responses remain available");
+  await limited.stop(); assert.equal(timers.size, 0);
+}
 await session.start("c", 0);
 session.context.state = "interrupted"; session.context.events.get("statechange")();
 await session.closing;
@@ -162,4 +187,4 @@ const graph = new ResponseGraph(new Context(), 0);
 graph.play("c", 2); graph.clear(true);
 assert.equal(graph.voices.size, 0);
 graph.dispose();
-console.log("scene-response smoke PASS (exact current-audio parity, authored excerpts, bounded phrases/voices, mute, cancellation, interruption, teardown)");
+console.log("scene-response smoke PASS (A/B/C preserved, D shared-context bed/texture/headroom, authored excerpts, bounded voices, mute, tiers, lifecycle)");

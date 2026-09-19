@@ -2,6 +2,13 @@
 
 Status: **E31 governor production採用 / Sensory Frame・labはtools-only**
 
+2026-09-19: 同じ本文付き比較に「D・統合」を追加。ユーザーの「B/Cはいいが音楽っぽい、
+Aの不気味に沈む感じと効果音/BGMの質感も統合したい」を受け、Aの持続音を下地に、
+間引いた拍動・薄い擦れ音・沈む基音に沿う曇った断片を重ねる。A/B/Cは比較用に維持。
+単一AudioContext、固定の層別音量、既存full/light/staticと停止規約を保つ。本編E44は無変更。
+ハエ回路は今回も未接続。Musicの実測部分回路は再検査72項目PASSだが、有限反応の計算であり、
+常時生存・自動成長・RSIの実装ではない。Dの聴感と採否は人間の試聴待ち。
+
 2026-09-15: [本文付きの反応音比較](playtest/scene-response-trial.md)を別のtools-only入口へ追加。
 MusicでユーザーがB/Cを好評価したことを出発点に、同じ本文の抜粋へ短い拍動/断片を対応させる。
 曲・Tone.js・実測回路・再生状態を取り込むものではない。現行音は本番Audio IIFEの一致検証付きsnapshot。

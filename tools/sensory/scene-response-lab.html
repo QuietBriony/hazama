@@ -5,26 +5,29 @@
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#080b0e">
   <link rel="icon" href="data:,">
-  <link rel="stylesheet" href="./scene-response-lab.css?v=scene-20260915-1">
+  <link rel="stylesheet" href="./scene-response-lab.css?v=scene-20260919-1">
   <title>世界が音で応える — Hazama 試聴</title>
 </head>
 <body>
   <main>
     <header>
-      <p class="eyebrow">HAZAMA / SCENE LISTENING 01</p>
+      <p class="eyebrow">HAZAMA / SCENE LISTENING 02</p>
       <h1>世界が、音で応える。</h1>
-      <p class="intro">同じ5場面を、違う音で。<br>曲の良さより、文章に深く入れるか。</p>
+      <p class="intro">沈む気配は、途切れない。<br>Aの地の音に、B/Cの断片を重ねる。</p>
       <p class="note">本編未採用の試作 · 目安1〜2分 / 1案</p>
     </header>
 
     <section class="comparison" aria-labelledby="comparison-title">
       <h2 id="comparison-title" tabindex="-1">音を選ぶ</h2>
       <div class="modes" role="group" aria-label="比較する音">
-        <button type="button" data-mode="current" aria-pressed="true">現行音<span>持続する地の音</span></button>
+        <button type="button" data-mode="current" aria-pressed="false">A · 現行音<span>持続する地の音</span></button>
         <button type="button" data-mode="b" aria-pressed="false">B · 拍動<span>身体に返る</span></button>
         <button type="button" data-mode="c" aria-pressed="false">C · 断片<span>痕跡が戻る</span></button>
+        <button type="button" data-mode="d" aria-pressed="true">D · 統合<span>沈む音＋気配</span></button>
       </div>
       <p id="mode-description" class="mode-description"></p>
+      <p class="note">まずDで。次にAと比べて、沈む感じが残っているか。</p>
+      <p id="reduced-notice" class="note" hidden>OSの「動きを減らす」設定により、A・Dの持続音は出ません。本編と同じ設定を尊重し、操作への応答だけになります。</p>
       <p class="note">切替は停止して最初から。選んだだけでは鳴りません。</p>
     </section>
 
@@ -46,10 +49,12 @@
 
     <details>
       <summary>この比較で変えたもの</summary>
-      <p>現行音は本編の音コードを同じまま切り出したものです。乱数だけ固定し、5場面の深さ・圧・選択を与えます。背景のグリッチ演出やゲーム進行全体の再現ではありません。</p>
+      <p>Aは本編の音コードを同じまま切り出したものです。乱数だけ固定し、5場面の深さ・圧・選択を与えます。背景のグリッチ演出やゲーム進行全体の再現ではありません。</p>
       <p>B・CはMusicで聴いた曲そのものではなく、拍動・断片・余白の特徴を短い反応へ翻訳した別試作です。ハエ回路・外部音源・Musicの再生エンジンは使いません。</p>
+      <p>DはAの持続音を下地に、Bの拍動を短く不規則に、Cの断片を少し曇らせて重ねます。音程も地の音とともに沈みます。操作の擦れはその場で合成したノイズ。追加の反応が退いた後も地の音は続きます。A/B/Cの音は比較用に残しています。</p>
       <p>本文はA→B→C→B→Cの抜粋です。場面名と音の状態は比較用で、本編の認識値・分岐・セーブは動きません。各案の音量設定は共通ですが、音色や密度による大きさの感じ方までは同一ではありません。</p>
       <p id="tier-note"></p>
+      <p>ハエ回路はこのページには未接続です。Music側では脚運動回路の一部を使って、再生前に有限長の反応を計算しています。常時生き続ける個体でも、自動で成長する仕組みでもありません。</p>
       <p>ページを離れる・画面を隠すと停止し、勝手には再開しません。連続再生は2分で自動停止します。</p>
     </details>
     <p class="footer"><a href="./sensory-audio-lab.html?v=neural-20260914-1">以前の揺らぎ比較へ</a></p>
@@ -58,9 +63,9 @@
 
   <aside class="audio-dock" aria-label="音の操作">
     <div class="volume-row"><label for="volume">音量</label><input id="volume" type="range" min="0" max="100" value="35"><output id="volume-value" for="volume">35%</output></div>
-    <button id="play-toggle" type="button">現行音で聴く</button>
+    <button id="play-toggle" type="button">D · 統合で聴く</button>
     <p id="status" role="status">停止中 · 小さな音量から始めてください</p>
   </aside>
-  <script type="module" src="./scene-response-lab.mjs?v=scene-20260915-1"></script>
+  <script type="module" src="./scene-response-lab.mjs?v=scene-20260919-1"></script>
 </body>
 </html>

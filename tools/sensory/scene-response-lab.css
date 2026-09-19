@@ -8,7 +8,7 @@ p { line-height: 1.8; margin: 10px 0; }
 .intro { color: #c3cac4; font-size: .98rem; }
 .note { font-size: .78rem; color: #9daaa9; }
 .comparison { margin: 28px 0; }
-.modes { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.modes { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
 button, input { font: inherit; }
 button { color: inherit; border: 1px solid #3c4949; border-radius: 6px; background: #11191d; padding: 12px; min-height: 48px; touch-action: manipulation; cursor: pointer; }
 button:hover { border-color: #bcc9bd; }
@@ -42,5 +42,6 @@ output { text-align: right; font-variant-numeric: tabular-nums; }
 #play-toggle { width: 100%; min-height: 44px; border-color: #80937b; background: #28362b; }
 #status { color: #aebbad; font-size: .72rem; margin: 5px 0 0; line-height: 1.5; }
 [hidden] { display: none !important; }
+@media (max-width: 520px) { .modes { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (max-width: 360px) { body { padding-left: 16px; padding-right: 16px; } .prose { font-size: 1rem; } .modes { gap: 5px; } }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior: auto !important; } }

@@ -91,20 +91,24 @@ Hazama 自律開発の作業待ち行列。
 
 ## P2
 
-### HZ-BL-024 — 本文の同じ5場面で現行音とMusic由来の反応音を比較
+### HZ-BL-024 — 本文の同じ5場面で現行音・反応音・統合案を比較
 - priority : P2
 - scope    : tools / smoke / verify
 - agent    : either
 - human-gate: yes
-- status   : 実装・公開済 — 2026-09-15 agent検証完了・本文付きの人間試聴と採否待ち
+- status   : D追加実装・agent検証済 — 2026-09-19 既存Pagesへ反映予定・Dの人間試聴と採否待ち
 - source   : MusicのB/CはいいがHazama世界に合うか、という相談→同じ短い場面の比較提案へ「すすめて」
-- detail   : `tools/sensory/scene-response-lab.html`でA→B→C→B→Cの既存本文抜粋を3案で読む。
+- detail   : `tools/sensory/scene-response-lab.html`でA→B→C→B→Cの既存本文抜粋を4案で読む。
   現行は本番Audio IIFEと完全一致を検査する切り出し。Bは短い拍動、Cは断片/余白/戻るモチーフ。
   文字は自動送りしない。各応答は8秒未満、手動停止/非表示/中断でclose、2分の安全停止。
   MusicのB/Cの特徴を翻訳した別試作であり、曲そのもの・Tone・回路・録音は不使用。
   `docs/playtest/scene-response-trial.md`の条件と問いで実際に聴いてから採否を決める。
   「B/Cともいい」はMusicでの好みの証拠で、本文付きの合格や既存HZ-BL-023の完了とは扱わない。
   2026-09-15の継続承認により、tools-only音の試作は検証後の既存Pagesへの反映までを基本作業にする。
+  2026-09-19の「B/Cはいいが音楽っぽい、Aの不気味に沈む質感も統合したい」を受けD追加。
+  Aの持続音に、間引いた拍動・合成の擦れ音・曇る断片を同じContextで重ねる。A/B/Cは維持。
+  本編E44は変えない。Musicのハエ部分回路は再検査72項目PASSだが有限計算であり常時生存/RSIではなく、
+  今回も未接続。Dの実機試聴と本編採用をagent検証だけで完了扱いにしない。
 
 ### HZ-BL-023 — 小さな神経回路による音の気配のA/B試聴
 - priority : P2

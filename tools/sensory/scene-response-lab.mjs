@@ -1,10 +1,10 @@
-import { MODES, SCENES } from "./scene-score.mjs?v=scene-20260915-1";
-import { SceneAudioSession } from "./scene-response-audio.mjs?v=scene-20260915-1";
+import { MODES, SCENES } from "./scene-score.mjs?v=scene-20260919-1";
+import { SceneAudioSession } from "./scene-response-audio.mjs?v=scene-20260919-1";
 
 export function setupSceneLab(doc, host) {
   const session = new SceneAudioSession(host, doc);
   const byId = (id) => doc.getElementById(id);
-  let mode = "current", index = 0, complete = false;
+  let mode = "d", index = 0, complete = false;
   const modes = [...doc.querySelectorAll("[data-mode]")];
   const status = (text) => { byId("status").textContent = text; };
 
@@ -54,7 +54,9 @@ export function setupSceneLab(doc, host) {
     if (complete) { index = 0; complete = false; renderScene(true); }
     try {
       if (await session.start(mode, index)) {
-        status(mode === "current" ? "現行音で試聴中 · 読み終えたら次の場面へ" : "反応音で試聴中 · 数秒で静かになります。読み終えたら次へ");
+        status(mode === "current" ? "現行音で試聴中 · 読み終えたら次の場面へ" : mode === "d"
+          ? (session.current?.tier === "static" ? "統合で試聴中 · OS設定により持続音なし、操作への応答のみ" : "統合で試聴中 · 反応の後も沈む地の音が続きます")
+          : "反応音で試聴中 · 数秒で静かになります。読み終えたら次へ");
         byId("scene-title").focus({ preventScroll: true });
         byId("scene-title").scrollIntoView({ block: "start" });
       }
@@ -85,12 +87,14 @@ export function setupSceneLab(doc, host) {
   });
   host.addEventListener("pagehide", () => { void session.stop("ページを離れたため停止。再開はボタンから。"); });
   const reduced = host.matchMedia?.("(prefers-reduced-motion: reduce)");
+  byId("reduced-notice").hidden = !reduced?.matches;
   byId("tier-note").textContent = reduced?.matches
-    ? "動きを減らす設定：現行音は本編と同じく持続音・自動鼓動なし、選択時のみ発音。B・Cも操作後の短い応答のみです。"
-    : "現行音は本編と同じく、タッチ端末では持続音の声数を減らします。B・Cはどの端末でも短い応答のみです。";
+    ? "動きを減らす設定：A・Dは本編と同じく持続音・自動鼓動なし。全案とも操作後の応答だけになり、Dの持続する沈みは比較できません。"
+    : "A・Dは本編と同じく、タッチ端末では持続音の声数を減らします。B・Cはどの端末でも短い応答のみです。";
   reduced?.addEventListener?.("change", () => {
     void session.stop("OS設定が変わりました。再開はボタンから。");
-    byId("tier-note").textContent = "OS設定の変更を検出しました。現行音の声数・自動鼓動は次の開始で設定を反映します。";
+    byId("reduced-notice").hidden = !reduced.matches;
+    byId("tier-note").textContent = "OS設定の変更を検出しました。A・Dの持続音・自動鼓動は次の開始で設定を反映します。";
   });
   byId("mode-description").textContent = MODES[mode].description;
   renderScene(); syncAudio();

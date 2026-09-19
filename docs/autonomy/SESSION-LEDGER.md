@@ -19,6 +19,30 @@ Hazama 自律開発 session の追記専用ログ。
 
 ---
 
+## 2026-09-19 — Aの沈む持続音とB/C由来の気配をDで統合（tools-only）
+- agent      : Codex（単一会話・別task/agentなし）
+- goal       : B/Cのよさを残し、Aの不気味に沈む感じと効果音/BGMの質感を統合して比較する。
+- baseline   : master / 0732651、originとの差分0/0・clean。着手時hazama-check 2 PASS / 0 FAIL / 0 SKIP。
+- shipped    : Scene Listening 02にD追加・既定選択。Aの持続音0.9倍＋応答0.65倍を単一AudioContextで鳴らす。
+  拍を最大2個/操作へ間引き、沈む基音に沿う断片とnative合成の擦れ音を加える。A/B/Cは維持。
+  反応後も地の音が残り、2分/停止/非表示/中断では両層を解放。OS reduced-motionでは持続音なしを明示。
+- checks     : hazama-check 2 PASS / 0 FAIL / 0 SKIP、変更JS構文/diff check PASS。
+  本番Audio完全一致とA/B/Cスコア維持、Dの両層ミュート/固定音量/tier/停止競合/タイマー解放をsmokeで検査。
+- browser    : PlaywrightスキルのCLIでChromium、全4案×5場面・同じ本文・切替停止/reset・終了closeを検証。
+  390/320pxの横overflowなし、画像を目視確認。hidden模擬→明示再開とreduced-motionの表示/抑止もPASS。
+  page error/unhandled rejection 0、終了時全Context closed/timer 0、新規localStorage 0。
+- audio      : native OfflineAudioContext 44.1kHz/stereo/12秒、A/D×5場面×full/lightの20条件を検査。
+  Dの合成peak 0.05403〜0.07965、12秒RMS 0.02060〜0.02339、NaN/Inf/クリップ0。
+  10.5秒以降のRMSはAの約0.9倍で持続を確認。オフラインclockであり実時間性能/聴感の合格ではない。
+- fly        : Musicをread-only確認、check-listening-loop 72項目PASS。実測の脚部分回路による有限反応生成で、
+  常時生存・神経学習・自動コード改善の実装ではない。Hazamaの64細胞labや今回のDとは別で未接続。
+- scope      : tools-only/smoke/docsのみ。index/slice.js/slice.css/sw/depths/locale、保存/進行/PWA E44は差分0。
+  Music/Openclaw-lab無変更、音源/録音/依存なし。assets queryのみscene-20260919-1へ更新。
+- release    : 継続承認に基づき対象だけcommit/pushして既存Pagesを確認する（このentry作成時点はpush前）。
+- backlog    : HZ-BL-024継続、Dの人間試聴待ち。HZ-BL-023と本編採用gateを維持。
+- next       : スマホでD→Aの同じ本文を比較し、沈下の維持・曲の主張・質感への感想をこの会話へ返す。
+- blockers   : 実機Safari/ロック復帰、耳での世界観/疲れ、本編視覚との同居と採否は未検証。
+
 ## 2026-09-15 — 本文付きの反応音比較をスマホ用Pagesへ公開・再検証
 - agent      : Codex（単一会話・別task/agentなし）
 - goal       : ユーザーの継続承認どおり、試聴ページを公開まで完了する。

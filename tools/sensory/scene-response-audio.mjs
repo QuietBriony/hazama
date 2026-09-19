@@ -1,7 +1,9 @@
-import { createCurrentAudio } from "./scene-current-audio.mjs?v=scene-20260915-1";
-import { MODES, SCENES, MAX_SECONDS, responseScore } from "./scene-score.mjs?v=scene-20260915-1";
+import { createCurrentAudio } from "./scene-current-audio.mjs?v=scene-20260919-1";
+import { MODES, SCENES, MAX_SECONDS, responseScore } from "./scene-score.mjs?v=scene-20260919-1";
 
 export const MAX_VOICES = 24;
+// Fixed headroom allocation, never raised by depth, response count or feedback.
+export const INTEGRATED_LEVELS = Object.freeze({ bed: .9, response: .65 });
 export const clampVolume = (n) => Number.isFinite(n) ? Math.max(0, Math.min(1, n)) : 0;
 const hz = (midi) => 440 * 2 ** ((midi - 69) / 12);
 
@@ -44,6 +46,11 @@ export class ResponseGraph {
 
   play(mode, index) {
     this.clear();
+    this.texture = mode === "d";
+    const time = this.ctx.currentTime;
+    this.filter.frequency.setTargetAtTime(this.texture ? 1050 - SCENES[index].depth * 450 - SCENES[index].dread * 110 : 2300, time, .25);
+    this.delay.delayTime.setTargetAtTime(this.texture ? .37 : .28, time, .1);
+    this.wet.gain.setTargetAtTime(this.texture ? .45 : .24, time, .1);
     const now = this.ctx.currentTime + .025;
     for (const event of responseScore(mode, index)) this.schedule(event, now + event.at);
   }
@@ -55,24 +62,44 @@ export class ResponseGraph {
       oldest.sources.forEach((source) => { try { source.stop(); } catch {} });
       this.release(oldest);
     }
-    const ctx = this.ctx, carrier = ctx.createOscillator(), gain = ctx.createGain();
+    const ctx = this.ctx, grain = event.kind === "grain";
+    const carrier = grain ? ctx.createBufferSource() : ctx.createOscillator(), gain = ctx.createGain();
     const sources = [carrier], nodes = [carrier, gain], frequency = hz(event.midi);
-    carrier.type = event.kind === "body" ? "triangle" : "sine";
-    carrier.frequency.setValueAtTime(frequency, at);
-    if (event.kind === "pulse") carrier.frequency.exponentialRampToValueAtTime(frequency * .65, at + .22);
+    let signal = carrier;
+    if (grain) {
+      // Generated in memory, never an imported recording/sample. A deterministic
+      // filtered grain adds friction, not a background process or neural claim.
+      carrier.buffer = ctx.createBuffer(1, Math.ceil(ctx.sampleRate * (event.duration + .04)), ctx.sampleRate);
+      const data = carrier.buffer.getChannelData(0);
+      let seed = (Math.round(event.midi * 1000) ^ 0x485a4d41) >>> 0, memory = 0;
+      for (let i = 0; i < data.length; i++) {
+        seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0;
+        memory = .86 * memory + .14 * (seed / 2147483648 - 1);
+        data[i] = Math.max(-1, Math.min(1, memory * 3.4));
+      }
+      const band = ctx.createBiquadFilter(); band.type = "bandpass"; band.Q.value = .8;
+      band.frequency.setValueAtTime(frequency, at);
+      band.frequency.setTargetAtTime(frequency * .67, at + .12, .3);
+      carrier.connect(band); signal = band; nodes.push(band);
+    } else {
+      carrier.type = event.kind === "body" ? "triangle" : "sine";
+      carrier.frequency.setValueAtTime(frequency, at);
+      if (event.kind === "pulse") carrier.frequency.exponentialRampToValueAtTime(frequency * .65, at + .22);
+      else if (this.texture) carrier.frequency.setTargetAtTime(frequency * .993, at + .6, 1.4);
+    }
     if (event.kind === "fragment") {
       const modulator = ctx.createOscillator(), amount = ctx.createGain();
-      modulator.frequency.value = frequency * 2.005;
-      amount.gain.setValueAtTime(frequency * .28, at);
+      modulator.frequency.value = frequency * (this.texture ? 1.997 : 2.005);
+      amount.gain.setValueAtTime(frequency * (this.texture ? .14 : .28), at);
       amount.gain.exponentialRampToValueAtTime(frequency * .025, at + .65);
       modulator.connect(amount).connect(carrier.frequency);
       sources.push(modulator); nodes.push(modulator, amount);
     }
     gain.gain.value = 0;
     gain.gain.setValueAtTime(0, at);
-    gain.gain.linearRampToValueAtTime(event.gain, at + (event.kind === "pulse" ? .012 : .025));
+    gain.gain.linearRampToValueAtTime(event.gain, at + (event.kind === "pulse" ? .012 : (grain || this.texture) ? .12 : .025));
     gain.gain.exponentialRampToValueAtTime(.00001, at + event.duration);
-    carrier.connect(gain).connect(this.input);
+    signal.connect(gain).connect(this.input);
     const voice = { carrier, gain, sources, nodes };
     this.voices.add(voice);
     carrier.onended = () => this.release(voice);
@@ -108,14 +135,16 @@ export class SceneAudioSession {
       const resumed = ctx.resume();
       ctx.resume = () => resumed;
       void resumed.catch(() => {});
-      if (mode === "current") {
+      if (mode === "current" || mode === "d") {
         this.current = createCurrentAudio({
           AudioContext: function () { return ctx; },
           matchMedia: this.host.matchMedia?.bind(this.host),
           setInterval: this.host.setInterval.bind(this.host), clearInterval: this.host.clearInterval.bind(this.host)
         }, this.doc, this.host.matchMedia?.("(prefers-reduced-motion: reduce)").matches || false);
-        this.current.setVolume(this.volume); this.current.start(); this.current.setColor(7);
-      } else this.graph = new ResponseGraph(ctx, this.volume);
+        this.current.setVolume(this.volume * (mode === "d" ? INTEGRATED_LEVELS.bed : 1));
+        this.current.start(); this.current.setColor(7);
+      }
+      if (mode !== "current") this.graph = new ResponseGraph(ctx, this.volume * (mode === "d" ? INTEGRATED_LEVELS.response : 1));
       this.onChange();
       await resumed;
       if (generation !== this.generation || this.doc.hidden || ctx !== this.context) return false;
@@ -142,13 +171,16 @@ export class SceneAudioSession {
     if (this.current) {
       const scene = SCENES[index];
       this.current.update(scene.depth, scene.dread, scene.density);
-      if (index > 0) this.current.pulseOnce(.85);
-    } else this.graph.play(this.mode, index);
+      // D supplies its own action response; don't double the old choice accent.
+      if (index > 0 && this.mode === "current") this.current.pulseOnce(.85);
+    }
+    this.graph?.play(this.mode, index);
   }
 
   setVolume(value) {
     this.volume = clampVolume(value);
-    this.current?.setVolume(this.volume); this.graph?.setVolume(this.volume);
+    this.current?.setVolume(this.volume * (this.mode === "d" ? INTEGRATED_LEVELS.bed : 1));
+    this.graph?.setVolume(this.volume * (this.mode === "d" ? INTEGRATED_LEVELS.response : 1));
   }
 
   stop(reason = "停止中。再開はボタンから。") {

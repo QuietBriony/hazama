@@ -1,10 +1,11 @@
 // Authored response rules, not a fly-brain simulation or a continuous music player.
-export const VERSION = "scene-20260915-1";
+export const VERSION = "scene-20260919-1";
 export const MAX_SECONDS = 120;
 export const MODES = Object.freeze({
-  current: { label: "現行音", description: "本編と同じドローン・鼓動・選択音。比較用の固定seed。" },
+  current: { label: "A · 現行音", description: "本編と同じドローン・鼓動・選択音。比較用の固定seed。" },
   b: { label: "B · 拍動", description: "沈む・引き返すときに短い拍が現れ、読み続けると退く。" },
-  c: { label: "C · 断片", description: "気づいたときに断片がつながり、戻ると少し姿を変える。" }
+  c: { label: "C · 断片", description: "気づいたときに断片がつながり、戻ると少し姿を変える。" },
+  d: { label: "D · 統合", description: "Aの沈む地の音は続く。その奥で、短い拍動・擦れる音・曇った断片が応える。" }
 });
 
 // Existing prose, in a fixed A → B → C → B → C sequence. This is an excerpt,
@@ -46,7 +47,20 @@ export function responseScore(mode, index) {
   const cue = SCENES[index].cue;
   const notes = [];
   const add = (kind, at, midi, duration, gain) => notes.push(Object.freeze({ kind, at, midi, duration, gain }));
-  if (mode === "b") {
+  if (mode === "d") {
+    // The bed is the real current-audio snapshot, not a note here. These sparse
+    // foreground responses follow its sinking fundamental, with no bar grid.
+    const root = 69 + 12 * Math.log2((116 - SCENES[index].depth * 40) / 440);
+    const times = { enter: [.08], descend: [.04, .79], recognition: [.11], resist: [.05, .41], return: [.13, 1.36] }[cue];
+    times.forEach((at, i) => add("pulse", at, root + .25, .62, i ? .06 : .13));
+    add("grain", cue === "resist" ? .07 : 1.3, root + 31.2, cue === "resist" ? .38 : .9, .1);
+    add("body", .56, root + 12.04, 3.25, .035);
+    if (cue === "recognition" || cue === "return") {
+      const returning = cue === "return";
+      add("fragment", returning ? 1.43 : 1.06, root + 24.17, 3.1, returning ? .052 : .085);
+      add("fragment", returning ? 3.7 : 3.17, root + 31.04, 2.8, returning ? .045 : .055);
+    } else if (cue !== "resist") add("fragment", 2.41, root + 24.17, 2.8, cue === "enter" ? .025 : .04);
+  } else if (mode === "b") {
     const pulseTimes = { enter: [0, .94], descend: [0, .625, .94, 1.875, 2.5, 3.75],
       recognition: [0, 1.25], resist: [0, .47, 1.72], return: [0, .625, 1.875] }[cue];
     pulseTimes.forEach((at, i) => add("pulse", at, 45 - index, .46, i === 0 ? .19 : .12));
