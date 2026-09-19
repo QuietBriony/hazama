@@ -82,6 +82,17 @@ service worker登録なし。旧labには入口リンクだけ追加。Music / O
 未検証: 実iPhone/Safariでの音・ロック復帰、イヤホン/内蔵スピーカー差、Dの世界観・疲れ・採否。
 本編E44とHZ-BL-023はそのまま、HZ-BL-024のhuman gateを維持する。
 
+## 公開確認（2026-09-19、D追加）
+
+実装commit `365e32e072074818e5c7044bbc1059ad8f14946d`、既存Pagesの
+[deployment 35431206928](https://github.com/QuietBriony/hazama/actions/runs/35431206928)は同SHAでsuccess。
+HTML/CSS/4 modulesの6資産はHTTP200・正しいMIME・ローカルと改行正規化後の内容一致。
+更新前のScene 01を読み込んだ隔離ChromiumでE44のSW/cacheを維持し、公開旧labの入口をクリック。
+Scene 02の4案・D既定・音量35%・初期無音と全moduleの`scene-20260919-1`取得を確認した。
+公開先でも全4案×5場面、同一本文、切替/終了/hidden模擬からの明示再開、320/390px、
+reduced-motionの説明と抑止を再検証。終了時全Context closed/timer 0、page error/保存0。
+古いcacheは削除せず、本編のPWA versionもE44を維持。実機の耳での評価は引き続き未検証。
+
 ## Agent検証（2026-09-15）
 
 - `node scripts/hazama-check.mjs`: 2 PASS / 0 FAIL / 0 SKIP。

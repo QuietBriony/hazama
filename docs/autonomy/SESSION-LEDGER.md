@@ -19,6 +19,20 @@ Hazama 自律開発 session の追記専用ログ。
 
 ---
 
+## 2026-09-19 — D統合案を既存Pagesへ公開・旧cacheからの切替も確認
+- agent      : Codex（単一会話・別task/agentなし）
+- goal       : 継続承認どおりスマホで聴けるDの比較を公開し、配信と停止規約を再確認する。
+- shipped    : `365e32e`をmasterへ通常push。既存Pages deployment `35431206928`は同SHAでsuccess。
+  `https://quietbriony.github.io/hazama/tools/sensory/scene-response-lab.html?v=scene-20260919-1`が入口。
+- checks     : 公開6資産のHTTP200・MIME・ローカルとの内容一致、旧labから新リンクへの実クリックを確認。
+  E44 SW下で旧Scene 01のcacheを残したまま、新版のD既定・音量35%・全module query同期を確認。
+- browser    : 公開Chromiumでも全4案×5場面と同一本文、単一Context、終了close/timer 0、保存なしを確認。
+  320/390px、切替reset、hidden模擬→手動再開、reduced-motion説明/持続音抑止、エラー0を再検証。
+- scope      : tools-only。音源/依存/公開設定追加なし、cache削除なし、本編E44とMusic/Openclaw-labは不変。
+- backlog    : HZ-BL-024をD追加公開済・人間試聴待ちに更新。実機や耳での合格に置き換えない。
+- next       : D→Aで沈む感じと背景への馴染みを比べ、必要な調整をこの会話で受ける。
+- blockers   : Dの実機Safari/ロック復帰、聴感/疲れ、本編採否のhuman gateは未完了。
+
 ## 2026-09-19 — Aの沈む持続音とB/C由来の気配をDで統合（tools-only）
 - agent      : Codex（単一会話・別task/agentなし）
 - goal       : B/Cのよさを残し、Aの不気味に沈む感じと効果音/BGMの質感を統合して比較する。
