@@ -98,7 +98,7 @@ Hazama 自律開発の作業待ち行列。
 - scope    : runtime(audio) / smoke / verify / lore consistency
 - agent    : codex
 - human-gate: yes（実機聴感/販売品質は別）
-- status   : 実装済 — Codex 2026-09-20、10群接続・自動/ローカルブラウザ検証済／公開確認前・実機聴感待ち
+- status   : 実装・本編公開済 — 2026-09-20、E46の自動/公開ブラウザ検証済・実機聴感待ち
 - source   : 「接続しながら磨いて」「八観設定今最適？」「接続してすすめよ」
 - detail   : MaleCNS脚部分回路の固定出典から10群へ縮約。係数だけを内製Audioへ接続し、
   on/off比較・凍結/停止・音量不増幅・出典・生体/学習でない説明を備える。

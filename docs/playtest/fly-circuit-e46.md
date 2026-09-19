@@ -1,6 +1,6 @@
 # E46 — 配線由来の小さな応答を、沈む世界へ
 
-2026-09-20 / HZ-BL-026。Status: 実装・自動/ローカルブラウザ検証済、公開確認前。
+2026-09-20 / HZ-BL-026。Status: 実装・自動/ローカル/公開ブラウザ検証・本編公開済。実機聴感待ち。
 
 ユーザーの「接続しながら磨いて」により本編音への接続を実装。
 公開範囲を聞いた後の「接続してすすめよ」を受け、検証後に既存本編へ反映する方針を伝えた。
@@ -57,6 +57,19 @@ Openclaw-labへの通信/実行も追加しない。
   出典リンクの暗い既定色をaccent色へ改善し、summaryの44px操作領域とキーボードfocusを追加。
   ローカル最終CSSはQA queryを追加して旧E46試験cacheを避けた。公開先では通常のE46参照で再確認する。
 - feature branchで同一会話の差分reviewを実施。独立agent reviewではない。原典・ゲーム数値・保存形式は変更なし。
+
+## 公開確認
+
+- 実装commit `198ac5e168f2899b5a1bb46645f83f391d708ad6`をmasterへfast-forwardして通常push。
+  既存Pages deployment `35452317333`は同SHAでsuccess。新hosting/公開設定/workflowは追加しない。
+- [本編E46を開く](https://quietbriony.github.io/hazama/?v=e46)。公開15資産はHTTP200・MIME・ローカル内容一致。
+  本編6資産、出典MD、縮約JSON、既存の比較lab7資産を確認した。
+- 公開E45のSW/cacheを保持した同じ隔離ChromiumでE46を開き、更新後の入口・runtime・SWがe46に揃うことを確認。
+  cacheはe46-static/runtime。音声Context作成0・自動再生なし。
+- 公開構造ルートでΩ終端（認識14、C→B抗い/再訪あり）。回路on/off、pause、hidden模擬→手動再開、
+  pagehide→再生成、保存維持、reload/キャッシュ済みoffline入口を再確認。全Context closed・予約音0・エラー0。
+- 通常のe46 CSS参照で日英共通の出典リンク色を確認。390/320pxの設定と展開出典・終端で横overflowなし。
+  Playwrightのスクリーンショットを目視。実iPhoneの音やSafari固有挙動を代わりに保証するものではない。
 
 ## 次に人間が聴くところ
 

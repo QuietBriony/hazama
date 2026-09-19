@@ -19,6 +19,25 @@ Hazama 自律開発 session の追記専用ログ。
 
 ---
 
+## 2026-09-20 — E46本編を公開、旧E45からの更新と公開降下ループを確認
+- agent      : Codex（単一会話・別task/agentなし）
+- goal       : 「接続してすすめよ」を受けた本編反映を、スマホ用公開入口の確認まで完了する。
+- shipped    : 実装commit `198ac5e168f2899b5a1bb46645f83f391d708ad6`をmasterへfast-forward・通常push。
+  既存Pages deployment `35452317333`は同SHAでsuccess。入口`https://quietbriony.github.io/hazama/?v=e46`。
+- checks     : commit前hazama-check 2 PASS / 0 FAIL / 0 SKIP、構文/staged diff check PASS。
+  物語JSONは名称2行を除き構造完全一致、choose/resolveResistは改行正規化後に元と一致。
+  公開15資産のHTTP200/MIME/内容一致。本編6資産＋出典MD＋縮約JSON＋既存比較lab7資産。
+- browser    : E45の旧SW/cache下から新版を開き、E46への更新と入口の自動再生なしを確認。
+  公開構造ルート→Ω（認識14、C→B抗い/再訪）、回路on/off、pause/再開、hidden模擬→手動再開、
+  pagehide/Context再生成、保存/reload/キャッシュ済みoffline入口維持をPASS。全Context closed/予約音0/エラー0。
+  通常E46 CSSで出典リンクの改善を確認、390/320pxの設定/展開出典/終端の横overflowなし・画面を目視。
+  QA出力先だけ無音にして操作。実iPhone/Safari/耳の合格ではない。
+- scope      : 本編音/設定/名称2行/出典/検証/docs/versionのみ。原典・数値・保存形式・公開設定は不変。
+  Music/Openclaw-lab無変更。音源/依存/新workflowなし。このcloseoutはdocs-only、e46を再bumpしない。
+- backlog    : HZ-BL-026を実装・本編公開済/実機聴感待ちへ。既存human gateは閉じない。
+- next       : HZ-BL-026の小音量on/off聴感確認、HZ-BL-018の初見で「何をするゲームか」と再訪の発見を確かめる。
+- blockers   : 実機の疲れ/馴染み・Safari/ロック復帰/PWA・英語話者・思想の受け取り/販売品質は未検証。
+
 ## 2026-09-20 — E46・実測脚配線の縮約を音へ接続、八観の呼び名を整合
 - agent      : Codex（単一会話・別task/agentなし）
 - goal       : 「接続しながら磨いて」「八観設定今最適？」へ、接続実装と公開資料に基づく制作方針で応える。
