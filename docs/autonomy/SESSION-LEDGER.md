@@ -19,6 +19,24 @@ Hazama 自律開発 session の追記専用ログ。
 
 ---
 
+## 2026-09-19 — E45本編をPagesへ公開・旧E44からの更新と公開降下ループを確認
+- agent      : Codex（単一会話・別task/agentなし）
+- goal       : 今回の本編デプロイ依頼に沿って、音の統合を本番で利用できる状態まで届ける。
+- shipped    : 実装commit `c253f2e8cd77ca37302748975a15c78bc0c2eff7`をfeature branchからmasterへfast-forward、通常push。
+  既存Pages deployment `35449782311`は同SHAでsuccess。入口は`https://quietbriony.github.io/hazama/?v=e45`。
+- checks     : commit前hazama-check 2 PASS / 0 FAIL / 0 SKIP、構文/diff check PASS。
+  公開13資産のHTTP200・MIME・ローカル内容一致。本編slice/SW/queryとE45 static/runtime cacheの同期を確認。
+- browser    : 旧E44 SW下からE45入口を開き、更新確認による再読込後に開始可能になることを確認。
+  公開Chromiumで構造ルート→Ω終端（認識14、C→B抗い/再訪あり）。pause/再開、hidden模擬、
+  pagehide/Context再生成、390/320px横overflowなし、エラー0・最後の全Context closed・予約音0。
+  reload/オフライン入口の保存維持・自動再生なしもPASS。QAの出力先だけをミュートして操作した。
+  公開比較labの4案×5場面も終了/close・エラー0を確認。closed Contextも数えたQAの予約音集計は状態を含め再確認。
+- scope      : 本編音/案内/検証/docs/versionのみ。物語/分岐数値/保存形式、Music/Openclaw-lab、公開設定は不変。
+  比較A/DはE44原型のまま保持し、本編へE45 Audioを二重importしない。
+- backlog    : HZ-BL-025を実装・本編公開済/実機聴感待ちへ更新。HZ-BL-024/023ほかのhuman gateは閉じない。
+- next       : HZ-BL-025の実機聴感確認。小音量で読み、沈みが続くか/曲を主張しないか/数分で疲れないかを聞く。
+- blockers   : 実iPhone/Safari・ロック復帰・イヤホン差・実機PWA install/offline・耳の合格は未検証。
+
 ## 2026-09-19 — E45・沈む地の音と有限応答を本編へ統合
 - agent      : Codex（単一会話・別task/agentなし）
 - goal       : 「続けて／磨いて／本番デプロイはやらん？」を本編統合と既存Pagesへの公開依頼として進める。

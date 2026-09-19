@@ -1,6 +1,6 @@
 # E45 — 沈む地の音と、世界の応答
 
-Status: 実装・自動/ブラウザ検証済 / feature branchで差分review済 / 公開前。
+Status: 実装・自動/ブラウザ検証・本編公開済 / feature branchで差分review済 / 実機聴感の確認待ち。
 
 本編入口: [Hazama](https://quietbriony.github.io/hazama/?v=e45)
 比較原型: [Scene Listening 02](scene-response-trial.md)
@@ -52,6 +52,19 @@ OSの視覚効果軽減では従来どおり持続音/自動鼓動なし、操�
   最初のQAでは終端遷移待ちと既存onboardingキーを考慮しないassertを修正し、残りのlifecycle検査を再実行した。
 - 同一会話で差分review: 進行/保存/本文への変更なしを確認し、開始時の二重fade targetと
   断片FMの予約開始値を修正。その最終Audioで21条件の合成出力を再検査した。
+
+## 本番公開の確認（2026-09-19）
+
+- 実装commit `c253f2e8cd77ca37302748975a15c78bc0c2eff7` をfeature branchからmasterへfast-forwardし、通常push。
+  既存GitHub Pages deployment `35449782311` は同SHAでsuccess。新しいworkflowや公開設定は追加していない。
+- 本編/locale/PWA/比較labの13資産についてHTTP 200・MIME・ローカルとの内容一致を確認。
+- 旧E44 SWを持つChromiumでE45入口を開き、更新確認による再読込を経て入口が有効になった。
+  `slice.js?v=e45`・`sw.js?v=e45`・`hazama-pwa-e45-static/runtime`への同期を確認。
+- 公開本編の構造ルートをC→Bへの抗い/再訪を含めΩ終端まで操作。認識14点、音のpause/手動再開、
+  hidden模擬/pagehide/Context再生成、320px横overflowなし、エラー0、最後の全Context closed/予約音0。
+  reloadとオフラインの入口起動でも保存を維持し、自動で音を開始しないことを確認。
+- 公開比較labも4案×5場面を通過し、全Context closed・エラー0を確認。QAの予約音集計は、
+  すでにclosedのContext内の記録まで数えていたため、終了状態を含めて再確認した。
 
 ## 人間に残す確認
 
