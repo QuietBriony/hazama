@@ -1385,7 +1385,7 @@
     let beat = null;
     if (truth === true) {
       state.attunement = Math.min(99, state.attunement + ATTUNE.echoGain);
-      Audio.pulseOnce(0.9);
+      Audio.respond("recognition");
       // E14: Z（外殻最終・Ω 直前）の真ビートは Q より強い断定＝「外殻を貫いた」
       beat = id === "Z"
         ? { who: "cold", t: "——あなたの降下は、外殻を貫いた。" }
@@ -1417,14 +1417,19 @@
     if (c.kind === "retreat" && !c.terminal) return resolveResist(c);
     // E25: A の岐路の「身体で受けとめる(soma 幹)」は"別の降り方"であって浅い読みではない＝認識の剥がれ対象外。
     //   deep 幹の +1 は維持。trunk 選択は読みの深浅と別軸（E16「soma は罰でなく別の降り方」意図に合わせる）。
+    const previousAttunement = state.attunement || 0;
     if (!(JUNCTIONS.has(state.id) && c.kind === "surface")) gainRecognition(c);  // E3: 深い構造読みで育ち／表層で剥がれる
     state.sink += c.sink || 0;
     state.dread = Math.min(1, state.dread + (c.dread || 0));
     if (c.close && state.returnPaths > 0) state.returnPaths -= 1; // 戻り道は復活しない
-    Audio.pulseOnce(c.kind === "descend" ? 1 : c.kind === "surface" ? 0.85 : 0.5);
     const to = Route.resolve(state.id, c);   // 分岐ルーティング（表層弾き＝別ルート前進 / 周回＝別の幹）
     if (to === "__edge") { state.wagered = !!c.wager; return renderEdge(); }   // E19: 賭け（核を貫く）かどうかを終端へ持ち越す
+    const recognized = (previousAttunement < 1 && state.attunement >= 1)
+      || (previousAttunement < ATTUNE.omegaThreshold && isAttuned());
+    const revisited = (state.visits[to] || 0) > 0;
     renderNode(to);
+    // E45: 鳴らすのは状態確定後。認識の節目/再訪だけ断片が戻り、毎択を旋律にしない。
+    Audio.respond(recognized ? "recognition" : revisited ? "return" : "descend");
   }
 
   // 抗う/戻るの判定。尺度は観測者数＝物語深度（単調増加で、早々に飽和する沈下より安定）。
@@ -1444,26 +1449,24 @@
         ? "——戻ろうとする。が、上が、もう無い。世界が、一段こちらを引き込んだ。"
         : "——抗う手が、空を掻く。戻り道は、とうに尽きていた。" };
       addSink += 2; addDread += 0.06;
-      Audio.pulseOnce(1);
     } else if (depth >= RESIST_STRAIN) {
       // 抗えるが引き込まれる（_hold ノードが地の文で語るので、ここでは追いビートを足さない）
       state.returnPaths -= 1; state.resisted += 1;
       target = c.to;
       addSink += 1; addDread -= 0.03;
-      Audio.pulseOnce(0.55);
     } else {
       // 浅い：少し戻れる
       state.returnPaths -= 1; state.resisted += 1;
       target = c.back || c.to;
       beat = { who: "cold", t: "——息を整え、来た方へ。まだ、戻れる。だが沈んだ分は、もう戻らない。" };
       addDread -= 0.06;
-      Audio.pulseOnce(0.4);
     }
     state.sink += addSink;
     state.dread = Math.min(1, Math.max(0, state.dread + addDread));
     state.resistBeat = beat;
     if (target === "__edge") return renderEdge();
     renderNode(target);
+    Audio.respond("resist");
   }
 
   // ---------- 縁（増分の終わり。沈みきり/辛うじて で分岐） ----------
@@ -1711,6 +1714,9 @@
     let volume = 1; // 圧で変動するmasterとは別の最終音量。既定1＝従来の音を変えない。
     let lfo = null, lfoGain = null, drones = [], pulseTimer = null, on = false, playing = false;
     let suspendedByVisibility = false;
+    let audioEpoch = 0, onChange = () => {};
+    const transients = new Set(); // E45: scheduled/fading voicesも含めて上限・停止を一元化。
+    let responseStep = 0;
     // depth=深度(rank/沈下の濃い方・0..1) / dread=圧(0..1) / density=観測者の多声(0..1)。
     // depth.html のリアクティブ設計（深さ→音域/cutoff/残響、多声→密度、圧→不協和/鼓動）を
     // 同一document の内製エンジンへ畳み込んだ信号。menace=浅は馴染む/深で威圧。
@@ -1720,9 +1726,9 @@
     // E31: desktopの既存音は維持し、coarse pointerだけ持続音/IR budgetを下げる。
     // reduced-motionは自動drone/pulseを作らず、実手勢のtransientだけを残す。
     const AUDIO_BUDGETS = Object.freeze({
-      full:   Object.freeze({ partials: 6, impulseSeconds: 2.8, wetScale: 1, pulse: true }),
-      light:  Object.freeze({ partials: 3, impulseSeconds: 0.8, wetScale: 0.45, pulse: true }),
-      static: Object.freeze({ partials: 0, impulseSeconds: 0, wetScale: 0, pulse: false })
+      full:   Object.freeze({ partials: 6, impulseSeconds: 2.8, wetScale: 1, pulse: true, transients: 24 }),
+      light:  Object.freeze({ partials: 3, impulseSeconds: 0.8, wetScale: 0.45, pulse: true, transients: 12 }),
+      static: Object.freeze({ partials: 0, impulseSeconds: 0, wetScale: 0, pulse: false, transients: 8 })
     });
     const coarsePointer = !!window.matchMedia && window.matchMedia("(pointer: coarse)").matches;
     const audioTier = REDUCED ? "static" : coarsePointer ? "light" : "full";
@@ -1753,7 +1759,7 @@
       const C = window.AudioContext || window.webkitAudioContext;
       ctx = new C();
       master = ctx.createGain(); master.gain.value = 0.0001;
-      master.gain.setTargetAtTime(0.26, ctx.currentTime + 0.05, 0.8);
+      // apply() alone owns the fade-in target; a later fixed ramp must not override the current depth/headroom.
       // E31: guardrail。音圧を稼がず、既存layerが重なった瞬間のpeakだけを受ける。
       compressor = ctx.createDynamicsCompressor();
       compressor.threshold.value = -18; compressor.knee.value = 12; compressor.ratio.value = 4;
@@ -1783,7 +1789,13 @@
       }
       on = true; playing = true; suspendedByVisibility = false; schedulePulse(); apply(true);
       // 実手勢の中で resume()＝モバイルでも解禁される（同一document の context なので通る）。
-      if (ctx.state !== "running") ctx.resume();
+      const opening = ctx;
+      ctx.onstatechange = () => {
+        if (ctx !== opening || opening.state !== "interrupted") return;
+        ++audioEpoch; playing = false; suspendedByVisibility = true;
+        clearPulse(); clearTransients(); onChange();
+      };
+      return resumeContext();
     }
     // playing は「鳴らす意図」を表す（ctx.suspend/resume は非同期で state 反映が遅れるため、
     // チップ表示はこの意図フラグを正にする）。
@@ -1796,10 +1808,30 @@
       if (!on) return start();
       playing = !playing;
       suspendedByVisibility = false;
+      if (playing) return resumeContext();
+      ++audioEpoch; clearPulse(); clearTransients(); pauseContext(ctx);
+    }
+    function pauseContext(context) {
+      try { const pending = context.suspend(); if (pending && pending.catch) pending.catch(() => {}); } catch (e) {}
+    }
+    function resumeContext() {
+      const opening = ctx, epoch = ++audioEpoch;
+      const failed = () => {
+        if (ctx === opening && epoch === audioEpoch) {
+          playing = false; clearPulse(); clearTransients(); onChange();
+        }
+        return false;
+      };
       try {
-        if (playing) { ctx.resume(); schedulePulse(); }
-        else { clearPulse(); ctx.suspend(); }
-      } catch (e) {}
+        // resume is invoked synchronously inside the gesture; only its completion is deferred.
+        return Promise.resolve(opening.resume()).then(() => {
+          if (ctx !== opening || epoch !== audioEpoch || !playing || document.hidden) {
+            if (ctx === opening && (!playing || document.hidden)) pauseContext(opening);
+            return false;
+          }
+          schedulePulse(); onChange(); return true;
+        }, failed);
+      } catch (e) { return Promise.resolve(failed()); }
     }
     function apply(now) {
       if (!on || !ctx) return;
@@ -1820,7 +1852,7 @@
         dr.osc.detune.setTargetAtTime(baseCents, t, 1.8);
       });
       filter.frequency.setTargetAtTime(Math.max(280, cutoff), t, slow);
-      master.gain.setTargetAtTime(0.24 + d * 0.06, t, 0.8);
+      master.gain.setTargetAtTime((0.24 + d * 0.06) * 0.9, t, 0.8); // E45: 重ねる応答のため固定の余裕を残す。
       if (wetGain) wetGain.gain.setTargetAtTime((0.1 + s * 0.34) * audioBudget.wetScale, t, 1.8); // 深いほど広い残響
       if (lfo) lfo.frequency.setTargetAtTime(0.05 + s * 0.1, t, 1.8);
       if (lfoGain) lfoGain.gain.setTargetAtTime(3 + s * 10 + dens * 4 + (colorSeed % 5) + axisWobble, t, 1.8); // うねり幅（cents）＋E21 幹の揺れ
@@ -1835,7 +1867,7 @@
       pulseTimer = setInterval(() => beat(0.5), Math.max(440, Math.round(1150 - cur.dread * 680))); // 圧で鼓動が速い
     }
     function beat(amp) {
-      if (!on || !ctx || ctx.state !== "running") return;
+      if (!on || !playing || !ctx || ctx.state !== "running" || document.hidden) return;
       const t = ctx.currentTime;
       const osc = ctx.createOscillator(), g = ctx.createGain();
       osc.type = "sine"; osc.frequency.value = 98 - cur.depth * 30;
@@ -1843,20 +1875,91 @@
       g.gain.value = 0.0001;
       g.gain.exponentialRampToValueAtTime(0.06 * amp + cur.dread * 0.05, t + 0.02);
       g.gain.exponentialRampToValueAtTime(0.0001, t + 0.55);
-      osc.connect(g); g.connect(filter); osc.start(t); osc.stop(t + 0.6); // 鼓動も残響を通す
-      // 仕上げ: 選択時(amp>=0.8)だけ、やわらかい音色を一音添える＝可聴で音楽的なアクセント。
-      // 鼓動(自動 beat=0.5)には付けない＝うるさくしない。沈むほど低い音度＋短い余韻。
-      if (amp >= 0.8) {
-        const scale = [0, 3, 7, 10, 12];                          // 短調寄りの度数
-        const deg = scale[Math.min(scale.length - 1, Math.floor(cur.depth * scale.length))];
-        const f = (176 - cur.depth * 42) * Math.pow(2, deg / 12); // 中域＝端末スピーカーで明瞭
-        const o2 = ctx.createOscillator(), g2 = ctx.createGain();
-        o2.type = "triangle"; o2.frequency.value = f;
-        g2.gain.value = 0.0001;
-        g2.gain.exponentialRampToValueAtTime(0.055, t + 0.03);
-        g2.gain.exponentialRampToValueAtTime(0.0001, t + 0.95);
-        o2.connect(g2); g2.connect(filter); o2.start(t); o2.stop(t + 1.0);
+      osc.connect(g); g.connect(filter);
+      trackTransient([osc], [osc, g], g, "pulse");
+      osc.start(t); osc.stop(t + 0.6); // 地の鼓動は維持。毎択の音階アクセントは応答へ置き換える。
+    }
+    function releaseTransient(voice) {
+      voice.sources[0].onended = null;
+      voice.nodes.forEach((node) => { try { node.disconnect(); } catch (e) {} });
+      transients.delete(voice);
+    }
+    function stopTransient(voice, fade = 0) {
+      const t = ctx ? ctx.currentTime : 0;
+      try {
+        voice.gain.gain.cancelScheduledValues(t);
+        if (fade) voice.gain.gain.setTargetAtTime(0, t, .008);
+        else voice.gain.gain.setValueAtTime(0, t);
+      } catch (e) {}
+      voice.sources.forEach((source) => { try { source.stop(t + fade); } catch (e) {} });
+      if (!fade) releaseTransient(voice);
+    }
+    function clearTransients(tag, fade = false) {
+      for (const voice of [...transients]) if (!tag || voice.tag === tag) stopTransient(voice, fade ? .035 : 0);
+    }
+    function trackTransient(sources, nodes, gain, tag) {
+      while (transients.size >= audioBudget.transients) stopTransient(transients.values().next().value);
+      const voice = { sources, nodes, gain, tag };
+      transients.add(voice);
+      sources[0].onended = () => releaseTransient(voice);
+    }
+    // E45: Dの質感を既存filter/合成IR/単一compressorへ翻訳。曲/別engine/神経回路は読み込まない。
+    function respond(cue) {
+      if (!["enter", "descend", "recognition", "return", "resist"].includes(cue)) return false;
+      if (!on || !playing || !ctx || ctx.state !== "running" || document.hidden || volume === 0) return false;
+      clearTransients("response", true);
+      responseStep = (responseStep + 1) % 256;
+      const root = (116 - cur.depth * 40) * Math.pow(2, baseCents / 1200);
+      const t = ctx.currentTime + .025;
+      responseVoice("pulse", root * 1.014, t + .03, .62, .13);
+      if (cue === "resist") responseVoice("pulse", root * .98, t + .37, .48, .055);
+      responseVoice("body", root * 2.004, t + .38, 2.8, .026);
+      responseVoice("grain", root * 6.07, t + (cue === "resist" ? .08 : 1.18), cue === "resist" ? .42 : .8, .065);
+      if (cue === "recognition" || cue === "return") {
+        const returning = cue === "return";
+        responseVoice("fragment", root * 4.039, t + (returning ? 1.4 : 1.02), 3.1, returning ? .045 : .07);
+        if (audioTier === "full") responseVoice("fragment", root * 6.014, t + (returning ? 3.1 : 2.76), 2.8, returning ? .03 : .045);
       }
+      return true;
+    }
+    function responseVoice(kind, frequency, at, duration, amplitude) {
+      const grain = kind === "grain", carrier = grain ? ctx.createBufferSource() : ctx.createOscillator();
+      const gain = ctx.createGain(), sources = [carrier], nodes = [carrier, gain];
+      let signal = carrier;
+      if (grain) {
+        const buffer = ctx.createBuffer(1, Math.ceil(ctx.sampleRate * (duration + .04)), ctx.sampleRate);
+        const data = buffer.getChannelData(0);
+        let seed = (Math.round(frequency * 100) ^ Math.imul(responseStep + 1, 0x485a4d41)) >>> 0, memory = 0;
+        for (let i = 0; i < data.length; i++) {
+          seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0;
+          memory = .86 * memory + .14 * (seed / 2147483648 - 1);
+          data[i] = Math.max(-1, Math.min(1, memory * 3.4));
+        }
+        carrier.buffer = buffer;
+        const band = ctx.createBiquadFilter(); band.type = "bandpass"; band.Q.value = .8;
+        band.frequency.setValueAtTime(frequency, at);
+        band.frequency.setTargetAtTime(frequency * .67, at + .12, .3);
+        carrier.connect(band); signal = band; nodes.push(band);
+      } else {
+        carrier.type = kind === "body" ? "triangle" : "sine";
+        carrier.frequency.setValueAtTime(frequency, at);
+        if (kind === "pulse") carrier.frequency.exponentialRampToValueAtTime(frequency * .65, at + .22);
+        else carrier.frequency.setTargetAtTime(frequency * .993, at + .6, 1.4);
+        if (kind === "fragment") {
+          const mod = ctx.createOscillator(), amount = ctx.createGain();
+          mod.frequency.value = frequency * 1.997;
+          amount.gain.setValueAtTime(frequency * .14, at);
+          amount.gain.exponentialRampToValueAtTime(frequency * .025, at + .65);
+          mod.connect(amount).connect(carrier.frequency); sources.push(mod); nodes.push(mod, amount);
+        }
+      }
+      gain.gain.value = 0;
+      gain.gain.setValueAtTime(0, at);
+      gain.gain.linearRampToValueAtTime(amplitude * .65, at + (kind === "pulse" ? .012 : .12));
+      gain.gain.exponentialRampToValueAtTime(.00001, at + duration);
+      signal.connect(gain).connect(filter);
+      trackTransient(sources, nodes, gain, "response");
+      sources.forEach((source) => { source.start(at); source.stop(at + duration + .04); });
     }
     // グリッジ・バーストと同期して音も一瞬"裂ける"（共有信号＝視覚と一緒に壊れていく）。
     //  - drone を一瞬デチューン（音程が割れる）→ baseCents へ復帰
@@ -1864,7 +1967,7 @@
     //  - 短いノイズ・バースト（バンドパス）でデータモッシュ的なザッという質感
     // intensity は深いほど大きい（Glitch から depth 連動で渡す）。
     function glitchHit(intensity) {
-      if (!on || !ctx || ctx.state !== "running") return;
+      if (!on || !playing || !ctx || ctx.state !== "running" || document.hidden) return;
       const t = ctx.currentTime, amt = Math.max(0, Math.min(1.2, intensity));
       try {
         drones.forEach((dr) => {
@@ -1888,6 +1991,7 @@
         ng.gain.setValueAtTime(0.018 * amt + cur.dread * 0.012, t);
         ng.gain.exponentialRampToValueAtTime(0.0001, t + 0.05);
         src.connect(bp); bp.connect(ng); ng.connect(master);
+        trackTransient([src], [src, bp, ng], ng, "glitch");
         src.start(t); src.stop(t + 0.06);
       } catch (e) {}
     }
@@ -1907,7 +2011,8 @@
     // E21: 縁の呼気＝解決音ではない、ただの息。低い一音が膨らんで、わずかに沈んで、ほどける。
     //   Ω=低く満ちる／浮上=中域で醒める。Audio 未解禁なら no-op。
     function breath(attuned) {
-      if (!on || !ctx || ctx.state !== "running") return;
+      if (!on || !playing || !ctx || ctx.state !== "running" || document.hidden) return;
+      clearTransients("response", true);
       const t = ctx.currentTime;
       const f0 = attuned ? 80 : 128;
       const o = ctx.createOscillator(), g = ctx.createGain();
@@ -1916,19 +2021,21 @@
       g.gain.value = 0.0001;
       g.gain.setTargetAtTime(attuned ? 0.075 : 0.05, t + 0.08, 1.0); // ゆっくり吸う
       g.gain.setTargetAtTime(0.0001, t + 2.8, 2.0);                  // ゆっくり吐く＝呼気
-      o.connect(g); g.connect(filter); o.start(t); o.stop(t + 6.0);
+      o.connect(g); g.connect(filter); trackTransient([o], [o, g], g, "breath");
+      o.start(t); o.stop(t + 6.0);
     }
     // E31: hiddenから勝手に鳴り直さない。再開は既存chipの実手勢だけ。
     function suspendForVisibility() {
       if (!on || !ctx || !playing) return false;
-      playing = false; suspendedByVisibility = true; clearPulse();
-      try { const pending = ctx.suspend(); if (pending && pending.catch) pending.catch(() => {}); } catch (e) {}
+      ++audioEpoch; playing = false; suspendedByVisibility = true; clearPulse(); clearTransients();
+      pauseContext(ctx);
       return true;
     }
     // E31: pagehide/BFCacheでも単一AudioContextを閉じ、次の実手勢で再生成可能にする。
     function dispose() {
-      clearPulse();
+      ++audioEpoch; clearPulse(); clearTransients(); responseStep = 0;
       const closing = ctx;
+      if (closing) closing.onstatechange = null;
       drones.forEach(({ osc, g }) => {
         try { osc.stop(); } catch (e) {}
         try { osc.disconnect(); g.disconnect(); } catch (e) {}
@@ -1948,7 +2055,9 @@
       } catch (e) {}
     }
     return {
-      start, toggle, setVolume, pulseOnce: (a) => beat(a), glitchHit, setAxis, breath, suspendForVisibility, dispose,
+      start, toggle, setVolume, pulseOnce: (a) => beat(a), respond, glitchHit, setAxis, breath, suspendForVisibility, dispose,
+      set onChange(callback) { onChange = typeof callback === "function" ? callback : () => {}; },
+      get transientCount() { return transients.size; },
       get volume() { return volume; },
       get on() { return on; },
       get playing() { return playing; }, // 鳴らす意図（チップ表示の正）
@@ -1957,7 +2066,7 @@
       setColor: (seed) => { colorSeed = seed; apply(false); },
       update: (depth, dread, density) => {
         const prev = cur.dread;
-        cur = { depth, dread, density: density || 0 };
+        cur = { depth: clamp01(depth || 0), dread: clamp01(dread || 0), density: clamp01(density || 0) };
         apply(false);
         if (Math.abs(prev - dread) > 0.08) schedulePulse(); // 圧が動いたら鼓動の速さを取り直す
       }
@@ -2503,7 +2612,15 @@
       if (sound && entered) sound.checked = Audio.playing;
     }
     // 「沈む」タップ（実手勢・同一document）の中で呼ばれる＝ここで resume が通る。
-    function startPrimary() { if (chip) chip.hidden = false; if (Preferences.sound) Audio.start(); label(); }
+    Audio.onChange = label;
+    function startPrimary() {
+      if (chip) chip.hidden = false;
+      if (Preferences.sound) {
+        const ready = Audio.start();
+        ready?.then?.((started) => { if (started) Audio.respond("enter"); label(); });
+      }
+      label();
+    }
     function cycle() { Audio.toggle(); Preferences.sound = Audio.playing; label(); }
     function setEnabled(enabled) {
       Preferences.sound = !!enabled;
@@ -2582,7 +2699,7 @@
     // 翻訳が取得できなくても日本語の起動は止めない。言語は表紙での明示選択・保存しない。
     const controller = new AbortController();
     const timer = window.setTimeout(() => controller.abort(), 8000);
-    fetch("locales/en.json?v=e44", { signal: controller.signal }).then((response) => {
+    fetch("locales/en.json?v=e45", { signal: controller.signal }).then((response) => {
       if (!response.ok) throw new Error("English catalog HTTP " + response.status);
       return response.json();
     }).then((data) => {
@@ -2594,7 +2711,7 @@
   }
 
   async function loadData() {
-    const res = await fetch("depths-shell.json?v=e44", { cache: "no-store" });
+    const res = await fetch("depths-shell.json?v=e45", { cache: "no-store" });
     if (!res.ok) throw new Error(`depths-shell HTTP ${res.status}`);
     const data = await res.json();
     if (!data || typeof data !== "object" || !data.start || !data.nodes || !data.nodes[data.start]) {
@@ -2674,7 +2791,7 @@
   function registerSlicePWA() {
     if (!("serviceWorker" in navigator)) return;
     const register = () => {
-      navigator.serviceWorker.register("sw.js?v=e44", { scope: "./", updateViaCache: "none" }).then((reg) => {
+      navigator.serviceWorker.register("sw.js?v=e45", { scope: "./", updateViaCache: "none" }).then((reg) => {
         if (typeof reg.update === "function") reg.update().catch(() => {});
       }).catch((err) => console.warn("[Hazama slice] SW register failed:", err));
     };

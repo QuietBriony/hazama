@@ -1,8 +1,8 @@
 // Authored response rules, not a fly-brain simulation or a continuous music player.
-export const VERSION = "scene-20260919-1";
+export const VERSION = "scene-20260919-2";
 export const MAX_SECONDS = 120;
 export const MODES = Object.freeze({
-  current: { label: "A · 現行音", description: "本編と同じドローン・鼓動・選択音。比較用の固定seed。" },
+  current: { label: "A · 原型", description: "E44本編のドローン・鼓動・選択音を保存。比較用の固定seed。" },
   b: { label: "B · 拍動", description: "沈む・引き返すときに短い拍が現れ、読み続けると退く。" },
   c: { label: "C · 断片", description: "気づいたときに断片がつながり、戻ると少し姿を変える。" },
   d: { label: "D · 統合", description: "Aの沈む地の音は続く。その奥で、短い拍動・擦れる音・曇った断片が応える。" }

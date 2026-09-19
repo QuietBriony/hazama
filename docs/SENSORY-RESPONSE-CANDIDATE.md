@@ -1,6 +1,11 @@
 # Hazama Sensory Response candidate
 
-Status: **E31 governor production採用 / Sensory Frame・labはtools-only**
+Status: **E31 governor＋E45世界の応答を本編統合 / Sensory Frame・lab自体はtools-only**
+
+2026-09-19続行: ユーザーの「続けて／磨いて／本番デプロイはやらん？」を受け、
+[E45本編統合](playtest/world-audio-e45.md)へ進む。公開の依頼として扱い、実機聴感の合格とは記録しない。
+本編はDの方向を既存Audioへ翻訳し、認識の節目・再訪・抗いで応答を出す。試聴用engineはimportしない。
+比較ページのA/DはE44の原型をhash固定で保ち、本編更新に追随して比較条件を変えない。
 
 2026-09-19: 同じ本文付き比較に「D・統合」を追加。ユーザーの「B/Cはいいが音楽っぽい、
 Aの不気味に沈む感じと効果音/BGMの質感も統合したい」を受け、Aの持続音を下地に、

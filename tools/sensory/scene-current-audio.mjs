@@ -1,4 +1,4 @@
-// Tools-only snapshot of the production Audio IIFE. The smoke check enforces exact source parity.
+// Frozen E44 Audio reference. The smoke checks its hash; E45 production is tested separately.
 // Do not import this fixture into the game. No build step is required to use the lab.
 export function createCurrentAudio(window, document, REDUCED = false) {
   const setInterval = window.setInterval.bind(window);

@@ -1,5 +1,5 @@
-import { MODES, SCENES } from "./scene-score.mjs?v=scene-20260919-1";
-import { SceneAudioSession } from "./scene-response-audio.mjs?v=scene-20260919-1";
+import { MODES, SCENES } from "./scene-score.mjs?v=scene-20260919-2";
+import { SceneAudioSession } from "./scene-response-audio.mjs?v=scene-20260919-2";
 
 export function setupSceneLab(doc, host) {
   const session = new SceneAudioSession(host, doc);
@@ -54,7 +54,7 @@ export function setupSceneLab(doc, host) {
     if (complete) { index = 0; complete = false; renderScene(true); }
     try {
       if (await session.start(mode, index)) {
-        status(mode === "current" ? "現行音で試聴中 · 読み終えたら次の場面へ" : mode === "d"
+        status(mode === "current" ? "E44の原型で試聴中 · 読み終えたら次の場面へ" : mode === "d"
           ? (session.current?.tier === "static" ? "統合で試聴中 · OS設定により持続音なし、操作への応答のみ" : "統合で試聴中 · 反応の後も沈む地の音が続きます")
           : "反応音で試聴中 · 数秒で静かになります。読み終えたら次へ");
         byId("scene-title").focus({ preventScroll: true });

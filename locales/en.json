@@ -41,7 +41,7 @@
     "OSの視覚効果軽減を使っている場合、文字は常に全文表示になります。": "If your system uses reduced motion, text is always shown immediately.",
     "音を鳴らす": "Enable sound",
     "音量": "Volume",
-    "音は「沈む」のあとに鳴ります。0%で無音、100%がこれまでの音量です。": "Sound starts after you select Descend. 0% is silent; 100% is the original volume.",
+    "音は「沈む」のあとに鳴ります。0%で無音です。小さな音量から試してください。": "Sound starts after you select Descend. 0% is silent. Begin at a low volume.",
     "音あり推奨・片手で読める縦長": "Sound recommended · A portrait-format reading experience",
     "深度を読み込み中…": "Loading the depths…",
     "♪ 再開": "♪ Resume",

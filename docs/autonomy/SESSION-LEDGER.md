@@ -19,6 +19,31 @@ Hazama 自律開発 session の追記専用ログ。
 
 ---
 
+## 2026-09-19 — E45・沈む地の音と有限応答を本編へ統合
+- agent      : Codex（単一会話・別task/agentなし）
+- goal       : 「続けて／磨いて／本番デプロイはやらん？」を本編統合と既存Pagesへの公開依頼として進める。
+- baseline   : master / a4efe78、origin差分0/0・clean。hazama-check 2 PASS / 0 FAIL / 0 SKIP。
+- branch     : codex/hazama-e45-world-audio。実装後に同一会話で差分review。独立agentによるreviewではない。
+- shipped    : Dの方向をslice.js内のAudioへ翻訳。認識の節目/エコー正認識/再訪にだけ断片、降下は短い拍/擦れ、
+  抗いは不均等な2拍。Aの持続音・既存空間・単一compressor/最終音量を共有、master0.9倍/応答gain0.65倍。
+  既存one-shotも含む声数上限24/12/8、終了disconnect、pause/hidden/interruptedの予約音取消、resume競合/拒否を追加。
+  本編/PWA/locale参照をe45同期。音量案内を日英で更新。比較A/DはE44原型へhash固定し、表示/queryのみ更新。
+- checks     : hazama-check 2 PASS / 0 FAIL / 0 SKIP、slice構文/diff check PASS。
+  world-response-smokeは実Audio・実choose/resolveResist、3tier各300回、音量/上限/終了/遅延resumeを検査。
+  native OfflineAudioContext 44.1kHz/stereo/12秒×21条件、最終peak最大0.17819、非有限/clip 0、全tier mute=0。
+  検証clockで駆動したnative DSPの検査で、耳や実時間性能の合格とはしない。
+- browser    : PlaywrightスキルのCLIでChromium。本編の構造→Ω（C→Bの抗い/再訪あり）、次周の流れ→Ω、
+  英語身体8点→浮上をUI通過。全文表示とQA用出力先ミュートを使用。390/320pxの画像を目視・横overflowなし。
+  pause/hidden模擬→手動再開/pagehide→新Context、予約音0・close・エラー0。英語reduced-motionの持続音なしを確認。
+  既存spiral/onboardingの全保存値は音操作/reload/offline coverで不変。QAの終端待ち/既存キーassertを直して再実行。
+- review     : 開始時に後着の固定fadeが深度/余裕のtargetを上書きする点を整理し、FMの予約開始値を明示。
+  最終Audioで合成検査を再実行。本番進行/認識/抗い数値・保存形式・原文・CSSには変更なし。
+- scope      : 音と必要な案内/検証/docs/versionだけ。音源/録音/依存/新hosting/公開設定なし、Music/Openclaw-lab無変更。
+- release    : 今回の依頼で本編公開まで進める。聴感合格とは扱わない。このentry作成時点はcommit/push前。
+- backlog    : HZ-BL-025を作成。HZ-BL-024の比較原型、HZ-BL-023の小回路、他のhuman gateは維持。
+- next       : 公開E45で小音量から沈み、世界の気配として馴染むか/数分で疲れないかを人間が確認する。
+- blockers   : 実機Safari/ロック/イヤホン差・PWA実機体感・音の世界観/販売品質は未検証。
+
 ## 2026-09-19 — D統合案を既存Pagesへ公開・旧cacheからの切替も確認
 - agent      : Codex（単一会話・別task/agentなし）
 - goal       : 継続承認どおりスマホで聴けるDの比較を公開し、配信と停止規約を再確認する。

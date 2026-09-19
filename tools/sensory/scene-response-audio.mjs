@@ -1,5 +1,5 @@
-import { createCurrentAudio } from "./scene-current-audio.mjs?v=scene-20260919-1";
-import { MODES, SCENES, MAX_SECONDS, responseScore } from "./scene-score.mjs?v=scene-20260919-1";
+import { createCurrentAudio } from "./scene-current-audio.mjs?v=scene-20260919-2";
+import { MODES, SCENES, MAX_SECONDS, responseScore } from "./scene-score.mjs?v=scene-20260919-2";
 
 export const MAX_VOICES = 24;
 // Fixed headroom allocation, never raised by depth, response count or feedback.

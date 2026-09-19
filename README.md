@@ -17,9 +17,9 @@ Hazama は、沈むほど戻りにくい「降下する対話」の没入型静�
 - 制作候補: `docs/BLENDER-AUTHORING.md`（WorkerPC Blender 5.2をrepo外の静止画制作実行器に限定。runtime非依存）
 - 体験版候補: [E41 初見テスト](docs/playtest/steam-demo-candidate-e41.md)（既存Web版の初回２ルート・人間の評価待ち。Steam提出用ビルドではない）
 - 人に渡す試遊案内: [日本語](docs/playtest/invite-ja.md) / [English](docs/playtest/invite-en.md)。実施側は[最初のラウンド](docs/playtest/first-round.md)へ（準備済み・人間の結果は未取得）
-- 感覚統合: `docs/SENSORY-RESPONSE-CANDIDATE.md`（E31 production governor、本編未配線のSensory Frame＋native Web Audio試聴lab）
+- 感覚統合: `docs/SENSORY-RESPONSE-CANDIDATE.md`（E31 governor＋E45本編応答。Sensory Frame/labそのものは本編未配線） / [E45音の統合・検証](docs/playtest/world-audio-e45.md)
 - 神経回路風の音実験: [スマホで試聴](https://quietbriony.github.io/hazama/tools/sensory/sensory-audio-lab.html?v=neural-20260914-1) / [比較手順と接続仕様](docs/playtest/neural-modulator-trial.md)。`tools/sensory/`内で通常の揺らぎと64個の簡易回路をA/B比較。本編未配線・実際のハエの脳データは不使用・人間の試聴待ち。
-- 本文と音の比較: [世界が、音で応える](https://quietbriony.github.io/hazama/tools/sensory/scene-response-lab.html?v=scene-20260919-1) / [試聴手順](docs/playtest/scene-response-trial.md)。同じ5場面をAの現行音・Bの拍動・Cの断片・Dの統合で読む。DはAの沈む持続音に、間引いた拍動・曇る断片・合成の擦れ音を重ねる。Musicの曲や回路を取り込まないtools-only試作。本編E44は不変。
+- 本文と音の比較: [世界が、音で応える](https://quietbriony.github.io/hazama/tools/sensory/scene-response-lab.html?v=scene-20260919-2) / [試聴手順](docs/playtest/scene-response-trial.md)。AのE44原型・Bの拍動・Cの断片・Dの統合案は比較用に保存。本編E45はDの方向を実際の認識・再訪・抗いに合わせて内製Audioへ翻訳した。曲・ハエ回路・labの実行エンジンは取り込まない。
 
 > 旧 forward 実装（Gate Run 資源ゲーム・Music ブリッジ・v2.x 系）と `slice/` 重複・別プレビュー repo は
 > 整理・撤去済み。履歴は git に保全（ロールバック: `f8763f2` 没入初版 / `7d5def9` forward v2.45 /
@@ -106,7 +106,8 @@ node scripts/hazama-check.mjs
   縁の二択と縁カード、出現中の連打・古い画面の遅延処理・reduced-motion下の単一選択、
   README/AGENTS が存在しない scripts を案内していないこと、depths グラフ到達性
 - tools-only音実験の回帰: `scripts/sensory-frame-smoke.mjs` / `scripts/neural-modulator-smoke.mjs`も単一checkに含む。再現性・反応/回復・長時間の数値境界・停止/非表示・音量上限を確認する。音質の合格判定ではない。
-- 本文付き比較の回帰: `scripts/scene-response-smoke.mjs`も単一checkに含む。現行Audioの切り出しと本編コードの完全一致、本文抜粋とA/B/Cスコアの維持、Dの単一Contextでの持続音/応答の共存、反応音の長さ/声数、音量/負荷tier/開始競合/中断/停止を確認する。本編Audioを変更した場合は比較用snapshotも確認・同期する（build stepではない）。
+- 本文付き比較の回帰: `scripts/scene-response-smoke.mjs`はE44原型Audioのhash固定、本文抜粋とA/B/Cスコアの維持、Dの単一Contextと音量/負荷tier/停止を検証する。E45以降は比較のAを現行音へ自動置換しない。
+- 本編応答の回帰: `scripts/world-response-smoke.mjs`は実際のAudioとchoose/resolveResistから、認識の節目/再訪/抗いの接続、単一mix/音量、声数上限、停止/中断/遅延resume取消を検証する。
 
 `0 FAIL` が commit 前提（`AGENTS.md` 参照）。
 
@@ -353,6 +354,13 @@ Codex / Claude Code が同じ順番で作業を継続するための薄いエン
   「読書優先」は文字を明瞭にし、背景の明滅/揺れを抑えるページ内だけの選択肢。通常の文字送りと音は独立のまま。
   本文のTab移動とキーボードscroll、自動追従の解除を整備。新しい操作も日英対応。
   原文/分岐/数値/保存形式/音エンジンは不変（`?v=e44`）。Steam提出/PC配布の完了や人間の評価とは区別する。
+
+- **進化 E45（2026-09・沈む地の音と世界の応答）**: Aの持続音とDの方向を既存Audioへ統合。
+  通常の降下は短い拍動/擦れ、認識の節目と再訪だけに曇る断片を添える。既存filter/合成IR/
+  単一compressor/最終音量を共有し、共通masterは従来カーブの0.9倍、応答gainは0.65倍で余裕を残す。
+  full/light/staticのtransient上限24/12/8、終了後disconnect、停止/非表示/中断時の予約音取消、
+  遅延resume競合/拒否を検証。本編・PWA・英語カタログ参照は`?v=e45`へ同期。
+  本文/分岐/保存は不変。ハエ回路は未接続。公開の依頼と耳での最終評価は分けて記録する。
 
 ## Status / Rules
 

@@ -2,7 +2,11 @@
 
 Status: tools-only公開試作 / agent検証済み / 本文付きの人間試聴・採否待ち。
 
-入口: [世界が、音で応える](https://quietbriony.github.io/hazama/tools/sensory/scene-response-lab.html?v=scene-20260919-1)
+入口: [世界が、音で応える](https://quietbriony.github.io/hazama/tools/sensory/scene-response-lab.html?v=scene-20260919-2)
+
+E45本編統合への続行（2026-09-19）: 本編への反映を求めるユーザーの追加指示を受け、
+[本編側の応答](world-audio-e45.md)を別に実装。この比較はA/Dの地をE44へ固定して残す。
+以下の9月15日/19日の検証記録は、その時点の試作についての記録であり、実機の聴感合格ではない。
 
 ## 目的
 
@@ -19,7 +23,7 @@ Hazama世界に合うことは別だと指摘した。今回は曲の完成度�
 - 同じ本文抜粋: A→B→C→B→C、5場面。約1〜2分を目安に自分のペースで読む。
 - 本文は`depths-shell.json`の既存文そのまま。比較用の場面名・選択ラベル・正規化した
   音の状態は演出の台本であり、本編の認識判定/分岐/数値モデルを実行するものではない。
-- A・現行音: 本編のAudio IIFEを`scene-current-audio.mjs`へ切り出し、smokeで完全一致を検査。
+- A・原型: E44のAudio IIFEを`scene-current-audio.mjs`へ保存し、smokeでhash固定を検査。
   合成IR等の乱数だけ固定。深さ/圧/選択音を与えるが、背景のGlitchや終端・全進行の再現ではない。
 - B: 操作直後の短い拍動・低音・応答。圧を常時ビートにせず、数秒で退く。
 - C: 同じ開いたモチーフの断片。認識で一度つながり、再訪では一部を欠いて戻る。
@@ -34,7 +38,7 @@ Hazama世界に合うことは別だと指摘した。今回は曲の完成度�
 
 1. リンクをSafari等で開き、小音量から開始。選択だけでは鳴らない。
 2. まず「D・統合」で5場面を読む。各場面のボタンは読み終わってから押す。
-3. 「A・現行音」で同じ5場面を読み、沈む感じがDでも残っているかを比べる。
+3. 「A・原型」で同じ5場面を読み、沈む感じがDでも残っているかを比べる。
 4. 余裕があれば「B」「C」も比較する。音量と端末音量をできるだけ変えない。
 5. 応答イベントは8秒未満で終わり、残響も退く。B/Cは無音へ、DはA由来の地の音へ戻る。
 6. 逆順でも比べ、疲れたら停止する。OSの「動きを減らす」が有効な場合は、本編と同様に
@@ -51,13 +55,13 @@ Hazama世界に合うことは別だと指摘した。今回は曲の完成度�
 - `tools/sensory/scene-score.mjs`: 本文snapshot、固定場面状態、有限長の作曲ルール。
 - `tools/sensory/scene-response-audio.mjs`: native Web Audio、応答層24発音voice上限、単一Context/停止競合制御。
   Dでは本番相当tierの持続音を同じContextへ加える。2分停止・非表示・中断時には両層を破棄する。
-- `tools/sensory/scene-current-audio.mjs`: 比較専用の本番Audioコピー。将来の本番Audio変更時は
-  smokeが不一致を知らせるので、コピーを確認して同期する。実行時の抽出/eval/build stepはない。
+- `tools/sensory/scene-current-audio.mjs`: 比較専用のE44 Audioコピー。E45からは本番の変更を反映せず、
+  原型のhashを検査する。本編の実Audioは別のsmokeで検証。実行時の抽出/eval/build stepはない。
 - `scripts/scene-response-smoke.mjs`: 単一`hazama-check`に接続。
 
-本編index/slice.js/slice.css/sw/depths/localeは無変更（E44）。新しい保存/通信・音源・依存・
-service worker登録なし。旧labには入口リンクだけ追加。Music / Openclaw-labも変更しない。
-試作assetsだけを`scene-20260919-1`で同期し、既存PWA cacheを消さない。
+Scene 02初回作成時は本編無変更（E44）。続行の本編E45は別の記録へ切り分ける。
+この比較自体は新しい保存/通信・音源・依存・service worker登録なし。Music/Openclaw-labは変更しない。
+試作の表示とqueryを`scene-20260919-2`に更新。A/B/C/Dの音は変更せず、E44の原型として比較を保つ。
 
 ユーザーの2026-09-15継続承認: tools-only音の試作は、検証と既存Pages反映までを基本作業とする。
 スマホ公開の都度確認は不要。本編採用や新hosting/公開設定変更はこの承認に含めない。

@@ -8,11 +8,11 @@ const read = (path) => readFileSync(new URL(`../${path}`, import.meta.url), "utf
 const production = read("slice.js");
 const fixture = read("tools/sensory/scene-current-audio.mjs");
 const audioStart = "  const Audio = (() => {";
-const audioEnd = "\n  // ---------- 手続き的曼荼羅";
-const body = production.slice(production.indexOf(audioStart), production.indexOf(audioEnd)).trimEnd();
 const copy = fixture.slice(fixture.indexOf(audioStart), fixture.lastIndexOf("\n  return Audio;")).trimEnd();
-assert.ok(body.length > 12000, "full production Audio body, not a placeholder");
-assert.equal(copy, body, "current comparison must use the exact production Audio source; refresh the tools-only snapshot when production changes");
+assert.ok(copy.length > 12000, "full E44 reference Audio body, not a placeholder");
+assert.equal(createHash("sha256").update(copy).digest("hex"),
+  "17fadf2d659f7d204d4e91b1a0b1ec6f8281cdbf93e7a64aad1a8fbb7dbc6726",
+  "A and D retain the exact E44 reference; do not silently turn the comparison bed into E45");
 const depths = JSON.parse(read("depths-shell.json"));
 assert.deepEqual(SCENES.map((s) => s.node), ["A", "B", "C", "B", "C"]);
 assert.equal(SCENES[3].depth, SCENES[2].depth, "retreat does not reset descent");

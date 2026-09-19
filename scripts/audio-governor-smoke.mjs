@@ -10,9 +10,10 @@ const audioSource = slice.slice(audioStart, audioEnd).replace(/^  /gm, "");
 
 class FakeParam {
   constructor(value = 0) { this.value = value; }
-  setTargetAtTime(value) { this.value = value; }
-  setValueAtTime(value) { this.value = value; }
-  exponentialRampToValueAtTime(value) { this.value = value; }
+  setTargetAtTime(value) { assert.ok(Number.isFinite(value)); this.value = value; }
+  setValueAtTime(value) { assert.ok(Number.isFinite(value)); this.value = value; }
+  linearRampToValueAtTime(value) { this.setValueAtTime(value); }
+  exponentialRampToValueAtTime(value) { assert.ok(value > 0); this.setValueAtTime(value); }
   cancelScheduledValues() {}
 }
 
@@ -65,15 +66,16 @@ class FakeConvolver extends FakeNode {
 
 class FakeBufferSource extends FakeNode {
   constructor() { super("buffer-source"); this.buffer = null; }
-  start() {}
-  stop() {}
+  start() { this.started = true; }
+  stop() { this.stopped = true; }
 }
 
-function createHarness({ coarse = false, reduced = false } = {}) {
+export function createHarness({ coarse = false, reduced = false, resume = "immediate" } = {}) {
   const contexts = [];
   const timers = new Map();
   let nextTimer = 1;
   const document = { hidden: false };
+  const pendingResumes = [];
 
   class FakeAudioContext {
     constructor() {
@@ -84,6 +86,7 @@ function createHarness({ coarse = false, reduced = false } = {}) {
       this.oscillators = [];
       this.compressors = [];
       this.convolvers = [];
+      this.bufferSources = [];
       contexts.push(this);
     }
     createGain() { return new FakeGain(); }
@@ -103,12 +106,16 @@ function createHarness({ coarse = false, reduced = false } = {}) {
       this.oscillators.push(node);
       return node;
     }
-    createBufferSource() { return new FakeBufferSource(); }
+    createBufferSource() { const node = new FakeBufferSource(); this.bufferSources.push(node); return node; }
     createBuffer(channels, length) {
       const data = Array.from({ length: channels }, () => new Float32Array(length));
       return { numberOfChannels: channels, length, getChannelData: (channel) => data[channel] };
     }
-    resume() { this.state = "running"; return Promise.resolve(); }
+    resume() {
+      if (resume === "reject") return Promise.reject(new Error("resume rejected"));
+      if (resume === "deferred") return new Promise(resolve => pendingResumes.push(() => { this.state = "running"; resolve(); }));
+      this.state = "running"; return Promise.resolve();
+    }
     suspend() { this.state = "suspended"; return Promise.resolve(); }
     close() { this.state = "closed"; return Promise.resolve(); }
   }
@@ -131,7 +138,7 @@ function createHarness({ coarse = false, reduced = false } = {}) {
   };
   sandbox.globalThis = sandbox;
   vm.runInNewContext(audioSource + "\nglobalThis.__audio = Audio;", sandbox);
-  return { audio: sandbox.__audio, contexts, timers, document };
+  return { audio: sandbox.__audio, contexts, timers, document, pendingResumes };
 }
 
 const full = createHarness();
@@ -188,7 +195,7 @@ assert.equal(light.audio.suspendedByVisibility, true);
 assert.equal(light.contexts[0].state, "suspended");
 assert.equal(light.timers.size, 0, "hidden clears the pulse timer");
 light.document.hidden = false;
-light.audio.toggle();
+await light.audio.toggle();
 assert.equal(light.audio.playing, true, "explicit toggle resumes intent");
 assert.equal(light.audio.suspendedByVisibility, false);
 assert.equal(light.contexts[0].state, "running");
@@ -210,7 +217,7 @@ assert.equal(reduced.contexts[0].oscillators.length, 0, "static creates no conti
 assert.equal(reduced.contexts[0].convolvers.length, 0, "static creates no IR");
 assert.equal(reduced.timers.size, 0, "static creates no automatic pulse timer");
 reduced.audio.pulseOnce(1);
-assert.equal(reduced.contexts[0].oscillators.length, 2, "static keeps explicit transient feedback");
+assert.equal(reduced.contexts[0].oscillators.length, 1, "static keeps the explicit pulse without the old scale accent");
 reduced.audio.dispose();
 
 console.log("audio-governor smoke PASS");
