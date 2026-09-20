@@ -14,6 +14,7 @@ import "./choice-commit-smoke.mjs";
 import "./reading-control-smoke.mjs";
 import "./reading-settings-smoke.mjs";
 import "./reading-locale-smoke.mjs";
+import "./entry-visual-smoke.mjs";
 
 const root = process.cwd();
 const failures = [];
@@ -371,7 +372,7 @@ assert(!optionalMiss.deleted.includes("music-cache"), "sw must not delete non-Ha
 for (const a of ["icons/icon-96.png", "icons/icon-192.png", "icons/icon-512.png", "icons/icon-512-maskable.png", "icons/apple-touch-icon.png", "assets/hazama-descent-key.webp"]) nonEmpty(a);
 
 // E29: 降下の弧（背景写真が深度/終端で差し替わる層スタック）。
-// base(surface)＝hazama-descent-key.webp は常在（後方互換）。overlay 4 枚＋実体＋CSS クロスフェード＋sw precache。
+// E47 base(surface)は採用した入口。overlay 4枚＋実体＋CSSクロスフェード＋sw precacheは維持。
 for (const st of ["drift", "bottom", "surfaced", "omega"]) {
   nonEmpty(`assets/hazama-descent-${st}.webp`);
   has(html, `data-stage="${st}"`, `E29 stage img ${st}`);

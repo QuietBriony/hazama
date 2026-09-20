@@ -6,7 +6,7 @@
    - cache prefix=hazama-pwa- ＝旧 forward 版 cache(hazama-pwa-v2.45 等)を activate で掃除し更新。
 ========================================================= */
 
-const VERSION = "hazama-pwa-e46";
+const VERSION = "hazama-pwa-e47";
 const RELEASE = VERSION.replace("hazama-pwa-", "");
 const CACHE_PREFIX = "hazama-pwa-";
 const STATIC_CACHE = `${VERSION}-static`;
@@ -31,6 +31,7 @@ const OPTIONAL_PRECACHE_URLS = [
   "icons/icon-512-maskable.png",
   "icons/apple-touch-icon.png",
   "assets/hazama-descent-key.webp",
+  "assets/hazama-descent-entry-e47.webp",
   "assets/hazama-descent-drift.webp",
   "assets/hazama-descent-bottom.webp",
   "assets/hazama-descent-surfaced.webp",

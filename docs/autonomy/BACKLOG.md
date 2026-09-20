@@ -95,18 +95,19 @@ Hazama 自律開発の作業待ち行列。
 
 ### HZ-BL-027 — ImageGen背景候補と読書画面の視覚調整
 - priority : P2
-- scope    : visual candidate / verify
+- scope    : runtime(visual) / verify
 - agent    : codex
-- human-gate: yes（画像採否・実機の可読性）
-- status   : 比較ページ公開済 — 2026-09-20、本編未採用・画像採否/実機確認待ち
-- source   : 「ビジュアルも Imageとかで磨ける？」「スマホからで見えるようにして」
+- human-gate: yes（実機の可読性・動きの体感）
+- status   : 入口への採用実装済 — 2026-09-20、E47検証/公開準備・実機確認待ち
+- source   : 「ビジュアルも Imageとかで磨ける？」「スマホからで見えるようにして」「とりあえず入れ替えたら／動きはいらない？」
 - detail   : 現行keyを参照し、剥離した建築表面/鉄錆の配線/沈む縦構図を内蔵ImageGenで試作。
   原画と生成promptはローカル`output/playwright/hazama-visual-20260920-01.*`へ保存（git管理外）。
   原画を含む6枚を[スマホ比較ページ](https://quietbriony.github.io/hazama/tools/visual/visual-preview.html?v=visual-20260920-1)へ公開。
   `tools/visual/`だけの静止比較で、音・入力保存・本編importなし。公開9資産のHTTP200/内容一致、320/390/1440px確認済み。
   320/390/1440pxで背景だけの差替えと表紙の露出/切取を仮比較。実機・全深度・聴感との同居は未確認。
-  採用前に画像を人間が選び、段階別の構図/軽量WebP/可読性を詰める。E46 runtime/PWA/音/保存は不変。
-  今回の承認は比較ページの公開に限定。本編差替えやhuman gate合格と扱わず、採用後のruntime branchを分ける。
+  追加の入れ替え依頼を受けE47入口へ採用。原画と画素一致のlossless WebP、表紙露出/crop35%、36秒の有限カメラ。
+  本文は動かさず、読書優先/視覚効果軽減で停止。深度4枚/周回変奏、音/進行/保存は維持。別branchで実装/reviewする。
+  既存Pagesの本編更新まで進めるが、公開と実機の可読性/動き/販売品質の合格は分ける。段階別画像の刷新は別判断。
 
 ### HZ-BL-026 — 実測脚配線の縮約接続と世界の反応の調整
 - priority : P2

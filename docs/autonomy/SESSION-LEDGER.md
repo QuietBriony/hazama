@@ -19,6 +19,34 @@ Hazama 自律開発 session の追記専用ログ。
 
 ---
 
+## 2026-09-20 — E47・候補01を入口へ採用し、有限の沈降カメラを追加
+- agent      : Codex（単一会話・別task/agentなし）
+- goal       : 「とりあえず入れ替えたら／動きはいらない？」へ、選んだ画像と控えめな動きを本編に反映する。
+- baseline   : master / 945468d・clean。branch `codex/hazama-e47-entry-art`で実装し、同一会話で差分review。
+- shipped    : 原画からlossless WebPへ形式変換した`assets/hazama-descent-entry-e47.webp`を入口へ採用。
+  PNGとRGB全画素一致、1536×1024・1,235,594 bytes（元から約32.5%減）。原画/旧key/比較PNGは保持。
+  入口を全周回で共通化し、深度/終端4枚とセットBの変奏は維持。crop35%と表紙露出/文字色を調整。
+  画像だけの外側cameraで36秒・1回・1.8%拡大/0.65%上移動、終了位置で静まる。JS timer追加なし。
+  視覚効果軽減/読書優先は静止、hidden/pagehideでpause・visible/pageshowでresume。
+  表紙背後の空の選択肢の黒帯を隠し、320pxで発見したtitle横overflowを字間/サイズで修正。
+  README/比較ページを採用済みへ更新、`docs/playtest/visual-entry-e47.md`へ意図/出典/限界を記録。
+- checks     : hazama-check 2 PASS / 0 FAIL / 0 SKIP、構文/diff check PASS。
+  新しいentry-visual smokeで実picker/周回/入口固定/4枚変奏/有限motion/停止/CSS/画像/precacheを確認。
+  choose/resolveResist/renderNode/Audioは改行正規化後baselineと一致。物語/locale/manifestは差分なし。
+- browser    : PlaywrightスキルCLI/Chromium。320/390/1440pxと英語表紙、読書130%/comfortの横overflowなし。
+  CSS animationの実時間進行、終端時刻へのseekでfinished、hidden/pagehide模擬のpause/resume、
+  OS reduceと読書優先でanimationなし、表紙の空帯なし、開始後UI復帰、画像decodeを検証。画面を目視。
+  通常の構造→Ω（C→B抗い/再訪を含む）でsurface/drift/deep/bottomと終端背景を確認。
+  英語の身体→浮上をreduceで確認。保存/reload/キャッシュ済みofflineの新入口・自動再生なし・エラー0。
+  音はQAの出力先だけ無音化し、製品Audioを変更しない。英語QA終了時は全Context closed。
+- scope      : 入口画像/視覚/検証/docs/versionのみ。深度原典・分岐・数値・保存・音・外部runtimeは不変。
+  HTML/CSS/JS/SW/JSON/locale参照をE47同期。新画像をoptional precacheへ追加、既存cache名前空間の規律を維持。
+- release    : 今回の入れ替え指示とスマホ確認の流れに沿い、既存Pages本編へ更新する。
+  このentryはcommit/push前。旧E46からの公開更新と配信一致は公開後entryへ記録する。
+- backlog    : HZ-BL-027を入口採用実装済・公開準備へ。画像採用は受領したが、実機の可読性/動きhuman gateは閉じない。
+- next       : 公開版のスマホで沈む気配と文字の読みやすさを確認。段階別画像の刷新は別判断。
+- blockers   : 実iPhone/Safari・実機PWA/ロック復帰・聴感・販売品質は未検証。WebPの更なる軽量化余地あり。
+
 ## 2026-09-20 — ビジュアル比較ページを公開し、スマホ用URLの配信と操作を確認
 - agent      : Codex（単一会話・別task/agentなし）
 - goal       : 作成した背景候補をリモートのスマホから見られるよう、公開確認まで完了する。

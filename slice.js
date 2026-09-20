@@ -932,9 +932,9 @@
     applyArtSet();
   }
 
-  // E37: 絵の変奏＝周回で背景写真セット（E29 降下の弧 5枚）が丸ごと回る。worldSeed×周回の決定論。
-  //   セットは imagelab の img2img 派生（同じ場所の別の夜）＝弧の役割（base/drift/bottom/surfaced/omega）は保つ。
-  //   cycle0 は正典セット固定（初見不変・HTML 既定 src とも一致＝JS 死亡時も同じ見え）。
+  // E37→E47: 周回で深度/終端の4枚が回る。入口は採用した候補01で共通化（色相/パンは周回依存）。
+  //   深度セットは imagelab の img2img 派生（同じ場所の別の夜）＝drift/bottom/surfaced/omegaの役割を保つ。
+  //   cycle0 の深度は正典セット。入口は全周回でHTML既定srcと一致＝JS死亡時も同じ見え。
   //   src の書き替えのみ＝E29 のクロスフェード CSS（class/data-stage 参照）には非干渉。
   const ART_SETS = ["", "-b"];
   function applyArtSet() {
@@ -947,7 +947,7 @@
     const rng = mulberry32((hashStr("hazama:world") ^ hashStr("artset:" + c) ^ 0xa87f5e) >>> 0);
     const suffix = c < 1 ? "" : pickR(rng, ART_SETS);
     const base = document.querySelector(".hz-bg-descent");
-    if (base) base.src = "assets/hazama-descent-key" + suffix + ".webp";
+    if (base) base.src = "assets/hazama-descent-entry-e47.webp";
     document.querySelectorAll(".hz-stage").forEach((img) => {
       img.src = "assets/hazama-descent-" + img.dataset.stage + suffix + ".webp";
     });
@@ -2794,7 +2794,7 @@
     // 翻訳が取得できなくても日本語の起動は止めない。言語は表紙での明示選択・保存しない。
     const controller = new AbortController();
     const timer = window.setTimeout(() => controller.abort(), 8000);
-    fetch("locales/en.json?v=e46", { signal: controller.signal }).then((response) => {
+    fetch("locales/en.json?v=e47", { signal: controller.signal }).then((response) => {
       if (!response.ok) throw new Error("English catalog HTTP " + response.status);
       return response.json();
     }).then((data) => {
@@ -2806,7 +2806,7 @@
   }
 
   async function loadData() {
-    const res = await fetch("depths-shell.json?v=e46", { cache: "no-store" });
+    const res = await fetch("depths-shell.json?v=e47", { cache: "no-store" });
     if (!res.ok) throw new Error(`depths-shell HTTP ${res.status}`);
     const data = await res.json();
     if (!data || typeof data !== "object" || !data.start || !data.nodes || !data.nodes[data.start]) {
@@ -2877,6 +2877,13 @@
 
   $("audio-toggle").addEventListener("click", () => Music.cycle());
   setupReadingSettings();
+  // E47: CSSだけの有限カメラ。非表示/BFCacheで停止し、可視へ戻った位置から再開する。
+  // timer・入力収集・保存・Audioには接続しない。
+  const syncEntryMotion = () => document.body.classList.toggle("entry-motion-paused", document.hidden);
+  document.addEventListener("visibilitychange", syncEntryMotion);
+  window.addEventListener("pagehide", () => document.body.classList.add("entry-motion-paused"));
+  window.addEventListener("pageshow", syncEntryMotion);
+  syncEntryMotion();
 
   // 開発用フック（プレビュー検証専用）: 任意ノードへ跳ぶ／状態を読む／縁・カードを直接出す。
   // garden(depth, dread, seed): A3 構図モード検証用＝seed を変えて #garden を直接描き直す。
@@ -2886,7 +2893,7 @@
   function registerSlicePWA() {
     if (!("serviceWorker" in navigator)) return;
     const register = () => {
-      navigator.serviceWorker.register("sw.js?v=e46", { scope: "./", updateViaCache: "none" }).then((reg) => {
+      navigator.serviceWorker.register("sw.js?v=e47", { scope: "./", updateViaCache: "none" }).then((reg) => {
         if (typeof reg.update === "function") reg.update().catch(() => {});
       }).catch((err) => console.warn("[Hazama slice] SW register failed:", err));
     };

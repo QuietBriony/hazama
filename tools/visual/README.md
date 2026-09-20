@@ -3,7 +3,9 @@
 [スマホ向け比較ページ](https://quietbriony.github.io/hazama/tools/visual/visual-preview.html?v=visual-20260920-1)
 
 ユーザーの「スマホからで見えるようにして」（2026-09-20）に基づく、静止画像だけの公開プレビュー。
-本編E46への採用や可読性のhuman gate通過を意味しない。新しいruntime・外部依存・音・保存・PWA登録はない。
+公開後の「とりあえず入れ替えたら」を受け、候補01は本編E47の入口へ採用した。
+この比較ページ自体は当時の静止画のまま。可読性のhuman gate通過を意味しない。
+このページにruntime・外部依存・音・保存・PWA登録はない。[動く本編](https://quietbriony.github.io/hazama/?v=e47)。
 
 ## 収録画像
 
@@ -26,4 +28,4 @@
 
 原画SHA-256: `12d63a6b2d8985d244c0710f32c0dacd7dcb6b919933d9ae92c8c98b2471c900`。
 元の画像・生成prompt・検証用スクリーンショットはローカルの`output/playwright/`に保持。
-本編採用時の軽量化・全深度の検証・実機判断は別作業。
+本編の形式変換/有限カメラは[実装と確認](../../docs/playtest/visual-entry-e47.md)へ。実機判断は別作業。
