@@ -19,6 +19,24 @@ Hazama 自律開発 session の追記専用ログ。
 
 ---
 
+## 2026-09-20 — ビジュアル比較ページを公開し、スマホ用URLの配信と操作を確認
+- agent      : Codex（単一会話・別task/agentなし）
+- goal       : 作成した背景候補をリモートのスマホから見られるよう、公開確認まで完了する。
+- shipped    : `141c19b2d0da295846b8137313ede701677bca6d`を既存masterへ通常push。
+  Pages deployment `35490876116`は同SHAでsuccess。
+  入口: https://quietbriony.github.io/hazama/tools/visual/visual-preview.html?v=visual-20260920-1
+- checks     : commit前hazama-check 2 PASS / 0 FAIL / 0 SKIP、staged diff check PASS。
+  公開HTML/説明MD/PNG6枚/既存iconの9資産すべてHTTP200・MIME・内容一致。
+  原画hashは生成時と同一。本編runtime/元assets/locale/物語/SW/icon/manifestはbaselineから差分なし。
+- browser    : 公開Chromiumで320/390/1440px、横overflowなし、候補/現行切替、details開閉、
+  原寸リンク、画像全枚decode、キーボード操作、zoom許可、JS0・保存増加0・エラー0を確認し画面を目視。
+  公開画像の取得でありローカルserverを必要としない。実iPhone/Safariや人間の可読性判断は未検証。
+- scope      : tools-onlyの比較公開とdocsのみ。本編はE46のまま、画像採用/音/進行/保存/公開設定は変更しない。
+  新hosting・workflow・外部依存なし。Codexへの表示要求はqueued、実際にスマホで開いたとは扱わない。
+- backlog    : HZ-BL-027を比較公開済・画像採否/実機確認待ちへ更新。human gateは閉じない。
+- next       : スマホで候補の沈む質感と本文との共存を見てもらい、本編採用に進むか判断する。
+- blockers   : 比較ページ公開は完了。本編採用時の全深度/軽量化/実機の明るさ・可読性は別検証。
+
 ## 2026-09-20 — 背景候補をスマホから見られる静止比較ページへ
 - agent      : Codex（単一会話・別task/agentなし）
 - goal       : 「スマホからで見えるようにして」を受け、既存Pagesに候補の比較入口を用意する。

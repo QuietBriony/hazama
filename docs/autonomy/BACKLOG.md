@@ -98,11 +98,12 @@ Hazama 自律開発の作業待ち行列。
 - scope    : visual candidate / verify
 - agent    : codex
 - human-gate: yes（画像採否・実機の可読性）
-- status   : 候補1案作成 — 2026-09-20、スマホ比較ページの公開準備中・本編未採用
+- status   : 比較ページ公開済 — 2026-09-20、本編未採用・画像採否/実機確認待ち
 - source   : 「ビジュアルも Imageとかで磨ける？」「スマホからで見えるようにして」
 - detail   : 現行keyを参照し、剥離した建築表面/鉄錆の配線/沈む縦構図を内蔵ImageGenで試作。
   原画と生成promptはローカル`output/playwright/hazama-visual-20260920-01.*`へ保存（git管理外）。
-  原画を含む6枚を`tools/visual/`の静止比較として既存Pagesへ公開する。音・入力保存・本編importなし。
+  原画を含む6枚を[スマホ比較ページ](https://quietbriony.github.io/hazama/tools/visual/visual-preview.html?v=visual-20260920-1)へ公開。
+  `tools/visual/`だけの静止比較で、音・入力保存・本編importなし。公開9資産のHTTP200/内容一致、320/390/1440px確認済み。
   320/390/1440pxで背景だけの差替えと表紙の露出/切取を仮比較。実機・全深度・聴感との同居は未確認。
   採用前に画像を人間が選び、段階別の構図/軽量WebP/可読性を詰める。E46 runtime/PWA/音/保存は不変。
   今回の承認は比較ページの公開に限定。本編差替えやhuman gate合格と扱わず、採用後のruntime branchを分ける。
