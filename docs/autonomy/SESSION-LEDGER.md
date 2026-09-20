@@ -19,6 +19,25 @@ Hazama 自律開発 session の追記専用ログ。
 
 ---
 
+## 2026-09-20 — E47の新しい入口を公開し、旧版更新と公開降下ループを確認
+- agent      : Codex（単一会話・別task/agentなし）
+- goal       : 候補01への入れ替えを、スマホで動く本編の公開確認まで完了する。
+- shipped    : 実装`f2ecba2a70709e156ef7b6b4113f864980599dfe`をmasterへfast-forward・通常push。
+  Pages deployment `35494287902`は同SHAでsuccess。入口: https://quietbriony.github.io/hazama/?v=e47
+- checks     : commit前hazama-check 2 PASS / 0 FAIL / 0 SKIP、構文/staged diff check PASS。
+  公開18資産（本編6・新画像1・従来深度画像8・実装記録1・比較ページ/説明2）はHTTP200/MIME/内容一致。
+  新画像hashはlossless形式変換時と同一。旧画像群・物語・locale・Audio/choose/resolveResist/renderNodeは維持。
+- browser    : 公開E46のSWと旧keyを事前にcacheした隔離ブラウザからE47へ更新。
+  新しいSW/CSS/入口画像・表紙無音を確認。公開320/390/1440pxの表紙/英語表紙、有限cameraの実進行と終端、
+  hidden/pagehide模擬のpause/resume、読書優先/OS reduceで静止、黒帯なしを確認して画面を目視。
+  通常の構造→Ω（C→B抗い/再訪）、全4phase、読書130%/comfortの320px、保存/reload/新入口のcached offlineをPASS。
+  エラー0、AudioはQA出力先だけ無音化。終了時Contextをcloseし、offline入口の自動再生なし。
+- scope      : 本編入口/視覚とversion更新。進行/保存/音/公開設定は変更しない。新hosting/workflow/依存なし。
+  Codexへの本編表示要求はqueuedであり、ユーザーのスマホで実際に開いたとは扱わない。
+- backlog    : HZ-BL-027を入口採用・本編公開済/実機確認待ちへ。human gateは未完了。
+- next       : 実スマホで「沈む気配はあるが酔わないか」「本文が読めるか」を確認して微調整する。
+- blockers   : 配信とagent検証は完了。実iPhone/Safari・PWA実機・動きの体感・販売品質は未検証。
+
 ## 2026-09-20 — E47・候補01を入口へ採用し、有限の沈降カメラを追加
 - agent      : Codex（単一会話・別task/agentなし）
 - goal       : 「とりあえず入れ替えたら／動きはいらない？」へ、選んだ画像と控えめな動きを本編に反映する。
