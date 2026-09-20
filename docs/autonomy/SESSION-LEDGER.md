@@ -19,6 +19,48 @@ Hazama 自律開発 session の追記専用ログ。
 
 ---
 
+## 2026-09-20 — 背景候補をスマホから見られる静止比較ページへ
+- agent      : Codex（単一会話・別task/agentなし）
+- goal       : 「スマホからで見えるようにして」を受け、既存Pagesに候補の比較入口を用意する。
+- baseline   : master / 89a1e6b。前sessionの候補記録2ファイルのみ未commit。originと同位置。
+- shipped    : `tools/visual/visual-preview.html`と説明・PNG6枚を追加。候補/現行の表紙切替、
+  原画の原寸リンク、零章の比較、PC横画面。画面内UIは静止画と明記し、本編へのリンクを設置。
+  レビュー済みPNGを無変換でコピーし、元画像とhash照合。READMEから比較ページへ接続。
+- checks     : ローカルhazama-check 2 PASS / 0 FAIL / 0 SKIP、diff check PASS。
+  PlaywrightスキルCLI/Chromiumで320/390/1440pxのoverflowなし、radio48px、画像6枚decode、
+  候補/現行切替、details開閉、キーボードradio操作、原画リンク1536×1024を確認。エラー0。
+  画面を目視。viewportは拡大可、JS0、local/sessionStorage増加なし。
+  初回favicon404は既存icon参照で修正。QA側のURL global不足は文字列判定へ修正し再走。
+- scope      : tools-only＋docs。index/slice/SW/本編assets/物語/音/保存は無変更、E46をbumpしない。
+  main降下ループはこのsessionでは再走せず、既存checkを実施。実機Safariの合格とはしない。
+- release    : 今回の明示依頼を比較ページの既存Pages公開承認として扱う。公開設定・workflowは変更しない。
+  このentryはcommit/push前。実際の配信内容の照合は公開後entryに記録する。
+- backlog    : HZ-BL-027の比較ページを公開準備へ。本編画像の採否・実機の可読性human gateは開いたまま。
+- next       : 公開URLをスマホで見てもらい、候補の質感と読書画面の方向を選ぶ。
+- blockers   : 本編採用・全深度・軽量化・実機の明るさ/可読性は未検証。
+
+## 2026-09-20 — ImageGenで背景候補1案を制作し、現行画面へローカル仮置き
+- agent      : Codex（単一会話・別task/agentなし）
+- goal       : 「ビジュアルも Imageとかで磨ける？」へ、現行世界観を保つ具体的な画像候補を示す。
+- baseline   : master / 89a1e6b・clean、hazama-check 2 PASS / 0 FAIL / 0 SKIP。
+- candidate  : 内蔵ImageGenを1回使用。現行`assets/hazama-descent-key.webp`を目視して参照に渡し、
+  乾いた剥離面/露出配線/巨大な垂直構造/低コントラストの中央余白を持つ新しい兄弟案を生成。
+  原版はgenerated_imagesに保持し、ローカル`output/playwright/hazama-visual-20260920-01.png`へコピー。
+  1,831,559 bytes、SHA-256 `12d63a6b2d8985d244c0710f32c0dacd7dcb6b919933d9ae92c8c98b2471c900`。
+  全promptは同フォルダ`hazama-visual-20260920-01-prompt.md`。これらはgit管理外で本番から参照しない。
+- browser    : PlaywrightスキルCLI/Chromium、音をオフにし、表紙と零章の仮置きを目視。
+  現行の多重暗幕では画像だけを替えても差が小さいため、表紙の露出/案内文色/スマホcrop35%もDOM内だけで比較。
+  320/390/1440pxの横overflowなし。初回の零章撮影はgate fade中だったため、opacity=0を待って撮り直した。
+  最終静止比較はCSS animationを撮影時だけ止めた。全文/択/音/セーブの製品コードは改稿していない。
+- assessment : 画像の質感と実際の重ね方は別の採否が必要。原画だけで読書画面の改善を合格にしない。
+  PCの全体構図とスマホ中央cropを分ける余地がある。八観の動きは既存canvas/CSS側、絵は空間/質感を担当。
+- scope      : 画像試作/隔離ブラウザ/ローカル記録のみ。assets/index/slice/SW/locale/物語は無変更。
+  本編E46の差替え、PWA version bump、commit/push/公開は未実施。Creative Production boardは直接呼べる面がなく、
+  ImageGenの画像とスクリーンショットを現会話へ表示するfallback。外部画像API/別taskは使わない。
+- backlog    : HZ-BL-027を候補作成・採否待ちとして追加。HZ-BL-018ほかのhuman gateは未完了。
+- next       : HZ-BL-027の方向を選び、入口/漂い/深部の段階画像と露出/可読性を小さく詰める。採用は別判断。
+- blockers   : 実スマホの明るさ/可読性・全深度・画像容量最適化・人間の画像採否は未検証。
+
 ## 2026-09-20 — E46本編を公開、旧E45からの更新と公開降下ループを確認
 - agent      : Codex（単一会話・別task/agentなし）
 - goal       : 「接続してすすめよ」を受けた本編反映を、スマホ用公開入口の確認まで完了する。

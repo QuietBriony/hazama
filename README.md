@@ -15,6 +15,7 @@ Hazama は、沈むほど戻りにくい「降下する対話」の没入型静�
 - `assets/hazama-descent-key.webp` : キービジュアル（E29〜: base=surface。`hazama-descent-{drift,bottom,surfaced,omega}.webp` の4枚が深度/終端で差し替わる「降下の弧」・`og-card.jpg` は共有 OG カード）
 - 検証: `scripts/hazama-check.mjs`（`autonomy-docs` ＋ `build-consistency` の2本）
 - 制作候補: `docs/BLENDER-AUTHORING.md`（WorkerPC Blender 5.2をrepo外の静止画制作実行器に限定。runtime非依存）
+- ビジュアル候補01: [スマホで見る](https://quietbriony.github.io/hazama/tools/visual/visual-preview.html?v=visual-20260920-1) / [収録内容](tools/visual/README.md)。原画・現行/候補の表紙・読書画面の静止比較。本編未採用。
 - 体験版候補: [E41 初見テスト](docs/playtest/steam-demo-candidate-e41.md)（既存Web版の初回２ルート・人間の評価待ち。Steam提出用ビルドではない）
 - 人に渡す試遊案内: [日本語](docs/playtest/invite-ja.md) / [English](docs/playtest/invite-en.md)。実施側は[最初のラウンド](docs/playtest/first-round.md)へ（準備済み・人間の結果は未取得）
 - 感覚統合: `docs/SENSORY-RESPONSE-CANDIDATE.md`（E31 governor＋E45本編応答＋E46縮約回路。Sensory Frame/labの実行エンジンは未配線） / [E45音の統合・検証](docs/playtest/world-audio-e45.md) / [E46接続と検証](docs/playtest/fly-circuit-e46.md)

@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#080e12">
+  <link rel="icon" type="image/png" sizes="192x192" href="../../icons/icon-192.png">
+  <meta name="description" content="Hazamaの背景候補01。現行と候補のスマホ画面、生成した原画を見比べるための静止画プレビューです。">
+  <title>Hazama — ビジュアル候補01</title>
+  <style>
+    :root { color-scheme: dark; --bg: #080e12; --panel: #101a20; --ink: #e7edef; --muted: #a9bac2; --line: #31444d; --accent: #a0d3d8; }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--bg); color: var(--ink); font-family: system-ui, -apple-system, "Segoe UI", sans-serif; line-height: 1.8; }
+    main { max-width: 1060px; margin: auto; padding: 30px 20px 56px; padding-left: max(20px, env(safe-area-inset-left)); padding-right: max(20px, env(safe-area-inset-right)); }
+    a { color: var(--accent); text-underline-offset: .25em; overflow-wrap: anywhere; }
+    a:focus-visible, summary:focus-visible { outline: 3px solid var(--accent); outline-offset: 5px; }
+    h1, h2, h3, p, figure { margin: 0; }
+    h1 { font-size: clamp(1.8rem, 6vw, 2.7rem); font-weight: 500; letter-spacing: .06em; line-height: 1.35; margin: 8px 0 12px; }
+    h2 { font-size: 1.25rem; font-weight: 500; margin-bottom: 8px; }
+    h3 { font-size: 1rem; font-weight: 500; margin-bottom: 12px; }
+    .eyebrow { color: var(--accent); font-size: .75rem; letter-spacing: .13em; }
+    .intro, .note { color: var(--muted); font-size: .9rem; }
+    .intro { max-width: 42em; }
+    .notice { color: #e0d1b8; margin-top: 12px; font-size: .85rem; }
+    .nav { display: flex; gap: 6px 20px; flex-wrap: wrap; margin: 14px 0 22px; }
+    .nav a, .image-link { display: inline-flex; align-items: center; min-height: 44px; }
+    section { border-top: 1px solid var(--line); padding-top: 24px; margin-top: 28px; scroll-margin-top: 16px; }
+    .cover-section { margin-top: 0; }
+    fieldset { margin: 20px auto 18px; padding: 0; border: 0; max-width: 390px; }
+    legend { padding: 0; margin-bottom: 8px; color: var(--muted); font-size: .85rem; }
+    .switch { display: flex; gap: 8px; }
+    .switch label { flex: 1; display: flex; gap: 8px; align-items: center; justify-content: center; min-height: 48px; border: 1px solid var(--line); border-radius: 8px; background: var(--panel); cursor: pointer; }
+    .switch label:has(input:checked) { background: #20363d; border-color: var(--accent); }
+    .switch label:focus-within { outline: 3px solid var(--accent); outline-offset: 3px; }
+    input { accent-color: var(--accent); width: 18px; height: 18px; margin: 0; }
+    .cover { display: none; max-width: 390px; margin: auto; }
+    .cover-section:has(#candidate:checked) .cover-candidate,
+    .cover-section:has(#current:checked) .cover-current { display: block; }
+    @supports not selector(:has(*)) { .cover { display: block; margin-bottom: 24px; } fieldset { display: none; } }
+    img { display: block; width: 100%; height: auto; background: #080d11; }
+    .screen { border: 1px solid var(--line); border-radius: 8px; }
+    figcaption { margin-top: 12px; font-size: .85rem; color: var(--muted); }
+    .image-link { font-size: .9rem; }
+    .art { margin-top: 20px; }
+    details { margin-top: 20px; border: 1px solid var(--line); border-radius: 8px; background: var(--panel); }
+    summary { cursor: pointer; padding: 14px 16px; min-height: 52px; color: var(--ink); }
+    .detail-body { padding: 4px 16px 20px; }
+    .reading-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 390px)); justify-content: center; gap: 24px; margin-top: 20px; }
+    .reading-grid figure { min-width: 0; }
+    .desktop { margin-top: 14px; }
+    footer { border-top: 1px solid var(--line); margin-top: 36px; padding-top: 22px; }
+    footer p + p { margin-top: 8px; }
+    @media (max-width: 600px) { main { padding-top: 24px; } .reading-grid { grid-template-columns: minmax(0, 390px); } }
+  </style>
+</head>
+<body>
+  <main>
+    <header>
+      <p class="eyebrow">HAZAMA / VISUAL STUDY 01</p>
+      <h1>剥がれる世界、<br>沈む気配。</h1>
+      <p class="intro">背景候補をスマホで見比べるページです。まずは表紙を切り替え、気になった絵は原寸で開いて拡大できます。</p>
+      <p class="notice">本編には未採用。画面内の「沈む」などは静止画で、操作できません。</p>
+      <nav class="nav" aria-label="プレビュー内の移動">
+        <a href="#cover">表紙を比較</a>
+        <a href="#art">原画を見る</a>
+        <a href="#reading">読書画面</a>
+      </nav>
+    </header>
+
+    <section id="cover" class="cover-section" aria-labelledby="cover-title">
+      <h2 id="cover-title">スマホの表紙</h2>
+      <p class="note">候補は背景に加え、明るさ・文字の色・縦画面の切り取りを仮調整しています。</p>
+      <fieldset>
+        <legend>表示する画面</legend>
+        <div class="switch">
+          <label><input id="candidate" type="radio" name="cover" value="candidate" checked>候補 01</label>
+          <label><input id="current" type="radio" name="cover" value="current">現行 E46</label>
+        </div>
+      </fieldset>
+      <figure class="cover cover-candidate">
+        <img class="screen" src="assets/cover-candidate-390.png" width="390" height="844" alt="候補01の表紙。左側の壁面が剥がれ、配線が露出した巨大な縦の空間と、底に立つ小さな人影。" fetchpriority="high">
+        <figcaption>候補01 · 390 × 844<br>剥離面と奥行きが見えるように仮調整。撮影時のみアニメーションを止めています。</figcaption>
+        <a class="image-link" href="assets/cover-candidate-390.png">候補の表紙を原寸で開く ↗</a>
+      </figure>
+      <figure class="cover cover-current">
+        <img class="screen" src="assets/cover-current-390.png" width="390" height="844" alt="現行E46の表紙。暗幕で背景が沈み、Hazamaの文字の輪郭に赤と青のずれが見える。">
+        <figcaption>現行 E46 · 390 × 844<br>現在の背景と重ね方。タイトルの色ずれはアニメーションの一瞬です。</figcaption>
+        <a class="image-link" href="assets/cover-current-390.png">現行の表紙を原寸で開く ↗</a>
+      </figure>
+    </section>
+
+    <section id="art" aria-labelledby="art-title">
+      <h2 id="art-title">候補01の原画</h2>
+      <p class="note">文字や暗幕を重ねる前の画像です。冷たい青、鉄錆、薄く剥がれた壁面で「世界の下地が見える」質感を試しています。</p>
+      <figure class="art">
+        <img src="assets/hazama-peeling-world-01.png" width="1536" height="1024" loading="lazy" decoding="async" alt="冷たい青と鉄錆色の巨大な空洞。建築の表面が薄く剥がれ、細い構造線が露出する。小さな人影が深い暗がりに立つ。">
+        <figcaption>ImageGenによる生成候補 · 1536 × 1024 · PNG 約1.8 MB</figcaption>
+        <a class="image-link" href="assets/hazama-peeling-world-01.png">原画を開いて拡大する ↗</a>
+      </figure>
+    </section>
+
+    <section id="reading" aria-labelledby="reading-title">
+      <h2 id="reading-title">文字が乗ったとき</h2>
+      <p class="note">原画の印象だけでなく、本文が読めるかも確認するための比較です。</p>
+      <details>
+        <summary>読書画面の現行／候補を見る</summary>
+        <div class="detail-body">
+          <p class="note">同じ零章で背景だけを交換。表紙候補の明るさ調整は入れていません。本文の背面が暗いため、違いは控えめです。</p>
+          <div class="reading-grid">
+            <figure>
+              <h3>現行 E46</h3>
+              <img class="screen" src="assets/reading-current-390.png" width="390" height="844" loading="lazy" decoding="async" alt="現行背景を使った零章の読書画面。本文と選択肢の背面に暗い空間が見える。">
+              <figcaption><a class="image-link" href="assets/reading-current-390.png">現行の読書画面を原寸で開く ↗</a></figcaption>
+            </figure>
+            <figure>
+              <h3>候補01 · 背景のみ交換</h3>
+              <img class="screen" src="assets/reading-candidate-390.png" width="390" height="844" loading="lazy" decoding="async" alt="候補01の背景に交換した同じ零章。本文や選択肢は変更せず、背後に壁の剥離と構造線が見える。">
+              <figcaption><a class="image-link" href="assets/reading-candidate-390.png">候補の読書画面を原寸で開く ↗</a></figcaption>
+            </figure>
+          </div>
+        </div>
+      </details>
+      <details>
+        <summary>PC横画面の候補も見る</summary>
+        <figure class="detail-body">
+          <img class="screen desktop" src="assets/cover-candidate-1440.png" width="1440" height="900" loading="lazy" decoding="async" alt="候補01を使った横長の表紙。中央のHazamaタイトルと案内を、両側の大きな剥離面が囲む。">
+          <figcaption>1440 × 900 · 表紙の重ね方も仮調整した静止画です。</figcaption>
+          <a class="image-link" href="assets/cover-candidate-1440.png">PC画面を原寸で開く ↗</a>
+        </figure>
+      </details>
+    </section>
+
+    <footer>
+      <p class="note">2026-09-20 · ビジュアル候補01。画像の採否、実スマホでの明るさ・可読性は確認待ちです。本編の絵・音・進行・保存は変更していません。</p>
+      <p><a class="image-link" href="../../?v=e46">現在のHazama本編を開く ↗</a></p>
+    </footer>
+  </main>
+</body>
+</html>
