@@ -96,6 +96,56 @@ function harness(reduced = false, dialogMode = "native") {
   return { context, choicesEl, document, dialog, actions, render, advance };
 }
 
+// E48: invisible decisions cannot accept early taps or consume their click listener.
+// The edge must follow the same disabled-until-appearance rule as normal/echo choices.
+for (const kind of ["normal", "echo", "edge"]) {
+  for (const reduced of [false, true]) {
+    const h = harness(reduced), buttons = h.render(kind);
+    assert.ok(buttons.every((button) => button.disabled), `${kind}: all unrevealed choices are disabled`);
+    buttons.forEach((button) => button.click());
+    assert.deepEqual(h.actions, [], `${kind}: early input cannot commit a decision`);
+    assert.equal(h.dialog.opens || 0, 0, `${kind}: early input cannot open forget confirmation`);
+    assert.equal(h.context.revealToken, 0, `${kind}: early input cannot invalidate the pending appearance`);
+    h.advance(1000);
+    buttons[0].click(); h.advance(140);
+    assert.equal(h.actions.length, 1, `${kind}: an ignored early tap does not consume the later choice`);
+  }
+}
+
+const appearance = harness(), edgeButtons = appearance.render("edge");
+appearance.advance(199);
+assert.ok(edgeButtons.every((button) => button.disabled), "edge: both controls stay disabled before first appearance");
+appearance.advance(1);
+assert.equal(edgeButtons[0].disabled, false, "edge: first control enables at its own appearance");
+assert.equal(edgeButtons[0].classList.contains("in"), true);
+assert.equal(edgeButtons[1].disabled, true, "edge: second control waits for its own appearance");
+edgeButtons[1].click();
+assert.equal(appearance.dialog.opens || 0, 0, "edge: forget remains inert while only descent is visible");
+appearance.advance(159);
+assert.equal(edgeButtons[1].disabled, true);
+appearance.advance(1);
+assert.equal(edgeButtons[1].disabled, false, "edge: forget enables at 360ms");
+assert.equal(edgeButtons[1].classList.contains("in"), true);
+
+const edgeCommit = harness(), committedButtons = edgeCommit.render("edge");
+edgeCommit.advance(220); committedButtons[0].click();
+edgeCommit.advance(139);
+assert.deepEqual(edgeCommit.actions, [], "edge: preserve the existing commit beat");
+edgeCommit.advance(1); // Second appearance and first commit now share the same deadline.
+assert.equal(committedButtons[1].disabled, true, "edge: late appearance cannot revive the unchosen control");
+committedButtons[1].click(); edgeCommit.advance(1000);
+assert.deepEqual(edgeCommit.actions, ["descend"]);
+assert.equal(edgeCommit.dialog.opens || 0, 0, "edge: a committed descent cannot open the old forget dialog");
+
+for (const stale of ["token", "detached"]) {
+  const h = harness(), buttons = h.render("edge");
+  if (stale === "token") h.context.revealToken++;
+  else h.choicesEl.innerHTML = "";
+  h.advance(1000);
+  assert.ok(buttons.every((button) => button.disabled), `edge ${stale}: stale appearance leaves old controls disabled`);
+  assert.equal(h.document.activeElement, h.document.body, `edge ${stale}: no stale focus transfer`);
+}
+
 for (const kind of ["normal", "echo"]) {
   for (const clickAt of [160, 200, 260]) {
     const h = harness(), buttons = h.render(kind);
@@ -180,4 +230,4 @@ for (const mode of ["missing", "unsupported", "throws"]) {
   buttons[0].click(); h.advance(1000);
   assert.deepEqual(h.actions, ["descend"], `${mode}: memory-preserving descent remains playable`);
 }
-console.log("choice-commit smoke PASS (staggered clicks, stale scenes, reduced motion, locks, safe forget/cancel/reopen)");
+console.log("choice-commit smoke PASS (preappearance input, staggered clicks, stale scenes, reduced motion, locks, safe forget/cancel/reopen)");

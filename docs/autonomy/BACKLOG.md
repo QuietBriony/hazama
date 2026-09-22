@@ -26,6 +26,21 @@ Hazama 自律開発の作業待ち行列。
 
 ## P1
 
+### HZ-BL-028 — 結末の選択肢の表示前入力を防ぐ
+- priority : P1
+- scope    : runtime(narrow) / smoke / verify
+- agent    : codex
+- human-gate: no（実機の体感・販売品質のhuman gateは別）
+- status   : ready — 2026-09-23 E48実装・agent検証済、公開承認待ち
+- source   : Advisor的な判断役で進める提案への「すすめて」
+- detail   : 結末の2択だけ生成時にdisabledでなく、出現前のclickが再降下/忘却確認へ進む。
+  通常/エコー門と同じ出現前保護を実装し、古い出現タイマーの再有効化防止も検証済み。
+  再現と受け入れ条件は`docs/playtest/ending-choice-preappearance-e47.md`。
+  承認を受けた隔離ブラウザでE47を実再現、E48の表示前入力遮断・取消・連打・通常/軽減の結末を確認。
+  320/390px、文字130%・読書優先、E47→E48更新とcache済みoffline入口をPASS。
+  hazama-check 2 PASS / 0 FAIL / 0 SKIP。音/物語/保存/画像/CSSは維持、本編公開は未実施。
+  実iPhone/Safari・初見・聴感・販売品質のhuman gateは閉じない。
+
 ### HZ-BL-020 — 英語の身体ルート試作と英語話者の検証
 - priority : P1
 - scope    : runtime / verify

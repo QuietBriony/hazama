@@ -19,6 +19,47 @@ Hazama 自律開発 session の追記専用ログ。
 
 ---
 
+## 2026-09-23 — E48：結末の表示前入力を実画面で再現し、狭く修正（未公開）
+- agent      : Codex（単一会話・別task/agentなし）
+- goal       : 隔離ブラウザ使用への「進めて」を受け、結末の誤入力を再現・修正して回帰確認する。
+- baseline   : d128091、前回調査のdocs差分のみ。branch `codex/hazama-e48-ending-input`。
+- finding    : E47の身体→浮上を自然操作で辿り、結末ボタンの生成直後を時計で停止。
+  opacity 0・disabled=falseの再降下へ実座標clickし、出現200msより前に再降下の文へ進むことを確認。
+- shipped    : renderEdgeChoicesの初期disabledと出現コールバックの有効化の2行で保護。
+  既存の世代/所属チェックを維持。runtime参照/SWをE48同期、README/再現記録を更新。
+  物語/ルート/数値/保存/音/画像/CSS/公開設定は変えない。commit/push/公開なし。
+- checks     : 追加smokeが修正前にFAILすることを確認後、修正後hazama-check 2 PASS / 0 FAIL / 0 SKIP。
+  通常/エコー/結末の表示前入力、200/360ms境界、確定後の古い出現タイマー、既存の連打/忘却取消をPASS。
+  slice.js/sw.js/choice-commit-smoke.mjsの構文、git diff check PASS。
+- browser    : Playwright CLIの隔離Chrome。新規profileで身体→通常浮上と軽減時のΩ結末へ自然到達。
+  E48の見えない両ボタンへのclickは動作/確認画面/保存変化なし。表示後の操作/focusは正常。
+  320×568・文字130%/読書優先、390pxで横overflowなし。本文末へkeyboard scroll可能。
+  忘却のEscape/記憶を残すの取消で保存維持・focus復帰、再降下double clickは周回/zero訪問が1回だけ増加。
+  E47→E48のSW/CSS/JS更新・記憶維持、cache済みoffline reloadの入口/開始を確認。通常/軽減のconsole error/warning 0。
+  QAの初周文言待機が周回変奏でtimeoutしたためselectorを修正、保存増分を独立確認し軽減側でも再検証。
+  12枚の画面を保存して目視。記録は`docs/playtest/ending-choice-preappearance-e47.md`、ローカル証跡は`output/playwright/e48/`。
+- scope      : 本文一括表示・音offによる操作検証。初見の間合い/音/実iPhone/Safari/PWA実機/英語再試遊は未検証。
+  実画面に基づいて入力保護だけに絞った監査であり、人間の体感やSteam品質の認定ではない。
+- backlog    : HZ-BL-028をready（実装・agent検証済/公開承認待ち）へ。既存human gateは維持。
+- next       : 明示承認後、既存Pagesの本編へE48を反映し配信と旧版更新を確認する。
+- blockers   : ローカル修正は完了。このsessionでは公開E47を変更していない。
+
+## 2026-09-23 — Advisor確認：結末の表示前入力をコードで再現、画面確認は保留
+- agent      : Codex（単一会話・別task/agentなし）
+- goal       : 演出の追加より先に、入口→降下→選択→余韻の弱い箇所を根拠から絞る。
+- baseline   : master / d128091・clean。hazama-check 2 PASS / 0 FAIL / 0 SKIP。
+- finding    : 結末の2択だけ初期disabledがなく、.in前にclickを受ける。
+  既存choice-commit harnessとproduction rendererを無変更で読み、通常/エコー門は発火0、
+  結末は140msで再降下確定、忘却は確認画面を開くことを再現。確認なしの記憶消去はない。
+- shipped    : `docs/playtest/ending-choice-preappearance-e47.md`に再現・制限・受け入れ条件を記録。
+  runtime/物語/数値/音/保存/バージョンは無変更。commit/push/公開なし。
+- browser    : 現接続で内蔵Browser/Chromeとも利用不可。Product Design auditの実画面評価は保留。
+  スクリーンショット・降下ループ・mobile widthはこのsessionでは未検証。
+  Playwright隔離ブラウザの使用確認を提示し、返答前の起動はしない。
+- backlog    : HZ-BL-028を追加。既存の初見/実機/聴感/販売品質human gateは閉じない。
+- next       : ブラウザ使用の回答後、表示前入力と自然な結末到達を確認して狭く修正する。
+- blockers   : 利用できる画面確認手段がない。コード再現を人間の体感や実画面の検証と混同しない。
+
 ## 2026-09-20 — E47の新しい入口を公開し、旧版更新と公開降下ループを確認
 - agent      : Codex（単一会話・別task/agentなし）
 - goal       : 候補01への入れ替えを、スマホで動く本編の公開確認まで完了する。

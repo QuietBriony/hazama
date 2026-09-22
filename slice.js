@@ -1597,6 +1597,7 @@
       const btn = document.createElement("button");
       btn.type = "button";
       btn.className = "hz-choice " + kind;
+      btn.disabled = true; // E48: 結末も出現前の入力を受けない。通常/エコー門と同じ保護。
       btn.innerHTML = `<span class="lead"></span><span class="sub"></span>`;
       btn.querySelector(".lead").textContent = tr(lead);
       btn.querySelector(".sub").textContent = tr(sub);
@@ -1625,6 +1626,7 @@
       window.setTimeout(() => {
         if (myToken !== revealToken || !choicesEl.contains(b)) return;
         b.classList.add("in");
+        b.disabled = false; // 確定後/画面交代後は上の世代・所属チェックで再有効化を防ぐ。
         // E28: 縁（終端）でも focus 着地＝キーボード/SR が結末の二択へ迷わず届く（喪失時のみ・見え不変）。
         if (i === 0 && document.activeElement === document.body) b.focus({ preventScroll: true });
       }, REDUCED ? 0 : 200 + i * 160));
@@ -2794,7 +2796,7 @@
     // 翻訳が取得できなくても日本語の起動は止めない。言語は表紙での明示選択・保存しない。
     const controller = new AbortController();
     const timer = window.setTimeout(() => controller.abort(), 8000);
-    fetch("locales/en.json?v=e47", { signal: controller.signal }).then((response) => {
+    fetch("locales/en.json?v=e48", { signal: controller.signal }).then((response) => {
       if (!response.ok) throw new Error("English catalog HTTP " + response.status);
       return response.json();
     }).then((data) => {
@@ -2806,7 +2808,7 @@
   }
 
   async function loadData() {
-    const res = await fetch("depths-shell.json?v=e47", { cache: "no-store" });
+    const res = await fetch("depths-shell.json?v=e48", { cache: "no-store" });
     if (!res.ok) throw new Error(`depths-shell HTTP ${res.status}`);
     const data = await res.json();
     if (!data || typeof data !== "object" || !data.start || !data.nodes || !data.nodes[data.start]) {
@@ -2893,7 +2895,7 @@
   function registerSlicePWA() {
     if (!("serviceWorker" in navigator)) return;
     const register = () => {
-      navigator.serviceWorker.register("sw.js?v=e47", { scope: "./", updateViaCache: "none" }).then((reg) => {
+      navigator.serviceWorker.register("sw.js?v=e48", { scope: "./", updateViaCache: "none" }).then((reg) => {
         if (typeof reg.update === "function") reg.update().catch(() => {});
       }).catch((err) => console.warn("[Hazama slice] SW register failed:", err));
     };
