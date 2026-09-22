@@ -1,7 +1,8 @@
 # 結末の表示前入力 — E47 再現 / E48 修正
 
 2026-09-23。入口→降下→選択→余韻の確認で発見し、隔離ブラウザ使用への「進めて」を受けて再現・修正した。
-E48はローカル実装・agent検証済み、未公開。人間の試遊結果やSteam販売品質の認定ではない。
+E48はローカル/公開版のagent検証済み。公開への「お願い」を受け、既存Pagesへ反映した。
+人間の試遊結果やSteam販売品質の認定ではない。
 
 ## E47で確認できた問題
 
@@ -57,6 +58,20 @@ E47の`renderEdgeChoices()`は「縁から、もう一度沈む」「すべて�
 - Product Design auditの実画面確認で範囲を絞り、演出は増やさず入力保護だけを修正した。
   12枚の画面と順序付きメモはローカルの`output/playwright/e48/`に保存・目視確認済み（git対象外）。
 
+## 公開確認 — 2026-09-23
+
+- 公開先: https://quietbriony.github.io/hazama/?v=e48
+- 実装commit: `b8bf1cf67c17bab90b7553049111182eed0df091`。同一会話で差分review後、masterへfast-forward・通常push。
+- Pages deployment `6602833812`は同SHAでsuccess、Pages buildもbuiltを確認。
+- HTML/JS/CSS/SW/深度JSON/英語JSON/manifest/入口画像/本記録の9資産はHTTP200、MIMEとcommitの全byte一致。
+- 公開E47で身体の道を途中まで進めた隔離profileからE48へ更新。SW/CSS/JSがE48へ揃い、保存文字列は不変。
+  表紙320/390/1440pxに横overflowなし。cache済みoffline reloadでも入口画像・開始操作が利用可能。
+- 別の新規profileで公開の身体→浮上へ自然到達。見えない両ボタンの実座標clickを無視し、200/360msで順に有効化。
+  320px・文字130%/読書優先、忘却のEscape/記憶を残すの取消、再降下double clickを再確認。
+  周回0→1、zero訪問1→2、認識維持。両profileのconsole error/warningは0。
+- 公開画面5枚を`output/playwright/e48-public/`へ保存・目視確認（git対象外）。
+  進行は本文一括表示・音offで確認。実機の体感確認の代わりとはしない。
+
 ## 範囲と未確認
 
 - baseline: `master` / `d1280918f777733ecfbffc5acd5748abe1bff3d1`。
@@ -64,7 +79,7 @@ E47の`renderEdgeChoices()`は「縁から、もう一度沈む」「すべて�
 - 内蔵Browser/Chrome接続が利用できず、ユーザー承認後にPlaywright CLIの隔離Chromeで確認した。
 - 高速な再現のため本文一括表示・音offを使用。初見の間合い、音の体感、実iPhone/Safari、
   PWA実機install、screen reader、英語の今回の実ブラウザ再試験は対象外。offline全編完走も未試験。
-- commit・push・公開は未実施。このsessionでは既存公開版E47を変更していない。
+- 実装検証のsessionでは公開を保留し、後続の明示承認を受けて上記の公開確認まで進めた。
 - 初見の面白さ、実機の読みやすさ・動き・聴感、Steam販売品質のhuman gateは閉じない。
 
-次は本編公開の明示承認後、既存PagesへE48を反映して配信/旧版更新を確認する。
+次は公開E48を実スマホで確認する。初見の面白さや聴感については既存のhuman gateで判断する。

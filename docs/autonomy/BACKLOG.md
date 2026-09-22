@@ -26,21 +26,6 @@ Hazama 自律開発の作業待ち行列。
 
 ## P1
 
-### HZ-BL-028 — 結末の選択肢の表示前入力を防ぐ
-- priority : P1
-- scope    : runtime(narrow) / smoke / verify
-- agent    : codex
-- human-gate: no（実機の体感・販売品質のhuman gateは別）
-- status   : ready — 2026-09-23 E48実装・agent検証済、公開承認待ち
-- source   : Advisor的な判断役で進める提案への「すすめて」
-- detail   : 結末の2択だけ生成時にdisabledでなく、出現前のclickが再降下/忘却確認へ進む。
-  通常/エコー門と同じ出現前保護を実装し、古い出現タイマーの再有効化防止も検証済み。
-  再現と受け入れ条件は`docs/playtest/ending-choice-preappearance-e47.md`。
-  承認を受けた隔離ブラウザでE47を実再現、E48の表示前入力遮断・取消・連打・通常/軽減の結末を確認。
-  320/390px、文字130%・読書優先、E47→E48更新とcache済みoffline入口をPASS。
-  hazama-check 2 PASS / 0 FAIL / 0 SKIP。音/物語/保存/画像/CSSは維持、本編公開は未実施。
-  実iPhone/Safari・初見・聴感・販売品質のhuman gateは閉じない。
-
 ### HZ-BL-020 — 英語の身体ルート試作と英語話者の検証
 - priority : P1
 - scope    : runtime / verify
@@ -251,6 +236,18 @@ handoff 前の確認は `docs/autonomy/closeout-checklist.md` を使います。
 ---
 
 ## Done
+
+### HZ-BL-028 — 結末の選択肢の表示前入力を防ぐ ✅ 2026-09-23
+- scope: runtime(narrow) / smoke / verify
+- status: done — E48公開・agent確認済（実機の体感/販売品質のhuman gateは別）
+- source: Advisor的な判断役で進める提案への「すすめて」、既存スマホ公開版への反映に「お願い」
+- 結末の2択の表示前clickを実再現し、初期disabled/表示開始時有効化で保護。
+  古い出現タイマーによる再有効化も防ぐ。音/物語/数値/保存/画像/CSSは維持。
+- hazama-check 2 PASS / 0 FAIL / 0 SKIP。ローカル通常/軽減の結末、公開身体→浮上→再降下を確認。
+  公開の表示前入力遮断、200/360ms境界、忘却取消、連打でも1周、320px/文字130%をPASS。
+  E47→E48の公開SW/CSS/JS更新と記憶保持、cache済みoffline入口、console error/warning 0。
+- 再現・制限・公開証跡は`docs/playtest/ending-choice-preappearance-e47.md`。
+  実iPhone/Safari・初見・聴感・販売品質のhuman gateは閉じない。
 
 ### HZ-BL-022 — 忘却の誤操作防止と読書優先表示 ✅ 2026-09-05
 - scope: runtime / smoke / verify（実装/agent確認のみ）

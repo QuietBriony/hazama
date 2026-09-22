@@ -19,6 +19,27 @@ Hazama 自律開発 session の追記専用ログ。
 
 ---
 
+## 2026-09-23 — E48を公開し、旧版更新・記憶保持・公開の結末操作を確認
+- agent      : Codex（単一会話・別task/agentなし）
+- goal       : 本編のスマホ公開版への反映に対する「お願い」を受け、既存PagesへE48を公開する。
+- shipped    : 実装`b8bf1cf67c17bab90b7553049111182eed0df091`をfeature branchでcommitし、masterへfast-forward・通常push。
+  Pages deployment `6602833812`が同SHAでsuccess。入口: https://quietbriony.github.io/hazama/?v=e48
+  README/再現記録/BACKLOGを公開済みへ更新。ホスト・公開設定・workflow・依存は追加/変更しない。
+- checks     : commit前hazama-check 2 PASS / 0 FAIL / 0 SKIP、staged diff check PASS。
+  公開9資産（HTML/JS/CSS/SW/深度JSON/英語JSON/manifest/入口画像/記録）はHTTP200・MIME・commitの全byte一致。
+  baselineからCSS/物語/locale/画像/manifestに差分なし。音/進行/保存の実装も変更しない。
+- browser    : Playwright CLIの隔離Chrome。公開E47で作った記憶を保ち、SW/CSS/JSをE48へ更新。
+  表紙320/390/1440pxの横overflowなし、cache済みoffline reloadの入口/開始を確認。
+  新規profileで公開の身体→浮上へ自然到達し、見えない両ボタンの実座標clickを遮断、200/360ms境界をPASS。
+  320px/文字130%/読書優先、忘却のEscape/記憶を残すの取消、再降下連打を再確認。
+  記憶保持/focus復帰、周回0→1・zero訪問1→2だけ増加。両profileのconsole error/warning 0。
+  公開画面5枚を保存して目視、ローカル証跡は`output/playwright/e48-public/`。
+- scope      : 本文一括表示・音offの操作検証。実スマホ/Safari・PWA実機・間合い/聴感/販売品質は未検証。
+  ローカルの通常/軽減確認と公開の配信/操作確認を、人間の体感判断と混同しない。
+- backlog    : HZ-BL-028をDoneへ。HZ-BL-018/020/001/002等のhuman gateは維持。
+- next       : 公開E48の実スマホ確認と既存初見テスト。追加の演出/音/数値変更はこの公開作業に含めない。
+- blockers   : 配信とagent検証は完了。実機の読みやすさ・動き・聴感のhuman確認は残る。
+
 ## 2026-09-23 — E48：結末の表示前入力を実画面で再現し、狭く修正（未公開）
 - agent      : Codex（単一会話・別task/agentなし）
 - goal       : 隔離ブラウザ使用への「進めて」を受け、結末の誤入力を再現・修正して回帰確認する。

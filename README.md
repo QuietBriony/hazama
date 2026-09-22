@@ -15,7 +15,7 @@ Hazama は、沈むほど戻りにくい「降下する対話」の没入型静�
 - `assets/hazama-descent-entry-e47.webp` : E47の入口（候補01を採用・原画と画素一致のlossless WebP）。36秒で僅かに寄って静まる有限カメラ。`hazama-descent-{drift,bottom,surfaced,omega}.webp` の4枚と周回セットBは深度/終端で引き継ぐ。旧`hazama-descent-key.webp`と`og-card.jpg`は共有OG画像として保持。
 - 検証: `scripts/hazama-check.mjs`（`autonomy-docs` ＋ `build-consistency` の2本）
 - 制作候補: `docs/BLENDER-AUTHORING.md`（WorkerPC Blender 5.2をrepo外の静止画制作実行器に限定。runtime非依存）
-- ビジュアル01: [本編E47](https://quietbriony.github.io/hazama/?v=e47) / [採用前の静止比較](https://quietbriony.github.io/hazama/tools/visual/visual-preview.html?v=visual-20260920-1) / [実装と確認](docs/playtest/visual-entry-e47.md)。入口に採用。読書優先/視覚効果軽減は静止、実機の見え方は人間の確認待ち。
+- ビジュアル01: [本編E48](https://quietbriony.github.io/hazama/?v=e48) / [採用前の静止比較](https://quietbriony.github.io/hazama/tools/visual/visual-preview.html?v=visual-20260920-1) / [実装と確認](docs/playtest/visual-entry-e47.md)。入口に採用。読書優先/視覚効果軽減は静止、実機の見え方は人間の確認待ち。
 - 体験版候補: [E41 初見テスト](docs/playtest/steam-demo-candidate-e41.md)（既存Web版の初回２ルート・人間の評価待ち。Steam提出用ビルドではない）
 - 人に渡す試遊案内: [日本語](docs/playtest/invite-ja.md) / [English](docs/playtest/invite-en.md)。実施側は[最初のラウンド](docs/playtest/first-round.md)へ（準備済み・人間の結果は未取得）
 - 感覚統合: `docs/SENSORY-RESPONSE-CANDIDATE.md`（E31 governor＋E45本編応答＋E46縮約回路。Sensory Frame/labの実行エンジンは未配線） / [E45音の統合・検証](docs/playtest/world-audio-e45.md) / [E46接続と検証](docs/playtest/fly-circuit-e46.md)
@@ -128,7 +128,7 @@ Codex / Claude Code が同じ順番で作業を継続するための薄いエン
 
 ## 沿革（詳細は git log）
 
-- **進化 E48（2026-09・未公開）**: 結末の再降下/忘却ボタンを出現前は無効化し、表示開始時だけ有効にする。古い出現タイマーによる再有効化は世代チェックで防ぐ。絵・音・物語・進行数値・保存を維持（`?v=e48`）。[再現と検証](docs/playtest/ending-choice-preappearance-e47.md)。
+- **進化 E48（2026-09）**: 結末の再降下/忘却ボタンを出現前は無効化し、表示開始時だけ有効にする。古い出現タイマーによる再有効化は世代チェックで防ぐ。絵・音・物語・進行数値・保存を維持（`?v=e48`）。公開版の旧版更新・記憶保持・降下/取消/再降下を確認。[再現と検証](docs/playtest/ending-choice-preappearance-e47.md)。
 - **進化 E47（2026-09）**: 候補01を入口へ採用。剥離面が見える表紙の重ね方・スマホcrop、36秒で1.8%寄る有限カメラ。本文はカメラの外、読書優先/視覚効果軽減では静止。表紙背後の空の選択肢帯と320pxタイトルoverflowを修正。深度/終端4枚、音/進行/保存は維持（`?v=e47`）。
 
 - **forward 統合版 v2.21–v2.45**: codex 土台に Gate Run 資源ゲーム・Breath Gate・Music ブリッジ・
