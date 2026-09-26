@@ -19,6 +19,20 @@ Hazama 自律開発 session の追記専用ログ。
 
 ---
 
+## 2026-09-27 — E50公開：一語の表紙タイトルと旧版からの更新を確認
+- agent      : Codex（単一会話・別task/agentなし）
+- goal       : 新しい表紙タイトルを既存Pagesへ反映し、スマホで見られる状態にする。
+- shipped    : runtime commit `4122e35`をmasterへFF/push。Pages run `36262946259` / deployment `6682678314`成功。
+  README・試遊手順を現行E50へ同期。
+- checks     : hazama-check 2 PASS / 0 FAIL。公開のindex/CSS/runtime/SW/本文/英語6ファイルはHTTP 200で
+  commitとbyte一致。旧版E49からの更新でCSS/JS/controllerがE50になり、Hazama cacheもE50へ移行。
+- browser    : 実際にE49の身体ルートへ進めた隔離profileからE50を開き、`hazama_spiral_v1`が文字列で完全一致。
+  可視h1は1つの`HAZAMA`、console error/warning 0。オフライン再読み込み後も入口が操作可能で記憶一致。
+  ローカルの小画面画像は`output/playwright/title-e50-*.png`。実スマホの見た目は人間の確認待ち。
+- backlog    : HZ-BL-018の表紙整備と配信を完了。人間の初見/再訪評価は継続。
+- next       : 初見の人に表紙から数分遊んでもらい、タイトルの印象と物語へ入れたかを聞く。
+- blockers   : 配信のblockerなし。Steamで売れる品質や実機の体感は未判定。
+
 ## 2026-09-27 — E50候補：表紙タイトルを一語の見出しへ
 - agent      : Codex（単一会話・別task/agentなし）
 - goal       : 「タイトルもっとかっこよく、シンプルに」を受け、HZ-BL-018の表紙印象を整える。

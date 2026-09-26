@@ -2,7 +2,7 @@
 
 Status: 2026-09-26公開・agentの動作確認済み / 人間の初見・再訪の採否待ち。
 
-入口: [本編E49](https://quietbriony.github.io/hazama/?v=e49)
+入口: [現行本編E50](https://quietbriony.github.io/hazama/?v=e50)（E49の冒頭本文を継承し、表紙タイトルを簡素化）
 
 ## 仮説
 
