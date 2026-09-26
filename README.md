@@ -15,7 +15,7 @@ Hazama は、沈むほど戻りにくい「降下する対話」の没入型静�
 - `assets/hazama-descent-entry-e47.webp` : E47の入口（候補01を採用・原画と画素一致のlossless WebP）。36秒で僅かに寄って静まる有限カメラ。`hazama-descent-{drift,bottom,surfaced,omega}.webp` の4枚と周回セットBは深度/終端で引き継ぐ。旧`hazama-descent-key.webp`と`og-card.jpg`は共有OG画像として保持。
 - 検証: `scripts/hazama-check.mjs`（`autonomy-docs` ＋ `build-consistency` の2本）
 - 制作候補: `docs/BLENDER-AUTHORING.md`（WorkerPC Blender 5.2をrepo外の静止画制作実行器に限定。runtime非依存）
-- ビジュアル01: [本編E51候補](https://quietbriony.github.io/hazama/?v=e51) / [採用前の静止比較](https://quietbriony.github.io/hazama/tools/visual/visual-preview.html?v=visual-20260920-1) / [実装と確認](docs/playtest/visual-entry-e47.md)。入口に採用。読書優先/視覚効果軽減は静止、実機の見え方は人間の確認待ち。
+- ビジュアル01: [本編E51](https://quietbriony.github.io/hazama/?v=e51) / [採用前の静止比較](https://quietbriony.github.io/hazama/tools/visual/visual-preview.html?v=visual-20260920-1) / [実装と確認](docs/playtest/visual-entry-e47.md)。入口に採用。読書優先/視覚効果軽減は静止、実機の見え方は人間の確認待ち。
 - 表紙タイトル: E50で一語の「HAZAMA」を見出しにし、重なっていた赤/シアンの文字を外した。スマホ幅と旧版からの更新を公開ページで確認済み。
 - 体験版候補: [E41 初見テスト](docs/playtest/steam-demo-candidate-e41.md)（既存Web版の初回２ルート・人間の評価待ち。Steam提出用ビルドではない）
 - Steam版の構成案: [Web本体とPC包装の分離](docs/playtest/steam-desktop-plan-e51.md)。実行ファイルは未作成。販売品質・Steam登録・審査は未達。
@@ -131,6 +131,7 @@ Codex / Claude Code が同じ順番で作業を継続するための薄いエン
 
 ## 沿革（詳細は git log）
 
+- **進化 E51（2026-09-27公開）**: 日本語の表紙では英語試作の長い注意を隠し、英語選択時と翻訳取得失敗時だけ知らせる。Steam等の同梱版向けに非Web schemeでPWA cacheを登録しないガードを追加。配信ファイルと公開ブラウザの入口・英語切替・オフライン再表示を確認。物語・進行・保存・音は不変。[Steam版の構成案](docs/playtest/steam-desktop-plan-e51.md)は別資料で、実行ファイルは未作成。
 - **進化 E50（2026-09-27公開）**: 表紙のタイトルを一語の「HAZAMA」に整理し、二重のRGB文字と揺れを外した。1つの可視`h1`にし、320pxからPCまで読める大きさと字間へ調整（`?v=e50`）。旧版からの記憶保持とオフライン再読み込みを確認。物語・音・進行・保存は不変。
 - **進化 E49（2026-09-26公開）**: 零章の消えた一行から、伏せる/応える選択に即時の異変を返す。A初回は八観の名前より月と冷たさの二つの手掛かりを先に出し、再訪で八観を開く。構造/身体の分岐を本文の感覚につなげ、零章の「戻り道」表示を実際の消費と一致させた。英語試作と比較用音ページのA本文引用を同期（`?v=e49`）。進行数値・保存形式・音の作曲ルールは不変。[実装と検証](docs/playtest/opening-hook-e49.md)。
 - **進化 E48（2026-09）**: 結末の再降下/忘却ボタンを出現前は無効化し、表示開始時だけ有効にする。古い出現タイマーによる再有効化は世代チェックで防ぐ。絵・音・物語・進行数値・保存を維持（`?v=e48`）。公開版の旧版更新・記憶保持・降下/取消/再降下を確認。[再現と検証](docs/playtest/ending-choice-preappearance-e47.md)。

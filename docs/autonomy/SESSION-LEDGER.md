@@ -19,6 +19,22 @@ Hazama 自律開発 session の追記専用ログ。
 
 ---
 
+## 2026-09-27 — E51公開：入口の言語案内を整理し、Steam包装の境界を明文化
+
+- agent      : Codex（単一会話・別task/agentなし）
+- goal       : 販売に向けた初見の入口を整え、Web本体を保ったSteam版の構成を示す。
+- shipped    : commit `6c7bdd9`をfeature branchでreview後masterへFF/push。Pages run `36264383648`成功。
+  日本語表紙の英語試作注意を隠し、英語選択・英語catalog失敗では表示。非HTTP(S)ではPWA登録を行わない。
+  `docs/playtest/steam-desktop-plan-e51.md`で別包装・保存分離・実機/人間のgateを記録。
+- checks     : hazama-check 2 PASS / 0 FAIL、差分check PASS。公開のindex/CSS/runtime/SW/本文/英語catalogは
+  HTTP 200、commitのblobとbyte一致。公開390pxで日本語表紙、offline reload後の英語案内表示を確認。
+  controller/cacheはE51、console error/warning 0。
+- browser    : ローカル320×568/390×844の日本語・英語表紙を目視。320pxでも「沈む」が画面内にあり、
+  日本語で零章へ起動。画像は`output/playwright/entry-e51-*.png`（git対象外）。実スマホは未確認。
+- backlog    : HZ-BL-018の入口改善を進めたがhuman gateを維持。Steam包装は設計のみでEXE未作成。
+- next       : 初見5〜10人と英語話者の試遊を集め、面白さ・意味理解を確認して有料版の範囲を決める。
+- blockers   : Steam販売品質、PC実行ファイル、実機の音・PWA体感は未検証。Steam操作/支払/提出なし。
+
 ## 2026-09-27 — E50公開：一語の表紙タイトルと旧版からの更新を確認
 - agent      : Codex（単一会話・別task/agentなし）
 - goal       : 新しい表紙タイトルを既存Pagesへ反映し、スマホで見られる状態にする。
