@@ -1,11 +1,12 @@
-// Exercise production choice renderers with a deterministic clock: late appearance
-// callbacks must never reopen a decision after the player has committed it.
+// Exercise production choice renderers with a deterministic clock: no choice may
+// commit before all candidates are readable, and late callbacks must stay inert.
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import vm from "node:vm";
 import { localeSource } from "./reading-locale-smoke.mjs";
 
 const source = readFileSync(new URL("../slice.js", import.meta.url), "utf8");
+const englishCatalog = JSON.parse(readFileSync(new URL("../locales/en.json", import.meta.url), "utf8"));
 const forgetGuard = source.match(/  const ForgetGuard = \(\(\) => \{[\s\S]*?\n  \}\)\(\);/)?.[0];
 assert.ok(forgetGuard, "production forget confirmation must be available");
 const names = ["renderChoices", "confirmThen", "renderEchoChoices", "renderEdgeChoices"];
@@ -53,7 +54,8 @@ function harness(reduced = false, dialogMode = "native") {
     }
     focus() { document.activeElement = this; }
   }
-  const document = { body: new Element(), createElement: () => new Element() };
+  const document = { body: new Element(), documentElement: { lang: "ja" },
+    createElement: () => new Element(), querySelectorAll: () => [] };
   document.activeElement = document.body;
   const choicesEl = new Element(), sceneEl = new Element();
   const dialog = dialogMode === "missing" ? null : new Element();
@@ -61,6 +63,7 @@ function harness(reduced = false, dialogMode = "native") {
   if (dialogMode === "throws") dialog.showModal = () => { throw new Error("cannot show"); };
   const context = vm.createContext({
     document, choicesEl, sceneEl, REDUCED: reduced, revealToken: 0, $: () => dialog,
+    englishCatalog,
     window: { setTimeout(fn, delay = 0) { timers.set(++nextTimer, { fn, at: now + delay }); return nextTimer; } },
     state: { id: "B", cycle: 0, maxSink: 0, attunement: 0, visits: { B: 1 }, legacy: { detoursSeen: [] } },
     ATTUNE: { omegaThreshold: 6 }, CHOICE_VARIA: {}, ECHO_BANK: { B: "seen", C: "unseen", D: "unseen too" },
@@ -93,11 +96,27 @@ function harness(reduced = false, dialogMode = "native") {
     }
     now = end;
   }
-  return { context, choicesEl, document, dialog, actions, render, advance };
+  return { context, choicesEl, document, dialog, actions, node, render, advance };
 }
 
-// E48: invisible decisions cannot accept early taps or consume their click listener.
-// The edge must follow the same disabled-until-appearance rule as normal/echo choices.
+// A depleted path cannot be spent again; the promise on the button must agree
+// with the actual floor-at-zero rule in both available display languages.
+for (const language of ["ja", "en"]) {
+  const h = harness();
+  h.context.state.returnPaths = 0;
+  h.node.choices[0].sub = "身体に問う＝地盤が一枚固くなる（戻り道 −1）";
+  h.node.choices[0].close = 1;
+  h.node.choices[1].sub = h.node.choices[0].sub;
+  if (language === "en") vm.runInContext("Locale.install(englishCatalog); Locale.select('en');", h.context);
+  const [costly, unchanged] = h.render("normal");
+  const cost = costly.querySelector(".sub").textContent;
+  assert.match(cost, language === "en" ? /No ways back remain/ : /戻り道は尽きた/);
+  assert.doesNotMatch(cost, /−1/, `${language}: no false one-path loss at zero`);
+  assert.match(unchanged.querySelector(".sub").textContent, language === "en" ? /Ways back −1/ : /戻り道 −1/,
+    `${language}: no-cost choice is not rewritten`);
+}
+
+// Invisible decisions cannot accept early taps or consume their click listener.
 for (const kind of ["normal", "echo", "edge"]) {
   for (const reduced of [false, true]) {
     const h = harness(reduced), buttons = h.render(kind);
@@ -116,7 +135,7 @@ const appearance = harness(), edgeButtons = appearance.render("edge");
 appearance.advance(199);
 assert.ok(edgeButtons.every((button) => button.disabled), "edge: both controls stay disabled before first appearance");
 appearance.advance(1);
-assert.equal(edgeButtons[0].disabled, false, "edge: first control enables at its own appearance");
+assert.equal(edgeButtons[0].disabled, true, "edge: first control stays inert while the other is hidden");
 assert.equal(edgeButtons[0].classList.contains("in"), true);
 assert.equal(edgeButtons[1].disabled, true, "edge: second control waits for its own appearance");
 edgeButtons[1].click();
@@ -124,45 +143,60 @@ assert.equal(appearance.dialog.opens || 0, 0, "edge: forget remains inert while 
 appearance.advance(159);
 assert.equal(edgeButtons[1].disabled, true);
 appearance.advance(1);
-assert.equal(edgeButtons[1].disabled, false, "edge: forget enables at 360ms");
+assert.equal(edgeButtons[1].disabled, true, "edge: both controls wait through the final fade");
 assert.equal(edgeButtons[1].classList.contains("in"), true);
+appearance.advance(399);
+assert.ok(edgeButtons.every((button) => button.disabled), "edge: no action before both labels can be read");
+appearance.advance(1);
+assert.ok(edgeButtons.every((button) => !button.disabled), "edge: both controls enable together at 760ms");
+assert.equal(appearance.document.activeElement, edgeButtons[0], "edge: focus lands when the full decision is available");
 
 const edgeCommit = harness(), committedButtons = edgeCommit.render("edge");
-edgeCommit.advance(220); committedButtons[0].click();
+edgeCommit.advance(759); committedButtons[0].click();
+assert.deepEqual(edgeCommit.actions, [], "edge: pre-fade input cannot commit");
+edgeCommit.advance(1); committedButtons[0].click();
 edgeCommit.advance(139);
 assert.deepEqual(edgeCommit.actions, [], "edge: preserve the existing commit beat");
-edgeCommit.advance(1); // Second appearance and first commit now share the same deadline.
-assert.equal(committedButtons[1].disabled, true, "edge: late appearance cannot revive the unchosen control");
+edgeCommit.advance(1);
+assert.equal(committedButtons[1].disabled, true, "edge: a committed choice closes the other control");
 committedButtons[1].click(); edgeCommit.advance(1000);
 assert.deepEqual(edgeCommit.actions, ["descend"]);
 assert.equal(edgeCommit.dialog.opens || 0, 0, "edge: a committed descent cannot open the old forget dialog");
 
-for (const stale of ["token", "detached"]) {
-  const h = harness(), buttons = h.render("edge");
-  if (stale === "token") h.context.revealToken++;
-  else h.choicesEl.innerHTML = "";
-  h.advance(1000);
-  assert.ok(buttons.every((button) => button.disabled), `edge ${stale}: stale appearance leaves old controls disabled`);
-  assert.equal(h.document.activeElement, h.document.body, `edge ${stale}: no stale focus transfer`);
+for (const kind of ["normal", "echo", "edge"]) {
+  for (const stale of ["token", "detached"]) {
+    const h = harness(), buttons = h.render(kind);
+    if (stale === "token") h.context.revealToken++;
+    else h.choicesEl.innerHTML = "";
+    h.advance(1000);
+    assert.ok(buttons.every((button) => button.disabled), `${kind} ${stale}: stale appearance leaves old controls disabled`);
+    assert.equal(h.document.activeElement, h.document.body, `${kind} ${stale}: no stale focus transfer`);
+  }
 }
 
 for (const kind of ["normal", "echo"]) {
-  for (const clickAt of [160, 200, 260]) {
+  const unlockAt = kind === "normal" ? 820 : 970;
+  for (const clickAt of [160, 270, unlockAt - 1]) {
     const h = harness(), buttons = h.render(kind);
     h.advance(clickAt);
-    buttons[0].click();
-    h.advance(270 - clickAt); // Second button's appearance falls inside the 140ms commit beat.
-    assert.equal(buttons[1].disabled, true, `${kind}: appearance must not re-enable an unchosen button`);
-    buttons[1].click();
+    buttons[0].click(); buttons[1].click();
+    assert.ok(buttons.every((button) => button.disabled), `${kind}: partial reveal cannot be chosen`);
+    assert.equal(h.actions.length, 0, `${kind}: partial reveal has no effect`);
+    h.advance(unlockAt - clickAt);
+    assert.equal(buttons[0].disabled, false, `${kind}: first candidate is ready`);
+    assert.equal(buttons[1].disabled, false, `${kind}: second candidate is ready at the same time`);
+    if (kind === "normal") assert.equal(buttons[2].disabled, true, "normal: locked key stays locked");
+    buttons[0].click(); buttons[1].click();
     assert.equal(h.actions.length, 0, `${kind}: preserve the confirmation beat`);
-    h.advance(1000);
+    h.advance(140);
     assert.equal(h.actions.length, 1, `${kind}: exactly one choice effect`);
+    assert.equal(buttons[1].disabled, true, `${kind}: confirmation closes the other choice`);
   }
 }
 
 for (const kind of ["normal", "echo", "edge"]) {
   const h = harness(), buttons = h.render(kind);
-  h.advance(220);
+  h.advance(1000);
   buttons[0].click();
   h.document.activeElement = h.document.body;
   h.context.revealToken++; // A newer scene replaces this decision before its commit runs.
@@ -230,4 +264,4 @@ for (const mode of ["missing", "unsupported", "throws"]) {
   buttons[0].click(); h.advance(1000);
   assert.deepEqual(h.actions, ["descend"], `${mode}: memory-preserving descent remains playable`);
 }
-console.log("choice-commit smoke PASS (preappearance input, staggered clicks, stale scenes, reduced motion, locks, safe forget/cancel/reopen)");
+console.log("choice-commit smoke PASS (full-set reveal, stale scenes, reduced motion, locks, safe forget/cancel/reopen)");

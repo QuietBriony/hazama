@@ -47,6 +47,19 @@ for (const id of pack.coveredNodes) {
     assert.ok([...output.t].length * L.rate(output, 50) <= [...item.t].length * 50 + 0.001, "English does not inflate reveal wait");
   }
 }
+// Body-route copy promises a real, narrow tradeoff: the quiet choice advances
+// without spending a way back, while the other deepens recognition at a cost.
+for (const id of ["B_soma", "D_soma", "F_soma", "J_soma", "N_soma", "S_soma", "V_soma", "Y_soma"]) {
+  const [deep, quiet] = data.nodes[id].choices;
+  assert.equal(data.nodes[id].choices.length, 2, `${id}: the first descent keeps its two-choice shape`);
+  assert.equal(deep.deep, true, `${id}: costly choice still deepens recognition`);
+  assert.equal(deep.close, 1, `${id}: costly choice still closes a way back`);
+  assert.equal(quiet.kind, "descend", `${id}: quiet choice still advances`);
+  assert.equal(quiet.to, deep.to, `${id}: the branch still rejoins at the original node`);
+  assert.ok(!quiet.close, `${id}: quiet choice must not spend a way back`);
+  assert.match(quiet.sub, /戻り道は減らない/, `${id}: subtitle must match its no-loss behavior`);
+  assert.match(L.text(quiet.sub), /Ways back unchanged/, `${id}: English subtitle must match too`);
+}
 for (const item of [...data.edge.sankLines, ...data.edge.heldLines]) assert.ok(L.translated(item.t));
 const echoBank = source.match(/  const ECHO_BANK = (\{[\s\S]*?\n  \});/)?.[1];
 const echo = vm.runInNewContext("(" + echoBank + ")");

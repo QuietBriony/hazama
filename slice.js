@@ -1208,6 +1208,7 @@
   function renderChoices(node) {
     const myToken = revealToken;
     choicesEl.innerHTML = "";
+    const candidates = [];
     onboardHint(node);           // E9: 初回だけ、最初の読みの岐路に一行
     attuneGlossHint();           // E26: 認識◆が初めて灯った時だけ、その意味を一行（一度きり）
     // E17: 周回ゲート＝minCycle を持つ選択肢は state.cycle がその値以上のときだけ出す（周回で A に第3の幹が開く）。
@@ -1238,7 +1239,12 @@
       if (sub) {
         const label = locked ? "まだ届かない（認識 {value}/{need}）" : sub;
         const el = btn.querySelector(".sub");
-        el.textContent = tr(label, { value: Math.round(state.attunement || 0), need: ATTUNE.omegaThreshold });
+        let displayed = tr(label, { value: Math.round(state.attunement || 0), need: ATTUNE.omegaThreshold });
+        // 戻り道は0未満にならない。消費できない時に「−1」と約束しない（翻訳後の表示だけ変更）。
+        if (c.close && state.returnPaths === 0) displayed = displayed
+          .replace("戻り道 −1", "戻り道は尽きた")
+          .replace("Ways back −1", "No ways back remain");
+        el.textContent = displayed;
         el.lang = Locale.english && Locale.translated(label) ? "en" : "ja";
       }
       if (Locale.english && !Locale.covers(c.to)) {
@@ -1251,14 +1257,21 @@
       btn.disabled = true;                 // E14: appear タイマー前の暴発タップ防止＝reveal 中に固定位置の choices 帯を反射タップしても発火しない
       choicesEl.appendChild(btn);
       const appear = REDUCED ? 0 : 120 + idx * 150 + (c.kind === "retreat" ? state.maxSink * 800 : 0);
+      candidates.push({ btn, locked, appear });
       window.setTimeout(() => {
         if (myToken !== revealToken || !choicesEl.contains(btn)) return;
-        btn.classList.add("in"); if (!locked) btn.disabled = false;   // E19: ロックは解錠しない
-        // E25: ノード遷移でフォーカスが body へ落ちる穴を塞ぐ＝最初の押せる択が有効化した時、フォーカス喪失時のみ移す。
-        //   マウス/タッチは activeElement=body かつ focus-visible 非表示＝見えは不変。キーボード/SR/スイッチだけ効く。
-        if (idx === 0 && !locked && document.activeElement === document.body) btn.focus({ preventScroll: true });
+        btn.classList.add("in");
       }, appear);
     });
+    // 全候補を読む前に先頭だけ押せると、まだ見えない道を選ぶ機会が失われる。
+    // 出現演出は保ち、最後の候補のフェード（CSS 400ms）が終わってから一斉に解放する。
+    if (candidates.length) window.setTimeout(() => {
+      if (myToken !== revealToken || !candidates.every(({ btn }) => choicesEl.contains(btn))) return;
+      candidates.forEach(({ btn, locked }) => { if (!locked) btn.disabled = false; });
+      const first = candidates.find(({ locked }) => !locked)?.btn;
+      // E25: キーボード/SR/スイッチのフォーカス喪失時だけ着地させる。
+      if (first && document.activeElement === document.body) first.focus({ preventScroll: true });
+    }, REDUCED ? 0 : Math.max(...candidates.map(({ appear }) => appear)) + 400);
     // E27: 次に開く降り方を「封印された扉」として一枚だけ見せる（幹の中身は伏せる＝驚き温存・
     //   E19 の"見える鍵"イディオム）。周回の理由が初回から見える＝扉は sub の原文句で機構を語る。
     //   全幹が開いたら出ない。押せない＝aria-disabled・focus 対象外。
@@ -1368,13 +1381,18 @@
     frags.forEach((f) => mk(Locale.english ? "“" + tr(ECHO_BANK[f.key]) + "”" : "『" + ECHO_BANK[f.key] + "』", "", () => echoResolve(node, id, f.truth)));
     // E14: skip ラベルも id 別＝Z は「Ω へ抜ける」が等価＝Z 限定で「目を閉じ、Ωへ」。
     mk(id === "Z" ? "目を閉じ、Ωへ" : "目を逸らし、先へ", "echo-skip", () => echoResolve(node, id, null));
-    choicesEl.querySelectorAll(".hz-choice").forEach((b, i) =>
+    const candidates = Array.from(choicesEl.querySelectorAll(".hz-choice"));
+    candidates.forEach((b, i) =>
       window.setTimeout(() => {
         if (myToken !== revealToken || !choicesEl.contains(b)) return;
-        b.classList.add("in"); b.disabled = false;
-        // E28: 門でも focus 着地（E25 と同条件＝喪失時のみ・キーボード/SR だけに効く）。
-        if (i === 0 && document.activeElement === document.body) b.focus({ preventScroll: true });
+        b.classList.add("in");
       }, REDUCED ? 0 : 120 + i * 150));
+    window.setTimeout(() => {
+      if (myToken !== revealToken || !candidates.every((b) => choicesEl.contains(b))) return;
+      candidates.forEach((b) => { b.disabled = false; });
+      // E28: 門でも全断片を読めるようになってから focus 着地。
+      if (document.activeElement === document.body) candidates[0]?.focus({ preventScroll: true });
+    }, REDUCED ? 0 : 120 + (candidates.length - 1) * 150 + 400);
     setBusy(false);              // E6: 本文＋エコー門が出揃った
     queueA11yState();            // E34: 門が確定してから進行値を一度だけ読む
     Follow.stick();
@@ -1629,14 +1647,18 @@
     chip.addEventListener("click", () => EdgeCard.share(attuned, chip));
     row.appendChild(chip);
     choicesEl.appendChild(row);
-    choicesEl.querySelectorAll(".hz-choice").forEach((b, i) =>
+    const candidates = Array.from(choicesEl.querySelectorAll(".hz-choice"));
+    candidates.forEach((b, i) =>
       window.setTimeout(() => {
         if (myToken !== revealToken || !choicesEl.contains(b)) return;
         b.classList.add("in");
-        b.disabled = false; // 確定後/画面交代後は上の世代・所属チェックで再有効化を防ぐ。
-        // E28: 縁（終端）でも focus 着地＝キーボード/SR が結末の二択へ迷わず届く（喪失時のみ・見え不変）。
-        if (i === 0 && document.activeElement === document.body) b.focus({ preventScroll: true });
       }, REDUCED ? 0 : 200 + i * 160));
+    window.setTimeout(() => {
+      if (myToken !== revealToken || !candidates.every((b) => choicesEl.contains(b))) return;
+      candidates.forEach((b) => { b.disabled = false; });
+      // E28: 縁（終端）でも二択を読める状態で focus 着地。
+      if (document.activeElement === document.body) candidates[0]?.focus({ preventScroll: true });
+    }, REDUCED ? 0 : 200 + (candidates.length - 1) * 160 + 400);
     setBusy(false);              // E6: 縁が出揃った
     queueA11yState();            // E34: 結末本文と競合させず、最後の進行値を読む
     Follow.stick();
@@ -2812,7 +2834,7 @@
     // 翻訳が取得できなくても日本語の起動は止めない。言語は表紙での明示選択・保存しない。
     const controller = new AbortController();
     const timer = window.setTimeout(() => controller.abort(), 8000);
-    fetch("locales/en.json?v=e51", { signal: controller.signal }).then((response) => {
+    fetch("locales/en.json?v=e53", { signal: controller.signal }).then((response) => {
       if (!response.ok) throw new Error("English catalog HTTP " + response.status);
       return response.json();
     }).then((data) => {
@@ -2826,7 +2848,7 @@
   }
 
   async function loadData() {
-    const res = await fetch("depths-shell.json?v=e51", { cache: "no-store" });
+    const res = await fetch("depths-shell.json?v=e53", { cache: "no-store" });
     if (!res.ok) throw new Error(`depths-shell HTTP ${res.status}`);
     const data = await res.json();
     if (!data || typeof data !== "object" || !data.start || !data.nodes || !data.nodes[data.start]) {
@@ -2915,7 +2937,7 @@
     if (!["http:", "https:"].includes(window.location.protocol)) return;
     if (!("serviceWorker" in navigator)) return;
     const register = () => {
-      navigator.serviceWorker.register("sw.js?v=e51", { scope: "./", updateViaCache: "none" }).then((reg) => {
+      navigator.serviceWorker.register("sw.js?v=e53", { scope: "./", updateViaCache: "none" }).then((reg) => {
         if (typeof reg.update === "function") reg.update().catch(() => {});
       }).catch((err) => console.warn("[Hazama slice] SW register failed:", err));
     };

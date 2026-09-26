@@ -7,7 +7,7 @@ Hazama は、沈むほど戻りにくい「降下する対話」の没入型静�
 ## 構成（単一ビルド）
 
 - `index.html` : エントリーポイント（没入シェル＝9層アート＋本文＋選択＋認識インジケータ・初回ガイド・全文表示・読む/聴く設定・忘却の確認）
-- `slice.js` : エンジン（reveal/全文表示・ページ内設定・表示専用の言語切替・沈下/認識/Ωゲート・エコー門・二極終端と振り返り・終端の出現前入力保護・反転ガーデン/曼荼羅/グリッジ・内製Audio・below∞生成・spiral 記憶・縁カード）
+- `slice.js` : エンジン（reveal/全文表示・ページ内設定・表示専用の言語切替・沈下/認識/Ωゲート・エコー門・二極終端と振り返り・全候補表示後の選択解放・反転ガーデン/曼荼羅/グリッジ・内製Audio・below∞生成・spiral 記憶・縁カード）
 - `locales/en.json` : 英語試作カタログ（初回の身体の道＋共有終端/操作/エコー候補。全面英語対応ではない）
 - `slice.css` : 没入表示と、文字を明瞭にして背景の明滅/揺れを抑える読書優先表示
 - `depths-shell.json` : 深度本文データ（depthMeta v0 スキーマ・沈下スパイン・72ノード）
@@ -15,9 +15,10 @@ Hazama は、沈むほど戻りにくい「降下する対話」の没入型静�
 - `assets/hazama-descent-entry-e47.webp` : E47の入口（候補01を採用・原画と画素一致のlossless WebP）。36秒で僅かに寄って静まる有限カメラ。`hazama-descent-{drift,bottom,surfaced,omega}.webp` の4枚と周回セットBは深度/終端で引き継ぐ。旧`hazama-descent-key.webp`と`og-card.jpg`は共有OG画像として保持。
 - 検証: `scripts/hazama-check.mjs`（`autonomy-docs` ＋ `build-consistency` の2本）
 - 制作候補: `docs/BLENDER-AUTHORING.md`（WorkerPC Blender 5.2をrepo外の静止画制作実行器に限定。runtime非依存）
-- ビジュアル01: [本編E51](https://quietbriony.github.io/hazama/?v=e51) / [採用前の静止比較](https://quietbriony.github.io/hazama/tools/visual/visual-preview.html?v=visual-20260920-1) / [実装と確認](docs/playtest/visual-entry-e47.md)。入口に採用。読書優先/視覚効果軽減は静止、実機の見え方は人間の確認待ち。
+- ビジュアル01: [公開中の本編E53](https://quietbriony.github.io/hazama/?v=e53) / [採用前の静止比較](https://quietbriony.github.io/hazama/tools/visual/visual-preview.html?v=visual-20260920-1) / [実装と確認](docs/playtest/visual-entry-e47.md)。入口に採用。読書優先/視覚効果軽減は静止、実機の見え方は人間の確認待ち。
 - 表紙タイトル: E50で一語の「HAZAMA」を見出しにし、重なっていた赤/シアンの文字を外した。スマホ幅と旧版からの更新を公開ページで確認済み。
 - 体験版候補: [E41 初見テスト](docs/playtest/steam-demo-candidate-e41.md)（既存Web版の初回２ルート・人間の評価待ち。Steam提出用ビルドではない）
+- E53公開候補: [E52の選択公平性](docs/playtest/choice-fairness-e52.md)に[身体の道の場面・選択文](docs/playtest/body-route-e53.md)を追加。戻り道0本時の費用表示も実際の挙動に合わせた。人間の初見評価はまだ。
 - Steam版の構成案: [Web本体とPC包装の分離](docs/playtest/steam-desktop-plan-e51.md)。実行ファイルは未作成。販売品質・Steam登録・審査は未達。
 - 冒頭導線: [E49 異変→選択→反応](docs/playtest/opening-hook-e49.md)（2026-09-26公開・旧版更新と記憶保持を確認）。初回Aは八観の名称を伏せ、再訪では名称と記憶を見せる。初見の面白さは人間の試遊待ち。
 - 人に渡す試遊案内: [日本語](docs/playtest/invite-ja.md) / [English](docs/playtest/invite-en.md)。実施側は[最初のラウンド](docs/playtest/first-round.md)へ（準備済み・人間の結果は未取得）
@@ -131,6 +132,7 @@ Codex / Claude Code が同じ順番で作業を継続するための薄いエン
 
 ## 沿革（詳細は git log）
 
+- **進化 E53（2026-09-27公開）**: 全候補の表示後に選択を同時解放し、先頭択の早押し偏りを解消。身体の道のB/Nを場面化し、軽い選択の戻り道コストを明示。戻り道0本では「−1」を表示しない。進行値・行き先・保存形式・音は不変。ブラウザ390pxと自動チェックは確認済み。実スマホの手触り、面白さ、英訳の自然さ、販売品質は人間の確認待ち。
 - **進化 E51（2026-09-27公開）**: 日本語の表紙では英語試作の長い注意を隠し、英語選択時と翻訳取得失敗時だけ知らせる。Steam等の同梱版向けに非Web schemeでPWA cacheを登録しないガードを追加。配信ファイルと公開ブラウザの入口・英語切替・オフライン再表示を確認。物語・進行・保存・音は不変。[Steam版の構成案](docs/playtest/steam-desktop-plan-e51.md)は別資料で、実行ファイルは未作成。
 - **進化 E50（2026-09-27公開）**: 表紙のタイトルを一語の「HAZAMA」に整理し、二重のRGB文字と揺れを外した。1つの可視`h1`にし、320pxからPCまで読める大きさと字間へ調整（`?v=e50`）。旧版からの記憶保持とオフライン再読み込みを確認。物語・音・進行・保存は不変。
 - **進化 E49（2026-09-26公開）**: 零章の消えた一行から、伏せる/応える選択に即時の異変を返す。A初回は八観の名前より月と冷たさの二つの手掛かりを先に出し、再訪で八観を開く。構造/身体の分岐を本文の感覚につなげ、零章の「戻り道」表示を実際の消費と一致させた。英語試作と比較用音ページのA本文引用を同期（`?v=e49`）。進行数値・保存形式・音の作曲ルールは不変。[実装と検証](docs/playtest/opening-hook-e49.md)。
