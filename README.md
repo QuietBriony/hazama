@@ -15,9 +15,10 @@ Hazama は、沈むほど戻りにくい「降下する対話」の没入型静�
 - `assets/hazama-descent-entry-e47.webp` : E47の入口（候補01を採用・原画と画素一致のlossless WebP）。36秒で僅かに寄って静まる有限カメラ。`hazama-descent-{drift,bottom,surfaced,omega}.webp` の4枚と周回セットBは深度/終端で引き継ぐ。旧`hazama-descent-key.webp`と`og-card.jpg`は共有OG画像として保持。
 - 検証: `scripts/hazama-check.mjs`（`autonomy-docs` ＋ `build-consistency` の2本）
 - 制作候補: `docs/BLENDER-AUTHORING.md`（WorkerPC Blender 5.2をrepo外の静止画制作実行器に限定。runtime非依存）
-- ビジュアル01: [本編E50](https://quietbriony.github.io/hazama/?v=e50) / [採用前の静止比較](https://quietbriony.github.io/hazama/tools/visual/visual-preview.html?v=visual-20260920-1) / [実装と確認](docs/playtest/visual-entry-e47.md)。入口に採用。読書優先/視覚効果軽減は静止、実機の見え方は人間の確認待ち。
+- ビジュアル01: [本編E51候補](https://quietbriony.github.io/hazama/?v=e51) / [採用前の静止比較](https://quietbriony.github.io/hazama/tools/visual/visual-preview.html?v=visual-20260920-1) / [実装と確認](docs/playtest/visual-entry-e47.md)。入口に採用。読書優先/視覚効果軽減は静止、実機の見え方は人間の確認待ち。
 - 表紙タイトル: E50で一語の「HAZAMA」を見出しにし、重なっていた赤/シアンの文字を外した。スマホ幅と旧版からの更新を公開ページで確認済み。
 - 体験版候補: [E41 初見テスト](docs/playtest/steam-demo-candidate-e41.md)（既存Web版の初回２ルート・人間の評価待ち。Steam提出用ビルドではない）
+- Steam版の構成案: [Web本体とPC包装の分離](docs/playtest/steam-desktop-plan-e51.md)。実行ファイルは未作成。販売品質・Steam登録・審査は未達。
 - 冒頭導線: [E49 異変→選択→反応](docs/playtest/opening-hook-e49.md)（2026-09-26公開・旧版更新と記憶保持を確認）。初回Aは八観の名称を伏せ、再訪では名称と記憶を見せる。初見の面白さは人間の試遊待ち。
 - 人に渡す試遊案内: [日本語](docs/playtest/invite-ja.md) / [English](docs/playtest/invite-en.md)。実施側は[最初のラウンド](docs/playtest/first-round.md)へ（準備済み・人間の結果は未取得）
 - 感覚統合: `docs/SENSORY-RESPONSE-CANDIDATE.md`（E31 governor＋E45本編応答＋E46縮約回路。Sensory Frame/labの実行エンジンは未配線） / [E45音の統合・検証](docs/playtest/world-audio-e45.md) / [E46接続と検証](docs/playtest/fly-circuit-e46.md)

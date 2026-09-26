@@ -2794,28 +2794,39 @@
   // ---------- 起動 ----------
   function setupLanguage() {
     const select = $("gate-language");
+    const note = $("language-note");
+    let englishLoadFailed = false;
+    const syncLanguageNote = () => {
+      note.hidden = !englishLoadFailed && select.value !== "en";
+      if (note.hidden) select.removeAttribute("aria-describedby");
+      else select.setAttribute("aria-describedby", "language-note");
+    };
+    syncLanguageNote();
     select.disabled = false;
     select.addEventListener("change", () => {
       if (entered) return;
       if (!Locale.select(select.value)) select.value = "ja";
+      syncLanguageNote();
       Music.label();
     });
     // 翻訳が取得できなくても日本語の起動は止めない。言語は表紙での明示選択・保存しない。
     const controller = new AbortController();
     const timer = window.setTimeout(() => controller.abort(), 8000);
-    fetch("locales/en.json?v=e50", { signal: controller.signal }).then((response) => {
+    fetch("locales/en.json?v=e51", { signal: controller.signal }).then((response) => {
       if (!response.ok) throw new Error("English catalog HTTP " + response.status);
       return response.json();
     }).then((data) => {
       Locale.install(data);
       select.querySelector('[value="en"]').disabled = false;
     }).catch(() => {
-      $("language-note").textContent = "英語データを読み込めません。日本語では遊べます。 / English unavailable. Reload to retry.";
+      englishLoadFailed = true;
+      note.textContent = "英語データを読み込めません。日本語では遊べます。 / English unavailable. Reload to retry.";
+      syncLanguageNote();
     }).finally(() => window.clearTimeout(timer));
   }
 
   async function loadData() {
-    const res = await fetch("depths-shell.json?v=e50", { cache: "no-store" });
+    const res = await fetch("depths-shell.json?v=e51", { cache: "no-store" });
     if (!res.ok) throw new Error(`depths-shell HTTP ${res.status}`);
     const data = await res.json();
     if (!data || typeof data !== "object" || !data.start || !data.nodes || !data.nodes[data.start]) {
@@ -2900,9 +2911,11 @@
 
   // R4: PWA — 単一buildをインストール/オフライン対応に。/hazama/ スコープ（相対 sw.js）。
   function registerSlicePWA() {
+    // Steam等の同梱app://版はbundle自体がoffline。Web用cacheを作らず配布側の更新に任せる。
+    if (!["http:", "https:"].includes(window.location.protocol)) return;
     if (!("serviceWorker" in navigator)) return;
     const register = () => {
-      navigator.serviceWorker.register("sw.js?v=e50", { scope: "./", updateViaCache: "none" }).then((reg) => {
+      navigator.serviceWorker.register("sw.js?v=e51", { scope: "./", updateViaCache: "none" }).then((reg) => {
         if (typeof reg.update === "function") reg.update().catch(() => {});
       }).catch((err) => console.warn("[Hazama slice] SW register failed:", err));
     };

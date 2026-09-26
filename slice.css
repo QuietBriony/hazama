@@ -604,6 +604,8 @@ body:not(.reading-comfort) :is(.hz-gate-settings .hz-chip, .hz-gate-note:not(.is
 .hz-language select { max-width: 55%; min-height: 44px; padding: 8px; color: var(--ink); background: #101923; border: 1px solid var(--line); border-radius: 6px; font: inherit; color-scheme: dark; }
 .hz-language select:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
 .hz-language-note { max-width: 38em; margin: 8px auto 16px; font-size: 0.72rem; line-height: 1.6; color: #a1aebc; }
+.hz-language-note[hidden] { display: none; }
+.hz-language-note[hidden] + .hz-gate-enter { margin-top: 16px; }
 .hz-locale-notice { flex: 0 0 auto; margin: 4px 0 0; color: #a1aebc; font-size: 0.72rem; line-height: 1.45; }
 .hz-locale-notice[hidden] { display: none; }
 .hz-language-tag { display: block; margin-top: 5px; font-size: 0.72rem; color: #b1bac6; }

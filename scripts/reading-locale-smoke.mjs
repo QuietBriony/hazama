@@ -57,11 +57,47 @@ const staticTexts = (input) => [...input.replace(/\r\n?/g, "\n")
   .matchAll(/<([\w-]+)\b[^>]*\bdata-i18n(?=[\s>])[^>]*>([^<]+)<\/\1>/g)].map(tag => tag[2]);
 const uiTexts = staticTexts(html);
 assert.ok(uiTexts.includes("狭間（あわい）\n沈むほど、戻り道は細くなる。"), "multiline cover must be checked");
+assert.match(html, /<p id="language-note"[^>]*\bhidden>/, "Japanese cover starts without the English trial disclaimer");
+assert.match(read("slice.css"), /\.hz-language-note\[hidden\]\s*\{\s*display:\s*none;/,
+  "the hidden disclaimer must not occupy visual space");
 for (const newline of ["\n", "\r\n", "\r"]) {
   const checkout = html.replace(/\r\n?/g, "\n").replace(/\n/g, newline);
   assert.deepEqual(staticTexts(checkout), uiTexts, "UI keys must not depend on checkout line endings");
 }
 for (const field of uiTexts) assert.ok(L.translated(field), "missing static UI translation: " + field);
+const setupLanguageSource = source.match(/  function setupLanguage\(\) \{[\s\S]*?\n  \}/)?.[0];
+assert.ok(setupLanguageSource, "production language picker is extractable");
+let activeSelect, activeNote, onChange;
+const picker = () => ({ value: "ja", disabled: true, attributes: new Map(),
+  querySelector: () => ({ disabled: true }),
+  setAttribute(name, value) { this.attributes.set(name, value); },
+  removeAttribute(name) { this.attributes.delete(name); },
+  addEventListener(name, listener) { if (name === "change") onChange = listener; } });
+context.$ = (id) => id === "gate-language" ? activeSelect : activeNote;
+context.entered = false;
+context.Music = { label() {} };
+context.AbortController = AbortController;
+context.window = { setTimeout: () => 1, clearTimeout() {} };
+context.fetch = () => Promise.resolve({ ok: true, json: () => Promise.resolve(pack) });
+vm.runInContext(setupLanguageSource + "\nglobalThis.setupLanguage = setupLanguage;", context);
+activeSelect = picker(); activeNote = { hidden: false, textContent: "" };
+context.setupLanguage();
+assert.equal(activeNote.hidden, true, "Japanese cover hides the English scope note");
+assert.equal(activeSelect.attributes.has("aria-describedby"), false, "hidden note is not announced for Japanese");
+await new Promise(setImmediate);
+activeSelect.value = "en"; onChange();
+assert.equal(activeNote.hidden, false, "English choice reveals the scope note");
+assert.equal(activeSelect.attributes.get("aria-describedby"), "language-note", "English scope note is announced");
+activeSelect.value = "ja"; onChange();
+assert.equal(activeNote.hidden, true, "switching back to Japanese hides the scope note");
+context.fetch = () => Promise.reject(new Error("offline catalog"));
+activeSelect = picker(); activeNote = { hidden: true, textContent: "" };
+context.setupLanguage();
+await new Promise(setImmediate);
+assert.equal(activeNote.hidden, false, "catalog failure is visible even in Japanese");
+assert.match(activeNote.textContent, /English unavailable/, "catalog failure explains the fallback");
+context.$ = () => note;
+L.select("en");
 L.notice([{ _lang: "ja" }]); assert.match(note.textContent, /untranslated Japanese/);
 L.notice([{ _lang: "en" }]); assert.doesNotMatch(note.textContent, /untranslated/);
 L.select("ja"); assert.equal(button.textContent, "沈む");

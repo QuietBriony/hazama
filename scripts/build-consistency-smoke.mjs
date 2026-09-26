@@ -53,6 +53,8 @@ const runtimeSwV = (js.match(/serviceWorker\.register\("sw\.js\?v=([a-z0-9.]+)"/
 assert(bootSwV === jsV, `boot SW version mismatch: sw=${bootSwV} index=${jsV}`);
 assert(bootRuntimeV === jsV, `boot runtime version mismatch: runtime=${bootRuntimeV} index=${jsV}`);
 assert(runtimeSwV === jsV, `runtime SW registration version mismatch: sw=${runtimeSwV} index=${jsV}`);
+has(js, 'if (!["http:", "https:"].includes(window.location.protocol)) return;',
+  "desktop bundle must not register the web-only PWA cache");
 const bootScript = (html.match(/<script>\s*([\s\S]*?)\s*<\/script>/i) || [])[1];
 assert(Boolean(bootScript), "inline boot script missing");
 if (bootScript) {
