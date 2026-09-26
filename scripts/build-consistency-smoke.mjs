@@ -63,7 +63,7 @@ assert(!html.includes("preview"), "production index.html should not say preview"
 for (const layer of ["hz-bg-garden", "hz-bg-mandala", "hz-glitch", "hz-scanline", "hz-vignette"]) has(html, layer, "immersive art layer");
 for (const el of ['id="scene"', 'id="choices"', 'id="gate-enter"', 'id="attune"', 'rel="manifest"']) has(html, el, "index element");
 has(html, 'id="gate" class="hz-gate" aria-busy="true"', "E33 gate load state");
-has(html, 'class="hz-gate-title" aria-hidden="true"', "E33 decorative title hidden from assistive tech");
+has(html, '<h1 class="hz-gate-title">HAZAMA</h1>', "E50 single visible title heading");
 has(html, 'aria-describedby="gate-note"', "E33 entry audio/load description");
 has(html, 'id="gate-note" class="hz-gate-note" role="status" aria-live="polite"', "E33 visible gate load status");
 has(html, 'id="a11y-state" class="hz-sr-only" role="status" aria-live="polite" aria-atomic="true"', "E34 gauge state live summary");
@@ -258,7 +258,8 @@ assert(/\.hz-onboard\s*\{[^}]*font-style:\s*normal/.test(css), "E14 onboard font
 assert(/\.hz-onboard\s*\{[^}]*palt/.test(css), "E14 onboard uses palt feature");
 has(css, "phase-break", "E5/A4 phase-break style");
 has(css, ":focus-visible", "E5/B1 focus-visible a11y");
-has(css, ".hz-gate-title::before", "E5/B3 title RGB-split pseudo");
+assert(!css.includes(".hz-gate-title::before") && !css.includes(".hz-gate-title::after"),
+  "E50 title must have one readable layer");
 assert(!css.includes(".hz-tl-c"), "E5/B3 dead CSS removed (.hz-tl-c must not remain)");
 // js: dev hook・周回スキン・phase 跨ぎ検知・below seed 畳み込み。
 has(js, "__hz", "E5/A3 dev hook namespace");
@@ -266,8 +267,7 @@ has(js, "garden:", "E5/A3 garden dev hook");
 has(js, "applyCycleSkin", "E5/B4 cycle skin");
 has(js, "lastPhase", "E5/A4 phase transition tracker");
 has(js, "belowLoop, 0x632be59b", "E5/A2 belowLoop seed fold");
-// html: 表紙タイトルの data-text（B3 の RGB ずれ再接続の燃料）。
-has(html, 'data-text="Hazama"', "E5/B3 title data-text");
+assert(!html.includes('data-text="Hazama"'), "E50 title must not keep the old text clone");
 
 // docs 参照整合: README/AGENTS が存在しない scripts を案内していないこと（forward 撤去後の漂流防止）
 for (const docFile of ["README.md", "AGENTS.md"]) {

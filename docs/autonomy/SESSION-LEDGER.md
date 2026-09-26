@@ -19,6 +19,19 @@ Hazama 自律開発 session の追記専用ログ。
 
 ---
 
+## 2026-09-27 — E50候補：表紙タイトルを一語の見出しへ
+- agent      : Codex（単一会話・別task/agentなし）
+- goal       : 「タイトルもっとかっこよく、シンプルに」を受け、HZ-BL-018の表紙印象を整える。
+- baseline   : master 4e897b7・clean。hazama-check 2 PASS / 0 FAIL。
+- shipped    : `HAZAMA`を唯一の可視h1へ変更。タイトルの赤/シアン複製と揺れを外し、大きさ/字間を調整。
+  index/CSS/runtime/SWの参照をE50へ揃え、旧タイトル構造に固定された整合チェックを更新。
+- browser    : ローカル隔離Chromiumで320×740、390×844、1280×800、320×568の表紙を目視。
+  320×568でも表紙のボタンまで収まり、横overflowなし。英語表紙も同幅で確認。console error/warning 0。
+  画像は`output/playwright/title-e50-*.png`（git対象外）。実スマホ端末での評価ではない。
+- scope      : 表紙の一語とCSS、version、既存整合チェック。進行/本文/音/保存に変更なし。
+- next       : 最終check・review後、既存Pagesへ反映して実配信と旧版更新を確認。
+- blockers   : 人間の初見での印象評価は未取得。公開前候補として記録。
+
 ## 2026-09-26 — E49公開完了：冒頭・旧版更新・記憶保持・公開の初回/再訪を確認
 - agent      : Codex（単一会話・別task/agentなし）
 - goal       : ユーザーの公開指示に従い、HZ-BL-018/020のE49候補と比較ページ引用同期を既存Pagesへ配信する。

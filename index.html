@@ -29,7 +29,7 @@
   <link rel="manifest" href="manifest.webmanifest" />
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png" />
   <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png" />
-  <link rel="stylesheet" href="slice.css?v=e49" />
+  <link rel="stylesheet" href="slice.css?v=e50" />
 </head>
 <body data-phase="surface">
   <div class="hz-bg" aria-hidden="true">
@@ -95,8 +95,7 @@
 
   <div id="gate" class="hz-gate" aria-busy="true">
     <div class="hz-gate-inner">
-      <h1 class="hz-sr-only">Hazama 狭間</h1>
-      <div class="hz-gate-title" aria-hidden="true" data-text="Hazama">Hazama</div>
+      <h1 class="hz-gate-title">HAZAMA</h1>
 
       <p class="hz-gate-sub" data-i18n>狭間（あわい）
 沈むほど、戻り道は細くなる。</p>
@@ -159,8 +158,8 @@
     // E35: 既存SWはversion queryを無視して旧CSS/runtimeを返し得るため、
     // controller takeover後は入口のまま一度reloadし、CSS/JSを同じ版で読む。fresh/current loadは待たせない。
     (() => {
-      const SW_URL = "sw.js?v=e49";
-      const RUNTIME_URL = "slice.js?v=e49";
+      const SW_URL = "sw.js?v=e50";
+      const RUNTIME_URL = "slice.js?v=e50";
       const expectedController = new URL(SW_URL, document.baseURI).href;
       const gate = document.getElementById("gate");
       const gateButton = document.getElementById("gate-enter");

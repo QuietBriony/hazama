@@ -573,7 +573,17 @@ body.omega .hz-scene, body.surfaced .hz-scene { animation: none; }
 }
 .hz-gate.gone { opacity: 0; pointer-events: none; }
 .hz-gate-inner { text-align: center; padding: 24px; max-width: 440px; max-height: 100%; overflow-y: auto; text-shadow: 0 1px 10px #010309; }
-.hz-gate-title { font-size: 2.6rem; letter-spacing: 0.5em; margin: 0 0 0.6em; color: var(--ink); text-indent: 0.5em; }
+.hz-gate-title {
+  margin: 0 0 0.42em;
+  padding-left: 0.22em;
+  color: #e6ecec;
+  font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+  font-size: clamp(2.75rem, 11vw, 3.75rem);
+  font-weight: 500;
+  line-height: 1.05;
+  letter-spacing: 0.22em;
+  text-shadow: 0 2px 18px rgba(0, 0, 0, 0.7);
+}
 .hz-gate-sub { color: var(--ink-dim); line-height: 2; margin: 0 0 2em; }
 .hz-gate-guide { color: var(--ink-dim); font-size: 0.82rem; line-height: 1.9; margin: -0.8em 0 1.8em; }
 body:not(.reading-comfort) :is(.hz-gate-sub, .hz-gate-guide) { color: #a1adba; }
@@ -610,10 +620,6 @@ html:lang(en) .hz-attune { text-orientation: mixed; }
   .hz-language-note { line-height: 1.45; margin-bottom: 10px; }
 }
 .hz-gate-settings + .hz-gate-note { margin-top: 1em; }
-@media (max-width: 360px) {
-  .hz-gate-title { font-size: 2.1rem; letter-spacing: 0.4em; text-indent: 0.4em; }
-}
-
 /* E42: native dialogのtop layerで、背景の択/表紙とfocusを隔離する。 */
 .hz-settings {
   color: var(--ink); background: #0a1018; border: 1px solid var(--line);
@@ -833,27 +839,6 @@ body.peeling .hz-peel { visibility: visible; animation: hz-peel-sweep .62s cubic
 .hz-choice.retreat.heavy .lead { color: var(--ink-dim); }
 .hz-choice:active { box-shadow: inset 0 0 0 1px rgba(216,68,46,0.25); }
 
-/* ---------- タイトル（バスキア的・RGBずれ＝グリッジ＆刷り重ね） ----------
-   B3: data-text を赤/シアンの二層に刷り重ね（::before/::after）、本体の上下にわずかにずらして
-   ゆっくり呼吸させる＝生きた刷り。グリッジ・バースト(glitch-hard)で一瞬大きく裂ける（既存と同調）。
-   reduced は呼吸停止・静止 ±1px（薄く）。 */
-.hz-gate-title { position: relative; }
-.hz-gate-title::before, .hz-gate-title::after {
-  content: attr(data-text);
-  position: absolute; left: 0; top: 0; width: 100%;
-  pointer-events: none;
-  /* タイトルは letter-spacing/text-indent を持つ＝擬似要素も同じ字送りで重なる（継承される）。 */
-}
-.hz-gate-title::before { color: rgba(216,68,46,0.55); animation: hz-tl-before 5.5s ease-in-out infinite; }  /* 赤 */
-.hz-gate-title::after  { color: rgba(10,186,181,0.5); animation: hz-tl-after 5.5s ease-in-out infinite; }   /* シアン */
-@keyframes hz-tl-before { 0%,100%{transform:translate(-2px,-2px)} 50%{transform:translate(-3px,-1px)} }
-@keyframes hz-tl-after  { 0%,100%{transform:translate(2px,2px)}  50%{transform:translate(3px,1px)} }
-/* グリッジバースト中はタイトルも一瞬大きく裂ける（既存グリッジ・バーストに同調） */
-body.glitch-hard .hz-gate-title::before { animation: hz-tl-before-glitch .18s steps(2) 1; }
-body.glitch-hard .hz-gate-title::after  { animation: hz-tl-after-glitch .18s steps(2) 1; }
-@keyframes hz-tl-before-glitch { 0%{transform:translate(-2px,-2px)} 50%{transform:translate(-10px,2px)} 100%{transform:translate(-2px,-2px)} }
-@keyframes hz-tl-after-glitch  { 0%{transform:translate(2px,2px)}  50%{transform:translate(11px,-3px)} 100%{transform:translate(2px,2px)} }
-
 /* サブ：手で引いた打ち消し線（「戻り道は細くなる」を予兆として消し込む） */
 .hz-strike { position: relative; }
 .hz-strike::after {
@@ -897,10 +882,6 @@ body.glitch-hard .hz-gate-title::after  { animation: hz-tl-after-glitch .18s ste
      上の reset を上書きしてしまうため、ここで本文行と ::after マーカーの傾きを明示的に殺す。 */
   .hz-line.scrawl.foreign, .hz-line.scrawl.foreign::after { transform: none; }
   .hz-gate-drift { transform: none; }   /* E8: 表紙の漂着も静止に揃える */
-  /* B3: タイトルの RGB 呼吸は停止＝静止 ±1px（薄く）。グリッジ・バーストでも裂けない。 */
-  .hz-gate-title::before { animation: none; transform: translate(-1px,-1px); color: rgba(216,68,46,0.32); }
-  .hz-gate-title::after  { animation: none; transform: translate(1px,1px);  color: rgba(10,186,181,0.30); }
-  body.glitch-hard .hz-gate-title::before, body.glitch-hard .hz-gate-title::after { animation: none; }
   /* A4: phase 跨ぎの句読点は JS が発火しない（クラスを付けない）。保険で tear/増光を静止・無効に。 */
   body.phase-break .hz-bg { animation: none; }
   body.phase-break .hz-scanline { opacity: calc(0.05 + var(--press) * 0.14); }
@@ -971,9 +952,7 @@ body.reading-comfort .hz-line.scrawl { transform: none; opacity: 1; text-shadow:
 body.reading-comfort .hz-line.foreign::after { color: var(--ink-dim); opacity: 1; }
 body.reading-comfort :is(.hz-onboard, .hz-onboard-echo) { opacity: 1; }
 body.reading-comfort :is(.hz-bg-garden, .hz-bg-mandala, .hz-bg-grid, .hz-bg-abyss, .hz-bg-leak, .hz-glitch, .hz-vignette, .hz-scanline, .hz-grain, .hz-peel) { display: none !important; }
-body.reading-comfort .hz-bg::after,
-body.reading-comfort .hz-gate-title::before,
-body.reading-comfort .hz-gate-title::after { display: none; }
+body.reading-comfort .hz-bg::after { display: none; }
 body.reading-comfort .hz-bg,
 body.reading-comfort :is(.hz-bg-descent, .hz-stage, .hz-observer, .hz-attune, .hz-choice.newly, .hz-gate-title) { animation: none !important; transition: none !important; }
 @media (prefers-reduced-motion: reduce) {
