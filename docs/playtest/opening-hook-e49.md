@@ -1,6 +1,8 @@
-# 冒頭の異変→選択→反応 — E49ローカル候補
+# 冒頭の異変→選択→反応 — E49公開候補
 
-Status: agentの動作確認済み / 2026-09-26公開指示を受けて配信準備中 / 人間の初見・再訪の採否待ち。
+Status: 2026-09-26公開・agentの動作確認済み / 人間の初見・再訪の採否待ち。
+
+入口: [本編E49](https://quietbriony.github.io/hazama/?v=e49)
 
 ## 仮説
 
@@ -25,7 +27,7 @@ Status: agentの動作確認済み / 2026-09-26公開指示を受けて配信準
 
 `depths-shell.json`の72ノード・選択肢の行き先/数値・`hazama_spiral_v1`・public route/schemaは維持。
 本文、表示専用の周回変奏、言語、引用、version参照だけの変更。新しい音源/依存/保存はない。
-E49の本編と音比較ページは既存GitHub Pagesへ反映する。配信完了は公開側の確認記録をもって判定する。
+E49の本編と音比較ページは既存GitHub Pagesへ反映済み。公開側の確認記録は以下。
 
 `node scripts/hazama-check.mjs`: 2 PASS / 0 FAIL / 0 SKIP。`node --check slice.js`と`git diff --check`もPASS。
 Playwright CLIの隔離Chromiumで、390pxの零章→伏せる→A→構造B、自然に結末まで降りた後の
@@ -60,6 +62,23 @@ Aは新しい4段落、構造Bはなぞった線が残る反応。横はみ出�
 画面は`output/playwright/e49-release/local-a-390.png`に保存して目視した。
 テストの最初の読み取りは場面転換の反応文の途中だったため失敗し、選択肢の準備完了を待って確認し直した。
 公開E48は別profileで身体の道から浮上終端まで進め、実際に生成された記憶を更新比較用に保持している。
+
+## 2026-09-26の公開確認
+
+runtime commit `f08c9f0`をmasterへfast-forwardしてpush。既存Pagesのrun `36217076366`、
+deployment `6674495802`が成功。新しいworkflow/hosting設定は追加していない。
+本編6ファイルと比較ページ関連7ファイルはHTTP 200・正しいMIMEで、commitの内容とbyte単位で一致した。
+
+- 旧版更新: 身体ルートから浮上したE48 profileでE49へ移動。CSS/runtime/controllerはE49で一致。
+  `hazama_spiral_v1`の文字列が更新前後で完全一致し、Hazama cacheはE49のstatic/runtimeへ更新。
+  そのままオフラインreloadして表紙の「沈む」が有効になり、記憶も一致した。
+- 公開初回: 320pxの英語で零章→伏せる→A→身体B。Aは新しい4段落、本文の日本語fallbackなし、横overflowなし。
+- 公開再訪: 更新した390px profileで零章→伏せる→A。周回1/A訪問2、八観8行と本文変奏・痕跡を表示。
+  木目が波打つ反応と後続文もつながる。
+- 比較ページ: 新しいA本文3行を配信し、A/B/C/DのUIを表示。音の作曲と本編回路は今回変更なし。
+- 上記profileのconsole error/warning 0。画面は`output/playwright/e49-release/`で確認。
+
+PC上のChromiumによる小画面・更新・offline確認。実iPhone/SafariやPWA installのhuman passは代替しない。
 
 ## 人に渡すときに見る点
 

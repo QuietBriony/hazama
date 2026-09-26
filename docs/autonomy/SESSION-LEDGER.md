@@ -19,6 +19,23 @@ Hazama 自律開発 session の追記専用ログ。
 
 ---
 
+## 2026-09-26 — E49公開完了：冒頭・旧版更新・記憶保持・公開の初回/再訪を確認
+- agent      : Codex（単一会話・別task/agentなし）
+- goal       : ユーザーの公開指示に従い、HZ-BL-018/020のE49候補と比較ページ引用同期を既存Pagesへ配信する。
+- shipped    : runtime f08c9f0をmasterへFF/push。Pages run 36217076366 / deployment 6674495802 success。
+  本編E49とscene-20260923-1を公開。README・BACKLOG・実施手順・候補記録を現在の公開状態へ同期。
+- checks     : commit前hazama-check 2 PASS / 0 FAIL / 0 SKIP、JS構文/差分check PASS。
+  公開の本編6＋比較関連7ファイルでHTTP 200・MIME・commitとのbyte一致を確認。
+- browser    : 公開E48でUIから身体の道→浮上を終えたprofileをE49へ更新。CSS/JS/controller E49、
+  hazama_spiral_v1文字列が完全一致。offline reloadで表紙操作可能・記憶一致、Hazama cacheはE49。
+  公開英語320pxで零章→伏せる→A4段落→身体B、本文fallback/横overflowなし。
+  公開日本語390pxで再降下→伏せる→A、周回1/訪問2と八観8行を確認。比較ページは新A引用を表示。
+  console error/warning 0。目視用画面はoutput/playwright/e49-release/。操作確認は音off。
+- scope      : 進行数値/保存/本編の音/ビジュアルは不変。公開は既存Pagesのみ、Steam提出なし。
+- backlog    : HZ-BL-018/020の配信・整備を完了。human gate自体は閉じない。
+- next       : 公開E49を未説明の初見者へ渡し、異変の理解・選択結果・再訪の発見を確認する。
+- blockers   : 公開作業のblockerなし。初見の面白さ/実機の聴感/英語自然さ/販売品質は人間の結果待ち。
+
 ## 2026-09-26 — E49公開準備：現行差分を再確認し、旧版の更新試験を用意
 - agent      : Codex（単一会話・別task/agentなし）
 - goal       : 「整備磨き回して、公開お願いよ」を受け、HZ-BL-018/020のE49整備を既存Pagesへ反映する。

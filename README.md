@@ -15,15 +15,15 @@ Hazama は、沈むほど戻りにくい「降下する対話」の没入型静�
 - `assets/hazama-descent-entry-e47.webp` : E47の入口（候補01を採用・原画と画素一致のlossless WebP）。36秒で僅かに寄って静まる有限カメラ。`hazama-descent-{drift,bottom,surfaced,omega}.webp` の4枚と周回セットBは深度/終端で引き継ぐ。旧`hazama-descent-key.webp`と`og-card.jpg`は共有OG画像として保持。
 - 検証: `scripts/hazama-check.mjs`（`autonomy-docs` ＋ `build-consistency` の2本）
 - 制作候補: `docs/BLENDER-AUTHORING.md`（WorkerPC Blender 5.2をrepo外の静止画制作実行器に限定。runtime非依存）
-- ビジュアル01: [本編E48](https://quietbriony.github.io/hazama/?v=e48) / [採用前の静止比較](https://quietbriony.github.io/hazama/tools/visual/visual-preview.html?v=visual-20260920-1) / [実装と確認](docs/playtest/visual-entry-e47.md)。入口に採用。読書優先/視覚効果軽減は静止、実機の見え方は人間の確認待ち。
+- ビジュアル01: [本編E49](https://quietbriony.github.io/hazama/?v=e49) / [採用前の静止比較](https://quietbriony.github.io/hazama/tools/visual/visual-preview.html?v=visual-20260920-1) / [実装と確認](docs/playtest/visual-entry-e47.md)。入口に採用。読書優先/視覚効果軽減は静止、実機の見え方は人間の確認待ち。
 - 体験版候補: [E41 初見テスト](docs/playtest/steam-demo-candidate-e41.md)（既存Web版の初回２ルート・人間の評価待ち。Steam提出用ビルドではない）
-- 冒頭導線: [E49 異変→選択→反応](docs/playtest/opening-hook-e49.md)（ローカル候補・未公開）。初回Aは八観の名称を伏せ、再訪では名称と記憶を見せる。初見の面白さは人間の試遊待ち。
+- 冒頭導線: [E49 異変→選択→反応](docs/playtest/opening-hook-e49.md)（2026-09-26公開・旧版更新と記憶保持を確認）。初回Aは八観の名称を伏せ、再訪では名称と記憶を見せる。初見の面白さは人間の試遊待ち。
 - 人に渡す試遊案内: [日本語](docs/playtest/invite-ja.md) / [English](docs/playtest/invite-en.md)。実施側は[最初のラウンド](docs/playtest/first-round.md)へ（準備済み・人間の結果は未取得）
 - 感覚統合: `docs/SENSORY-RESPONSE-CANDIDATE.md`（E31 governor＋E45本編応答＋E46縮約回路。Sensory Frame/labの実行エンジンは未配線） / [E45音の統合・検証](docs/playtest/world-audio-e45.md) / [E46接続と検証](docs/playtest/fly-circuit-e46.md)
 - E46の回路: 実測の脚運動配線を10群へ縮約した係数を`slice.js`内で使い、音の小さな反応だけに接続。設定で固定応答と比較可能。[データ出典・変更と限界](docs/FLY-CIRCUIT-CREDITS.md)。生体/意識/神経学習/RSIの再現ではない。
 - 八観と商品方向: [設定を読む行為へ翻訳する検討](docs/playtest/eight-views-steam-direction.md)。ゲーム版の名称を揃え、空・縁起・真言密教は公開資料から設計を検討。用語追加や販売品質の合格とはしない。
 - 神経回路風の音実験: [スマホで試聴](https://quietbriony.github.io/hazama/tools/sensory/sensory-audio-lab.html?v=neural-20260914-1) / [比較手順と接続仕様](docs/playtest/neural-modulator-trial.md)。`tools/sensory/`内で通常の揺らぎと64個の簡易回路をA/B比較。本編未配線・実際のハエの脳データは不使用・人間の試聴待ち。
-- 本文と音の比較: [世界が、音で応える](https://quietbriony.github.io/hazama/tools/sensory/scene-response-lab.html?v=scene-20260919-2) / [試聴手順](docs/playtest/scene-response-trial.md)。AのE44原型・Bの拍動・Cの断片・Dの統合案は比較用に保存。本編E45でDの方向を既存Audioへ翻訳し、E46で縮約回路を音の反応に追加。曲・labの実行エンジン・外部再生には依存しない。
+- 本文と音の比較: [世界が、音で応える](https://quietbriony.github.io/hazama/tools/sensory/scene-response-lab.html?v=scene-20260923-1) / [試聴手順](docs/playtest/scene-response-trial.md)。AのE44原型・Bの拍動・Cの断片・Dの統合案は比較用に保存。本編E45でDの方向を既存Audioへ翻訳し、E46で縮約回路を音の反応に追加。E49でA本文引用を同期。曲・labの実行エンジン・外部再生には依存しない。
 
 > 旧 forward 実装（Gate Run 資源ゲーム・Music ブリッジ・v2.x 系）と `slice/` 重複・別プレビュー repo は
 > 整理・撤去済み。履歴は git に保全（ロールバック: `f8763f2` 没入初版 / `7d5def9` forward v2.45 /
@@ -129,7 +129,7 @@ Codex / Claude Code が同じ順番で作業を継続するための薄いエン
 
 ## 沿革（詳細は git log）
 
-- **進化 E49（2026-09・未公開候補）**: 零章の消えた一行から、伏せる/応える選択に即時の異変を返す。A初回は八観の名前より月と冷たさの二つの手掛かりを先に出し、再訪で八観を開く。構造/身体の分岐を本文の感覚につなげ、零章の「戻り道」表示を実際の消費と一致させた。英語試作と比較用音ページのA本文引用を同期（`?v=e49`）。進行数値・保存形式・音の作曲ルールは不変。[実装と検証](docs/playtest/opening-hook-e49.md)。
+- **進化 E49（2026-09-26公開）**: 零章の消えた一行から、伏せる/応える選択に即時の異変を返す。A初回は八観の名前より月と冷たさの二つの手掛かりを先に出し、再訪で八観を開く。構造/身体の分岐を本文の感覚につなげ、零章の「戻り道」表示を実際の消費と一致させた。英語試作と比較用音ページのA本文引用を同期（`?v=e49`）。進行数値・保存形式・音の作曲ルールは不変。[実装と検証](docs/playtest/opening-hook-e49.md)。
 - **進化 E48（2026-09）**: 結末の再降下/忘却ボタンを出現前は無効化し、表示開始時だけ有効にする。古い出現タイマーによる再有効化は世代チェックで防ぐ。絵・音・物語・進行数値・保存を維持（`?v=e48`）。公開版の旧版更新・記憶保持・降下/取消/再降下を確認。[再現と検証](docs/playtest/ending-choice-preappearance-e47.md)。
 - **進化 E47（2026-09）**: 候補01を入口へ採用。剥離面が見える表紙の重ね方・スマホcrop、36秒で1.8%寄る有限カメラ。本文はカメラの外、読書優先/視覚効果軽減では静止。表紙背後の空の選択肢帯と320pxタイトルoverflowを修正。深度/終端4枚、音/進行/保存は維持（`?v=e47`）。
 
