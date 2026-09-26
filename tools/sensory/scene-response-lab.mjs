@@ -1,5 +1,5 @@
-import { MODES, SCENES } from "./scene-score.mjs?v=scene-20260919-2";
-import { SceneAudioSession } from "./scene-response-audio.mjs?v=scene-20260919-2";
+import { MODES, SCENES } from "./scene-score.mjs?v=scene-20260923-1";
+import { SceneAudioSession } from "./scene-response-audio.mjs?v=scene-20260923-1";
 
 export function setupSceneLab(doc, host) {
   const session = new SceneAudioSession(host, doc);

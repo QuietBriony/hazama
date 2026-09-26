@@ -430,25 +430,25 @@
   // 原文の特定行に対する言い換え（原文も常に選択肢に含む＝周回でたまに元へ戻る）。
   // E2: 既存 zero/A/Omega/reborn を +1 案ずつ強化＋主要深度 15 ノード（B〜Z）を新設。
   const NODE_VARIANTS = {
-    // 出典: depths-shell.json zero lines[0..1] / 01-yoru1:38-49
+    // E49: 同じ「一行」を知って迎える再訪。出典: depths-shell.json zero / 01-yoru1:38-49
     zero: {
-      0: ["世界が静かになる瞬間が、また来る。前にも、こうして始まった。",
-          "静寂が戻る。これで何度目の、最初の夜だろう。",
-          "世界が、また静かになる。喧騒が引くのではない。世界の方が、音量を下げてくる。"],
-      1: ["ただ、思考のノイズが引く。理由は——もう、知っている。",
-          "ノイズが引く。予兆はある。前の周が、その予兆だった。",
-          "思考のノイズが引く。理由はない、と前は書いた。今は、理由を知っていて書かない。"]
+      0: ["消したはずの画面に、また同じ一行が残っている。今度は、消える前から言葉が分かる。",
+          "画面に『まだ、見ている？』。前の夜も、ここから始まった。",
+          "消したはずの画面に『まだ、見ている？』。夜の色だけが、前とは違う。"],
+      1: ["指が触れる前に、文字が消える。前もそうだった。",
+          "消えるまでの一拍を待ってしまう。通知には、今回も残らない。",
+          "文字は消えた。覚えている私だけが、前と同じではない。"]
     },
     // E36: zero_hold（伏せた夜）も周回で言葉が変わる＝入口の再読が毎周回わずかに違う呼吸になる。
     zero_hold: {
-      0: ["伏せる。休止のつもりが、耳だけが起きている。",
-          "伏せた画面の黒に、部屋がうっすら映る。それも、編み目に見える。"]
+      0: ["伏せる。指が待っていた場所で、机の木目が一度だけ波打った。",
+          "デバイスを伏せると、指の下で木目がうねる。その筋まで、編み目に思える。"]
     },
-    // 出典: depths-shell.json A lines[0] / 01-yoru1:57
+    // E49: 最初の応答を覚えてしまった再訪。出典: depths-shell.json A / 01-yoru1:57
     A: {
-      0: ["答えはない。代わりに、世界の表皮が——また、同じ縁から剥がれはじめる。視界の縁でピクセルが浮き、鉄錆色の配線が露出する。",
-          "答えはない。表皮が剥がれる。何度見ても、その下は同じ配線だ——世界は塗装だった。",
-          "答えは返らない。表皮が、いつもの縁から剥がれる。露出した配線の鉄錆まで、前と同じ位置にある。"]
+      0: ["声に気を向けると、手元の振動は、また一度だけ。前の周より先に、鉄錆の配線の位置が分かる。",
+          "今度は言葉を選ぶ前に、デバイスが震える。世界の表皮は、また同じ縁から剥がれた。",
+          "声は答えない。けれど、震える前から配線が露出する場所を知っていた。"]
     },
     // 出典: depths-shell.json B lines[0],[2] / 02-yoru2:53-54, 245
     B: {
@@ -699,9 +699,14 @@
   // （restart/descendAgain で reset・周回で再挑戦できる）。真＝訪問済みの断片・偽＝未訪問の断片。
   const ECHO_GATES = ["Q", "Z"];
 
-  // 周回/再訪で本文を変異させる（cycle 0 の初回は不変＝作り込んだ導入を壊さない）。
+  // 初回は導入用の表示、周回/再訪では原文と変奏を組み合わせる。
   function applyCycle(id, base) {
     const visits = state.visits[id] || 1;
+    // E49: A初回は選べる二つの感覚へ先に着地する。八観の名付けは再訪以降の発見として残す。
+    if (id === "A" && state.cycle < 1 && visits < 2) {
+      const views = new Set(["体観", "波観", "思観", "財観", "創観", "観察者観", "空観", "円観"]);
+      return Object.assign({}, base, { lines: base.lines.filter((line) => !views.has(line.t.split("——", 1)[0])) });
+    }
     if (state.cycle < 1 && visits < 2) return base;           // 初回通過は原文そのまま
     const seed = (hashStr(id) ^ Math.imul(state.cycle + 1, 0x9e3779b9) ^ Math.imul(visits, 0x85ebca6b)) >>> 0;
     const rng = mulberry32(seed);
@@ -1140,8 +1145,8 @@
       { t: "『誰だ』と問い返す前に、もう下りている", sub: "身体の方が先に答えた" }
     ],
     "zero>zero_hold#retreat": [
-      { t: "伏せて、いつもの夜に帰るふりをする", sub: "ふり、だと知っている。まだ表層。戻り道は減らない" },
-      { t: "聞こえなかったことにする", sub: "世界は付き合ってくれる。しばらくは——まだ表層。戻り道は減らない" }
+      { t: "伏せて、いつもの夜に帰るふりをする", sub: "ふり、だと知っている。戻り道 −1" },
+      { t: "聞こえなかったことにする", sub: "世界は付き合ってくれる。しばらくは——戻り道 −1" }
     ],
     "zero_hold>A#descend": [
       { t: "沈黙が、先に負ける", sub: "下りはじめる" },
@@ -1458,7 +1463,9 @@
       // 浅い：少し戻れる
       state.returnPaths -= 1; state.resisted += 1;
       target = c.back || c.to;
-      beat = { who: "cold", t: "——息を整え、来た方へ。まだ、戻れる。だが沈んだ分は、もう戻らない。" };
+      beat = { who: "cold", t: state.id === "zero"
+        ? "——応えない。それでも、戻り道が一本だけ閉じた。"
+        : "——息を整え、来た方へ。まだ、戻れる。だが沈んだ分は、もう戻らない。" };
       addDread -= 0.06;
     }
     state.sink += addSink;
@@ -2796,7 +2803,7 @@
     // 翻訳が取得できなくても日本語の起動は止めない。言語は表紙での明示選択・保存しない。
     const controller = new AbortController();
     const timer = window.setTimeout(() => controller.abort(), 8000);
-    fetch("locales/en.json?v=e48", { signal: controller.signal }).then((response) => {
+    fetch("locales/en.json?v=e49", { signal: controller.signal }).then((response) => {
       if (!response.ok) throw new Error("English catalog HTTP " + response.status);
       return response.json();
     }).then((data) => {
@@ -2808,7 +2815,7 @@
   }
 
   async function loadData() {
-    const res = await fetch("depths-shell.json?v=e48", { cache: "no-store" });
+    const res = await fetch("depths-shell.json?v=e49", { cache: "no-store" });
     if (!res.ok) throw new Error(`depths-shell HTTP ${res.status}`);
     const data = await res.json();
     if (!data || typeof data !== "object" || !data.start || !data.nodes || !data.nodes[data.start]) {
@@ -2895,7 +2902,7 @@
   function registerSlicePWA() {
     if (!("serviceWorker" in navigator)) return;
     const register = () => {
-      navigator.serviceWorker.register("sw.js?v=e48", { scope: "./", updateViaCache: "none" }).then((reg) => {
+      navigator.serviceWorker.register("sw.js?v=e49", { scope: "./", updateViaCache: "none" }).then((reg) => {
         if (typeof reg.update === "function") reg.update().catch(() => {});
       }).catch((err) => console.warn("[Hazama slice] SW register failed:", err));
     };

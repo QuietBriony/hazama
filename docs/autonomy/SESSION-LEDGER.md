@@ -19,6 +19,62 @@ Hazama 自律開発 session の追記専用ログ。
 
 ---
 
+## 2026-09-26 — E49公開準備：現行差分を再確認し、旧版の更新試験を用意
+- agent      : Codex（単一会話・別task/agentなし）
+- goal       : 「整備磨き回して、公開お願いよ」を受け、HZ-BL-018/020のE49整備を既存Pagesへ反映する。
+- baseline   : feature branch上の既存E49差分を保持。origin/masterはe41540d、Pagesの配信元はmasterのroot。
+- review     : 本文・表示だけの周回変奏・英語試作・tools-only引用・version・試遊資料を同じ会話内でdiff review。
+  route/進行数値/保存schema/音の作曲に変更なし。新hostingやActionsなし。
+- browser    : 390px隔離Chromiumの零章→伏せる→A→構造Bで本文/戻り道4本/初回A4段落を確認。
+  横overflowとconsole error/warningは0。画面はoutput/playwright/e49-release/local-a-390.png。
+  検証scriptは転換途中を読まないよう選択肢の準備完了を待つ。公開E48の身体ルート→浮上で更新用の記憶も用意。
+- checks     : baseline hazama-check 2 PASS / 0 FAIL / 0 SKIP。diff check PASS。
+- next       : 必須check後にcommit/FF/push。公開配信と旧版→E49の記憶保持を確認し、完了記録を別途追記する。
+- blockers   : 人間の初見/再訪/英語自然さ/実スマホの聴感は未取得。human gateは維持。
+
+## 2026-09-26 — E49整備：再訪の選択と本文の矛盾、古い試遊版表記を修正
+- agent      : Codex（単一会話・別task/agentなし）
+- goal       : 「整備回して」を受け、HZ-BL-018のE49候補を再点検し、試遊に持ち出す際の不整合を直す。
+- baseline   : `codex/hazama-e49-opening-hook`、前回E49の未commit差分を保持。hazama-check 2 PASS / 0 FAIL。
+- finding    : 再訪の抽選は原文にも戻るため、傾聴を選んだ後に「『誰だ』と口にすると」が出る。
+  cycle=10/A訪問11回など、cycle=1〜64・訪問=cycle+1で5通りを再現。伏せた画面の反射描写も残存。
+  参加者用案内と実施側の版表記はE44だったが、公開HTMLのCSS/JS/SWはE48。
+- shipped    : Aの原文を発話/傾聴の両方につながる反応へ改め、英訳と比較ページ引用を同期。
+  zero_holdの変奏を木目の動きで統一。参加者案内を共通化し、実施側で実際の配信版を添える手順へ更新。
+  E49の記録・BACKLOGを追記。未公開候補のversionはE49のまま。commit/push/公開なし。
+- checks     : 本番の表示関数/乱数/選択文抽選を取り出した一時診断1,040通りでPASS。
+  傾聴304通り、A全4候補/zero_hold全3候補を確認。初回Aの4段落/英訳、再訪Aの八観8行、
+  決定論、元データ/進行状態/選択肢の非変更を確認。hazama-check 2 PASS / 0 FAIL、構文/diff check PASS。
+- browser    : このsessionでは再試遊なし。9月23日の実画面結果と今回のコード診断を区別する。
+- backlog    : HZ-BL-018の整備を1段完了。HZ-BL-020の公開試作と未公開E49を区別。human gateは継続。
+- next       : E49を試遊対象として配信した後、初見の引き込み/選択結果の理解/再訪の発見を人間に確認する。
+- blockers   : 整備は完了。人間の試遊結果は未取得、公開ページはE48のまま。
+
+## 2026-09-23 — E49：零章からAの異変→選択→反応を先に読む（未公開）
+- agent      : Codex（単一会話・別task/agentなし）
+- goal       : 初見に入りやすいノベルの冒頭として、具体的な異変と選択直後の反応を既存の零章〜A〜Bへ接続する。
+- baseline   : master / e41540d・clean。branch `codex/hazama-e49-opening-hook`、commit/push/公開なし。
+- shipped    : 零章の消える一行と首の後ろの声、伏せる選択後の机の木目、応えた直後の一度の振動、
+  Aの月/冷たさ→構造/身体の二つの降り方、構造Bのなぞった線を本文に反映。
+  A初回だけ八観8行を表示せず、再訪で名称を見せる。入口/選択の周回文言も新しい異変へ揃える。
+  零章の退避は実際に戻り道5→4なので、初回/再訪の選択文と専用の短い反応を一致させた。
+  英語試作は新しい初回身体ルートを訳し、既存の二人称と統一。tools-onlyの音比較A抜粋は初回Aに同期。
+  runtime参照/PWAをE49へ同期し、README・初見手順・比較ページ記録・E49記録を更新。
+- checks     : `node scripts/hazama-check.mjs` 2 PASS / 0 FAIL / 0 SKIP、`node --check slice.js`、
+  `git diff --check` PASS。HEADとのJSON比較で全72ノードの構成/行き先/数値・choice機構が不変。
+  scene-response smokeは新抜粋と一致、比較音の固定スコア/本編E44音snapshotは不変。
+- browser    : Playwright CLI隔離Chromium。390pxで零章→伏せる→A→構造B、
+  UI経由で構造の長い道を浮上終端まで進め、再降下Aに八観8行と周回の記憶が出ることを確認。
+  別profileの320pxで日本語標準文字送りの零章、英語全文表示の零章→伏せる→A→身体Bを確認。
+  伏せる直後に戻り道5→4、構造選択で4→3。比較音ページの新A抜粋、320px横overflowなし。
+  画面4枚を`output/playwright/e49/`に保存して目視。各隔離profileのconsole error/warning 0。
+- scope      : 本文/表示だけの周回変奏/翻訳/比較用引用。route、72ノード、保存、音の作曲・進行数値は不変。
+  PC上の小画面再現と無音での操作検証であり、実スマホの読み味・聴感・Steam販売品質は未判定。
+- backlog    : HZ-BL-018をE49候補の初見/再訪評価待ちとして継続。HZ-BL-020等のhuman gateも維持。
+- next       : 未説明の5〜10人に最初の3分の引き込み/選択結果の理解と再訪Aの八観を確認。
+  本編公開は別途明示されたときだけ行い、その後スマホ実機で確認する。
+- blockers   : agent実装・局所検証は完了。公開E48は変更していない。人間の初見・再訪・英語自然さは未取得。
+
 ## 2026-09-23 — E48を公開し、旧版更新・記憶保持・公開の結末操作を確認
 - agent      : Codex（単一会話・別task/agentなし）
 - goal       : 本編のスマホ公開版への反映に対する「お願い」を受け、既存PagesへE48を公開する。

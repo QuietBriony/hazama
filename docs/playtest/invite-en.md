@@ -47,4 +47,4 @@ There is no response form on this page, and no request to post a public review.
 
 </details>
 
-Trial invitation: prepared for E44 / 2026-09-05
+Trial invitation: updated 2026-09-26. The person inviting you will include the build being tested.

@@ -1,5 +1,5 @@
 // Authored response rules, not a fly-brain simulation or a continuous music player.
-export const VERSION = "scene-20260919-2";
+export const VERSION = "scene-20260923-1";
 export const MAX_SECONDS = 120;
 export const MODES = Object.freeze({
   current: { label: "A · 原型", description: "E44本編のドローン・鼓動・選択音を保存。比較用の固定seed。" },
@@ -11,11 +11,11 @@ export const MODES = Object.freeze({
 // Existing prose, in a fixed A → B → C → B → C sequence. This is an excerpt,
 // not a route runner: these normalized audio states do not alter game balance.
 export const SCENES = Object.freeze([
-  { node: "A", indices: [0, 1, 3], label: "編み目に触れる", action: "編み目をなぞり、沈む", cue: "enter", depth: .18, dread: .12, density: .05,
+  { node: "A", indices: [0, 1, 2], label: "編み目に触れる", action: "編み目をなぞり、沈む", cue: "enter", depth: .18, dread: .12, density: .05,
     lines: [
-      "答えはない。代わりに、世界の表皮が剥がれはじめる。視界の縁でピクセルが浮き、その下から鉄錆色の配線が露出する——世界は塗装だった。",
+      "声に意識を向けた途端、手元のデバイスが一度だけ震える。通知はない。視界の縁でピクセルが浮き、その下から鉄錆色の配線が露出した。",
       "『世界は情報じゃない。構造でできている。いま、その編み目を見はじめている』",
-      "体観——指先が、まだ触れていない床の冷たさを、先に拾う。"
+      "線へ指を寄せると、画面の奥で月の縁が二重になる。指を引くと、まだ触れていない床の冷たさが先に来た。"
     ] },
   { node: "B", indices: [2, 3, 4], label: "沈む", action: "月の継ぎ目を覗く", cue: "descend", depth: .28, dread: .3, density: .08,
     lines: [
