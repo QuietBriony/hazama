@@ -19,6 +19,22 @@ Hazama 自律開発 session の追記専用ログ。
 
 ---
 
+## 2026-09-27 — E53公開：公平な選択と身体の道の場面化
+
+- agent      : Codex（単一会話・別task/agentなし）
+- goal       : E52/E53のローカル候補を最終確認し、masterへ統合して本番を更新する。
+- shipped   : `c12a8d5`をfeature branchからmasterへfast-forward mergeし、origin/masterへpush。
+  全候補が見えてから選べるようにしたE52、身体の道の場面と軽い択の費用表示を整えたE53を公開。
+  戻り道0本の重い択で誤った「−1」を表示しない日英の表示補正を追加。進行・保存・音は不変。
+- checks    : `hazama-check` 2 PASS / 0 FAIL、`node --check slice.js`、staged diff check PASS。
+  Playwrightの独立セッションでローカル390pxのB→D→F→J→Nを通し、戻り道0本・認識4/6で
+  「戻り道は尽きた」/「戻り道は減らない」の択、横overflowなし、warning/errorなしを確認。
+- published : GitHub Pagesの`c12a8d5` buildが`built`。公開390pxでCSS/JS/SWがe53、
+  Bの新本文・軽い択・英語カタログを取得できた。新規試遊でA訪問を保存し、reload後の再訪表紙を確認。
+- backlog   : HZ-BL-018のagent側の整備のみ。人間の初見試遊・実スマホ体感・英語の自然さ・販売品質は未判定。
+- next      : E53の初見5〜10人試遊で二択の待ち感、身体の道の能動感、B/Nの異変、浮上の意味を聞く。
+- blockers  : Steam提出用実行ファイルと人間の販売品質判定はまだない。旧E51 SWからの更新は今回の独立ブラウザで直接再現していない。
+
 ## 2026-09-27 — E53候補：身体の道を場面と選択の手応えから磨く
 
 - agent      : Codex（単一会話・別task/agentなし）
