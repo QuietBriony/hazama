@@ -84,7 +84,7 @@
       ],
       "choices": [
         { "t": "割れた月の継ぎ目を、覗き込む", "sub": "描画の裏を読む＝不可逆（戻り道 −1）", "to": "C", "sink": 3, "dread": 0.3, "close": 1, "kind": "descend", "deep": true },
-        { "t": "視線を伏せて、ただ下りる", "sub": "それでも沈む", "to": "C", "sink": 1, "dread": 0.16, "kind": "descend" }
+        { "t": "月の割れ目から目を離し、下りる", "sub": "継ぎ目には触れない（戻り道は減らない）", "to": "C", "sink": 1, "dread": 0.16, "kind": "descend" }
       ]
     },
 
@@ -100,7 +100,7 @@
       ],
       "choices": [
         { "t": "自分の古い記憶を一つ、開いて確かめる", "sub": "開けば書き換わる＝不可逆（戻り道 −1）", "to": "D", "sink": 2, "dread": 0.24, "close": 1, "kind": "descend", "deep": true },
-        { "t": "記憶に触れず、先へ", "sub": "沈む", "to": "D", "sink": 1, "dread": 0.18, "kind": "descend" },
+        { "t": "記憶に触れず、先へ", "sub": "記憶を開かない（戻り道は減らない）", "to": "D", "sink": 1, "dread": 0.18, "kind": "descend" },
         { "t": "記憶を閉じ、深度Bへ引き返す", "sub": "まだ浅い。戻れる（戻り道 −1・沈下は残る）", "to": "B", "back": "B", "sink": 0, "dread": 0.08, "kind": "retreat" }
       ]
     },
@@ -118,7 +118,7 @@
       ],
       "choices": [
         { "t": "“これだけは自分だ”という線に、触れる", "sub": "触れれば書き換わる＝決定的に不可逆（戻り道 −1）", "to": "E", "sink": 3, "dread": 0.34, "close": 1, "kind": "descend", "deep": true },
-        { "t": "表示から目を逸らし、下りる", "sub": "沈む", "to": "E", "sink": 1, "dread": 0.2, "kind": "descend" }
+        { "t": "表示から目を逸らし、下りる", "sub": "書換えの表示を見ない（戻り道は減らない）", "to": "E", "sink": 1, "dread": 0.2, "kind": "descend" }
       ]
     },
 

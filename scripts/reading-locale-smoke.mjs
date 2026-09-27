@@ -60,6 +60,26 @@ for (const id of ["B_soma", "D_soma", "F_soma", "J_soma", "N_soma", "S_soma", "V
   assert.match(quiet.sub, /戻り道は減らない/, `${id}: subtitle must match its no-loss behavior`);
   assert.match(L.text(quiet.sub), /Ways back unchanged/, `${id}: English subtitle must match too`);
 }
+// The first Structure descent must offer the same legible tradeoff. Later-loop
+// display variants must not conceal the unchanged path cost either.
+for (const id of ["B", "C", "D"]) {
+  const [deep, quiet] = data.nodes[id].choices;
+  assert.equal(deep.kind, "descend", `${id}: deep choice remains a descent`);
+  assert.equal(deep.deep, true, `${id}: deep choice still grows recognition`);
+  assert.equal(deep.close, 1, `${id}: deep choice still spends a way back`);
+  assert.equal(quiet.kind, "descend", `${id}: quiet choice still advances`);
+  assert.equal(quiet.to, deep.to, `${id}: both choices still reach the same scene`);
+  assert.ok(!quiet.close && !quiet.deep, `${id}: quiet choice has no path or recognition cost`);
+  assert.match(quiet.sub, /戻り道は減らない/, `${id}: quiet subtitle matches its no-loss behavior`);
+}
+const choiceVariaSource = source.match(/  const CHOICE_VARIA = (\{[\s\S]*?\n  \});/)?.[1];
+assert.ok(choiceVariaSource, "production choice variations are extractable");
+const choiceVaria = vm.runInNewContext("(" + choiceVariaSource + ")");
+for (const key of ["B>C#descend", "D>E#descend"]) {
+  assert.ok(choiceVaria[key]?.length, `${key}: quiet variation bank exists`);
+  for (const variant of choiceVaria[key])
+    assert.match(variant.sub, /戻り道は減らない/, `${key}: later-loop quiet copy keeps the tradeoff visible`);
+}
 for (const item of [...data.edge.sankLines, ...data.edge.heldLines]) assert.ok(L.translated(item.t));
 const echoBank = source.match(/  const ECHO_BANK = (\{[\s\S]*?\n  \});/)?.[1];
 const echo = vm.runInNewContext("(" + echoBank + ")");
@@ -123,4 +143,4 @@ assert.ok(!/\b(?:state|Spiral|localStorage|fetch)\b/.test(locale), "Locale is di
 const version = source.match(/depths-shell\.json\?v=([a-z0-9.]+)/)[1];
 assert.ok(source.includes("locales/en.json?v=" + version), "catalog fetch version matches runtime");
 assert.ok(read("sw.js").includes('`locales/en.json?v=${RELEASE}`'), "optional catalog is offline-cached with its version");
-console.log("reading-locale smoke PASS (Body path, all echo candidates, fallback, display-only, pacing, version, LF/CRLF/CR)");
+console.log("reading-locale smoke PASS (Body/Structure opening choices, echo candidates, fallback, display-only, pacing, version, LF/CRLF/CR)");

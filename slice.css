@@ -495,8 +495,9 @@ body.omega .hz-scene, body.surfaced .hz-scene { animation: none; }
 .hz-choice.descend { border-color: rgba(196,107,90,0.35); }
 .hz-choice.descend .sub { color: var(--warn); }
 .hz-choice.retreat { background: transparent; }
-.hz-choice.retreat.heavy { opacity: 0.55; }
-.hz-choice.retreat.heavy .sub { color: var(--ink-faint); }
+/* 押せる退路をロック風に暗くしない。重さは枠と打ち消し線で伝え、文言は読めるまま。 */
+.hz-choice.retreat.heavy { border-style: dashed; border-color: rgba(127,182,196,0.4); }
+.hz-choice.retreat.heavy .sub { color: var(--ink); }
 /* 表層で読む＝知覚ゲートで弾かれる手。降下でも戻りでもない“逸れ”＝点線枠＋逸れマーク（生の差し色）。 */
 .hz-choice.surface { background: rgba(216,68,46,0.04); border-style: dashed; border-color: rgba(216,68,46,0.32); }
 .hz-choice.surface .sub { color: var(--hand-red); opacity: 0.85; }
@@ -838,7 +839,6 @@ body.peeling .hz-peel { visibility: visible; animation: hz-peel-sweep .62s cubic
   content: "⤳"; position: absolute; left: -1.45em; top: -0.04em;
   color: var(--hand-red); font-weight: 700; opacity: 0.9;
 }
-.hz-choice.retreat.heavy .lead { color: var(--ink-dim); }
 .hz-choice:active { box-shadow: inset 0 0 0 1px rgba(216,68,46,0.25); }
 
 /* サブ：手で引いた打ち消し線（「戻り道は細くなる」を予兆として消し込む） */

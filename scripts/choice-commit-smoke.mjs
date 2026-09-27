@@ -6,6 +6,7 @@ import vm from "node:vm";
 import { localeSource } from "./reading-locale-smoke.mjs";
 
 const source = readFileSync(new URL("../slice.js", import.meta.url), "utf8");
+const css = readFileSync(new URL("../slice.css", import.meta.url), "utf8");
 const englishCatalog = JSON.parse(readFileSync(new URL("../locales/en.json", import.meta.url), "utf8"));
 const forgetGuard = source.match(/  const ForgetGuard = \(\(\) => \{[\s\S]*?\n  \}\)\(\);/)?.[0];
 assert.ok(forgetGuard, "production forget confirmation must be available");
@@ -115,6 +116,34 @@ for (const language of ["ja", "en"]) {
   assert.match(unchanged.querySelector(".sub").textContent, language === "en" ? /Ways back −1/ : /戻り道 −1/,
     `${language}: no-cost choice is not rewritten`);
 }
+
+for (const paths of [1, 0]) {
+  const h = harness();
+  h.context.state.id = "C";
+  h.context.state.returnPaths = paths;
+  h.node.choices = [{ t: "記憶を閉じ、深度Bへ引き返す",
+    sub: "まだ浅い。戻れる（戻り道 −1・沈下は残る）", kind: "retreat", to: "B", back: "B" }];
+  const [retreat] = h.render("normal");
+  const lead = retreat.querySelector(".lead").textContent;
+  const sub = retreat.querySelector(".sub").textContent;
+  if (paths === 0) {
+    assert.match(lead, /引き返そうとする/, "C: depleted retreat is presented as an attempt");
+    assert.match(sub, /戻っても沈下は深まる/, "C: depleted retreat describes its actual consequence");
+    assert.doesNotMatch(sub, /戻れる|−1/, "C: depleted retreat does not promise escape or a path loss");
+  } else {
+    assert.match(lead, /深度Bへ引き返す/, "C: available retreat keeps the authored label");
+    assert.match(sub, /戻れる（戻り道 −1/, "C: available retreat keeps its true cost");
+  }
+}
+
+// A retreat may feel heavier without resembling a disabled or locked option.
+const heavyStyle = css.match(/\.hz-choice\.retreat\.heavy\s*\{([^}]*)\}/)?.[1];
+assert.ok(heavyStyle, "heavy retreat styling exists");
+assert.doesNotMatch(heavyStyle, /opacity/, "enabled retreat does not lose opacity");
+assert.match(heavyStyle, /border-style:\s*dashed/, "weight remains visible as a border treatment");
+assert.match(css, /\.hz-choice\.retreat\.heavy \.sub\s*\{\s*color:\s*var\(--ink\)/,
+  "heavy retreat's explanatory text uses readable ink");
+assert.doesNotMatch(css, /\.hz-choice\.retreat\.heavy \.lead\s*\{/, "heavy retreat's action keeps normal ink");
 
 // Invisible decisions cannot accept early taps or consume their click listener.
 for (const kind of ["normal", "echo", "edge"]) {

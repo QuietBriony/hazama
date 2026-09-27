@@ -1157,8 +1157,8 @@
       { t: "割れ目の奥の、描き残しを探す", sub: "裏を読む＝不可逆（戻り道 −1）" }
     ],
     "B>C#descend": [
-      { t: "月には触れない。足だけ動かす", sub: "それでも沈む" },
-      { t: "見なかった側の目で、下りる", sub: "それでも沈む" }
+      { t: "月には触れない。足だけ動かす", sub: "継ぎ目には触れない（戻り道は減らない）" },
+      { t: "見なかった側の目で、下りる", sub: "割れ目を確かめない（戻り道は減らない）" }
     ],
     "C>B#retreat": [
       { t: "月の明るい方へ、引き返す", sub: "まだ間に合う——気がする（戻り道 −1・沈下は残る）" },
@@ -1168,7 +1168,7 @@
       { t: "“これだけは自分だ”の線を、指でなぞって確かめる", sub: "触れれば書き換わる＝決定的に不可逆（戻り道 −1）" }
     ],
     "D>E#descend": [
-      { t: "自分の輪郭は見ない。段だけ数える", sub: "沈む" }
+      { t: "自分の輪郭は見ない。段だけ数える", sub: "自分の線に触れない（戻り道は減らない）" }
     ],
     "Q>R#retreat": [
       { t: "糸を噛み切って、外へ", sub: "外側の外側。もう、戻り方を思い出せない" }
@@ -1228,6 +1228,12 @@
         const vr = mulberry32((hashStr("hazama:world") ^ hashStr("label:" + state.id + ">" + c.to + (c.deep ? "+" : "") + ":" + state.cycle) ^ 0x1abe15) >>> 0);  // E38: 周回錨（transient 非依存）
         const pick = pickR(vr, [null].concat(varia));
         if (pick) { lead = pick.t || lead; sub = (pick.sub !== undefined) ? pick.sub : sub; }
+      }
+      // Cの退路が尽きた後は、周回の言い換えも含めて「戻れる」と約束しない。
+      // resolveResist は見覚えのあるBへ回しても沈下を深める。行き先・進行値は変えない。
+      if (state.id === "C" && c.kind === "retreat" && state.returnPaths === 0) {
+        lead = "記憶を閉じ、引き返そうとする";
+        sub = "戻り道は尽きた。戻っても沈下は深まる";
       }
       const btn = document.createElement("button");
       btn.type = "button";
@@ -2834,7 +2840,7 @@
     // 翻訳が取得できなくても日本語の起動は止めない。言語は表紙での明示選択・保存しない。
     const controller = new AbortController();
     const timer = window.setTimeout(() => controller.abort(), 8000);
-    fetch("locales/en.json?v=e53", { signal: controller.signal }).then((response) => {
+    fetch("locales/en.json?v=e54", { signal: controller.signal }).then((response) => {
       if (!response.ok) throw new Error("English catalog HTTP " + response.status);
       return response.json();
     }).then((data) => {
@@ -2848,7 +2854,7 @@
   }
 
   async function loadData() {
-    const res = await fetch("depths-shell.json?v=e53", { cache: "no-store" });
+    const res = await fetch("depths-shell.json?v=e54", { cache: "no-store" });
     if (!res.ok) throw new Error(`depths-shell HTTP ${res.status}`);
     const data = await res.json();
     if (!data || typeof data !== "object" || !data.start || !data.nodes || !data.nodes[data.start]) {
@@ -2937,7 +2943,7 @@
     if (!["http:", "https:"].includes(window.location.protocol)) return;
     if (!("serviceWorker" in navigator)) return;
     const register = () => {
-      navigator.serviceWorker.register("sw.js?v=e53", { scope: "./", updateViaCache: "none" }).then((reg) => {
+      navigator.serviceWorker.register("sw.js?v=e54", { scope: "./", updateViaCache: "none" }).then((reg) => {
         if (typeof reg.update === "function") reg.update().catch(() => {});
       }).catch((err) => console.warn("[Hazama slice] SW register failed:", err));
     };
