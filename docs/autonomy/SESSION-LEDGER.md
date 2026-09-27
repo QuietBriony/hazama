@@ -19,6 +19,20 @@ Hazama 自律開発 session の追記専用ログ。
 
 ---
 
+## 2026-09-27 — E54公開：構造の道の選択文と退路の視認性
+
+- agent      : Codex（単一会話・別task/agentなし）
+- goal       : ローカルE54をレビューし、masterへマージして本番配信を確認する。
+- shipped    : `8d250cf`を`codex/structure-opening-e54`からmasterへfast-forward mergeし、origin/masterへpush。
+  B/C/Dの軽い択、Cの退路0本時の案内、押せる退路の視認性を公開。行き先・数値・保存・音は不変。
+- checks     : commit前の`hazama-check` 2 PASS / 0 FAIL、`node --check slice.js`、staged diff check PASS。
+- published  : GitHub Pagesの`8d250cf` buildが`built`。公開HTML/CSS/JS/SW/データのE54配信を確認。
+  320pxの独立ブラウザで零章→A→B→C→Dを操作し、新しいB/C/D副文、軽い択後の戻り道4本・認識1/6、
+  横overflowなし、warning/errorなしを確認。Cの退路0本は前sessionのローカル試遊とsmokeで確認。
+- backlog    : HZ-BL-018の公開候補を前進。HZ-BL-029の反復加点と人間の初見評価は未完了。
+- next       : 初見5〜10人で、選択の代償・再訪の発見・浮上の意味を確認する。
+- blockers   : 実スマホの手触り、PWA install/offline、面白さ、英訳の自然さ、Steam販売品質は人間の確認待ち。
+
 ## 2026-09-27 — E54候補：構造の道の軽い択を場面と代償に合わせる
 
 - agent      : Codex（単一会話・別task/agentなし）

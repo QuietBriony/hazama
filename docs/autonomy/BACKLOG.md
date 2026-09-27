@@ -58,7 +58,7 @@ Hazama 自律開発の作業待ち行列。
 - scope    : runtime / verify
 - agent    : either
 - human-gate: yes
-- status   : E53選択・身体の道整備を公開済み — 冒頭候補の人間初見テスト待ち
+- status   : E54選択文の整備を公開済み — 冒頭候補の人間初見テスト待ち
 - source   : 2026-09-05 ユーザーの「Steamで売り出せる品質にできるか」→体験版候補を進める指示
 - detail   : 入口・自分のペースで読む操作・選択に応じた終端の振り返りを整え、既存２ルートを
   初見5〜10人で確認する。`docs/playtest/steam-demo-candidate-e41.md`を今回の手順とする。
@@ -81,9 +81,9 @@ Hazama 自律開発の作業待ち行列。
   E53公開変更: [身体の道の改稿](../playtest/body-route-e53.md)でB/Nを場面化し、軽い選択の戻り道コストを明示。
   戻り道が0本の時の重い選択も、実際には減らないことが分かる表示にした。
   英語試作も同期。実装の確認だけで人間の面白さ・翻訳の採否は閉じない。
-  E54ローカル候補: [構造の道の冒頭](../playtest/structure-opening-e54.md)でもB/C/Dの軽い択と再訪時の
+  E54公開: [構造の道の冒頭](../playtest/structure-opening-e54.md)でもB/C/Dの軽い択と再訪時の
   言い換えに戻り道の差を明示。Cの退路0本時は「戻れる」の誤案内を外し、押せる退路の暗すぎる表示も修正。
-  初見評価と公開は未実施。
+  公開320pxの冒頭と配信ファイルをagent確認。人間の初見評価は未実施。
 
 ### HZ-BL-001 — PWA install / offline human pass
 - priority : P1
