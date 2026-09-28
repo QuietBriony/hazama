@@ -50,6 +50,9 @@ Constraints: original location and composition, no people or characters, no trai
   `prefers-reduced-motion: reduce`の初期反映を確認。
 - [公開ページ](https://quietbriony.github.io/hazama/tools/visual/station-window-lab.html?v=station-20260928-1)で操作できる。
   実スマホでの視認性・動きの体感、初見での解釈、作品全体への採否は未判定。
+- 公開版`6437747`はGitHub Pagesで`built`。390×844のブラウザで両再訪まで操作し、
+  HTML/CSS/JS/背景/アイコンのHTTP 200、横overflowなし、保存なし、warning/error 0を確認。
+  CSS/JSは版番号付きURLで読み、既存PWAの同一origin cacheから旧版を拾わない。
 
 ## 次のhuman gate
 

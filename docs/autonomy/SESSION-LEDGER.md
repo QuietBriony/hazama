@@ -19,6 +19,21 @@ Hazama 自律開発 session の追記専用ログ。
 
 ---
 
+## 2026-09-28 — 視覚試作02「間の駅」をGitHub Pagesに公開
+
+- agent      : Codex（単一会話・別task/agentなし）
+- goal       : ユーザーの「公開して」に応え、前sessionの独立試作を既存Pagesでスマホ試遊可能にする。
+- shipped    : `ce73bd0`で試作をmasterへ統合、`6437747`でCSS/JSに版番号を付け、
+  [公開ページ](https://quietbriony.github.io/hazama/tools/visual/station-window-lab.html?v=station-20260928-1)と関連文書を更新。
+  既存GitHub Pages以外のhosting、本編runtime・進行・保存・音・PWA設定は変更していない。
+- checks     : commit前の`hazama-check` 2 PASS / 0 FAIL、JS構文、staged diff check PASS。
+- published  : GitHub Pagesの`6437747` buildが`built`。公開HTML/CSS/JS/背景/アイコンはすべてHTTP 200。
+  公開390×844で「見る」「見ない」の両分岐から再訪まで操作し、画像変化を目視。
+  横overflowなし、`localStorage.length=0`、browser warning/error 0。
+- backlog    : HZ-BL-030は公開試作まで実施。実スマホの視認性・動き・作品全体への採否はhuman gate待ち。
+- next       : スマホで実際に触り、選択後の変化が伝わるかとグリッチの強さを判断する。
+- blockers   : 人間の体感確認と本編採用判断は未実施。Steam販売品質の認定ではない。
+
 ## 2026-09-28 — 雨の駅と同じ窓の再訪をtools-onlyで視覚試作
 
 - agent      : Codex（単一会話・別task/agentなし）
