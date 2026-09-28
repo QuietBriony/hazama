@@ -1,11 +1,12 @@
 # Hazama visual studies
 
-## 視覚試作02 — 間の駅（ローカル・未公開）
+## 視覚試作02 — 間の駅（公開中・本編未接続）
 
-[操作できる試作](station-window-lab.html) / [制作・試遊メモ](../../docs/playtest/station-window-study-20260928.md)。
+[スマホで操作できる試作](https://quietbriony.github.io/hazama/tools/visual/station-window-lab.html?v=station-20260928-1) /
+[ローカルファイル](station-window-lab.html) / [制作・試遊メモ](../../docs/playtest/station-window-study-20260928.md)。
 2026-09-28の画像相談から作った、夜の駅の同じ窓を「確かめる／視線を外す」で
 見直す短い分岐。背景はオリジナルの生成画、雨・窓枠・影・有限のグリッチはCSS。
-Three.jsや外部依存は使わない。本編の進行・保存・音・PWAには接続せず、公開・採用も未判定。
+Three.jsや外部依存は使わない。本編の進行・保存・音・PWAには接続せず、本編採用は未判定。
 
 ---
 

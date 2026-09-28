@@ -16,7 +16,7 @@ Hazama は、沈むほど戻りにくい「降下する対話」の没入型静�
 - 検証: `scripts/hazama-check.mjs`（`autonomy-docs` ＋ `build-consistency` の2本）
 - 制作候補: `docs/BLENDER-AUTHORING.md`（WorkerPC Blender 5.2をrepo外の静止画制作実行器に限定。runtime非依存）
 - ビジュアル01: [公開中の本編E54](https://quietbriony.github.io/hazama/?v=e54) / [採用前の静止比較](https://quietbriony.github.io/hazama/tools/visual/visual-preview.html?v=visual-20260920-1) / [実装と確認](docs/playtest/visual-entry-e47.md)。入口に採用。読書優先/視覚効果軽減は静止、実機の見え方は人間の確認待ち。
-- ビジュアル02: [間の駅の操作試作](tools/visual/station-window-lab.html) / [制作・試遊メモ](docs/playtest/station-window-study-20260928.md)。同じ窓を見直すことで変わる景色を、tools-onlyの独立ページで検証中。ローカル・未公開、本編未接続。
+- ビジュアル02: [スマホで操作できる「間の駅」](https://quietbriony.github.io/hazama/tools/visual/station-window-lab.html?v=station-20260928-1) / [制作・試遊メモ](docs/playtest/station-window-study-20260928.md)。同じ窓を見直すことで変わる景色を、tools-onlyの独立ページで検証中。本編未接続・実機の体感判断待ち。
 - 表紙タイトル: E50で一語の「HAZAMA」を見出しにし、重なっていた赤/シアンの文字を外した。スマホ幅と旧版からの更新を公開ページで確認済み。
 - 体験版候補: [E41 初見テスト](docs/playtest/steam-demo-candidate-e41.md)（既存Web版の初回２ルート・人間の評価待ち。Steam提出用ビルドではない）
 - E53公開候補: [E52の選択公平性](docs/playtest/choice-fairness-e52.md)に[身体の道の場面・選択文](docs/playtest/body-route-e53.md)を追加。戻り道0本時の費用表示も実際の挙動に合わせた。人間の初見評価はまだ。

@@ -136,7 +136,8 @@ Hazama 自律開発の作業待ち行列。
   ①一見して駅と窓を認識できるか、②見る/見ない両分岐と再訪の変化に気づくか、
   ③グリッチの量と文字の読みやすさがHazamaの読書体験に合うかを判定する。
   背景と窓の演出が支持されても、本編進行・保存・PWA・音への統合は別スコープとして設計・レビューする。
-  現時点ではローカル・未公開で、エージェントのブラウザ確認はhuman gateを閉じない。
+  [Pages公開版](https://quietbriony.github.io/hazama/tools/visual/station-window-lab.html?v=station-20260928-1)で人間が試せる。
+  エージェントのブラウザ確認だけではhuman gateを閉じない。
 
 ### HZ-BL-027 — ImageGen背景候補と読書画面の視覚調整
 - priority : P2

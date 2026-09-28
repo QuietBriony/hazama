@@ -48,8 +48,8 @@ Constraints: original location and composition, no people or characters, no trai
   320pxで横スクロールなし。`localStorage.length=0`のまま。
 - 390pxで選択直後の有限グリッチも撮影して確認。動き停止と
   `prefers-reduced-motion: reduce`の初期反映を確認。
-- 実スマホでの視認性・動きの体感、初見での解釈、作品全体への採否は未判定。
-  この試作はまだ公開されていないため、スマホの遠隔ブラウザからは開けない。
+- [公開ページ](https://quietbriony.github.io/hazama/tools/visual/station-window-lab.html?v=station-20260928-1)で操作できる。
+  実スマホでの視認性・動きの体感、初見での解釈、作品全体への採否は未判定。
 
 ## 次のhuman gate
 
