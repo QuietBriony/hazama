@@ -19,6 +19,19 @@ Hazama 自律開発 session の追記専用ログ。
 
 ---
 
+## 2026-09-28 — 雨の駅と同じ窓の再訪をtools-onlyで視覚試作
+
+- agent      : Codex（単一会話・別task/agentなし）
+- goal       : ユーザーのHD-2D/雨の駅の画像相談を、Hazamaらしい選択と再訪を持つ小さな操作場面で試す。
+- prepared   : ImageGen原画にCSSの窓・雨・影・曇り・有限グリッチを重ね、
+  「見る／見ない」から異なる同じ窓への再訪に進む独立ページを`tools/visual/`に追加。
+  本編runtime・進行・保存・音・PWAは未変更。公開・commit・pushはしていない。
+- checks     : `hazama-check` 2 PASS / 0 FAIL、JS構文、320×568・390×844・1440×900のブラウザ操作と視覚確認。
+  両分岐の再訪、320px横overflowなし、保存なし、motion toggleとreduced-motion初期設定を確認。
+- backlog    : HZ-BL-030を追加。人間の端末試遊と本編採否は未判定。
+- next       : 実スマホで初見の視認性・分岐差・グリッチの強さを見てから、必要なら本編の小場面として再設計する。
+- blockers   : スマホ公開は今回の指示に含まれず、実機体感・販売品質のhuman gateは未通過。
+
 ## 2026-09-27 — E54公開：構造の道の選択文と退路の視認性
 
 - agent      : Codex（単一会話・別task/agentなし）

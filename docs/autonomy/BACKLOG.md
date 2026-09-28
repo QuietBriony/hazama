@@ -125,6 +125,19 @@ Hazama 自律開発の作業待ち行列。
 
 ## P2
 
+### HZ-BL-030 — 「間の駅」の同じ窓を再訪する視覚試作を人間試遊
+- priority : P2
+- scope    : verify
+- agent    : human
+- human-gate: yes
+- status   : open
+- source   : 2026-09-28のHD-2D/雨の駅の画像相談から「進めてみて」
+- detail   : [tools-onlyの独立試作](../../tools/visual/station-window-lab.html)を実スマホで試し、
+  ①一見して駅と窓を認識できるか、②見る/見ない両分岐と再訪の変化に気づくか、
+  ③グリッチの量と文字の読みやすさがHazamaの読書体験に合うかを判定する。
+  背景と窓の演出が支持されても、本編進行・保存・PWA・音への統合は別スコープとして設計・レビューする。
+  現時点ではローカル・未公開で、エージェントのブラウザ確認はhuman gateを閉じない。
+
 ### HZ-BL-027 — ImageGen背景候補と読書画面の視覚調整
 - priority : P2
 - scope    : runtime(visual) / verify
