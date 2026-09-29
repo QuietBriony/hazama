@@ -1,5 +1,15 @@
 # Hazama visual studies
 
+## 視覚試作03 — 間の駅・奥行き比較（ローカル・未公開）
+
+[Three.js奥行き試作](station-window-three-lab.html) / [2D版](station-window-lab.html) /
+[A/Bと境界](../../docs/playtest/station-three-study-20260929.md)。
+同じ背景・文章・分岐で、窓の前から左右へ覗いたときの手触りを比較する。
+Three.jsの固定CDN読込はこの独立ページだけの例外。本編には未接続で、
+スマホ実機の体感・性能と採否は未判定。公開済みリンクは下の試作02のみ。
+
+---
+
 ## 視覚試作02 — 間の駅（公開中・本編未接続）
 
 [スマホで操作できる試作](https://quietbriony.github.io/hazama/tools/visual/station-window-lab.html?v=station-20260928-1) /

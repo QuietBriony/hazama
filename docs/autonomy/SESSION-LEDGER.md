@@ -19,6 +19,22 @@ Hazama 自律開発 session の追記専用ログ。
 
 ---
 
+## 2026-09-29 — 間の駅のThree.js奥行き比較をローカル試作
+
+- agent      : Codex（単一会話・別task/agentなし）
+- goal       : 公開済み2D試作に対し、同じ場面でThree.jsの視点移動が体験を良くするか試す。
+- prepared   : feature branch `codex/station-three-comparison-20260929`にtools-onlyの奥行き版と
+  [比較メモ](../playtest/station-three-study-20260929.md)を追加。固定CDNのThree.jsは
+  この独立ページだけに読込。本編runtime・進行・保存・音・PWAは未変更。merge/push/公開なし。
+- checks     : ローカルの320×568、390×844、1440×900で両分岐と再訪、左右の視点限界、
+  motion停止、reduced-motion、CDN遮断・WebGL context喪失時のfallbackをブラウザ確認。
+  横overflowと保存なし。
+  `hazama-check`は2 PASS / 0 FAIL、JS構文・diff checkもPASS。
+- finding    : 視点移動の手触りは改善。静止構図や物語は2D版を上回るとは未判定。
+- backlog    : HZ-BL-031を追加。HZ-BL-030の実スマホ確認も継続。
+- next       : 公開が指示されたらスマホで同一場面をA/Bし、可読性・負荷・再訪の意味で採否を決める。
+- blockers   : 実スマホ評価と本編採用・Steam販売品質はhuman gate待ち。
+
 ## 2026-09-28 — 視覚試作02「間の駅」をGitHub Pagesに公開
 
 - agent      : Codex（単一会話・別task/agentなし）

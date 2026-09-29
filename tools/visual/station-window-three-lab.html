@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#080d11">
+  <meta name="description" content="Hazamaの独立したThree.js視覚試作。同じ窓を左右から覗き、選択で変わる駅を確かめます。">
+  <link rel="icon" type="image/png" sizes="192x192" href="../../icons/icon-192.png">
+  <link rel="stylesheet" href="station-window-lab.css?v=station-20260928-1">
+  <link rel="stylesheet" href="station-window-three-lab.css">
+  <script src="station-window-lab.js?v=station-20260928-1" defer></script>
+  <script src="station-window-three-lab.js" type="module"></script>
+  <title>HAZAMA — 間の駅 / 奥行き試作</title>
+</head>
+<body>
+  <div class="experience three-experience" id="experience" data-scene="arrival" data-motion="off" data-three-ready="no">
+    <div class="world">
+      <div class="station fallback-station" aria-hidden="true"></div>
+      <canvas id="world-canvas" class="world-canvas" tabindex="0"
+        aria-label="駅を見渡す窓。左右にドラッグ、または左右矢印キーで視点を動かせます"></canvas>
+      <div class="glitch glitch-a" aria-hidden="true"></div>
+      <div class="glitch glitch-b" aria-hidden="true"></div>
+      <div class="world-shade" aria-hidden="true"></div>
+    </div>
+
+    <header class="topbar">
+      <span class="mark">HAZAMA <span class="mark-divider">/</span> DEPTH STUDY 03</span>
+      <button class="motion-toggle" id="motion-toggle" type="button">動きを止める</button>
+    </header>
+    <p class="view-hint">窓を左右になぞる <span aria-hidden="true">↔</span></p>
+
+    <main class="story-wrap">
+      <section class="story" aria-labelledby="scene-title">
+        <p class="eyebrow" id="scene-kicker">01 / 初めての窓</p>
+        <h1 id="scene-title" tabindex="-1">間の駅</h1>
+        <p class="story-line" id="scene-line" aria-live="polite">終電の記録だけが残る駅。扉のガラスに、雨の線が二重に落ちている。待合室には誰もいない。</p>
+        <div class="choices" id="choices" aria-label="この場面で選ぶこと">
+          <button type="button" data-next="observed">窓の奥を確かめる<span>見えた線を、覚える</span></button>
+          <button type="button" data-next="averted">視線を外す<span>見なかったものを、残す</span></button>
+        </div>
+        <p class="render-status" id="render-status" role="status" hidden>
+          奥行き表示を開始できませんでした。<a href="station-window-lab.html?v=station-20260928-1">2D版を開く</a>
+        </p>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <span>独立試作 · 本編の進行や記憶には接続しない</span>
+      <a href="station-window-lab.html?v=station-20260928-1">2D版と比べる ↗</a>
+      <a href="../../">本編へ戻る ↗</a>
+    </footer>
+  </div>
+</body>
+</html>

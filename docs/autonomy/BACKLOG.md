@@ -125,6 +125,19 @@ Hazama 自律開発の作業待ち行列。
 
 ## P2
 
+### HZ-BL-031 — 奥行き版と2D版を実スマホでA/B試遊
+- priority : P2
+- scope    : verify
+- agent    : human
+- human-gate: yes
+- status   : open
+- source   : 2026-09-29「Three.jsが合いそう」「進めてみて、よくなる？」
+- detail   : [奥行き試作](../../tools/visual/station-window-three-lab.html)と
+  [公開2D版](../../tools/visual/station-window-lab.html)で、左右へ覗く行為が再訪の意味を
+  強めるか、文章の可読性・待ち時間・発熱・端末タッチ感を実機で比較する。
+  奥行き版はローカル未公開。公開、本編採用、外部依存の本編追加はいずれも別判断。
+  エージェントのブラウザ操作だけでDoneにしない。
+
 ### HZ-BL-030 — 「間の駅」の同じ窓を再訪する視覚試作を人間試遊
 - priority : P2
 - scope    : verify
