@@ -19,6 +19,24 @@ Hazama 自律開発 session の追記専用ログ。
 
 ---
 
+## 2026-09-30 — 奥行き試作の影の位置・覗く操作・再訪を整備
+
+- agent      : Codex（単一会話・別task/agentなし）
+- goal       : 「必要改善すすめてみて」を受け、HZ-BL-031のローカル比較候補を磨く。
+- prepared   : 背景画の窓へ人影を同期、場面ごとの視点リセット、「正面へ」ボタンとHome、
+  一拍遅れる影、視点に遅れて追いつく反射を追加。縦スワイプ・拡大を許可し、
+  loading中と描画失敗時の操作順・10秒の読込打切りを整備。
+  [比較メモ](../playtest/station-three-study-20260929.md)へ記録。
+- checks     : `hazama-check` 2 PASS / 0 FAIL、JS構文・diff check PASS。
+  ブラウザ320×568・390×844・1440×900・横向き844×390で両分岐と再訪を確認。
+  横overflow・保存なし、正常時warning/error 0。横タッチ・縦スクロール・Home・
+  正面へ戻すボタン・場面リセット・reduced-motion・読込timeout・実際のWebGL喪失を確認。
+- scope      : `codex/station-three-comparison-20260929`の独立試作。本編runtime・保存・音・
+  PWA・公開2D版は不変。merge/push/公開なし。
+- backlog    : HZ-BL-031のagent側候補を更新。実スマホと採否のhuman gateはopen。
+- next       : スマホで同じ場面をA/Bし、覗く動作が再訪の意味を強めるかを判断する。
+- blockers   : 実機の発熱・タッチ感・初見の解釈・面白さは未判定。
+
 ## 2026-09-29 — 間の駅のThree.js奥行き比較をローカル試作
 
 - agent      : Codex（単一会話・別task/agentなし）

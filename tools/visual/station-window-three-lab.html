@@ -7,27 +7,30 @@
   <meta name="description" content="Hazamaの独立したThree.js視覚試作。同じ窓を左右から覗き、選択で変わる駅を確かめます。">
   <link rel="icon" type="image/png" sizes="192x192" href="../../icons/icon-192.png">
   <link rel="stylesheet" href="station-window-lab.css?v=station-20260928-1">
-  <link rel="stylesheet" href="station-window-three-lab.css">
+  <link rel="stylesheet" href="station-window-three-lab.css?v=depth-20260930-1">
   <script src="station-window-lab.js?v=station-20260928-1" defer></script>
-  <script src="station-window-three-lab.js" type="module"></script>
+  <script src="station-window-three-lab.js?v=depth-20260930-1" type="module"></script>
   <title>HAZAMA — 間の駅 / 奥行き試作</title>
 </head>
 <body>
   <div class="experience three-experience" id="experience" data-scene="arrival" data-motion="off" data-three-ready="no">
     <div class="world">
       <div class="station fallback-station" aria-hidden="true"></div>
-      <canvas id="world-canvas" class="world-canvas" tabindex="0"
-        aria-label="駅を見渡す窓。左右にドラッグ、または左右矢印キーで視点を動かせます"></canvas>
+      <canvas id="world-canvas" class="world-canvas" tabindex="-1" aria-hidden="true"
+        aria-label="駅を見渡す窓。左右にドラッグ、または左右矢印キーで視点を動かせます。Homeキーで正面に戻ります"></canvas>
       <div class="glitch glitch-a" aria-hidden="true"></div>
       <div class="glitch glitch-b" aria-hidden="true"></div>
       <div class="world-shade" aria-hidden="true"></div>
     </div>
 
     <header class="topbar">
-      <span class="mark">HAZAMA <span class="mark-divider">/</span> DEPTH STUDY 03</span>
+      <span class="mark">HAZAMA <span class="mark-divider">/</span> 間の駅</span>
       <button class="motion-toggle" id="motion-toggle" type="button">動きを止める</button>
     </header>
-    <p class="view-hint">窓を左右になぞる <span aria-hidden="true">↔</span></p>
+    <div class="view-controls" id="view-controls" hidden>
+      <p class="view-hint">窓を左右になぞる <span aria-hidden="true">↔</span></p>
+      <button class="view-reset" id="view-reset" type="button" aria-label="視点を正面へ戻す">正面へ</button>
+    </div>
 
     <main class="story-wrap">
       <section class="story" aria-labelledby="scene-title">

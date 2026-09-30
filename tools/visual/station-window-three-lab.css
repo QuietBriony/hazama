@@ -7,7 +7,7 @@
   height: 100%;
   opacity: 0;
   outline: none;
-  touch-action: none;
+  touch-action: pan-y pinch-zoom;
   pointer-events: auto;
   transition: opacity .65s ease;
 }
@@ -22,16 +22,22 @@
     linear-gradient(90deg, rgba(2,8,12,.2), transparent 30%, transparent 72%, rgba(2,8,12,.22));
 }
 .three-experience .glitch { z-index: 2; pointer-events: none; }
-.three-experience .view-hint {
+.three-experience .view-controls {
   position: absolute;
   top: max(72px, calc(env(safe-area-inset-top) + 57px));
   left: 50%;
   z-index: 2;
-  width: max-content;
+  display: flex;
+  align-items: center;
+  gap: 6px;
   max-width: calc(100% - 30px);
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+.three-experience .view-controls[hidden] { display: none; }
+.three-experience .view-hint {
   margin: 0;
   padding: 5px 9px;
-  transform: translateX(-50%);
   border: 1px solid rgba(137,184,188,.34);
   border-radius: 2px;
   color: #deebea;
@@ -40,10 +46,22 @@
   letter-spacing: .12em;
   line-height: 1.4;
   text-shadow: 0 1px 5px #000;
-  pointer-events: none;
+  white-space: nowrap;
 }
 .three-experience .view-hint span { color: #d5a37f; font-size: .85rem; }
-.three-experience[data-three-ready="failed"] .view-hint { display: none; }
+.three-experience .view-reset {
+  min-width: 52px;
+  min-height: 44px;
+  padding: 5px 8px;
+  border: 1px solid rgba(137,184,188,.34);
+  border-radius: 2px;
+  color: #deebea;
+  background: rgba(5,16,20,.7);
+  font-size: .7rem;
+  cursor: pointer;
+  pointer-events: auto;
+}
+.three-experience .view-reset:hover { background: rgba(28,49,55,.85); }
 .three-experience .render-status {
   margin: 14px 0 0;
   color: #ebd1bd;
@@ -54,14 +72,15 @@
 .three-experience .render-status a { color: #e4c6ac; }
 .three-experience .story-wrap { pointer-events: none; }
 .three-experience .story { pointer-events: auto; }
+.three-experience .mark { white-space: normal; }
 .three-experience .footer { gap: 4px 14px; }
 .three-experience[data-motion="off"] .world-canvas,
 .three-experience[data-motion="off"] .fallback-station { transition: none; }
 @media (max-width: 700px) {
-  .three-experience .view-hint { top: max(62px, calc(env(safe-area-inset-top) + 50px)); }
+  .three-experience .view-controls { top: max(62px, calc(env(safe-area-inset-top) + 50px)); }
   .three-experience .footer { font-size: .66rem; }
 }
 @media (max-height: 620px) {
-  .three-experience .view-hint { top: 58px; }
+  .three-experience .view-controls { top: 58px; }
   .three-experience .footer { font-size: .62rem; }
 }

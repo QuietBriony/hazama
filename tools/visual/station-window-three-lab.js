@@ -2,6 +2,8 @@
 const app = document.getElementById("experience");
 const canvas = document.getElementById("world-canvas");
 const status = document.getElementById("render-status");
+const viewControls = document.getElementById("view-controls");
+const viewReset = document.getElementById("view-reset");
 const THREE_URL = "https://cdn.jsdelivr.net/npm/three@0.186.1/build/three.module.js";
 
 function showFallback(error) {
@@ -9,11 +11,26 @@ function showFallback(error) {
   app.dataset.threeReady = "failed";
   canvas.tabIndex = -1;
   canvas.setAttribute("aria-hidden", "true");
+  viewControls.hidden = true;
   status.hidden = false;
 }
 
+async function withLoadDeadline(task) {
+  let timer;
+  try {
+    return await Promise.race([
+      task,
+      new Promise((_, reject) => {
+        timer = window.setTimeout(() => reject(new Error("Scene loading timed out")), 10000);
+      })
+    ]);
+  } finally {
+    window.clearTimeout(timer);
+  }
+}
+
 async function start() {
-  const THREE = await import(THREE_URL);
+  const THREE = await withLoadDeadline(import(THREE_URL));
   const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: "low-power" });
   renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.5));
   renderer.setClearColor(0x081116, 1);
@@ -24,7 +41,13 @@ async function start() {
   const camera = new THREE.PerspectiveCamera(54, 1, .1, 80);
   camera.position.set(0, 0, 6.2);
 
-  const texture = await new THREE.TextureLoader().loadAsync("assets/hazama-station-night-01.png");
+  let texture;
+  try {
+    texture = await withLoadDeadline(new THREE.TextureLoader().loadAsync("assets/hazama-station-night-01.png"));
+  } catch (error) {
+    renderer.dispose();
+    throw error;
+  }
   texture.colorSpace = THREE.SRGBColorSpace;
   texture.wrapS = THREE.ClampToEdgeWrapping;
   texture.wrapT = THREE.ClampToEdgeWrapping;
@@ -101,17 +124,16 @@ async function start() {
   const silhouetteTexture = new THREE.CanvasTexture(silhouetteCanvas);
   const farMaterial = new THREE.SpriteMaterial({ map: silhouetteTexture, color: 0x090e11, transparent: true, opacity: 0, depthWrite: false });
   const farFigure = new THREE.Sprite(farMaterial);
-  farFigure.position.set(1.85, 3.7, -11.25);
-  farFigure.scale.set(.48, 1.5, 1);
+  farFigure.position.z = -11.98;
   scene.add(farFigure);
   const reflectionCanvas = document.createElement("canvas");
   reflectionCanvas.width = 64;
   reflectionCanvas.height = 160;
   const reflection = reflectionCanvas.getContext("2d");
-  reflection.filter = "blur(5px)";
+  reflection.filter = "blur(3px)";
   reflection.drawImage(silhouetteCanvas, 0, 0);
   const reflectionTexture = new THREE.CanvasTexture(reflectionCanvas);
-  const nearMaterial = new THREE.SpriteMaterial({ map: reflectionTexture, color: 0x84afb3, transparent: true, opacity: 0, depthWrite: false });
+  const nearMaterial = new THREE.SpriteMaterial({ map: reflectionTexture, color: 0xb5d2d0, transparent: true, opacity: 0, depthWrite: false });
   const nearFigure = new THREE.Sprite(nearMaterial);
   nearFigure.position.set(-.43, .53, windowZ + .18);
   nearFigure.scale.set(.23, .57, 1);
@@ -177,8 +199,13 @@ async function start() {
   let looping = false;
   let lastFrame = 0;
   let pointerStart = null;
+  let activeScene = "";
+  let revealRemaining = 0;
+  let reflectionAnchorX = 0;
+  let reflectionOffset = 0;
 
   canvas.addEventListener("webglcontextlost", () => {
+    finishPointer();
     looping = false;
     window.cancelAnimationFrame(frameId);
     showFallback(new Error("WebGL context lost"));
@@ -199,6 +226,15 @@ async function start() {
       THREE.MathUtils.clamp(.54 - cropY / 2, 0, 1 - cropY)
     );
     texture.needsUpdate = true;
+
+    // Anchor the figure to the painted waiting-room window, including cover-crop.
+    // u/v use the original image; v grows upward in the texture coordinate system.
+    const figureU = .662;
+    const figureV = .545;
+    farFigure.position.x = backdrop.position.x + ((figureU - texture.offset.x) / cropX - .5) * backdrop.scale.x;
+    farFigure.position.y = backdrop.position.y + ((figureV - texture.offset.y) / cropY - .5) * backdrop.scale.y;
+    const figureHeight = .064 / cropY * backdrop.scale.y;
+    farFigure.scale.set(figureHeight * .4, figureHeight, 1);
   }
 
   function fitWindow(width, height) {
@@ -223,9 +259,15 @@ async function start() {
     frame.shine.scale.set(thickness * .16, top - bottom, .01);
     glass.position.y = (top + bottom) / 2;
     glass.scale.set(right - left, top - bottom, 1);
+    reflectionAnchorX = -.25 * visibleWidth;
+    nearFigure.position.set(reflectionAnchorX + reflectionOffset, .19 * visibleHeight, windowZ + .18);
+    nearFigure.scale.set(.064 * visibleHeight, .16 * visibleHeight, 1);
+    haze.position.set(.18 * visibleWidth, .18 * visibleHeight, windowZ + .15);
+    haze.scale.set(.8, .8, 1);
   }
 
   function resize() {
+    if (app.dataset.threeReady === "failed") return;
     const width = Math.max(1, canvas.clientWidth);
     const height = Math.max(1, canvas.clientHeight);
     renderer.setSize(width, height, false);
@@ -237,29 +279,44 @@ async function start() {
   }
 
   function syncScene() {
+    if (app.dataset.threeReady === "failed") return;
     const sceneId = app.dataset.scene;
     const scenes = {
       arrival: { x: 0, z: 6.2, look: 0, far: 0, near: 0, seam: 0, haze: 0 },
       observed: { x: .12, z: 5.65, look: .07, far: .9, near: 0, seam: .86, haze: 0 },
       averted: { x: -.17, z: 6.55, look: -.3, far: 0, near: 0, seam: .14, haze: .47 },
-      "return-observed": { x: 0, z: 6.2, look: 0, far: 0, near: .38, seam: .8, haze: 0 },
+      "return-observed": { x: 0, z: 6.2, look: 0, far: 0, near: .52, seam: .8, haze: 0 },
       "return-averted": { x: 0, z: 6.2, look: 0, far: .93, near: 0, seam: .12, haze: 0 }
     };
     target = scenes[sceneId] || scenes.arrival;
+    if (activeScene !== sceneId) {
+      activeScene = sceneId;
+      finishPointer();
+      setPan(0);
+      reflectionOffset = 0;
+      farMaterial.opacity = 0;
+      nearMaterial.opacity = 0;
+      revealRemaining = target.far || target.near ? .55 : 0;
+    }
     if (app.dataset.motion === "off") update(0, true);
     syncLoop();
   }
 
   function update(delta, immediate = false) {
-    const weight = immediate ? 1 : Math.min(1, delta * 3.4);
-    panCurrent += (panTarget - panCurrent) * weight;
-    cameraX += (target.x + panCurrent - cameraX) * weight;
+    const weight = immediate ? 1 : 1 - Math.exp(-delta * 3.4);
+    const panWeight = immediate ? 1 : 1 - Math.exp(-delta * 14);
+    panCurrent += (panTarget - panCurrent) * panWeight;
+    cameraX += (target.x - cameraX) * weight;
     cameraZ += (target.z - cameraZ) * weight;
-    lookX += (target.look + panCurrent * .17 - lookX) * weight;
-    camera.position.set(cameraX, 0, cameraZ);
-    camera.lookAt(lookX, 0, -8);
+    lookX += (target.look - lookX) * weight;
+    camera.position.set(cameraX + panCurrent, 0, cameraZ);
+    camera.lookAt(lookX + panCurrent * .17, 0, -8);
+    revealRemaining = immediate ? 0 : Math.max(0, revealRemaining - delta);
+    reflectionOffset += (panCurrent * .12 - reflectionOffset) * (immediate ? 1 : 1 - Math.exp(-delta * 1.8));
+    nearFigure.position.x = reflectionAnchorX + reflectionOffset;
     for (const [material, value] of [
-      [farMaterial, target.far], [nearMaterial, target.near],
+      [farMaterial, revealRemaining > 0 ? 0 : target.far],
+      [nearMaterial, revealRemaining > 0 ? 0 : target.near],
       [seamMaterial, target.seam], [hazeMaterial, target.haze]
     ]) material.opacity += (value - material.opacity) * weight;
     if (!immediate && delta > 0) {
@@ -291,7 +348,8 @@ async function start() {
   }
 
   function syncLoop() {
-    const shouldLoop = app.dataset.motion === "on" && !document.hidden && app.dataset.threeReady !== "failed";
+    if (app.dataset.threeReady === "failed") return;
+    const shouldLoop = app.dataset.motion === "on" && !document.hidden;
     if (shouldLoop && !looping) {
       looping = true;
       lastFrame = 0;
@@ -299,40 +357,61 @@ async function start() {
     } else if (!shouldLoop && looping) {
       looping = false;
       window.cancelAnimationFrame(frameId);
-      update(0, true);
-      renderOnce();
+      if (!document.hidden) { update(0, true); renderOnce(); }
     } else if (!shouldLoop) {
+      if (!document.hidden) { update(0, true); renderOnce(); }
+    }
+  }
+
+  function setPan(value) {
+    panTarget = THREE.MathUtils.clamp(value, -.72, .72);
+    canvas.dataset.pan = panTarget.toFixed(2);
+    if (app.dataset.motion === "off" && app.dataset.threeReady !== "failed") {
       update(0, true);
       renderOnce();
     }
   }
 
   canvas.addEventListener("pointerdown", (event) => {
-    pointerStart = { x: event.clientX, pan: panTarget };
-    canvas.setPointerCapture(event.pointerId);
+    if (!event.isPrimary || event.button !== 0 || app.dataset.threeReady !== "yes") return;
+    pointerStart = { id: event.pointerId, x: event.clientX, y: event.clientY, pan: panTarget, horizontal: false };
   });
   canvas.addEventListener("pointermove", (event) => {
-    if (!pointerStart) return;
-    panTarget = THREE.MathUtils.clamp(pointerStart.pan + (event.clientX - pointerStart.x) / canvas.clientWidth * 1.75, -.72, .72);
-    canvas.dataset.pan = panTarget.toFixed(2);
-    if (app.dataset.motion === "off") { update(0, true); renderOnce(); }
+    if (!pointerStart || pointerStart.id !== event.pointerId) return;
+    const dx = event.clientX - pointerStart.x;
+    const dy = event.clientY - pointerStart.y;
+    if (!pointerStart.horizontal) {
+      if (Math.abs(dx) < 6 && Math.abs(dy) < 6) return;
+      if (Math.abs(dy) > Math.abs(dx)) { finishPointer(); return; }
+      pointerStart.horizontal = true;
+      canvas.setPointerCapture(event.pointerId);
+    }
+    setPan(pointerStart.pan + dx / canvas.clientWidth * 1.75);
   });
-  function finishPointer() { pointerStart = null; }
+  function finishPointer() {
+    const id = pointerStart?.id;
+    pointerStart = null;
+    if (id !== undefined && canvas.hasPointerCapture(id)) canvas.releasePointerCapture(id);
+  }
   canvas.addEventListener("pointerup", finishPointer);
   canvas.addEventListener("pointercancel", finishPointer);
-  canvas.addEventListener("keydown", (event) => {
-    if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") return;
-    event.preventDefault();
-    panTarget = THREE.MathUtils.clamp(panTarget + (event.key === "ArrowRight" ? .19 : -.19), -.72, .72);
-    canvas.dataset.pan = panTarget.toFixed(2);
-    if (app.dataset.motion === "off") { update(0, true); renderOnce(); }
+  canvas.addEventListener("lostpointercapture", finishPointer);
+  canvas.addEventListener("pointerleave", () => {
+    if (pointerStart && !pointerStart.horizontal) finishPointer();
   });
+  canvas.addEventListener("keydown", (event) => {
+    if (!["ArrowLeft", "ArrowRight", "Home"].includes(event.key) || app.dataset.threeReady !== "yes") return;
+    event.preventDefault();
+    setPan(event.key === "Home" ? 0 : panTarget + (event.key === "ArrowRight" ? .19 : -.19));
+  });
+  viewReset.addEventListener("click", () => setPan(0));
 
   const observer = new MutationObserver(syncScene);
   observer.observe(app, { attributes: true, attributeFilter: ["data-scene", "data-motion"] });
-  document.addEventListener("visibilitychange", syncLoop);
+  document.addEventListener("visibilitychange", () => { finishPointer(); syncLoop(); });
   window.addEventListener("resize", resize);
   window.addEventListener("pagehide", (event) => {
+    finishPointer();
     looping = false;
     window.cancelAnimationFrame(frameId);
     if (!event.persisted) {
@@ -347,6 +426,9 @@ async function start() {
   resize();
   syncScene();
   app.dataset.threeReady = "yes";
+  canvas.tabIndex = 0;
+  canvas.removeAttribute("aria-hidden");
+  viewControls.hidden = false;
 }
 
 start().catch(showFallback);
