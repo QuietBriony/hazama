@@ -31,7 +31,7 @@ Hazama 自律開発の作業待ち行列。
 - scope    : runtime / verify
 - agent    : either
 - human-gate: yes
-- status   : 実装済 — 公開確認とhuman-gate待ち
+- status   : E55公開済 — 実機human-gate待ち
 - source   : 2026-10-01の端末名・八観の先出し・赤線・単調な背景・PWA更新の指摘
 - detail   : [E55確認メモ](../playtest/immersion-e55.md)で、入口/再訪/Ω/帰還の読書を確認する。
   設定にE55が出ることを先に確認し、改稿が端末を意識させず読者の気配を残すか、
@@ -149,7 +149,7 @@ Hazama 自律開発の作業待ち行列。
 - detail   : [奥行き試作](../../tools/visual/station-window-three-lab.html)と
   [公開2D版](../../tools/visual/station-window-lab.html)で、左右へ覗く行為が再訪の意味を
   強めるか、文章の可読性・待ち時間・発熱・端末タッチ感を実機で比較する。
-  奥行き版はE55と一緒に公開する独立比較ページ。本編採用と外部依存の本編追加は別判断。
+  奥行き版は2026-10-01にE55と一緒に公開済みの独立比較ページ。本編採用と外部依存の本編追加は別判断。
   エージェントのブラウザ操作だけでDoneにしない。
   2026-09-30: 画面幅を変えても影を待合室の窓に同期し、場面遷移・Home・ボタンで
   視点を戻せるよう整備。一拍遅れる影と反射、縦タッチ・読込timeoutもagent確認済み。

@@ -7,7 +7,7 @@
 [独立した奥行き試作](../../tools/visual/station-window-three-lab.html)を作った。
 本編はまだ2D/静的Webのまま。ゲーム進行、`hazama_spiral_v1`、音、PWA、
 `depths-shell.json`、`index.html`には触れていない。9/29当日はローカル試作だった。
-10/1の本編E55更新と一緒に独立比較ページを公開する。配信結果は[E55メモ](immersion-e55.md)へ。
+10/1の本編E55更新と一緒に独立比較ページを公開した。配信結果は[E55メモ](immersion-e55.md)へ。
 
 ## 何をThree.jsにしたか
 

@@ -19,6 +19,23 @@ Hazama 自律開発 session の追記専用ログ。
 
 ---
 
+## 2026-10-01 — E55本番反映・記憶を保つE54からの更新を確認
+- agent      : Codex / current task model
+- goal       : マージ/本番更新を配信成功と旧版からの実ブラウザ確認まで完了する。
+- shipped    : `270ba09`をmasterへfast-forward統合しpush。Pagesは同commitでbuilt、
+  `2026-10-01T12:51:18Z`。本編E55と、前回未公開だった独立Three.jsの2コミットを反映。
+  [公開本編](https://quietbriony.github.io/hazama/?v=e55)と
+  [Three.js比較](https://quietbriony.github.io/hazama/tools/visual/station-window-three-lab.html?v=depth-20260930-1)。
+- checks     : 公開E54 SWを持つ検証ブラウザ→E55 controller/CSS/JS/表示版が一致。
+  記憶は文字列一致、旧Hazama cacheだけ退役、非HazamaのMusic sentinel cacheは保持。
+  offline再読み込みでE55の表紙/全画像/起動準備、記憶一致を確認。
+  公開の周回2の零章→Aは八観一覧なし。診断Ωに薄明かりの改稿とthreshold背景。
+  `?v=e50`もHTTP 200/E55。公開Three.jsは準備完了、見なかった経路→再訪、左右キー/Home、
+  390pxで横overflow/保存なし。詳細は[配信メモ](../playtest/immersion-e55.md)。
+- backlog    : HZ-BL-032はE55公開済/実機待ち。031は公開独立比較で実機A/B待ち。human gateは閉じない。
+- next       : スマホPWAを開き直して設定のE55を確認し、入口/再訪/Ωの没入感、景色の差、痕跡の読書を評価する。
+- blockers   : 実スマホstandalone・没入感・面白さ・翻訳の自然さ・発熱・Steam販売品質は未判定。
+
 ## 2026-10-01 — E55: 没入の改稿・赤線の除去・物語に沿う背景と更新表示
 - agent      : Codex / current task model
 - goal       : スマホ画像の端末名、八観一覧、赤線、背景の単調さ、公開/PWAの版差を確認して改善する。
