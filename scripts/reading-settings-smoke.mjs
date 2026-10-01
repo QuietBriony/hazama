@@ -42,6 +42,7 @@ function harness(reduced = false) {
     Preferences: { textScale: 1, fullText: false, sound: true, readingComfort: false }, Follow: { release() {} },
     localStorage: new Proxy({}, { get() { throw new Error("settings must not access storage"); } })
   });
+  context.window.location = { reload() { calls.push("reload"); } };
   context.readingFinish = () => { finishCount++; context.readingFinish = null; };
   vm.runInContext(localeSource + "\n" + music + "\n" + settings + "\nsetupReadingSettings(); globalThis.music = Music;", context);
   return { $, context, audio, calls, document, styles, get finishCount() { return finishCount; } };
@@ -114,4 +115,7 @@ assert.equal(reduced.$("settings-reading").value, "full");
 reduced.$("settings-comfort").checked = true; reduced.$("settings-comfort").emit("change");
 assert.equal(reduced.$("settings-reading").disabled, true, "reading focus cannot override OS reduced motion");
 assert.equal(harness().context.Preferences.readingComfort, false, "a new session restores the original presentation");
+const refresh = harness();
+refresh.$("settings-refresh").emit("click");
+assert.deepEqual(refresh.calls, ["reload"], "explicit refresh reloads without erasing memory or starting audio");
 console.log("reading-settings smoke PASS (session-only reading focus, bounds, modal focus, no surprise audio, volume/mute sync, reduced motion)");

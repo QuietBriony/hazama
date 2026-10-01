@@ -11,7 +11,7 @@ Would you try a little of it and tell us how it felt? We are not asking for a po
 - Choose **English (trial)** on the title screen, then **Descend**.
 - This is a translation test of one path, not a fully translated game. At the first fork, choose
   **Let go of the weave. Take it in through the body.**
-  When you reach Depth Ω, choose **Gently close the light of the screen.**
+  When you reach Depth Ω, choose **Gently look away from the dim light.**
   Otherwise, choose freely. Other paths, later-cycle variations and share images may still contain Japanese.
 - Use about 15 minutes as a stopping point for this test, not as an estimate of the whole game's length.
   You can stop earlier, for any reason. You do not have to reach an ending.

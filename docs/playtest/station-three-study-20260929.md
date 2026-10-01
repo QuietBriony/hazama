@@ -6,7 +6,8 @@
 [公開済み2D版](../../tools/visual/station-window-lab.html)と同じ背景画・文章・分岐で、
 [独立した奥行き試作](../../tools/visual/station-window-three-lab.html)を作った。
 本編はまだ2D/静的Webのまま。ゲーム進行、`hazama_spiral_v1`、音、PWA、
-`depths-shell.json`、`index.html`には触れていない。今回のページはローカル試作で未公開。
+`depths-shell.json`、`index.html`には触れていない。9/29当日はローカル試作だった。
+10/1の本編E55更新と一緒に独立比較ページを公開する。配信結果は[E55メモ](immersion-e55.md)へ。
 
 ## 何をThree.jsにしたか
 
@@ -48,7 +49,7 @@ Three.jsの採用そのものを販売品質の達成と見なさない。
 
 ## 次のhuman gate
 
-公開を希望する場合は別途レビュー・公開指示を受け、スマホで2D版と横並びに試す。
+独立比較ページをスマホで2D版と横並びに試す。
 評価点は「奥行きが綺麗か」だけでなく、窓を覗く動作が再訪の意味を強めるか、
 読みづらさや端末負荷に見合うか。本編への採用はその後に別設計・別レビューとする。
 
@@ -84,5 +85,5 @@ JS/CSSのURLは`depth-20260930-1`で同期。本編のversionやPWA cacheは変�
   戻れることを確認。正常時のbrowser warning/errorは0。
 - `hazama-check`は2 PASS / 0 FAIL、JS構文・diff checkもPASS。
 
-変更は同じfeature branch内のローカル候補。公開と実スマホA/Bはまだ。
+9/30時点では同じfeature branch内のローカル候補。公開と実スマホA/Bは未実施だった。
 静止画の優劣、発熱、没入感、面白さ、Steam販売品質のhuman gateは維持する。

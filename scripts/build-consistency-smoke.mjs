@@ -15,6 +15,7 @@ import "./reading-control-smoke.mjs";
 import "./reading-settings-smoke.mjs";
 import "./reading-locale-smoke.mjs";
 import "./entry-visual-smoke.mjs";
+import "./immersion-copy-smoke.mjs";
 
 const root = process.cwd();
 const failures = [];
@@ -47,6 +48,8 @@ const fetchV = (js.match(/depths-shell\.json\?v=([a-z0-9.]+)/) || [])[1];
 assert(fetchV === jsV, `slice.js depths fetch version mismatch: fetch=${fetchV} index=${jsV}`);
 const swV = (sw.match(/const VERSION = "hazama-pwa-([a-z0-9.]+)"/) || [])[1];
 assert(swV === jsV, `sw.js cache version mismatch: sw=${swV} index=${jsV}`);
+const visibleV = (html.match(/id="build-version">([A-Z0-9.]+)<\//) || [])[1];
+assert(visibleV?.toLowerCase() === jsV, `visible release mismatch: shown=${visibleV} index=${jsV}`);
 const bootSwV = (html.match(/const SW_URL = "sw\.js\?v=([a-z0-9.]+)"/) || [])[1];
 const bootRuntimeV = (html.match(/const RUNTIME_URL = "slice\.js\?v=([a-z0-9.]+)"/) || [])[1];
 const runtimeSwV = (js.match(/serviceWorker\.register\("sw\.js\?v=([a-z0-9.]+)"/) || [])[1];
@@ -384,9 +387,11 @@ has(html, 'class="hz-stage"', "E29 stage layer class");
 has(css, ".hz-stage {", "E29 stage layer style");
 // E32: 文字列一致を整形非依存の regex に＋E29 の中核契約（base 退場・終端優先ガード・終端 filter）をロック。
 const hasRe = (re, label) => assert(re.test(css), `${label} missing: ${re}`);
-hasRe(/body:not\(\.surfaced\):not\(\.omega\)\[data-phase="bottom"\]\s+\.hz-stage\[data-stage="bottom"\]/, "E29 depth crossfade rule (terminal-guarded)");
-hasRe(/body:not\(\.surfaced\):not\(\.omega\)\[data-phase="drift"\]\s+\.hz-stage\[data-stage="drift"\]/, "E29 drift rule (terminal-guarded)");
-hasRe(/body\[data-phase="bottom"\]\s+\.hz-bg-descent\s*\{\s*opacity:\s*0/, "E29 base hidden while stage shows");
+for (const [place, stage] of [["drift", "drift"], ["shell", "bottom"], ["outer", "bottom"], ["threshold", "omega"]]) {
+  hasRe(new RegExp(`body:not\\(\\.surfaced\\):not\\(\\.omega\\)\\[data-backdrop="${place}"\\]\\s+\\.hz-stage\\[data-stage="${stage}"\\]`),
+    `E55 ${place} crossfade rule (terminal-guarded)`);
+}
+hasRe(/body\[data-backdrop\]:not\(\[data-backdrop="entry"\]\)\s+\.hz-bg-descent\s*\{\s*opacity:\s*0/, "E55 base hidden while stage shows");
 hasRe(/body\.surfaced\s+\.hz-stage\[data-stage="surfaced"\]/, "E29 surfaced terminal rule");
 hasRe(/body\.omega\s+\.hz-stage\[data-stage="omega"\]/, "E29 omega terminal rule");
 hasRe(/body\.surfaced\s+\.hz-stage\[data-stage="surfaced"\]\s*\{[^}]*filter:\s*brightness/, "E32 surfaced terminal fixed filter");

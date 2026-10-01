@@ -6,10 +6,10 @@
 :root {
   --bg: #04060b;
   --ink: #c8d2dc;
-  --ink-dim: #6b7682;
+  --ink-dim: #98a7b7;
   --ink-faint: #3a424c;
   --accent: #7fb6c4;       /* 冷たい青緑 */
-  --warn: #c46b5a;         /* 危険・身体の脅威 */
+  --warn: #d28670;         /* 危険・身体の脅威 */
   --line: rgba(127, 182, 196, 0.22);
   --reveal-ms: 46ms;       /* 1文字あたりの送り。危険局面で JS が伸ばす */
   --press: 0;              /* 0..1 圧。JS が更新。ヴィネット/震えに使う */
@@ -42,7 +42,7 @@ body {
 /* data-phase 連動の暗転パレット：潜るほど地色が沈み、インクと差し色が冷えて翳る。 */
 body[data-phase="drift"]  { --bg: #03050a; --ink: #c1cbd5; }
 body[data-phase="deep"]   { --bg: #03040a; --ink: #b6c0cb; --accent: #79a9b6; --line: rgba(127,182,196,0.18); }
-body[data-phase="bottom"] { --bg: #020308; --ink: #aab4bf; --accent: #8aa6ac; --ink-dim: #5c6671; --line: rgba(127,182,196,0.14); }
+body[data-phase="bottom"] { --bg: #020308; --ink: #c5ced8; --accent: #8aa6ac; --ink-dim: #93a2b3; --line: rgba(127,182,196,0.14); }
 
 /* ---------- 背景 ---------- */
 /* 奈落のドーム：上端がわずかに醒め、下へ向けて漆黒へ沈む。硬く乾いた沈下の地。 */
@@ -56,18 +56,17 @@ body[data-phase="bottom"] { --bg: #020308; --ink: #aab4bf; --accent: #8aa6ac; --
   position: absolute; inset: -4%;
   width: 108%; height: 108%;
   object-fit: cover;
-  /* 沈むほど暗く・彩度が落ち・わずかに沈降。深部はやや締めて硬く（contrast↑・寒色へ）。 */
+  /* E55: 沈下は色温度と有限の視点移動へ。輪郭と灯りは深部でも黒に潰さない。 */
   filter:
-    brightness(calc(0.6 - var(--sink) * 0.46))
-    saturate(calc(0.78 - var(--sink) * 0.5))
-    contrast(calc(1.05 + var(--sink) * 0.12))
+    brightness(calc(0.78 - var(--sink) * 0.18))
+    saturate(calc(0.8 - var(--sink) * 0.2))
+    contrast(1.06)
     hue-rotate(calc(var(--sink) * -8deg + var(--cycle-hue, 0deg)));
   /* B4: 周回スキン＝表紙写真をわずかに横へパン（cycle=0 は 50%＝従来どおり）。 */
   object-position: calc(50% + var(--cycle-pan, 0%)) 50%;
   transform: translateY(calc(var(--sink) * 2.4%)) scale(calc(1 + var(--sink) * 0.06));
   transition: filter 1.6s ease, transform 3s ease, opacity 2.2s ease;
-  /* R6: 深く潜るほど"世界の輪郭が溶ける"＝写真が退き、下から反転ガーデンが露出して取って代わる。 */
-  opacity: calc(0.88 - var(--sink) * 0.52);
+  opacity: calc(0.78 - var(--sink) * 0.12);
 }
 
 /* E47: 入口のカメラは36秒で1.8%だけ寄り、その位置で静まる。往復/無限ループなし。
@@ -101,7 +100,7 @@ body:has(.hz-gate:not(.gone)) :is(.hz-app, .hz-footer) { visibility: hidden; }
   z-index: 0; pointer-events: none;
   mix-blend-mode: screen;
   opacity: 0;
-  filter: contrast(1.12) saturate(0.92);
+  filter: brightness(0.68) contrast(1.08) saturate(0.72);
 }
 
 /* 沈降グロー：底中央から立ち上る冷たい淵。沈むほど増光し、わずかに迫り上がる。
@@ -141,7 +140,7 @@ body:has(.hz-gate:not(.gone)) :is(.hz-app, .hz-footer) { visibility: hidden; }
   transform: translate(-50%, -50%);
   /* 深部に近づくほど下から迫り上がる目的地（曼荼羅ゲート） */
   top: calc(118% - var(--sink) * 70%);
-  opacity: calc(0.08 + var(--sink) * 0.5);
+  opacity: calc(0.06 + var(--sink) * 0.3);
   transition: top 3s ease, opacity 3s ease;
   mix-blend-mode: screen;
 }
@@ -217,35 +216,37 @@ body.omega .hz-bg-garden { opacity: 0.3 !important; transition: opacity 2.5s eas
 body.omega { --ink: #e2ebf1; --accent: #9fd0db; }
 
 /* ============================================================================
-   E29 — 降下の弧：背景写真そのものが深度/終端で差し替わる層スタック。
-   .hz-stage は base(.hz-bg-descent) の positioning / --sink フィルタ / 周回パンを複製し、既定は不可視。
-   その phase の 1 枚だけ base の沈下 opacity で現れ（下から garden/曼荼羅が透ける挙動も保持）、
-   その間 base 写真は退場する。全て CSS＝JS 追加ゼロ。既存 data-phase / body.surfaced|omega を読むだけ。
-   base(surface) はE47の入口。JS無効/reducedでも表示し、各深度では従来の4枚へ引き継ぐ。 */
+   E55 — 降下の弧：景色の場所はdata-backdrop、圧/色温度は--sink。
+   累積沈下が上限へ達しても、物語の途中で背景が底の1枚に固定されない。
+   同じ外殻の絵もshell→outerで視点が変わる。動くのは遷移時だけ、読書UIは固定。
+   終端surfaced/omegaは常に優先。JS無効時は入口を残す。 */
 .hz-stage {
   position: absolute; inset: -4%; width: 108%; height: 108%;
   object-fit: cover; object-position: calc(50% + var(--cycle-pan, 0%)) 50%;
   filter:
-    brightness(calc(0.6 - var(--sink) * 0.46))
-    saturate(calc(0.78 - var(--sink) * 0.5))
-    contrast(calc(1.05 + var(--sink) * 0.12))
+    brightness(calc(0.78 - var(--sink) * 0.18))
+    saturate(calc(0.8 - var(--sink) * 0.2))
+    contrast(1.06)
     hue-rotate(calc(var(--sink) * -8deg + var(--cycle-hue, 0deg)));
   transform: translateY(calc(var(--sink) * 2.4%)) scale(calc(1 + var(--sink) * 0.06));
   opacity: 0;
-  transition: opacity 1.8s ease, filter 1.6s ease, transform 3s ease;
+  transition: opacity 1.8s ease, filter 1.6s ease, transform 3s ease, object-position 2.4s ease;
 }
-/* 深度：drift は drift+deep を、bottom は bottom を担当。担当 stage だけ base の沈下 opacity で現れる。
-   E32: 終端（surfaced/omega）では :not() ガードで深度規則そのものを外す＝data-phase は終端でも
-   立ち続ける（パレットが phase 依存のため落とせない）ので、特異度勝負でなく選択子で「終端優先」を担保。 */
-body:not(.surfaced):not(.omega)[data-phase="drift"]  .hz-stage[data-stage="drift"],
-body:not(.surfaced):not(.omega)[data-phase="deep"]   .hz-stage[data-stage="drift"],
-body:not(.surfaced):not(.omega)[data-phase="bottom"] .hz-stage[data-stage="bottom"] {
-  opacity: calc(0.88 - var(--sink) * 0.52);
+/* E32の終端ガードは維持。Ω本文のthresholdと、賭けて届く終端omegaは別状態。 */
+body:not(.surfaced):not(.omega)[data-backdrop="drift"] .hz-stage[data-stage="drift"],
+body:not(.surfaced):not(.omega)[data-backdrop="shell"] .hz-stage[data-stage="bottom"],
+body:not(.surfaced):not(.omega)[data-backdrop="outer"] .hz-stage[data-stage="bottom"],
+body:not(.surfaced):not(.omega)[data-backdrop="threshold"] .hz-stage[data-stage="omega"] {
+  opacity: calc(0.78 - var(--sink) * 0.12);
 }
-/* stage が出ている間は base 写真を退場（同深度の二重像を防ぐ）。特異度で既存 .hz-bg-descent を上書き。 */
-body[data-phase="drift"]  .hz-bg-descent,
-body[data-phase="deep"]   .hz-bg-descent,
-body[data-phase="bottom"] .hz-bg-descent { opacity: 0; }
+body[data-backdrop]:not([data-backdrop="entry"]) .hz-bg-descent { opacity: 0; }
+body[data-backdrop="drift"] .hz-stage[data-stage="drift"] { object-position: calc(43% + var(--cycle-pan, 0%)) 48%; }
+body[data-backdrop="shell"] .hz-stage[data-stage="bottom"] { object-position: calc(34% + var(--cycle-pan, 0%)) 44%; }
+body[data-backdrop="outer"] .hz-stage[data-stage="bottom"] {
+  object-position: calc(68% + var(--cycle-pan, 0%)) 56%;
+  transform: translateY(-1.2%) scale(1.08);
+}
+body[data-backdrop="threshold"] .hz-stage[data-stage="omega"] { object-position: calc(54% + var(--cycle-pan, 0%)) 52%; }
 /* 終端：担当 stage のみ現れ、base と他 stage は退場（深度規則は上の :not() ガードで既に不一致）。
    E32: 終端 stage は --sink 式 filter のままだと縁（--sink≈1）で brightness≈0.19＝ほぼ黒に潰れるため、
    base の終端と同じ「沈下 var に依存しない固定 filter」で見えを保証する（具体値の追い込みは実機の目）。 */
@@ -418,6 +419,9 @@ body.omega    .hz-stage[data-stage="omega"] {
   display: flex; flex-direction: column; justify-content: flex-start;
   gap: 1.05em;
   padding: 5vh 2px 3vh;
+  /* 絵の露出と文字の明瞭さを分離。全文を暗くせず、読む場所だけに薄い幕を置く。 */
+  background: linear-gradient(90deg, rgba(3,6,12,0.76), rgba(3,6,12,0.62));
+  border-radius: 4px;
   -webkit-overflow-scrolling: touch;
 }
 .hz-scene::before { content: ""; margin-top: auto; }
@@ -495,7 +499,7 @@ body.omega .hz-scene, body.surfaced .hz-scene { animation: none; }
 .hz-choice.descend { border-color: rgba(196,107,90,0.35); }
 .hz-choice.descend .sub { color: var(--warn); }
 .hz-choice.retreat { background: transparent; }
-/* 押せる退路をロック風に暗くしない。重さは枠と打ち消し線で伝え、文言は読めるまま。 */
+/* 押せる退路をロック風に暗くしない。重さは枠と余白の印で伝える。 */
 .hz-choice.retreat.heavy { border-style: dashed; border-color: rgba(127,182,196,0.4); }
 .hz-choice.retreat.heavy .sub { color: var(--ink); }
 /* 表層で読む＝知覚ゲートで弾かれる手。降下でも戻りでもない“逸れ”＝点線枠＋逸れマーク（生の差し色）。 */
@@ -600,6 +604,8 @@ body:not(.reading-comfort) :is(.hz-gate-settings .hz-chip, .hz-gate-note:not(.is
 .hz-gate-note { margin-top: 2.4em; font-size: 0.72rem; color: var(--ink-faint); }
 .hz-gate-note.is-error { font-size: 0.8rem; line-height: 1.6; color: var(--warn); }
 .hz-gate-settings { margin-top: 12px; }
+.hz-settings-release { margin: 20px 0; padding-top: 12px; border-top: 1px solid var(--line); }
+.hz-settings-release p { margin-block: 8px; }
 .hz-gate-sub { white-space: pre-line; }
 .hz-language { display: flex; justify-content: center; align-items: center; gap: 10px; margin: 18px 0 0; font-size: 0.8rem; color: var(--ink); }
 .hz-language select { max-width: 55%; min-height: 44px; padding: 8px; color: var(--ink); background: #101923; border: 1px solid var(--line); border-radius: 6px; font: inherit; color-scheme: dark; }
@@ -772,7 +778,7 @@ body.peeling .hz-peel { visibility: visible; animation: hz-peel-sweep .62s cubic
 
 /* ---------- 割り込み行 scrawl（タガが外れた手の声が冷たい構造へ書き込まれる） ----------
    §2/§3融合: 周回(cycle)ごとに変わる手描き割り込み。本文より「生」で、わずかに傾き、
-   マーカーの滲みと荒い下線を持つ。が、読めること優先（傾き<1deg・高コントラスト）。 */
+   マーカーは余白に置く。文字を打ち消さず、手の声そのものを読めるようにする。 */
 .hz-line.scrawl {
   color: var(--hand-bone);
   font-family: "Hiragino Maru Gothic ProN", "Yu Gothic", "Comic Sans MS", system-ui, sans-serif;
@@ -788,9 +794,9 @@ body.peeling .hz-peel { visibility: visible; animation: hz-peel-sweep .62s cubic
   opacity: 0.8;
 }
 .hz-line.scrawl .ch.lit { transition: opacity 90ms ease, filter 120ms ease; } /* 手は速く書きつける */
-.hz-line.scrawl.cross {                /* 打ち消し（否定の吐露） */
-  background: no-repeat left center/100% 0.5em
-    url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='160'%20height='10'%20viewBox='0%200%20160%2010'%20preserveAspectRatio='none'%3E%3Cpath%20d='M2%206%20C40%202%2080%208%20120%204%20C140%202%20150%207%20158%205'%20fill='none'%20stroke='%23d8442e'%20stroke-width='2'/%3E%3C/svg%3E");
+.hz-line.scrawl.cross {                /* 否定の痕跡も本文の左へ。折り返しても文字に被らない。 */
+  border-left: 2px solid rgba(216,68,46,0.65);
+  background: none;
 }
 /* E7: 別の観測の痕跡（漂着）＝"自分の手"でなく"別の手"。冷たい寄りに振り、逆向きに傾け、
    下に小さく出自マーカーを添える＝これが実在の他者か別の自分かは区別がつかない（曖昧＝主題）。 */
@@ -819,21 +825,16 @@ body.peeling .hz-peel { visibility: visible; animation: hz-peel-sweep .62s cubic
 
 /* ---------- 選択肢の手マーク（descend＝戴冠の沈降 / retreat＝消し込まれた戻り道） ---------- */
 .hz-choice { position: relative; }
+.hz-choice:is(.descend, .retreat, .surface) { padding-left: 2.35em; }
 .hz-choice .lead { position: relative; display: inline-block; }
 .hz-choice.descend .lead::before {     /* R6: 王冠を廃し、下方へ沈む砂紋（渦の縁）に。冠さず、ただ降りる。 */
   content: ""; position: absolute; left: -1.55em; top: 0.12em; width: 1.2em; height: 0.82em;
   background: no-repeat center/contain url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='24'%20height='16'%20viewBox='0%200%2024%2016'%3E%3Cg%20fill='none'%20stroke='%237fb6c4'%20stroke-width='1.8'%20stroke-linecap='round'%3E%3Cpath%20d='M2%203%20Q12%208%2022%203'/%3E%3Cpath%20d='M5%208%20Q12%2012%2019%208'/%3E%3Cpath%20d='M9%2013%20Q12%2014.5%2015%2013'/%3E%3C/g%3E%3C/svg%3E");
 }
-.hz-choice.descend .lead::after {      /* 生の手の下線（沈むほど効く差し色） */
-  content: ""; position: absolute; left: 0; right: -4px; bottom: -3px; height: 6px;
-  background: no-repeat center/100% 100%
-    url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='120'%20height='8'%20viewBox='0%200%20120%208'%20preserveAspectRatio='none'%3E%3Cpath%20d='M0%205%20C20%201%2040%207%2060%204%20C80%201%20100%207%20120%204'%20fill='none'%20stroke='%23d8442e'%20stroke-width='2'/%3E%3C/svg%3E");
-  opacity: 0.7;
-}
-.hz-choice.retreat .lead {             /* 戻り道は手で消し込まれている＝「もう細い」 */
-  text-decoration: line-through;
-  text-decoration-color: rgba(216,68,46,0.5);
-  text-decoration-thickness: 1.5px;
+.hz-choice.retreat .lead { text-decoration: none; }
+.hz-choice.retreat .lead::before {
+  content: "↑"; position: absolute; left: -1.4em; top: 0;
+  color: var(--accent); opacity: 0.8;
 }
 .hz-choice.surface .lead::before {     /* 逸れマーク＝弾かれて別の筋へ折れる（戻りでも降下でもない） */
   content: "⤳"; position: absolute; left: -1.45em; top: -0.04em;
@@ -841,13 +842,11 @@ body.peeling .hz-peel { visibility: visible; animation: hz-peel-sweep .62s cubic
 }
 .hz-choice:active { box-shadow: inset 0 0 0 1px rgba(216,68,46,0.25); }
 
-/* サブ：手で引いた打ち消し線（「戻り道は細くなる」を予兆として消し込む） */
+/* 旧打ち消しクラスも、文字の外の小さな印として扱う。 */
 .hz-strike { position: relative; }
 .hz-strike::after {
-  content: ""; position: absolute; left: -2%; right: -2%; top: 52%; height: 0.55em;
-  background: no-repeat center/100% 100%
-    url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='200'%20height='10'%20viewBox='0%200%20200%2010'%20preserveAspectRatio='none'%3E%3Cpath%20d='M2%206%20C60%202%20120%208%20198%204'%20fill='none'%20stroke='%23d8442e'%20stroke-width='2.2'/%3E%3C/svg%3E");
-  opacity: 0.7; transform: rotate(-1deg);
+  content: ""; position: absolute; left: -0.65em; top: 0.25em; width: 2px; height: 0.9em;
+  background: var(--hand-red); opacity: 0.7;
 }
 /* 入口ボタン：スタンプ／殴り書きの枠。読める。沈むの語に手の重み。 */
 .hz-gate-enter {

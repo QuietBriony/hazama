@@ -1,14 +1,15 @@
 # Hazama visual studies
 
-## 視覚試作03 — 間の駅・奥行き比較（ローカル・未公開）
+## 視覚試作03 — 間の駅・奥行き比較（本編未接続）
 
-[Three.js奥行き試作](station-window-three-lab.html) / [2D版](station-window-lab.html) /
+[スマホのThree.js比較](https://quietbriony.github.io/hazama/tools/visual/station-window-three-lab.html?v=depth-20260930-1) /
+[ローカルファイル](station-window-three-lab.html) / [2D版](station-window-lab.html) /
 [A/Bと境界](../../docs/playtest/station-three-study-20260929.md)。
 同じ背景・文章・分岐で、窓の前から左右へ覗いたときの手触りを比較する。
 「正面へ」またはHomeキーで戻れ、場面が変わっても正面へ戻る。2026-09-30に影の位置を
 画面幅へ同期し、影・反射の間と縦スクロールを調整した。
 Three.jsの固定CDN読込はこの独立ページだけの例外。本編には未接続で、
-スマホ実機の体感・性能と採否は未判定。公開済みリンクは下の試作02のみ。
+スマホ実機の体感・性能と採否は未判定。配信と更新の確認は[E55メモ](../../docs/playtest/immersion-e55.md)へ。
 
 ---
 

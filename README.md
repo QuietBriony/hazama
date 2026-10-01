@@ -7,23 +7,24 @@ Hazama は、沈むほど戻りにくい「降下する対話」の没入型静�
 ## 構成（単一ビルド）
 
 - `index.html` : エントリーポイント（没入シェル＝9層アート＋本文＋選択＋認識インジケータ・初回ガイド・全文表示・読む/聴く設定・忘却の確認）
-- `slice.js` : エンジン（reveal/全文表示・ページ内設定・表示専用の言語切替・沈下/認識/Ωゲート・エコー門・二極終端と振り返り・全候補表示後の選択解放・反転ガーデン/曼荼羅/グリッジ・内製Audio・below∞生成・spiral 記憶・縁カード）
+- `slice.js` : エンジン（reveal/全文表示・ページ内設定と記憶を残す再読み込み・表示専用の言語切替・沈下/認識/Ωゲート・エコー門・二極終端と振り返り・全候補表示後の選択解放・物語の位置に応じた背景・反転ガーデン/曼荼羅/グリッジ・内製Audio・below∞生成・spiral 記憶・縁カード）
 - `locales/en.json` : 英語試作カタログ（初回の身体の道＋共有終端/操作/エコー候補。全面英語対応ではない）
-- `slice.css` : 没入表示と、文字を明瞭にして背景の明滅/揺れを抑える読書優先表示
+- `slice.css` : 没入表示（深部の絵を黒に潰さない露出・本文の薄い暗幕・文字に重ならない痕跡）と、背景の明滅/揺れを抑える読書優先表示
 - `depths-shell.json` : 深度本文データ（depthMeta v0 スキーマ・沈下スパイン・72ノード）
 - `manifest.webmanifest` / `sw.js` / `icons/` : PWA install / offline shell（cache prefix `hazama-pwa-`）
 - `assets/hazama-descent-entry-e47.webp` : E47の入口（候補01を採用・原画と画素一致のlossless WebP）。36秒で僅かに寄って静まる有限カメラ。`hazama-descent-{drift,bottom,surfaced,omega}.webp` の4枚と周回セットBは深度/終端で引き継ぐ。旧`hazama-descent-key.webp`と`og-card.jpg`は共有OG画像として保持。
 - 検証: `scripts/hazama-check.mjs`（`autonomy-docs` ＋ `build-consistency` の2本）
 - 制作候補: `docs/BLENDER-AUTHORING.md`（WorkerPC Blender 5.2をrepo外の静止画制作実行器に限定。runtime非依存）
-- ビジュアル01: [公開中の本編E54](https://quietbriony.github.io/hazama/?v=e54) / [採用前の静止比較](https://quietbriony.github.io/hazama/tools/visual/visual-preview.html?v=visual-20260920-1) / [実装と確認](docs/playtest/visual-entry-e47.md)。入口に採用。読書優先/視覚効果軽減は静止、実機の見え方は人間の確認待ち。
+- ビジュアル01: [本編E55](https://quietbriony.github.io/hazama/?v=e55) / [採用前の静止比較](https://quietbriony.github.io/hazama/tools/visual/visual-preview.html?v=visual-20260920-1) / [入口の実装と確認](docs/playtest/visual-entry-e47.md)。E55は入口→漂流→外殻→裏側→Ωの手前で既存の絵と視点を切り替える。実機の見え方は人間の確認待ち。
 - ビジュアル02: [スマホで操作できる「間の駅」](https://quietbriony.github.io/hazama/tools/visual/station-window-lab.html?v=station-20260928-1) / [制作・試遊メモ](docs/playtest/station-window-study-20260928.md)。同じ窓を見直すことで変わる景色を、tools-onlyの独立ページで検証中。本編未接続・実機の体感判断待ち。
-- ビジュアル03: [ローカルのThree.js奥行き比較](tools/visual/station-window-three-lab.html) / [A/Bメモ](docs/playtest/station-three-study-20260929.md)。02と同じ話・画で視点移動を比較。9/30に影の位置同期・遅延出現・視点リセット・縦タッチ操作を整備。未公開・本編未接続。固定CDN読込はこの独立ページ限り。
+- ビジュアル03: [スマホで比較するThree.js奥行き版](https://quietbriony.github.io/hazama/tools/visual/station-window-three-lab.html?v=depth-20260930-1) / [A/Bメモ](docs/playtest/station-three-study-20260929.md)。02と同じ話・画で視点移動を比較。影の位置同期・遅延出現・視点リセット・縦タッチ操作を整備。本編未接続。固定CDN読込はこの独立ページ限り。
+- E55: [没入の改稿・痕跡・背景・更新表示](docs/playtest/immersion-e55.md)。Ωの端末名/説明列挙を景色と気配へ改稿。入口は周回後も八観を並べず、通った道の感覚を返す。設定に表示中の版と記憶を消さない再読み込みを追加。進行値・行き先・保存形式・音は不変。
 - 表紙タイトル: E50で一語の「HAZAMA」を見出しにし、重なっていた赤/シアンの文字を外した。スマホ幅と旧版からの更新を公開ページで確認済み。
 - 体験版候補: [E41 初見テスト](docs/playtest/steam-demo-candidate-e41.md)（既存Web版の初回２ルート・人間の評価待ち。Steam提出用ビルドではない）
 - E53公開候補: [E52の選択公平性](docs/playtest/choice-fairness-e52.md)に[身体の道の場面・選択文](docs/playtest/body-route-e53.md)を追加。戻り道0本時の費用表示も実際の挙動に合わせた。人間の初見評価はまだ。
 - E54公開: [構造の道B/C/Dの選択文](docs/playtest/structure-opening-e54.md)を場面と実際の戻り道コストに合わせた。Cの退路0本時も「戻れる」と案内せず、押せる退路を暗くしすぎない。進行・保存・音は不変。
 - Steam版の構成案: [Web本体とPC包装の分離](docs/playtest/steam-desktop-plan-e51.md)。実行ファイルは未作成。販売品質・Steam登録・審査は未達。
-- 冒頭導線: [E49 異変→選択→反応](docs/playtest/opening-hook-e49.md)（2026-09-26公開・旧版更新と記憶保持を確認）。初回Aは八観の名称を伏せ、再訪では名称と記憶を見せる。初見の面白さは人間の試遊待ち。
+- 冒頭導線: [E49 異変→選択→反応](docs/playtest/opening-hook-e49.md)から、E55で再訪Aの用語一覧も撤去。名付けは流れの道の中盤以降へ残し、入口は二つの感覚に絞る。初見の面白さは人間の試遊待ち。
 - 人に渡す試遊案内: [日本語](docs/playtest/invite-ja.md) / [English](docs/playtest/invite-en.md)。実施側は[最初のラウンド](docs/playtest/first-round.md)へ（準備済み・人間の結果は未取得）
 - 感覚統合: `docs/SENSORY-RESPONSE-CANDIDATE.md`（E31 governor＋E45本編応答＋E46縮約回路。Sensory Frame/labの実行エンジンは未配線） / [E45音の統合・検証](docs/playtest/world-audio-e45.md) / [E46接続と検証](docs/playtest/fly-circuit-e46.md)
 - E46の回路: 実測の脚運動配線を10群へ縮約した係数を`slice.js`内で使い、音の小さな反応だけに接続。設定で固定応答と比較可能。[データ出典・変更と限界](docs/FLY-CIRCUIT-CREDITS.md)。生体/意識/神経学習/RSIの再現ではない。
@@ -135,6 +136,7 @@ Codex / Claude Code が同じ順番で作業を継続するための薄いエン
 
 ## 沿革（詳細は git log）
 
+- **進化 E55（2026-10-01）**: Ω/帰還の端末名と説明列挙を気配へ改稿。入口は周回後も八観を一括開示しない。赤線を余白へ移し、景色は物語の5地点で進む。設定に版表示と記憶を残す再読み込み。本編の進行/保存/音は不変。独立Three.js比較も本編と区別してスマホ公開する。[確認メモ](docs/playtest/immersion-e55.md)。
 - **進化 E54（2026-09-27公開）**: 構造ルートB/C/Dの軽い択と再訪時の言い換えに「戻り道は減らない」を明示。Cで退路が尽きた場合の案内を実際の沈下に合わせ、押せる退路の視認性を上げた。公開320pxの冒頭を確認済み。人間の初見評価はまだ。
 - **進化 E53（2026-09-27公開）**: 全候補の表示後に選択を同時解放し、先頭択の早押し偏りを解消。身体の道のB/Nを場面化し、軽い選択の戻り道コストを明示。戻り道0本では「−1」を表示しない。進行値・行き先・保存形式・音は不変。ブラウザ390pxと自動チェックは確認済み。実スマホの手触り、面白さ、英訳の自然さ、販売品質は人間の確認待ち。
 - **進化 E51（2026-09-27公開）**: 日本語の表紙では英語試作の長い注意を隠し、英語選択時と翻訳取得失敗時だけ知らせる。Steam等の同梱版向けに非Web schemeでPWA cacheを登録しないガードを追加。配信ファイルと公開ブラウザの入口・英語切替・オフライン再表示を確認。物語・進行・保存・音は不変。[Steam版の構成案](docs/playtest/steam-desktop-plan-e51.md)は別資料で、実行ファイルは未作成。

@@ -540,16 +540,16 @@
       2: ["神でも、主人公でもない。ただ、世界の一角のピースになる。背景と自分の縫い目が、もう見つからない。",
           "神でも主人公でもない。世界の一角の、ひとつのピース。どこからが背景でどこからが自分か、見分けが取れない。"]
     },
-    // 出典: depths-shell.json Omega lines[1] / 11-yoru7:38-40, 197-199
+    // E55: 再訪も説明一覧へ戻さず、核を描かないことを景色で返す。
     Omega: {
-      1: ["Ωは“核そのもの”ではない。核の外周を、物語の外から見つめる記号だ。「これ以上モデル化しない」という、観測者側の合意——巡るたびに、その合意だけが残る。",
-          "Ωは核ではない。核の外周を、物語の外側から見張るための記号だ。「ここから内側はモデル化しない」という合意——周回するほど、合意の線だけが濃くなる。"]
+      1: ["前の周に覚えた暗さの縁が、今度は少し遠い。近づいたはずなのに、中心だけは近づかない。",
+          "編み目のない場所へ目を凝らす。見えないのではない。こちらが見ようとする分だけ、暗さが退いていく。"]
     },
     // 出典: depths-shell.json reborn lines[0] / 12-omega-manual(透明化), 07-yoru6:334
     reborn: {
-      0: ["スクリーンを閉じる。世界は、また同じように動きはじめる。",
-          "閉じる。だが、閉じるたびに、入口が一段、深くなっている。",
-          "スクリーンを閉じる。世界は同じように動く。ただ、動かしている側が、また一枚増えている。"]
+      0: ["目を離す。部屋の音が戻る前に、まだ見ている誰かの息が聞こえた。",
+          "目を離す。机の木目は、前の周と同じ筋で止まっている。",
+          "目を離す。何も動いていない。動かなくなったのを、いつから見ていたのだろう。"]
     }
   };
 
@@ -702,11 +702,7 @@
   // 初回は導入用の表示、周回/再訪では原文と変奏を組み合わせる。
   function applyCycle(id, base) {
     const visits = state.visits[id] || 1;
-    // E49: A初回は選べる二つの感覚へ先に着地する。八観の名付けは再訪以降の発見として残す。
-    if (id === "A" && state.cycle < 1 && visits < 2) {
-      const views = new Set(["体観", "波観", "思観", "財観", "創観", "観察者観", "空観", "円観"]);
-      return Object.assign({}, base, { lines: base.lines.filter((line) => !views.has(line.t.split("——", 1)[0])) });
-    }
+    // E55: Aの八観一覧は原文からも外す。周回しただけで用語をまとめて開示しない。
     if (state.cycle < 1 && visits < 2) return base;           // 初回通過は原文そのまま
     const seed = (hashStr(id) ^ Math.imul(state.cycle + 1, 0x9e3779b9) ^ Math.imul(visits, 0x85ebca6b)) >>> 0;
     const rng = mulberry32(seed);
@@ -718,6 +714,12 @@
       const opts = [lines[idx].t].concat(vbank[k]);
       lines[idx] = Object.assign({}, lines[idx], { t: pickR(rng, opts) });
     });
+    // 通った道の余韻を入口へ返す。既存の訪問集計だけを読み、保存項目は増やさない。
+    if (id === "A" && (state.visits.B_soma || state.visits.B)) {
+      lines[0] = Object.assign({}, lines[0], { t: state.visits.B_soma
+        ? "声へ顔を向けるより先に、足裏が冷える。前に沈めた重さが、まだここにある。"
+        : "線に触れる前から、月の割れる場所が分かる。今度は、向こうの影もこちらを見ている。" });
+    }
     // (B) scrawl 割り込み（周回が深いほど多く・断片的に）
     const tier = scrawlTier();
     let count = 0;
@@ -892,6 +894,8 @@
     root.setProperty("--reveal-ms", (REDUCED ? 0 : Math.round(34 + state.dread * 64)) + "ms");
     const phase = phaseFor(sinkNorm);
     document.body.dataset.phase = phase;
+    // 絵は物語の場所で進める。沈下が早く上限に触れても、終盤まで同じ黒い絵に固定しない。
+    document.body.dataset.backdrop = backdropFor(state.rank);
     // A4: phase が深くなる方向へ跨いだ瞬間だけ句読点を打つ（浅くなる retreat では発火しない）。
     if (PHASE_ORDER.indexOf(phase) > PHASE_ORDER.indexOf(lastPhase)) firePhaseBreak();
     lastPhase = phase;
@@ -923,6 +927,7 @@
   // できない／全画面オーバーレイがフリーズの元」だったため廃止。音は同一document の内製エンジン
   // (Audio) が applyAtmosphere の Audio.update で直接鳴らす。depth.html 単体デモは別repoに残す。
   function phaseFor(s) { return s < 0.18 ? "surface" : s < 0.45 ? "drift" : s < 0.75 ? "deep" : "bottom"; }
+  function backdropFor(rank) { return rank < 2 ? "entry" : rank < 10 ? "drift" : rank < 18 ? "shell" : rank < 27 ? "outer" : "threshold"; }
 
   // B4: 周回スキン（周回≥1 の表紙写真の seeded 変化）。root へ2変数を立てる＝決定論（Math.random 不使用）。
   //  --cycle-hue: 周回ごとに色相を ±10deg 内でずらす（descent の hue-rotate 連鎖へ加算）。
@@ -2817,6 +2822,7 @@
       Music.label();
       sync();
     });
+    $("settings-refresh")?.addEventListener("click", () => window.location.reload());
   }
 
   // ---------- 起動 ----------
@@ -2840,7 +2846,7 @@
     // 翻訳が取得できなくても日本語の起動は止めない。言語は表紙での明示選択・保存しない。
     const controller = new AbortController();
     const timer = window.setTimeout(() => controller.abort(), 8000);
-    fetch("locales/en.json?v=e54", { signal: controller.signal }).then((response) => {
+    fetch("locales/en.json?v=e55", { signal: controller.signal }).then((response) => {
       if (!response.ok) throw new Error("English catalog HTTP " + response.status);
       return response.json();
     }).then((data) => {
@@ -2854,7 +2860,7 @@
   }
 
   async function loadData() {
-    const res = await fetch("depths-shell.json?v=e54", { cache: "no-store" });
+    const res = await fetch("depths-shell.json?v=e55", { cache: "no-store" });
     if (!res.ok) throw new Error(`depths-shell HTTP ${res.status}`);
     const data = await res.json();
     if (!data || typeof data !== "object" || !data.start || !data.nodes || !data.nodes[data.start]) {
@@ -2943,7 +2949,7 @@
     if (!["http:", "https:"].includes(window.location.protocol)) return;
     if (!("serviceWorker" in navigator)) return;
     const register = () => {
-      navigator.serviceWorker.register("sw.js?v=e54", { scope: "./", updateViaCache: "none" }).then((reg) => {
+      navigator.serviceWorker.register("sw.js?v=e55", { scope: "./", updateViaCache: "none" }).then((reg) => {
         if (typeof reg.update === "function") reg.update().catch(() => {});
       }).catch((err) => console.warn("[Hazama slice] SW register failed:", err));
     };
