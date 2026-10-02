@@ -315,7 +315,7 @@ handoff 前の確認は `docs/autonomy/closeout-checklist.md` を使います。
 
 ### HZ-BL-033 — 深度データの通信停止から起動を復旧する ✅ 2026-10-02
 - scope: runtime(narrow) / smoke / verify
-- status: done — ローカルE55.1実装・agent確認済。未commit/未公開。
+- status: done — E55.1実装・agent確認済。採用・配信状況はSESSION-LEDGER参照。
 - human-gate: no（本不具合の再現・修正。実機の体感/販売品質のhuman gateは別）
 - source: 独立worktree `codex/one-bug-20261002` の未決通信再現
 - 深度データのheaders/本文が停止しても10秒で既存の再試行へ移る。

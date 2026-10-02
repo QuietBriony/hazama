@@ -1,6 +1,7 @@
-# 深度データ通信停止の起動復旧 — E55.1ローカル候補
+# 深度データ通信停止の起動復旧 — E55.1
 
-2026-10-02。対象は起動を止める1不具合。未commit・未公開。
+2026-10-02。対象は起動を止める1不具合。以下は初回実装検証時点の記録。
+採用・配信状況は[作業台帳](../autonomy/SESSION-LEDGER.md)を参照。
 
 ## 起点と作業範囲
 
@@ -75,4 +76,5 @@ repo外の`C:\Users\cta88\Documents\Codex\2026-10-02\task-5\output\playwright\`�
 
 実スマホstandalone、旧E55からの実機更新、WebKit/Firefox、OSの通信切替/バックグラウンド制約は未検証。
 全分岐の実操作、全終端、音の体感、没入感/面白さ、Steam販売品質の判定は今回の範囲外。
-既存のhuman gateは継続。元masterの作業ファイルは変更せず、commit/push/PR/merge/公開は行わない。
+既存のhuman gateは継続。初回実装検証では元masterの作業ファイルを変更せず、
+commit/push/PR/merge/公開は行っていない。後続の採用・反映は作業台帳で記録する。
