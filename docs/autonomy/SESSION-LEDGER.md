@@ -19,6 +19,40 @@ Hazama 自律開発 session の追記専用ログ。
 
 ---
 
+## 2026-10-02 — E55.1独立レビュー通過・採用準備
+- agent      : Codex / 条件を満たす依頼改善PRのmergeまでユーザー承認済み
+- goal       : レビュー済み起動timeout修正だけをcommit/push/PR/mergeの条件確認へ進める。
+- prepared   : `6eeaeb9cce7fe7ba61832e94d9e4eb95f133f1f9`にレビュー済み9ファイルをcommit。
+  その後は文書を検証時点の記録として明示するだけで、runtimeには追加差分なし。
+- review     : 独立レビューPASS。対象patch SHA256
+  `d8399b93b407a6ea67014d0299e9d24c3f9802cf5e27c7c76e01d93b53716e9d`。
+  5つの期限境界、実Chromiumの部分本文・遅延応答・再試行/開始連打・記憶・SW/cache/offlineを確認。
+  実BFCacheの成立と実スマホ評価は証明していない。
+- checks     : commit直前`hazama-check` 2 PASS / 0 FAIL / 0 SKIP、構文/差分check PASS。
+  最新remote masterは`65f522d1`、他担当変更/claimなし、元masterはclean。
+- deployment : 既存Pagesはlegacy/master/rootの自動配信。mergeすると既存URLが更新される。
+  新hosting・設定/権限の変更・追加CIは行わない。
+- next       : draft PRのHEAD・必要check/review・未解決事項を確認し、条件合格ならmergeして配信確認。
+- blockers   : runtimeの未解決問題なし。実スマホ/旧版実機更新/実BFCache/販売品質のhuman gateは継続。
+
+## 2026-10-02 — E55.1候補: 深度データの通信停止を再試行へ戻す
+- agent      : Codex / 独立worktree、補助agentは読み取り調査・レビューのみ
+- goal       : 売れる水準へ向けた有限な1問題修正。base `65f522d1`。
+- prepared   : `codex/one-bug-20261002`で深度データ取得/JSON本文の読了に10秒期限を追加。
+  既存の再試行を使い、成功/失敗とも期限を解除。E55.1へruntime/表示/PWA参照を同期。
+  [再現・レビュー用メモ](../playtest/boot-data-timeout-e55-1.md)。未commit/未公開。
+- checks     : baseline/修正後の`hazama-check` 2 PASS / 0 FAIL / 0 SKIP。
+  新smokeは修正前にFAIL、修正後にheaders/本文待機、復旧、HTTP/通信/JSON/schema、期限解除をPASS。
+  JS構文とdiff check PASS。別agentの読み取りレビューで問題なし。
+- browser    : 旧実装で通信12秒保留→入口disabled/aria-busy=trueを再現。
+  修正後10.008秒で再試行。ネイティブHTTP 200の部分JSON停止も10.181秒でabort→再試行。
+  再試行→零章→A→身体の道、通常の零章→A→B、記憶文字列保持・周回加算・一時状態resetを確認。
+  320×568/390×844/1440×900で横overflowなし。通常PWA E55.1のoffline再読み込み・再降下を確認。
+- backlog    : HZ-BL-033をローカル完了。既存human gateは閉じない。
+- next       : この1問題の差分を親でレビューし、採用/commit/反映を判断する。
+- blockers   : 実スマホstandalone・旧E55からの実機更新・WebKit・没入感・販売品質は未判定。
+  低速でも10秒を超える取得は再試行を要する。公開・push・PR・mergeは保留。
+
 ## 2026-10-01 — E55本番反映・記憶を保つE54からの更新を確認
 - agent      : Codex / current task model
 - goal       : マージ/本番更新を配信成功と旧版からの実ブラウザ確認まで完了する。
