@@ -313,6 +313,18 @@ handoff 前の確認は `docs/autonomy/closeout-checklist.md` を使います。
 
 ## Done
 
+### HZ-BL-033 — 深度データの通信停止から起動を復旧する ✅ 2026-10-02
+- scope: runtime(narrow) / smoke / verify
+- status: done — ローカルE55.1実装・agent確認済。未commit/未公開。
+- human-gate: no（本不具合の再現・修正。実機の体感/販売品質のhuman gateは別）
+- source: 独立worktree `codex/one-bug-20261002` の未決通信再現
+- 深度データのheaders/本文が停止しても10秒で既存の再試行へ移る。
+  通信復旧後に再試行→零章→A→身体の道を操作し、記憶文字列一致を確認。
+  [再現・検証メモ](../playtest/boot-data-timeout-e55-1.md)に根拠と未検証を記録。
+- production関数の依存なしsmokeでheaders/本文待機・復旧・各エラー・期限解除を検証。
+  標準checksと実Chromiumの部分JSON停止・通常操作・offline復元を確認。
+  001/002/018/032など既存のhuman gateは継続。
+
 ### HZ-BL-028 — 結末の選択肢の表示前入力を防ぐ ✅ 2026-09-23
 - scope: runtime(narrow) / smoke / verify
 - status: done — E48公開・agent確認済（実機の体感/販売品質のhuman gateは別）

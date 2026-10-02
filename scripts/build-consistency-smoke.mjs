@@ -16,6 +16,7 @@ import "./reading-settings-smoke.mjs";
 import "./reading-locale-smoke.mjs";
 import "./entry-visual-smoke.mjs";
 import "./immersion-copy-smoke.mjs";
+import "./depth-loading-smoke.mjs";
 
 const root = process.cwd();
 const failures = [];

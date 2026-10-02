@@ -2846,7 +2846,7 @@
     // 翻訳が取得できなくても日本語の起動は止めない。言語は表紙での明示選択・保存しない。
     const controller = new AbortController();
     const timer = window.setTimeout(() => controller.abort(), 8000);
-    fetch("locales/en.json?v=e55", { signal: controller.signal }).then((response) => {
+    fetch("locales/en.json?v=e55.1", { signal: controller.signal }).then((response) => {
       if (!response.ok) throw new Error("English catalog HTTP " + response.status);
       return response.json();
     }).then((data) => {
@@ -2860,13 +2860,21 @@
   }
 
   async function loadData() {
-    const res = await fetch("depths-shell.json?v=e55", { cache: "no-store" });
-    if (!res.ok) throw new Error(`depths-shell HTTP ${res.status}`);
-    const data = await res.json();
-    if (!data || typeof data !== "object" || !data.start || !data.nodes || !data.nodes[data.start]) {
-      throw new Error("depths-shell schema unavailable");
+    // Bound both headers and body loading so a stalled connection reaches the
+    // existing retry control instead of leaving the entry disabled indefinitely.
+    const controller = new AbortController();
+    const timer = window.setTimeout(() => controller.abort(), 10000);
+    try {
+      const res = await fetch("depths-shell.json?v=e55.1", { cache: "no-store", signal: controller.signal });
+      if (!res.ok) throw new Error(`depths-shell HTTP ${res.status}`);
+      const data = await res.json();
+      if (!data || typeof data !== "object" || !data.start || !data.nodes || !data.nodes[data.start]) {
+        throw new Error("depths-shell schema unavailable");
+      }
+      DATA = data;
+    } finally {
+      window.clearTimeout(timer);
     }
-    DATA = data;
   }
   // ---------- 動く表紙（R6：タイトルも state/seed に応じて動く・静止でない） ----------
   // ゲート表示中、背後に反転ガーデンを薄く宿し（gate 背景は半透明）、グリッジが時折タイトルを裂き、
@@ -2949,7 +2957,7 @@
     if (!["http:", "https:"].includes(window.location.protocol)) return;
     if (!("serviceWorker" in navigator)) return;
     const register = () => {
-      navigator.serviceWorker.register("sw.js?v=e55", { scope: "./", updateViaCache: "none" }).then((reg) => {
+      navigator.serviceWorker.register("sw.js?v=e55.1", { scope: "./", updateViaCache: "none" }).then((reg) => {
         if (typeof reg.update === "function") reg.update().catch(() => {});
       }).catch((err) => console.warn("[Hazama slice] SW register failed:", err));
     };
