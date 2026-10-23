@@ -19,6 +19,9 @@
   "use strict";
 
   const REDUCED = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  // E56: reduced-motion でも「表示は即時・押せるのは一拍後」。直前の確定から約150msで次ノードの択が同じ位置に
+  //   出るため、ダブルタップ/ダブルクリックの2打目が次の択を確定しない（E14 の暴発防止を reduced にも効かせる）。
+  const REDUCED_UNLOCK_MS = 300;
   // E42: 読む/聴くためのページ内設定。spiral記憶とは分離し、storageへは書かない。
   const Preferences = { fullText: false, textScale: 1, sound: true, readingComfort: false };
   // E43: 翻訳は表示だけの射影。原文/ノード/seed/進行/保存を変更しない。
@@ -452,7 +455,9 @@
     },
     // 出典: depths-shell.json B lines[0],[2] / 02-yoru2:53-54, 245
     B: {
-      0: ["世界は、透明なレイヤー構造として見えはじめる。深く踏むほど、層の数が増える。"],
+      // E56: 旧原文（E49 以前）の言い換えだった変奏を外す＝現原文「指でなぞった線が…」の場面に戻らない。
+      //   空配列＝原文固定だが rng の消費は保つ（B[2] の pick と scrawl 位置は従来どおり）。新しい文案は作家側。
+      0: [],
       2: ["物理法則も偶然も、破綻を避けるための裏処理だった。月が一瞬、継ぎ目から二重に割れる。",
           "物理も偶然も、破綻を起こさないための後処理にすぎない。割れた月が、一拍遅れて一つに戻る。"]
     },
@@ -945,8 +950,9 @@
   // E37→E47: 周回で深度/終端の4枚が回る。入口は採用した候補01で共通化（色相/パンは周回依存）。
   //   深度セットは imagelab の img2img 派生（同じ場所の別の夜）＝drift/bottom/surfaced/omegaの役割を保つ。
   //   cycle0 の深度は正典セット。入口は全周回でHTML既定srcと一致＝JS死亡時も同じ見え。
-  //   src の書き替えのみ＝E29 のクロスフェード CSS（class/data-stage 参照）には非干渉。
+  //   src の書き替えのみ＝E55 のクロスフェード CSS（data-backdrop/data-stage 参照）には非干渉。
   const ART_SETS = ["", "-b"];
+  let artSetEpoch = 0;   // E56: 遅延差し替えの世代（後発の applyArtSet が勝つ）
   function applyArtSet() {
     const c = state.cycle | 0;
     // 注意: cycle 項は hashStr で拡散する。worldSeed と同定数の imul は XOR 相殺で周回不変になり、
@@ -958,8 +964,16 @@
     const suffix = c < 1 ? "" : pickR(rng, ART_SETS);
     const base = document.querySelector(".hz-bg-descent");
     if (base) base.src = "assets/hazama-descent-entry-e47.webp";
+    artSetEpoch += 1;
+    const epoch = artSetEpoch;
     document.querySelectorAll(".hz-stage").forEach((img) => {
-      img.src = "assets/hazama-descent-" + img.dataset.stage + suffix + ".webp";
+      const next = "assets/hazama-descent-" + img.dataset.stage + suffix + ".webp";
+      if (img.getAttribute("src") === next) return;
+      // E56: 見えている stage（reborn→零章の omega 等）はフェードアウト（1.8s）が終わってから差し替える＝
+      //   フェード中に A⇄B の絵が入れ替わって見えない。不可視の stage は即時。reduced は遷移なし＝即時。
+      const visible = !REDUCED && parseFloat(getComputedStyle(img).opacity) > 0;
+      if (!visible) { img.src = next; return; }
+      window.setTimeout(() => { if (epoch === artSetEpoch) img.src = next; }, 2000);
     });
   }
 
@@ -969,9 +983,12 @@
   function maybeForeignDrift(id, node) {
     if (id === "below" || (state.rank || 0) < 9 || !node.lines) return node;
     const v = state.visits[id] || 1;
-    const g = mulberry32((worldSeed() ^ hashStr("drift8:" + id) ^ Math.imul(v, 0x9e3779b9)) >>> 0);
+    // E56: worldSeed の cycles 項と visits 項が同定数（0x9e3779b9）＝毎周回1回ずつ通ると XOR 相殺で
+    //   漂着の出現が周回で変わらなかった（E37/E38 と同型）。cycle≥1 だけ周回錨を足す＝cycle0 は不変。
+    const cyc = state.cycle >= 1 ? hashStr("drift8c:" + id + ":" + state.cycle) : 0;
+    const g = mulberry32((worldSeed() ^ hashStr("drift8:" + id) ^ Math.imul(v, 0x9e3779b9) ^ cyc) >>> 0);
     if (g() >= 0.12) return node;                                  // 稀（深い層の通過で時折ひとつ）
-    const foreign = Drift.pick((worldSeed() ^ hashStr("drift8pick:" + id) ^ Math.imul(v, 0x85ebca6b)) >>> 0);
+    const foreign = Drift.pick((worldSeed() ^ hashStr("drift8pick:" + id) ^ Math.imul(v, 0x85ebca6b) ^ cyc) >>> 0);
     if (!foreign) return node;
     const lines = node.lines.slice();
     const at = Math.min(lines.length, 1 + Math.floor(g() * Math.max(1, lines.length - 1)));
@@ -1234,11 +1251,16 @@
         const pick = pickR(vr, [null].concat(varia));
         if (pick) { lead = pick.t || lead; sub = (pick.sub !== undefined) ? pick.sub : sub; }
       }
-      // Cの退路が尽きた後は、周回の言い換えも含めて「戻れる」と約束しない。
+      // E56: 戻り道を実際に消費するかの述語を1つに＝choose は close かつ残>0 で −1、resolveResist は retreat を
+      //   観測者<DEEP_LOCK かつ残>0 のときだけ −1（深部ロック／残0 は消費せず failTo へ落ちる）。表示だけ揃え、進行値は不変。
+      const isRetreat = c.kind === "retreat" && !c.terminal;
+      const spends = isRetreat ? (state.observer < DEEP_LOCK && state.returnPaths > 0) : !!(c.close && state.returnPaths > 0);
+      const lockedOut = isRetreat && !spends && state.returnPaths > 0;   // 残があるのに効かない＝深部ロック
+      // Cの退路が尽きた／効かない後は、周回の言い換えも含めて「戻れる」と約束しない。
       // resolveResist は見覚えのあるBへ回しても沈下を深める。行き先・進行値は変えない。
-      if (state.id === "C" && c.kind === "retreat" && state.returnPaths === 0) {
+      if (state.id === "C" && isRetreat && !spends) {
         lead = "記憶を閉じ、引き返そうとする";
-        sub = "戻り道は尽きた。戻っても沈下は深まる";
+        sub = lockedOut ? "戻り道は効かない。戻っても沈下は深まる" : "戻り道は尽きた。戻っても沈下は深まる";
       }
       const btn = document.createElement("button");
       btn.type = "button";
@@ -1252,9 +1274,10 @@
         const el = btn.querySelector(".sub");
         let displayed = tr(label, { value: Math.round(state.attunement || 0), need: ATTUNE.omegaThreshold });
         // 戻り道は0未満にならない。消費できない時に「−1」と約束しない（翻訳後の表示だけ変更）。
-        if (c.close && state.returnPaths === 0) displayed = displayed
-          .replace("戻り道 −1", "戻り道は尽きた")
-          .replace("Ways back −1", "No ways back remain");
+        // E56: retreat も同じ述語＝深部ロック（残があるのに効かない）は「効かない」、残0は「尽きた」。英語は大小文字を保つ。
+        if (!spends && (c.close || isRetreat)) displayed = displayed
+          .replace("戻り道 −1", lockedOut ? "戻り道は効かない" : "戻り道は尽きた")
+          .replace(/([Ww])ays back −1/, (m, w) => (lockedOut ? w + "ays back no longer hold" : (w === "W" ? "No ways back remain" : "no ways back remain")));
         el.textContent = displayed;
         el.lang = Locale.english && Locale.translated(label) ? "en" : "ja";
       }
@@ -1282,7 +1305,7 @@
       const first = candidates.find(({ locked }) => !locked)?.btn;
       // E25: キーボード/SR/スイッチのフォーカス喪失時だけ着地させる。
       if (first && document.activeElement === document.body) first.focus({ preventScroll: true });
-    }, REDUCED ? 0 : Math.max(...candidates.map(({ appear }) => appear)) + 400);
+    }, REDUCED ? REDUCED_UNLOCK_MS : Math.max(...candidates.map(({ appear }) => appear)) + 400);   // E56: reduced も一拍
     // E27: 次に開く降り方を「封印された扉」として一枚だけ見せる（幹の中身は伏せる＝驚き温存・
     //   E19 の"見える鍵"イディオム）。周回の理由が初回から見える＝扉は sub の原文句で機構を語る。
     //   全幹が開いたら出ない。押せない＝aria-disabled・focus 対象外。
@@ -1403,7 +1426,7 @@
       candidates.forEach((b) => { b.disabled = false; });
       // E28: 門でも全断片を読めるようになってから focus 着地。
       if (document.activeElement === document.body) candidates[0]?.focus({ preventScroll: true });
-    }, REDUCED ? 0 : 120 + (candidates.length - 1) * 150 + 400);
+    }, REDUCED ? REDUCED_UNLOCK_MS : 120 + (candidates.length - 1) * 150 + 400);
     setBusy(false);              // E6: 本文＋エコー門が出揃った
     queueA11yState();            // E34: 門が確定してから進行値を一度だけ読む
     Follow.stick();
@@ -1669,7 +1692,7 @@
       candidates.forEach((b) => { b.disabled = false; });
       // E28: 縁（終端）でも二択を読める状態で focus 着地。
       if (document.activeElement === document.body) candidates[0]?.focus({ preventScroll: true });
-    }, REDUCED ? 0 : 200 + (candidates.length - 1) * 160 + 400);
+    }, REDUCED ? REDUCED_UNLOCK_MS : 200 + (candidates.length - 1) * 160 + 400);
     setBusy(false);              // E6: 縁が出揃った
     queueA11yState();            // E34: 結末本文と競合させず、最後の進行値を読む
     Follow.stick();
@@ -1712,7 +1735,10 @@
     lastPhase = "surface";   // A4: 再降下のたびに最初の深い跨ぎがまた句読点を打てる
     // E6(監査): phase-break 由来の glitch-hard/leak-on が縁で発火したまま残り、再降下直後の零章に
     // 焼き付くのを断つ（burst の clearBurst タイマーは revealToken と無関係に走るため明示除去）。
-    document.body.classList.remove("surfaced", "omega", "phase-break", "glitch-hard", "glitch-soft", "leak-on");
+    // E56: 終端のウォッシュ（surfaced/omega）はビートの間は保ち、零章の描画と同じタスクで外す＝外した瞬間に
+    //   data-backdrop=threshold の omega stage がフェードインし garden/mandala が跳ねる「浮上→Ωの絵→入口」の
+    //   中間フレーム（1.4s）を出さない。glitch/leak の即時除去（E6）は従来どおり。
+    document.body.classList.remove("phase-break", "glitch-hard", "glitch-soft", "leak-on");
     buildReturnPaths();
     // E15: 縁の再降下に「沈む側」の句読点を一拍。forgetAll（破断＝glitchHit＋遅延 restart）と対の儀式＝
     //   E14 のコメントが約束しながら未実装だった「もう一度沈む＝Audio.pulseOnce」を、ここで実装として満たす。
@@ -1726,7 +1752,12 @@
     p.textContent = tr("——縁が、足の下でほどける。もう一度、沈む。");
     sceneEl.appendChild(p); Follow.stick();
     Audio.pulseOnce(1);                    // 沈む脈（未解禁なら no-op）＝reborn→zero と同じ降下音
-    window.setTimeout(() => renderNode(DATA.start || "zero"), REDUCED ? 400 : 1400);
+    const myToken = revealToken;
+    window.setTimeout(() => {
+      if (myToken !== revealToken) return;   // E56: 遅延中に別経路の描画が入ったら割り込まない
+      document.body.classList.remove("surfaced", "omega");
+      renderNode(DATA.start || "zero");
+    }, REDUCED ? 400 : 1400);
   }
 
   // E14: 「すべて忘れる」はゲーム内最大の不可逆操作（hazama_spiral_v1 削除＝周回/認識/痕跡 全消去）。
@@ -1741,7 +1772,8 @@
     p.textContent = tr("——消えた。周回も、認識も、痕跡も。次は、初めてになる。");
     sceneEl.appendChild(p); Follow.stick();
     Audio.glitchHit(0.6);                  // 忘却の破断音（未解禁なら no-op）
-    window.setTimeout(restart, REDUCED ? 400 : 1400);
+    const myToken = revealToken;
+    window.setTimeout(() => { if (myToken === revealToken) restart(); }, REDUCED ? 400 : 1400);   // E56: 世代チェック
   }
 
   // ---------- 沈下連動 inline Web Audio（Hazama内製・music-stack非依存） ----------
@@ -2222,6 +2254,7 @@
 
     function resize() {
       const r = cv.getBoundingClientRect();
+      if (!r.width || !r.height) { size = 0; return; }   // E56: display:none（読書優先）中は測れない＝内部解像度を 300 に落とさず次の可視で測り直す
       dpr = Math.min(window.devicePixelRatio || 1, 2);
       size = Math.max(120, Math.floor(Math.min(r.width || 300, r.height || 300)));
       cv.width = Math.floor(size * dpr); cv.height = Math.floor(size * dpr);
@@ -2287,7 +2320,11 @@
       }
     }
     function loop(time) {
-      if (time - last >= 33) { last = time; lastT = time; draw(time); } // ~30fps
+      if (time - last >= 33) { // ~30fps
+        last = time; lastT = time;
+        // E56: 読書優先（display:none）中は描かない。可視に戻った最初のフレームで未計測なら測り直す。
+        if (!document.body.classList.contains("reading-comfort")) { if (!size) resize(); draw(time); }
+      }
       raf = requestAnimationFrame(loop);
     }
     function start() {
@@ -2305,7 +2342,7 @@
       start,
       // 深度が変わった瞬間に1枚即描画（reactivity の即応＋rAF が間引かれる環境でも反映）。
       // rAF ループは回転を継続させる。
-      update: (sink, observer, dread) => { cur = { sink, observer, dread }; draw(lastT); }
+      update: (sink, observer, dread) => { cur = { sink, observer, dread }; if (!size) resize(); draw(lastT); }
     };
   })();
 
@@ -2846,7 +2883,7 @@
     // 翻訳が取得できなくても日本語の起動は止めない。言語は表紙での明示選択・保存しない。
     const controller = new AbortController();
     const timer = window.setTimeout(() => controller.abort(), 8000);
-    fetch("locales/en.json?v=e55.1", { signal: controller.signal }).then((response) => {
+    fetch("locales/en.json?v=e56", { signal: controller.signal }).then((response) => {
       if (!response.ok) throw new Error("English catalog HTTP " + response.status);
       return response.json();
     }).then((data) => {
@@ -2865,7 +2902,7 @@
     const controller = new AbortController();
     const timer = window.setTimeout(() => controller.abort(), 10000);
     try {
-      const res = await fetch("depths-shell.json?v=e55.1", { cache: "no-store", signal: controller.signal });
+      const res = await fetch("depths-shell.json?v=e56", { cache: "no-store", signal: controller.signal });
       if (!res.ok) throw new Error(`depths-shell HTTP ${res.status}`);
       const data = await res.json();
       if (!data || typeof data !== "object" || !data.start || !data.nodes || !data.nodes[data.start]) {
@@ -2938,6 +2975,13 @@
   }
 
   $("audio-toggle").addEventListener("click", () => Music.cycle());
+  // E56: Enter/Space の長押し（キーリピート）で、確定→次ノードの focus 着地（E25）→再確定…と連鎖しない。
+  //   repeat の keydown だけ既定動作（click 発火）を止める。単押し・他キー・設定 dialog は従来どおり。
+  document.addEventListener("keydown", (e) => {
+    if (!e.repeat || (e.key !== "Enter" && e.key !== " ")) return;
+    const t = e.target;
+    if (t && t.closest && t.closest("#choices, .hz-gate, #forget-dialog")) e.preventDefault();
+  }, true);
   setupReadingSettings();
   // E47: CSSだけの有限カメラ。非表示/BFCacheで停止し、可視へ戻った位置から再開する。
   // timer・入力収集・保存・Audioには接続しない。
@@ -2957,11 +3001,12 @@
     if (!["http:", "https:"].includes(window.location.protocol)) return;
     if (!("serviceWorker" in navigator)) return;
     const register = () => {
-      navigator.serviceWorker.register("sw.js?v=e55.1", { scope: "./", updateViaCache: "none" }).then((reg) => {
+      navigator.serviceWorker.register("sw.js?v=e56", { scope: "./", updateViaCache: "none" }).then((reg) => {
         if (typeof reg.update === "function") reg.update().catch(() => {});
       }).catch((err) => console.warn("[Hazama slice] SW register failed:", err));
     };
-    // E33 boot loader may append this runtime after window.load while an older SW hands over.
+    // E35 以降、旧 controller からの takeover は入口で reload するため、この runtime は常に parse 中に追加される
+    // （readyState が complete の分岐は同梱版／直接読込の保険）。
     if (document.readyState === "complete") register();
     else window.addEventListener("load", register, { once: true });
   }

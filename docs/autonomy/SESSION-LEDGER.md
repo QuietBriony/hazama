@@ -19,6 +19,24 @@ Hazama 自律開発 session の追記専用ログ。
 
 ---
 
+## 2026-10-23 — E56 レビュー輪の是正（変奏×後続変更／起動・PWA／選択の状態機械／CSS・性能／QA 正典）
+- agent      : Claude Fable 5.1（マネジメント・実装・実走検証）＋worker(opus)×4 レンズ＋worker(sonnet)×1（QA 追補）。今回は agent 5/5 完走（前回の 529/429 は再発せず）
+- goal       : E36〜E38（Claude）と E39〜E55.1（Codex）の統合ビルドを独立レビューし、客観・低リスクの是正だけを E56 として実装・検証する（push は号令待ち）
+- shipped    :
+  - `slice.js`: 退路の消費述語 `spends`（choose/resolveResist と同条件）で「戻り道 −1」を「効かない／尽きた」へ表示置換（C 固定文も同条件・英語は大小文字保持）／Enter・Space のキーリピート抑止（#choices・表紙・忘却 dialog）／reduced-motion の解放猶予 `REDUCED_UNLOCK_MS=300`（3 レンダラ）／descendAgain は終端ウォッシュをビート中保持し零章描画と同時に除去・descendAgain/forgetAll の遅延呼出に世代チェック／applyArtSet は可視 stage の src 差し替えをフェード後（2s・epoch）へ／maybeForeignDrift の seed に cycle≥1 の周回錨（worldSeed との XOR 相殺の是正・cycle0 不変）／NODE_VARIANTS.B[0] の旧原文由来の変奏を空に／Mandala: display:none 中の resize ガードと読書優先中の描画停止／古いコメント2件
+  - `index.html`: inline boot を E56 化（protocol＋try/catch の controller 取得・runtime script の 20s 停止期限・timeout/register 失敗時は css/js の cache hit なら起動、無ければ再試行＋controllerchange 待ち続行）・版 e56
+  - `sw.js`: HTML 分岐は network 応答を cache に書かず offline fallback は scope 直下のみ（`Response.error()`）／precache は `cache:"no-cache"` で再検証／install は core だけ待ち、視覚 asset は activate→claim 後に `precacheOptional()`（既存 hit は飛ばす・待たない）／未参照の `hazama-descent-key-b.webp` を precache から外し資産も削除／VERSION e56
+  - `slice.css`: prefers-contrast:more の `--ink-dim` #858f9b→#b3c0cd（既定 #98a7b7 8.3:1 より薄くなっていた逆転を是正・10.9:1）／`.hz-choice:is(.locked,.ghost,.echo-skip):not(.in){opacity:0}`／`.hz-bg-descent` の transition に object-position／表紙 filter に contrast(1)（補間成立）／reduced ブロックに glitch クラス下の静止固定規則・重複/残骸の整理／`.hz-choices::before`・`.hz-strike` 除去／コメント3件を現状へ
+  - `scripts/build-consistency-smoke.mjs`: 版同期の網羅（locales の ?v=・index/slice の全 ?v= 参照・RELEASE 導出式）／SW 契約（HTML 非 cache・fallback 限定・no-cache・core のみ install・optional は activate 後）／SW VM に Request 代替と optional flush・core requests の no-cache 検証／inline boot の VM 実走（11 シナリオ）／slice/css の E56 契約／E37 契約から key-b を除外・E14 forgetAll 契約を世代チェック形に
+  - `scripts/choice-commit-smoke.mjs`: DEEP_LOCK/REDUCED_UNLOCK_MS/observer/returnPaths を文脈に追加・reduced の解放猶予（0→300ms）を契約化・深部ロック/残0 の zero・C 退路（日英）を追加／`scripts/entry-visual-smoke.mjs`: 文脈に artSetEpoch/REDUCED/getComputedStyle/window を追加・可視 stage の遅延差し替え（2000ms・epoch で無効化）を検証
+  - docs: README 沿革 E56・構成（sw）、BACKLOG HZ-BL-034/035/036、QA 正典 F40〜F61（E39〜E55.1 追補・worker 起草を検収）＋F62/F63（E56）＋F22/F27/F37 の備考・F27 の P3/P4・既存行の根拠行番号を E56 の tree へ再対応、LOOP-STATE、PWA checklist（更新途中の offline 再起動）
+- checks     : `node --check` 全 PASS／`hazama-check` 2 PASS / 0 FAIL / 0 SKIP（choice-commit・entry-visual・depth-loading ほか全 smoke PASS）
+- verified   : ブラウザ実走（localhost:8740・SW/cache/保存をクリーン）＝起動 e56（controller/css/js/版表示）・static cache 22 件で `?cb=` の HTML なし／cycle0 A の扉は `.in` まで opacity 0→0.38／観測者18 の零章 retreat「戻り道は効かない」・残0「尽きた」・C 深部ロック「記憶を閉じ、引き返そうとする／戻り道は効かない。戻っても沈下は深まる」・観測者2 の C は変奏 sub の「−1」のまま（消費する）／keydown repeat（Enter/Space）は択と表紙で preventDefault、単押し・矢印・設定 select は不干渉／縁→「もう一度沈む」: +400ms は surfaced 維持・可視 stage は surfaced 1枚のみ、+1.9s で零章・entry・surfaced フェードアウト／reborn→零章で絵セットが B→A に変わる周回（cycle6）: 直後は omega-b のまま・2.3s 後に omega へ／読書優先中の resize で mandala 幅 508→508（従来は 300×dpr へ劣化）／console 0。320px・reduced-motion・旧 SW からの実 takeover は未実走（VM smoke と前回の Codex 実測に依拠）
+- backlog    : 追加 HZ-BL-034（reborn 再降下の観測者持ち越し＝退路が必ず失敗する機構と C の failTo 不在の採否・human/codex）／HZ-BL-035（PWA 更新設計: SW 中身での版判定・network-first の SW 側期限・OS 軽減の matchMedia 追従・読書優先中のグリッジ音・codex）／HZ-BL-036（見た目の human-gate 群: 終端 filter が通常時より暗い・ゴースト画像が旧 hero・入口画像 1.2MB 可逆・leak 静止値・E49 A変奏 vs E55 上書き・hz-settings-hint の規則なし）。既存 human-gate は閉じない
+- next       : 号令で push（fetch→採番衝突の確認→Pages 反映→`?v=e56` 実走）。次ループで QA 正典 F40〜F63 の P2 を実走
+- blockers   : push は号令待ち。実スマホ（PWA 更新途中の offline・reduced-motion・ダブルタップ・キーリピート）は human-gate
+- note       : レビュー所見の採否＝採用 26 件（重複所見は統合）／見送りは設計・テイスト（進行値・分岐・原文・視覚の値の変更＝不変条件の外: 観測者の持ち越し、終端 filter の値、ゴースト画像、入口画像の圧縮、reading-comfort の音、SW 中身での版判定）→ BACKLOG へ。実装の型: 変更は Python の行一致置換＋smoke 契約の同時追加＋VM 実走＋ブラウザ実走。Codex の smoke は関数を vm 文脈に抽出して走らせるため、新しい自由変数（artSetEpoch/REDUCED_UNLOCK_MS/DEEP_LOCK 等）は該当 smoke の文脈へ追加が要る
+
 ## 2026-10-02 — E55.1独立レビュー通過・採用準備
 - agent      : Codex / 条件を満たす依頼改善PRのmergeまでユーザー承認済み
 - goal       : レビュー済み起動timeout修正だけをcommit/push/PR/mergeの条件確認へ進める。

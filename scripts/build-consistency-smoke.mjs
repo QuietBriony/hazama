@@ -76,7 +76,7 @@ has(html, 'id="a11y-state" class="hz-sr-only" role="status" aria-live="polite" a
 has(html, "window.__hazamaArmRetry = armRetry", "E34 shared boot/data retry handler");
 has(html, 'label.textContent = "再試行"', "E34 retry control label");
 has(html, "window.location.reload()", "E34 retry action reloads the static shell");
-has(html, 'navigator.serviceWorker.controller.scriptURL === expectedController', "E33 current-controller version guard");
+has(html, 'current.scriptURL === expectedController', "E33/E56 current-controller version guard");
 has(html, 'navigator.serviceWorker.addEventListener("controllerchange", onControllerChange)', "E33 old SW takeover wait");
 const takeoverBody = (html.match(/const onControllerChange = \(\) => \{[\s\S]*?\n      \};/) || [""])[0];
 has(takeoverBody, "finish(() => window.location.reload())", "E35 old SW takeover reloads the complete shell");
@@ -202,7 +202,8 @@ assert(edgeCardBody.includes("navigator.canShare(shareData)"), "E39 EdgeCard pre
 // E14: 「すべて忘れる」が縁の他方（再降下）と対称＝忘却の破断ビート＋Audio.glitchHit＋遅延 restart。
 const forgetBody = (js.match(/function forgetAll\(\)[\s\S]*?\n  \}/) || [""])[0];
 assert(forgetBody.includes("Spiral.wipe()"), "E14 forgetAll still wipes spiral");
-assert(/setTimeout\(\s*restart/.test(forgetBody), "E14 forgetAll defers restart for the beat");
+assert(/setTimeout\((?:\s*restart|\(\) => \{ if \(myToken === revealToken\) restart\(\); \})/.test(forgetBody),
+  "E14 forgetAll defers restart for the beat (E56: generation-checked)");
 assert(forgetBody.includes("Audio.glitchHit"), "E14 forgetAll triggers break sound");
 has(js, "次は、初めてになる", "E14 forget beat text");
 // E15: 縁の再降下(descendAgain)を forgetAll と対称化＝降下の句読点＋Audio.pulseOnce＋遅延 renderNode。
@@ -301,7 +302,7 @@ has(sw, '`slice.js?v=${RELEASE}`', "sw precache versioned slice.js");
 has(sw, '`slice.css?v=${RELEASE}`', "sw precache versioned slice.css");
 has(sw, "const CORE_PRECACHE_URLS", "sw atomic core precache list");
 has(sw, "const OPTIONAL_PRECACHE_URLS", "sw optional visual precache list");
-has(sw, "cache.addAll(CORE_PRECACHE_URLS).then", "sw core precache rejects install atomically");
+has(sw, "cache.addAll(CORE_PRECACHE_URLS.map(freshRequest))", "sw core precache rejects install atomically (E56: fresh requests)");
 const corePrecache = (sw.match(/const CORE_PRECACHE_URLS = \[[\s\S]*?\n\];/) || [""])[0];
 for (const core of ['"./"', '"index.html"', '`slice.css?v=${RELEASE}`', '`slice.js?v=${RELEASE}`', '"depths-shell.json"']) {
   has(corePrecache, core, `sw required core ${core}`);
@@ -323,10 +324,12 @@ async function simulateSwInstall({ failCore = false, failOptional = false } = {}
   const deleted = [];
   let skipWaitingCalls = 0;
   let optionalAttempts = 0;
+  let coreRequests = [];
   const cache = {
-    addAll: async () => { if (failCore) throw new Error("core miss"); },
+    addAll: async (requests) => { coreRequests = requests; if (failCore) throw new Error("core miss"); },
     add: async () => { optionalAttempts += 1; if (failOptional) throw new Error("optional miss"); },
-    put: async () => {}
+    put: async () => {},
+    match: async () => null   // E56: optional precache は既存 hit を飛ばす
   };
   const cacheApi = {
     open: async () => cache,
@@ -345,6 +348,8 @@ async function simulateSwInstall({ failCore = false, failOptional = false } = {}
     caches: cacheApi,
     console: { log() {}, warn() {}, error() {} },
     URL,
+    // E56: freshRequest（cache: "no-cache"）。Node の Request は相対 URL を受けないので VM では記録だけの代替。
+    Request: class { constructor(url, init) { this.url = url; this.cache = init && init.cache; } },
     Promise
   });
 
@@ -356,8 +361,9 @@ async function simulateSwInstall({ failCore = false, failOptional = false } = {}
     let activatePromise = Promise.resolve();
     handlers.activate({ waitUntil: (promise) => { activatePromise = Promise.resolve(promise); } });
     await activatePromise;
+    await new Promise((resolve) => setImmediate(resolve));   // E56: activate 後の best-effort optional precache を流す
   }
-  return { installResolved, skipWaitingCalls, optionalAttempts, deleted };
+  return { installResolved, skipWaitingCalls, optionalAttempts, deleted, coreRequests };
 }
 
 const coreMiss = await simulateSwInstall({ failCore: true });
@@ -373,6 +379,8 @@ assert(optionalMiss.deleted.includes("hazama-pwa-e30-static") && optionalMiss.de
 assert(optionalMiss.deleted.includes("hazama-pwa-e32-static"),
   "sw successful install should retire the immediately previous Hazama cache");
 assert(!optionalMiss.deleted.includes("music-cache"), "sw must not delete non-Hazama caches");
+assert(optionalMiss.coreRequests.length >= 5 && optionalMiss.coreRequests.every((r) => r && r.cache === "no-cache"),
+  "E56 sw core precache must revalidate every entry (cache: no-cache)");
 
 // アイコン/アセット実体
 for (const a of ["icons/icon-96.png", "icons/icon-192.png", "icons/icon-512.png", "icons/icon-512-maskable.png", "icons/apple-touch-icon.png", "assets/hazama-descent-key.webp"]) nonEmpty(a);
@@ -433,10 +441,13 @@ assert(!/c\.t\s*=|c\.sub\s*=/.test(js), "E36 varia must not mutate choice object
 
 // E37: 絵の変奏＝背景写真セット（降下の弧5枚）が worldSeed×周回で丸ごと回る。
 // セットB 実体＋sw precache＋picker の cycle ゲート（cycle0=正典セット・HTML 既定 src と一致）を契約でロック。
-for (const st of ["key", "drift", "bottom", "surfaced", "omega"]) {
+for (const st of ["drift", "bottom", "surfaced", "omega"]) {
   nonEmpty(`assets/hazama-descent-${st}-b.webp`);
   has(sw, `assets/hazama-descent-${st}-b.webp`, `E37 sw precache set-B ${st}`);
 }
+// E56: E47 以降 base は entry-e47 固定＝セットB の hero（key-b）は未参照。資産も precache も持たない。
+assert(!existsSync(repoPath("assets/hazama-descent-key-b.webp")), "E56 unreferenced set-B hero asset removed");
+assert(!sw.includes("hazama-descent-key-b.webp"), "E56 unreferenced set-B hero must not be precached");
 has(js, "const ART_SETS", "E37 art set bank");
 has(js, "function applyArtSet", "E37 art set picker");
 assert(/function applyArtSet[\s\S]{0,900}?c < 1 \? ""/.test(js), "E37 picker must be cycle-gated (cycle0 = canonical set)");
@@ -582,6 +593,158 @@ has(css, ".hz-choice.ghost", "E27 ghost style");
 has(js, "function confirmThen", "E28 shared confirm helper");
 assert((js.match(/confirmThen\(btn, fn\)/g) || []).length >= 3, "E28 confirmThen wired to echo + edge (def + 2 call sites)");
 assert((js.match(/focus\(\{ preventScroll: true \}\)/g) || []).length >= 3, "E28 focus landing at choices + echo + edge");
+
+// E56: レビュー輪（5レンズ：変奏×後続変更／起動・PWA／選択の状態機械／CSS・性能／QA 正典）の客観是正を契約でロック。
+// (1) 版の同期＝locales fetch も照合・index/slice の全 ?v= 参照が同版・RELEASE の導出式を固定
+const localeV = (js.match(/fetch\("locales\/en\.json\?v=([a-z0-9.]+)"/) || [])[1];
+assert(localeV === jsV, `E56 slice.js locale catalog version mismatch: locale=${localeV} index=${jsV}`);
+for (const [name, text] of [["index.html", html], ["slice.js", js]]) {
+  for (const m of text.matchAll(/\b(?:slice\.(?:css|js)|sw\.js|depths-shell\.json|locales\/en\.json)\?v=([a-z0-9.]+)/g)) {
+    assert(m[1] === jsV, `E56 ${name} stale version ref: ${m[0]} (index=${jsV})`);
+  }
+}
+has(sw, 'const RELEASE = VERSION.replace("hazama-pwa-", "")', "E56 sw RELEASE derives from VERSION");
+// (2) SW: network の HTML を cache に書かない・offline fallback は scope 直下だけ・precache は再検証・optional は activate 後
+const htmlBranch = (sw.match(/if \(isHtmlRequest\(request\)\) \{[\s\S]*?\n    return;\n  \}/) || [""])[0];
+assert(htmlBranch && !htmlBranch.includes("putIfOk"), "E56 sw HTML branch must not cache network HTML (old SW + new HTML offline mix)");
+has(htmlBranch, "Response.error()", "E56 sw offline HTML fallback limited to scope root");
+has(sw, 'new Request(url, { cache: "no-cache" })', "E56 sw precache revalidates (no HTTP-cache reuse)");
+const installBody = (sw.match(/addEventListener\("install"[\s\S]*?\n\}\);/) || [""])[0];
+assert(installBody && !installBody.includes("OPTIONAL_PRECACHE_URLS"), "E56 sw install waits for core only");
+has(sw, "function precacheOptional", "E56 sw optional precache after activate");
+assert(/clients\.claim\(\)\)\s*\n\s*\.then\(\(\) => \{ precacheOptional\(\); \}\)/.test(sw), "E56 sw optional precache is fire-and-forget after claim");
+// (3) inline boot: opaque origin ガード・runtime 停止の期限・takeover 失敗時の cache 起動（controllerchange は待ち続ける）
+has(bootScript, "/^https?:$/.test(window.location.protocol)", "E56 boot protocol guard");
+has(bootScript, "const cachedShell", "E56 boot cached-shell fallback");
+has(bootScript, "script.onload = () => window.clearTimeout(stalled)", "E56 boot runtime stall timer");
+has(bootScript, "const timeoutId = window.setTimeout(giveUp, 10000)", "E56 boot timeout routes through giveUp");
+assert(!/if \(ready\) return finish\(\(\) => window\.location\.reload\(\)\)/.test(bootScript), "E56 cached-shell path starts runtime, never reloads");
+has(bootScript, "if (ready) return finish(startRuntime)", "E56 cached-shell path starts runtime");
+// (4) slice.js: 退路の約束／キーリピート／reduced の解放猶予／descendAgain の終端保持／drift 周回錨／絵セット遅延差し替え
+has(js, "const spends = isRetreat ?", "E56 unified path-spend predicate");
+has(js, "戻り道は効かない", "E56 deep-lock retreat wording");
+has(js, "ays back −1/", "E56 english retreat replacement (case-preserving)");
+has(js, 'if (!e.repeat || (e.key !== "Enter" && e.key !== " ")) return;', "E56 key-repeat guard");
+assert((js.match(/REDUCED \? REDUCED_UNLOCK_MS :/g) || []).length === 3, "E56 reduced unlock delay on all three renderers");
+const descendAgainSrc = (js.match(/function descendAgain\(\) \{[\s\S]*?\n  \}/) || [""])[0];
+assert(descendAgainSrc && !/classList\.remove\("surfaced", "omega", "phase-break"/.test(descendBody), "E56 descendAgain keeps terminal wash during the beat");
+has(descendAgainSrc, 'document.body.classList.remove("surfaced", "omega");', "E56 descendAgain drops terminal wash with zero render");
+has(js, 'hashStr("drift8c:"', "E56 foreign drift cycle anchor (cycle0 unchanged)");
+has(js, "let artSetEpoch", "E56 art set deferred swap epoch");
+has(js, "if (!r.width || !r.height) { size = 0; return; }", "E56 mandala hidden resize guard");
+// (5) css: 「濃く」が薄くならない・locked/扉の出現順・入口 filter の補間・base の横パン遷移・reduced のグリッジ固定・死に規則の除去
+const lumOf = (hex) => {
+  const ch = [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16) / 255)
+    .map((v) => (v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4)));
+  return 0.2126 * ch[0] + 0.7152 * ch[1] + 0.0722 * ch[2];
+};
+const inkDim = (css.match(/:root\s*\{[^}]*--ink-dim:\s*(#[0-9a-f]{6})/i) || [])[1];
+const inkDimMore = (css.match(/prefers-contrast: more\)\s*\{[\s\S]*?--ink-dim:\s*(#[0-9a-f]{6})/i) || [])[1];
+assert(inkDim && inkDimMore && lumOf(inkDimMore) > lumOf(inkDim), `E56 prefers-contrast:more must not lower --ink-dim below default (${inkDimMore} vs ${inkDim})`);
+hasRe(/\.hz-choice:is\(\.locked, \.ghost, \.echo-skip\):not\(\.in\)\s*\{\s*opacity:\s*0/, "E56 locked/ghost wait for appearance");
+hasRe(/body:has\(\.hz-gate:not\(\.gone\)\):not\(\.reading-comfort\) \.hz-bg-descent \{[^}]*contrast\(1\)/, "E56 gate filter interpolates (contrast(1))");
+hasRe(/\.hz-bg-descent \{[^}]*transition:[^;]*object-position/, "E56 base pan transition");
+hasRe(/body:is\(\.glitch-soft, \.glitch-hard\) \.hz-glitch::before \{[^}]*animation: none/, "E56 reduced glitch pinned under JS bursts");
+assert(!css.includes(".hz-choices::before"), "E56 dead choices fade removed");
+assert(!css.includes(".hz-strike"), "E56 unused strike class removed");
+
+// E56: inline boot の状態機械を VM で実走（SW / cache / timer を模擬・network なし）。
+//   fresh / current controller → 即起動／旧 controller → takeover 待ち → controllerchange で reload／
+//   timeout・register 失敗 → 新版 css/js が cache にあれば起動、無ければ再試行＋controllerchange 待ち続行／
+//   非 http(s)・serviceWorker getter が投げる origin → 起動／runtime script 停止 → 20s で再試行。
+async function simulateBoot({ controller = null, register = "resolve", cachedShell = false, protocol = "https:", throwingNavigator = false } = {}) {
+  const timers = []; let now = 0;
+  const listeners = { controllerchange: [] };
+  const appended = [];
+  const noteEl = { textContent: "", classList: { add() {} } };
+  const labelEl = { textContent: "沈む" };
+  const gateButton = { disabled: true, clicks: [], querySelector: () => labelEl, addEventListener(type, fn) { this.clicks.push(fn); } };
+  const document = {
+    baseURI: "https://example.test/hazama/",
+    querySelector: (sel) => (sel === 'link[rel="stylesheet"]' ? { getAttribute: () => "slice.css?v=test" } : null),
+    getElementById: (id) => (id === "gate" ? { setAttribute() {} } : id === "gate-enter" ? gateButton : id === "gate-note" ? noteEl : null),
+    createElement: () => ({}),
+    body: { appendChild: (el) => appended.push(el) }
+  };
+  const sw = {
+    controller,
+    addEventListener: (type, fn) => { (listeners[type] = listeners[type] || []).push(fn); },
+    removeEventListener: (type, fn) => { listeners[type] = (listeners[type] || []).filter((f) => f !== fn); },
+    register: () => (register === "reject" ? Promise.reject(new Error("offline")) : Promise.resolve({}))
+  };
+  const navigator = {};
+  if (throwingNavigator) Object.defineProperty(navigator, "serviceWorker", { get() { throw new Error("SecurityError"); } });
+  else navigator.serviceWorker = sw;
+  let reloads = 0;
+  const window = {
+    location: { protocol, reload: () => { reloads += 1; } },
+    setTimeout: (fn, ms) => { timers.push({ fn, at: now + ms }); return timers.length; },
+    clearTimeout: (id) => { if (timers[id - 1]) timers[id - 1].fn = null; },
+    caches: { match: (url) => Promise.resolve(cachedShell ? { url } : undefined) }
+  };
+  const context = vm.createContext({ document, navigator, window, caches: window.caches, URL, Promise, console });
+  const flush = async () => { for (let i = 0; i < 12; i++) await new Promise((resolve) => setImmediate(resolve)); };
+  const advance = async (ms) => {
+    const end = now + ms;
+    for (;;) {
+      const due = timers.map((t, i) => ({ t, i })).filter(({ t }) => t.fn && t.at <= end).sort((a, b) => a.t.at - b.t.at)[0];
+      if (!due) break;
+      now = due.t.at; const fn = due.t.fn; due.t.fn = null; fn();
+      await flush();
+    }
+    now = end; await flush();
+  };
+  vm.runInContext(bootScript, context);
+  await flush();
+  const controllerChange = async (next) => { sw.controller = next; for (const fn of listeners.controllerchange.slice()) fn(); await flush(); };
+  return { appended, noteEl, labelEl, gateButton, listeners, advance, controllerChange, reloads: () => reloads };
+}
+const CURRENT = { scriptURL: "https://example.test/hazama/sw.js?v=" + jsV };
+const OLD = { scriptURL: "https://example.test/hazama/sw.js?v=e0" };
+{
+  const fresh = await simulateBoot();
+  assert(fresh.appended.length === 1 && fresh.reloads() === 0, "E56 boot: no controller starts the runtime at once");
+  const current = await simulateBoot({ controller: CURRENT });
+  assert(current.appended.length === 1 && current.reloads() === 0, "E56 boot: current controller starts the runtime at once");
+  const bundled = await simulateBoot({ controller: OLD, protocol: "app:" });
+  assert(bundled.appended.length === 1, "E56 boot: non-http(s) origin never waits for a service worker");
+  const opaque = await simulateBoot({ throwingNavigator: true });
+  assert(opaque.appended.length === 1, "E56 boot: a throwing serviceWorker getter still starts the runtime");
+
+  const handoff = await simulateBoot({ controller: OLD });
+  assert(handoff.appended.length === 0 && handoff.noteEl.textContent === "更新を確認中…", "E56 boot: old controller waits for takeover");
+  await handoff.advance(500);
+  await handoff.controllerChange(CURRENT);
+  assert(handoff.reloads() === 1 && handoff.appended.length === 0, "E56 boot: takeover reloads the shell exactly once");
+  assert(handoff.listeners.controllerchange.length === 0, "E56 boot: settled takeover stops listening");
+
+  const cachedLate = await simulateBoot({ controller: OLD, cachedShell: true });
+  await cachedLate.advance(10000);
+  assert(cachedLate.appended.length === 1 && cachedLate.reloads() === 0, "E56 boot: timeout with cached css/js starts the runtime instead of failing");
+  assert(cachedLate.listeners.controllerchange.length === 0, "E56 boot: runtime started from cache stops listening (no reload mid-game)");
+  await cachedLate.controllerChange(CURRENT);
+  assert(cachedLate.reloads() === 0, "E56 boot: a late controllerchange cannot reload a running game");
+
+  const offline = await simulateBoot({ controller: OLD, register: "reject", cachedShell: false });
+  assert(offline.appended.length === 0 && offline.labelEl.textContent === "再試行" && offline.gateButton.disabled === false,
+    "E56 boot: failed takeover without cache arms retry");
+  assert(offline.listeners.controllerchange.length === 1, "E56 boot: retry state keeps waiting for a late activation");
+  await offline.controllerChange(CURRENT);
+  assert(offline.reloads() === 1, "E56 boot: late activation after a failed takeover reloads automatically");
+
+  const offlineCached = await simulateBoot({ controller: OLD, register: "reject", cachedShell: true });
+  assert(offlineCached.appended.length === 1 && offlineCached.labelEl.textContent === "沈む", "E56 boot: failed takeover with cached shell starts offline");
+
+  const stall = await simulateBoot();
+  await stall.advance(19999);
+  assert(stall.labelEl.textContent === "沈む", "E56 boot: runtime stall timer is silent before 20s");
+  await stall.advance(1);
+  assert(stall.labelEl.textContent === "再試行", "E56 boot: a stalled runtime script arms retry at 20s");
+  const loaded = await simulateBoot();
+  loaded.appended[0].onload();
+  await loaded.advance(30000);
+  assert(loaded.labelEl.textContent === "沈む", "E56 boot: a loaded runtime clears the stall timer");
+}
 
 if (failures.length) {
   console.error("build-consistency smoke FAIL");

@@ -12,7 +12,7 @@ Hazama は、沈むほど戻りにくい「降下する対話」の没入型静�
 - `locales/en.json` : 英語試作カタログ（初回の身体の道＋共有終端/操作/エコー候補。全面英語対応ではない）
 - `slice.css` : 没入表示（深部の絵を黒に潰さない露出・本文の薄い暗幕・文字に重ならない痕跡）と、背景の明滅/揺れを抑える読書優先表示
 - `depths-shell.json` : 深度本文データ（depthMeta v0 スキーマ・沈下スパイン・72ノード）
-- `manifest.webmanifest` / `sw.js` / `icons/` : PWA install / offline shell（cache prefix `hazama-pwa-`）
+- `manifest.webmanifest` / `sw.js` / `icons/` : PWA install / offline shell（cache prefix `hazama-pwa-`）。E56: core（html/css/js/depths/manifest）だけ atomic に precache し視覚 asset は activate 後に best-effort、network の HTML は cache に書かない（offline の HTML は同版の precache のみ）
 - `assets/hazama-descent-entry-e47.webp` : E47の入口（候補01を採用・原画と画素一致のlossless WebP）。36秒で僅かに寄って静まる有限カメラ。`hazama-descent-{drift,bottom,surfaced,omega}.webp` の4枚と周回セットBは深度/終端で引き継ぐ。旧`hazama-descent-key.webp`と`og-card.jpg`は共有OG画像として保持。
 - 検証: `scripts/hazama-check.mjs`（`autonomy-docs` ＋ `build-consistency` の2本）
 - 制作候補: `docs/BLENDER-AUTHORING.md`（WorkerPC Blender 5.2をrepo外の静止画制作実行器に限定。runtime非依存）
@@ -137,6 +137,25 @@ Codex / Claude Code が同じ順番で作業を継続するための薄いエン
 
 ## 沿革（詳細は git log）
 
+- **進化 E56（2026-10-23・レビュー輪の是正＝変奏×後続変更／起動・PWA／選択の状態機械／CSS・性能）**: Claude の5レンズ
+  （worker/opus×4＋QA 正典の追補）で E36〜E55.1 の統合ビルドを独立レビューし、客観・低リスクのみ実装（agent 5/5 完走）。
+  (1) **退路の約束と失敗条件の整合**＝「戻り道 −1」と約束する retreat が、深部ロック（観測者≥9）／戻り道0では消費せず
+  failTo へ落ちていた（reborn→零章の物語内再降下で到達）。消費の述語を1つにし「戻り道は効かない／尽きた」へ表示だけ置換
+  （C の固定文も同条件・英語も大小文字を保って置換）。進行値・行き先は不変 (2) **入力の暴発防止**＝Enter/Space の長押し
+  （キーリピート）が E25 の focus 着地先を連鎖確定しないよう repeat だけ抑止し、reduced-motion でも押せるのは一拍後
+  （300ms＝ダブルタップの2打目が次の択を確定しない） (3) **縁の再降下の中間フレーム除去**＝終端ウォッシュをビート中は保ち
+  零章の描画と同時に外す（浮上→Ωの絵→入口の 1.4s を出さない）、絵セットの差し替えはフェード後、遅延呼出に世代チェック
+  (4) **PWA 更新の堅牢化**＝SW は network の HTML を cache に書かない（旧 SW が新版 HTML を旧 cache に入れ、更新途中の offline
+  で版が混ざる経路を閉鎖・offline fallback は scope 直下のみ）、precache は HTTP cache を再検証、install は core だけ待ち
+  視覚 asset は activate 後に best-effort、inline boot は opaque origin ガード・runtime 停止の 20s 期限・takeover 失敗時は
+  新版 css/js が cache にあれば起動し無ければ再試行のまま activate を待ち続ける（VM smoke 11 シナリオ） (5) **CSS**＝
+  prefers-contrast:more の --ink-dim が E55 の既定より薄くなっていた逆転を是正（#b3c0cd≈10.9:1）、locked/扉/echo-skip が
+  出現演出を飛ばして先に見えていたのを `.in` まで不可視に、入口写真の周回パンを遷移、表紙→開始の filter 補間、OS の軽減を
+  セッション中に ON にしてもグリッジが止まる固定規則、死に規則（.hz-choices::before／.hz-strike）除去 (6) 漂着（E8）の出現判定
+  の XOR 相殺（E37/E38 と同型）を cycle≥1 だけ周回錨で是正、B[0] の旧原文由来の変奏を外す、読書優先中の Mandala 描画停止と
+  display:none 中の resize で解像度が落ちる欠陥の修正、未参照の key-b.webp を撤去。smoke: 版同期を 8 点（locales 含む）＋全
+  ?v= 参照に拡張・SW/boot の VM 契約・choice-commit に深部ロック/reduced 猶予。QA 正典に E39〜E56 を **F40〜F63** として追補
+  （P2 は次ループ）。見送り＝設計判断・テイストは BACKLOG HZ-BL-034/035/036（`?v=e56`）
 - **進化 E55（2026-10-01）**: Ω/帰還の端末名と説明列挙を気配へ改稿。入口は周回後も八観を一括開示しない。赤線を余白へ移し、景色は物語の5地点で進む。設定に版表示と記憶を残す再読み込み。本編の進行/保存/音は不変。独立Three.js比較も本編と区別してスマホ公開する。[確認メモ](docs/playtest/immersion-e55.md)。
 - **進化 E54（2026-09-27公開）**: 構造ルートB/C/Dの軽い択と再訪時の言い換えに「戻り道は減らない」を明示。Cで退路が尽きた場合の案内を実際の沈下に合わせ、押せる退路の視認性を上げた。公開320pxの冒頭を確認済み。人間の初見評価はまだ。
 - **進化 E53（2026-09-27公開）**: 全候補の表示後に選択を同時解放し、先頭択の早押し偏りを解消。身体の道のB/Nを場面化し、軽い選択の戻り道コストを明示。戻り道0本では「−1」を表示しない。進行値・行き先・保存形式・音は不変。ブラウザ390pxと自動チェックは確認済み。実スマホの手触り、面白さ、英訳の自然さ、販売品質は人間の確認待ち。

@@ -29,7 +29,7 @@
   <link rel="manifest" href="manifest.webmanifest" />
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png" />
   <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png" />
-  <link rel="stylesheet" href="slice.css?v=e55.1" />
+  <link rel="stylesheet" href="slice.css?v=e56" />
 </head>
 <body data-phase="surface" data-backdrop="entry">
   <div class="hz-bg" aria-hidden="true">
@@ -133,7 +133,7 @@
       </div>
       <p class="hz-settings-hint" data-i18n>音は「沈む」のあとに鳴ります。0%で無音です。小さな音量から試してください。</p>
       <div class="hz-settings-release">
-        <p><span data-i18n>表示中の版</span>: <output id="build-version">E55.1</output></p>
+        <p><span data-i18n>表示中の版</span>: <output id="build-version">E56</output></p>
         <p id="settings-refresh-note" class="hz-settings-hint" data-i18n>更新を確認すると入口に戻ります。周回・認識・痕跡の記憶は残ります。</p>
         <button id="settings-refresh" class="hz-chip" type="button" aria-describedby="settings-refresh-note" data-i18n>更新を確認して開き直す</button>
       </div>
@@ -162,9 +162,16 @@
   <script>
     // E35: 既存SWはversion queryを無視して旧CSS/runtimeを返し得るため、
     // controller takeover後は入口のまま一度reloadし、CSS/JSを同じ版で読む。fresh/current loadは待たせない。
+    // E56: (1) 非 http(s)／opaque origin で navigator.serviceWorker が投げても runtime を起動する
+    //      (2) runtime script の停止にも期限を置き、再試行へ戻す
+    //      (3) takeover が間に合わない／失敗しても、新版の css/js が既に cache にあれば起動する
+    //          （自動 update で「URL は旧版・中身は新版」になった controller や、遅い回線での待ち）。
+    //          無ければ再試行を出したまま controllerchange を待ち続け、遅れて activate したら自動 reload。
     (() => {
-      const SW_URL = "sw.js?v=e55.1";
-      const RUNTIME_URL = "slice.js?v=e55.1";
+      const SW_URL = "sw.js?v=e56";
+      const RUNTIME_URL = "slice.js?v=e56";
+      const cssLink = document.querySelector('link[rel="stylesheet"]');
+      const CSS_URL = cssLink ? cssLink.getAttribute("href") : "";
       const expectedController = new URL(SW_URL, document.baseURI).href;
       const gate = document.getElementById("gate");
       const gateButton = document.getElementById("gate-enter");
@@ -197,15 +204,21 @@
         runtimeStarted = true;
         const script = document.createElement("script");
         script.src = RUNTIME_URL;
-        script.onerror = () => failBoot("起動データを読み込めません。再試行してください。");
+        const stalled = window.setTimeout(() => failBoot("起動データを読み込めません。再試行してください。"), 20000);
+        script.onload = () => window.clearTimeout(stalled);
+        script.onerror = () => { window.clearTimeout(stalled); failBoot("起動データを読み込めません。再試行してください。"); };
         document.body.appendChild(script);
       };
 
-      if (!("serviceWorker" in navigator) || !navigator.serviceWorker.controller) {
+      let current = null;
+      try {
+        if (/^https?:$/.test(window.location.protocol) && "serviceWorker" in navigator) current = navigator.serviceWorker.controller;
+      } catch (_) { current = null; }
+      if (!current) {
         startRuntime();
         return;
       }
-      if (navigator.serviceWorker.controller.scriptURL === expectedController) {
+      if (current.scriptURL === expectedController) {
         startRuntime();
         return;
       }
@@ -225,13 +238,22 @@
           finish(() => window.location.reload());
         }
       };
-      const timeoutId = window.setTimeout(() => {
-        finish(() => failBoot("更新を適用できません。通信を確認して再試行してください。"));
-      }, 10000);
+      const cachedShell = () => {
+        if (!("caches" in window) || !CSS_URL) return Promise.resolve(false);
+        return Promise.all([caches.match(RUNTIME_URL), caches.match(CSS_URL)])
+          .then((hits) => hits.every(Boolean))
+          .catch(() => false);
+      };
+      const giveUp = () => cachedShell().then((ready) => {
+        if (settled) return;
+        if (ready) return finish(startRuntime);
+        failBoot("更新を適用できません。通信を確認して再試行してください。");
+      });
+      const timeoutId = window.setTimeout(giveUp, 10000);
       navigator.serviceWorker.addEventListener("controllerchange", onControllerChange);
       navigator.serviceWorker.register(SW_URL, { scope: "./", updateViaCache: "none" })
         .then(onControllerChange)
-        .catch(() => finish(() => failBoot("更新を適用できません。通信を確認して再試行してください。")));
+        .catch(giveUp);
     })();
   </script>
 </body>

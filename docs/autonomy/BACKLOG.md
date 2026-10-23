@@ -139,6 +139,46 @@ Hazama 自律開発の作業待ち行列。
 
 ## P2
 
+### HZ-BL-034 — reborn からの物語内再降下で退路が必ず失敗する機構の採否（C の failTo 不在を含む）
+- priority : P2
+- scope    : balance / research
+- agent    : either
+- human-gate: yes
+- status   : open
+- source   : 2026-10-23 E56 レビュー輪（レンズ1/3）
+- detail   : reborn[0]「もう一度、零章から沈む」は descendAgain と違い transient（観測者≥18・沈下・戻り道）を持ち越す。
+  その周回では zero/C の retreat が観測者≥DEEP_LOCK で必ず失敗（消費0・沈下+2・「上が、もう無い」）する。
+  E56 は表示だけを実挙動に揃えた（「戻り道は効かない」）。機構として意図か、再降下で観測者を初期化するかは設計判断。
+  併せて C[2] は failTo が無く、失敗時に「上が、もう無い」と言いながら上の B へ戻る（物語データ）。
+  進行値・分岐グラフ・depths schema に触れるため、人間の判断と Codex の narrow 実装で扱う。
+
+### HZ-BL-035 — PWA 更新・演出停止の設計判断（E56 レビューの見送り分）
+- priority : P2
+- scope    : runtime / research
+- agent    : codex
+- human-gate: no
+- status   : open
+- source   : 2026-10-23 E56 レビュー輪（レンズ2/4）
+- detail   : (1) 版の判定を SW の scriptURL でなく中身（`{type:"VERSION"}` の message 応答）で行う＝自動 update で
+  「URL は旧版・中身は新版」になった controller を正しく扱う（E56 は css/js の cache hit で起動する緩和まで）。
+  (2) network-first（HTML/depths）の SW 側に 4〜5 秒の期限を置き、止まった回線で cache を返す（版混在の再発に注意）。
+  (3) `REDUCED` を matchMedia の change に追従させ、セッション中の OS 軽減 ON で Glitch/Mandala/phase-break の JS を止める
+  （E56 は CSS 側で固定済み）。(4) 読書優先（視覚設定）でグリッジの破断音も止めるか。
+  いずれも public contract は不変だが設計変更＝BACKLOG で claim してから。
+
+### HZ-BL-036 — 見た目の human-gate 群（E56 レビューで記録・値は実機の目で）
+- priority : P2
+- scope    : verify
+- agent    : human
+- human-gate: yes
+- status   : open
+- source   : 2026-10-23 E56 レビュー輪（レンズ1/4・QA 追補）
+- detail   : (1) 終端 stage の固定 filter（surfaced .50／omega .52）が E55 の通常時（sink=1 で .60）より暗く、hue-rotate も
+  掛からない。(2) グリッジのゴーストは旧 hero（key.webp・中央 crop）で、入口 entry-e47 や E55 の crop と別構図。
+  (3) 入口画像 1.24MB（可逆 VP8L・初回転送の 88%）の可逆/不可逆。(4) reduced の leak 静止値（0↔0.08 の明滅）。
+  (5) E49 の A[0] 変奏は E55 の上書き（B/B_soma 訪問後）で実質使われない＝どちらを正とするか。
+  (6) `hz-settings-hint` に CSS 規則が無い（意図か）。値・絵・文案は人間の判断で、agent は提案まで。
+
 ### HZ-BL-031 — 奥行き版と2D版を実スマホでA/B試遊
 - priority : P2
 - scope    : verify

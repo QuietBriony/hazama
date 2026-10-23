@@ -63,10 +63,10 @@ function harness(reduced = false, dialogMode = "native") {
   if (dialogMode === "unsupported") dialog.showModal = undefined;
   if (dialogMode === "throws") dialog.showModal = () => { throw new Error("cannot show"); };
   const context = vm.createContext({
-    document, choicesEl, sceneEl, REDUCED: reduced, revealToken: 0, $: () => dialog,
+    document, choicesEl, sceneEl, REDUCED: reduced, REDUCED_UNLOCK_MS: 300, DEEP_LOCK: 9, revealToken: 0, $: () => dialog,
     englishCatalog,
     window: { setTimeout(fn, delay = 0) { timers.set(++nextTimer, { fn, at: now + delay }); return nextTimer; } },
-    state: { id: "B", cycle: 0, maxSink: 0, attunement: 0, visits: { B: 1 }, legacy: { detoursSeen: [] } },
+    state: { id: "B", cycle: 0, maxSink: 0, attunement: 0, observer: 1, returnPaths: 5, visits: { B: 1 }, legacy: { detoursSeen: [] } },
     ATTUNE: { omegaThreshold: 6 }, CHOICE_VARIA: {}, ECHO_BANK: { B: "seen", C: "unseen", D: "unseen too" },
     isAttuned: () => false, orderedChoices: (node) => node.choices,
     onboardHint() {}, attuneGlossHint() {}, setBusy() {}, queueA11yState() {},
@@ -134,6 +134,33 @@ for (const paths of [1, 0]) {
     assert.match(lead, /深度Bへ引き返す/, "C: available retreat keeps the authored label");
     assert.match(sub, /戻れる（戻り道 −1/, "C: available retreat keeps its true cost");
   }
+}
+
+// E56: a retreat that resolveResist will refuse (deep lock: observer >= DEEP_LOCK, or no path left) must not
+// promise "−1" in either language; C keeps its attempt wording with the matching consequence.
+for (const [observer, paths, expectJa, expectEn] of [
+  [18, 5, /戻り道は効かない/, /ways back no longer hold/],
+  [1, 0, /戻り道は尽きた/, /no ways back remain/]
+]) {
+  for (const language of ["ja", "en"]) {
+    const h = harness();
+    h.context.state.id = "zero"; h.context.state.observer = observer; h.context.state.returnPaths = paths;
+    h.node.choices = [{ t: "応えず、デバイスを伏せる", sub: "返事をしなくても、戻り道 −1", kind: "retreat", to: "zero_hold" }];
+    if (language === "en") vm.runInContext("Locale.install(englishCatalog); Locale.select('en');", h.context);
+    const [retreat] = h.render("normal");
+    const sub = retreat.querySelector(".sub").textContent;
+    assert.match(sub, language === "en" ? expectEn : expectJa, `${language}: failing retreat (observer=${observer}, paths=${paths}) states its real outcome`);
+    assert.doesNotMatch(sub, /−1/, `${language}: failing retreat does not promise a path loss`);
+  }
+}
+{
+  const h = harness();
+  h.context.state.id = "C"; h.context.state.observer = 18; h.context.state.returnPaths = 3;
+  h.node.choices = [{ t: "記憶を閉じ、深度Bへ引き返す",
+    sub: "まだ浅い。戻れる（戻り道 −1・沈下は残る）", kind: "retreat", to: "B", back: "B" }];
+  const [retreat] = h.render("normal");
+  assert.match(retreat.querySelector(".lead").textContent, /引き返そうとする/, "C: deep-locked retreat is presented as an attempt");
+  assert.match(retreat.querySelector(".sub").textContent, /戻り道は効かない。戻っても沈下は深まる/, "C: deep-locked retreat states that paths no longer hold");
 }
 
 // A retreat may feel heavier without resembling a disabled or locked option.
@@ -240,8 +267,13 @@ for (const kind of ["normal", "echo", "edge"]) {
 
   const reduced = harness(true), instant = reduced.render(kind);
   reduced.advance(0);
-  instant[0].click(); instant[1].click();
-  assert.equal(reduced.actions.length, 1, `${kind}: reduced motion commits once, immediately`);
+  assert.ok(instant.every((button) => button.classList.contains("in")), `${kind}: reduced motion shows every candidate immediately`);
+  instant[0].click();
+  assert.equal(reduced.actions.length, 0, `${kind}: reduced motion still holds input for the unlock beat (E56 double-tap guard)`);
+  reduced.advance(299); instant[0].click();
+  assert.equal(reduced.actions.length, 0, `${kind}: reduced motion holds input until the unlock beat ends`);
+  reduced.advance(1); instant[0].click(); instant[1].click();
+  assert.equal(reduced.actions.length, 1, `${kind}: reduced motion commits once after the unlock beat`);
 }
 
 const locked = harness(), lockedButtons = locked.render("normal");

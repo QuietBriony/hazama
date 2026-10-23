@@ -5,13 +5,14 @@
 - current_phase: DONE（QA一巡完了・2026-06-23）
 - phase_label: 完了。全25機能 検証 pass・敵対的エッジ検査クリア・**実バグ0**。P3=N/A（欠陥なし）・P4=N/A（修正0）
 - loop_status: STOPPED（次の自動起床なし。再開は再び /loop で）
-- last_row_id: F36
+- last_row_id: F63
 - canonical: docs/qa/feature-stories.csv
 - baseline_check: 2 PASS / 0 FAIL（node scripts/hazama-check.mjs）
 - preview_serverId: 9449ff33-dd4d-4f08-8f01-ebeb6d0422cd（port 8740・preview_start name=hazama）
 - P2進捗: 25/25 完了。happy-path で実バグ0（console0・smoke 0FAIL）。不具合列はツール癖(F01)/human-gate(F07,F16)/網羅注記のみ。
 - addendum（2026-07-09・docs-only 追記、この一巡の記録=上記25機能・欠陥0は不変）: E23（生成 testament）を **F26** として正典 CSV へ追加。正典は**26機能**に更新。P2はこのセッションの実走で pass 済み（human_gate=yes＝頻度・レジスタの採否は実機）。次ループの Phase2 で F26 を通しで再検証すること。
 - addendum（2026-07-15・docs-only 追記＋独立検証、上記25機能・欠陥0＋F26 の記録は不変）: 本番が E24〜E27 まで進んだのに正典が F26 で止まっていた乖離を是正。E24〜E27 のプレイヤー観測可能な新挙動を **F27〜F36（10行）** として追補し、正典は **36機能** に更新。P2 は worker(opus) が**実装者と別の目**で独立検証＝自前 static server(:8747)＋headless Chrome+CDP で `window.__hz`・`Emulation.setEmulatedMedia` を駆り、各行の期待挙動を実走確認（**10/10 pass・console error 0**）。human_gate=yes は **F33（浮上の音戻し＝耳）** のみ（コードパスは無例外で実行を確認）。F27 のピクセルの見えは visual-gate（機構は machine 検証済）。歴史（25機能・欠陥0 の一巡）は不変。次ループの Phase2 で F27〜F36 を再検証すること。
+- addendum（2026-10-23・docs-only 追記＋E56 で F27 修正）: 本番 E55.1 に対し正典が F39 で止まっていた乖離を是正＝E39〜E55.1 のプレイヤー観測可能な新挙動を **F40〜F61**（worker/sonnet 起草・根拠行は grep 実測・Fable 検収・P2 は空欄＝次ループの Phase2 で実走）、E56（退路の約束の整合・入力の暴発防止・PWA 更新の堅牢化）を **F62/F63** として追補し正典は **63機能**。**F27 は E55 以降 prefers-contrast:more の --ink-dim が既定より暗い逆転＝実バグ**として E56 で修正（P2_不具合/P3/P4 を記入）。F22/F37 の備考を現状（8 点同期・data-backdrop）へ。既存行の根拠行番号は E56 の tree へ機械再対応（difflib）。歴史（25機能・欠陥0 の一巡）は不変。
 
 ## Phase 3 計画（修正）
 Phase2 happy-path は欠陥0。確定前に「敵対的エッジ検査」を1チャンク行い、実バグが出たら working tree のみで修正→hazama-check 0FAIL→P3列、出なければ「修正0」を確定して Phase4(=再テスト不要)へ。

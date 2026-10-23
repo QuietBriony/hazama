@@ -29,15 +29,39 @@ assert(picker, "art picker exists");
 for (const cycle of [0, 1, 2, 12]) {
   for (const suffix of ["", "-b"]) {
     const base = { src: "" };
-    const stages = ["drift", "bottom", "surfaced", "omega"].map(stage => ({ dataset: { stage }, src: "" }));
+    const stages = ["drift", "bottom", "surfaced", "omega"].map(stage => ({ dataset: { stage }, src: "", getAttribute() { return this.src; } }));
     const context = {
-      state: { cycle }, ART_SETS: ["", "-b"],
+      state: { cycle }, ART_SETS: ["", "-b"], artSetEpoch: 0, REDUCED: true,
       hashStr: () => 0, mulberry32: () => () => 0, pickR: () => suffix,
+      getComputedStyle: () => ({ opacity: "0" }), window: { setTimeout: () => 0 },
       document: { querySelector: () => base, querySelectorAll: () => stages }
     };
     vm.runInNewContext(`${picker}; applyArtSet();`, context);
     assert.equal(base.src, asset);
     for (const image of stages) assert.equal(image.src, `assets/hazama-descent-${image.dataset.stage}${cycle ? suffix : ""}.webp`);
   }
+}
+// E56: a stage that is still visible (fading out, e.g. omega on reborn -> zero) swaps its art only after the fade;
+// hidden stages swap at once; a newer applyArtSet call supersedes a pending deferred swap.
+{
+  const timers = [];
+  const stages = ["drift", "bottom", "surfaced", "omega"].map(stage => ({ dataset: { stage }, src: `assets/hazama-descent-${stage}.webp`, getAttribute() { return this.src; } }));
+  const context = {
+    state: { cycle: 3 }, ART_SETS: ["", "-b"], artSetEpoch: 0, REDUCED: false,
+    hashStr: () => 0, mulberry32: () => () => 0, pickR: () => "-b",
+    getComputedStyle: (img) => ({ opacity: img.dataset.stage === "omega" ? "0.66" : "0" }),
+    window: { setTimeout: (fn, ms) => { timers.push({ fn, ms }); return timers.length; } },
+    document: { querySelector: () => ({ src: "" }), querySelectorAll: () => stages }
+  };
+  vm.runInNewContext(`${picker}; applyArtSet();`, context);
+  assert.equal(stages[0].src, "assets/hazama-descent-drift-b.webp", "hidden stage swaps immediately");
+  assert.equal(stages[3].src, "assets/hazama-descent-omega.webp", "visible stage keeps its art until the fade ends");
+  assert.equal(timers.length, 1, "exactly one deferred swap for the visible stage");
+  assert.equal(timers[0].ms, 2000, "deferred swap waits past the 1.8s fade");
+  timers[0].fn();
+  assert.equal(stages[3].src, "assets/hazama-descent-omega-b.webp", "deferred swap applies after the fade");
+  context.artSetEpoch += 1; stages[3].src = "assets/hazama-descent-omega.webp";
+  timers[0].fn();
+  assert.equal(stages[3].src, "assets/hazama-descent-omega.webp", "a superseded deferred swap stays inert");
 }
 console.log("entry-visual smoke PASS (adopted art, finite motion, opt-outs, offline, cycle-safe entry/stages)");

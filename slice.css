@@ -65,7 +65,8 @@ body[data-phase="bottom"] { --bg: #020308; --ink: #c5ced8; --accent: #8aa6ac; --
   /* B4: 周回スキン＝表紙写真をわずかに横へパン（cycle=0 は 50%＝従来どおり）。 */
   object-position: calc(50% + var(--cycle-pan, 0%)) 50%;
   transform: translateY(calc(var(--sink) * 2.4%)) scale(calc(1 + var(--sink) * 0.06));
-  transition: filter 1.6s ease, transform 3s ease, opacity 2.2s ease;
+  /* E56: --cycle-pan（周回で ±4%）の横パンも遷移＝「沈む」で cycle が進む瞬間に入口写真が跳ばない（.hz-stage と同値）。 */
+  transition: filter 1.6s ease, transform 3s ease, opacity 2.2s ease, object-position 2.4s ease;
   opacity: calc(0.78 - var(--sink) * 0.12);
 }
 
@@ -82,7 +83,8 @@ body[data-phase="bottom"] { --bg: #020308; --ink: #c5ced8; --accent: #8aa6ac; --
 body.entry-motion-paused .hz-entry-space { animation-play-state: paused; }
 /* 表紙のみ暗幕を薄くする。開始後は既存の深度フィルタへ戻し、本文の背面は維持。 */
 body:has(.hz-gate:not(.gone)):not(.reading-comfort) .hz-bg-descent {
-  filter: brightness(0.9) saturate(0.72) hue-rotate(var(--cycle-hue, 0deg));
+  /* E56: contrast(1) を挟んで通常時と関数列を揃える＝filter の 1.6s 遷移が補間される（見た目の値は不変）。 */
+  filter: brightness(0.9) saturate(0.72) contrast(1) hue-rotate(var(--cycle-hue, 0deg));
   opacity: 0.92;
 }
 /* 表紙の背後に空の選択肢帯/計器を出さない。開始後は通常の読書UIへ戻る。 */
@@ -183,10 +185,9 @@ body.surfaced .hz-bg::after { opacity: 1; }
 /* 世界の骨格の退場（JS が inline opacity を持つため !important）。 */
 body.surfaced .hz-bg-garden { opacity: 0.22 !important; transition: opacity 2.5s ease; }
 body.surfaced .hz-bg-mandala { opacity: 0.04; top: 112%; transition: opacity 2.5s ease, top 2.6s ease; }
-/* 表層世界の戻り: E29 以降、浮上の写真は base でなく .hz-stage[data-stage="surfaced"]（E29 ブロック）が担い、
+/* 表層世界の戻り: E29 以降、浮上の写真は base でなく .hz-stage[data-stage="surfaced"]（下の E55 ブロック）が担い、
    base はそこで opacity:0 に退場する。旧 `body.surfaced .hz-bg-descent { opacity:.55; filter:… }` は
-   後段の E29 規則（同特異度・後方）に常に負ける死に規則だったため E31 で削除（固定 filter の言語は
-   E29 ブロックの終端 stage 側へ移設済み）。 */
+   同特異度・後方の規則に常に負ける死に規則だったため E31 で削除（固定 filter は終端 stage 側に置く）。 */
 /* 色温度：わずかな醒め。scanline は圧を抜く。 */
 body.surfaced { --ink: #cdd6de; --accent: #8fc0cc; }
 body.surfaced .hz-scanline { opacity: 0.04; transition: opacity 2.5s ease; }
@@ -248,8 +249,8 @@ body[data-backdrop="outer"] .hz-stage[data-stage="bottom"] {
 }
 body[data-backdrop="threshold"] .hz-stage[data-stage="omega"] { object-position: calc(54% + var(--cycle-pan, 0%)) 52%; }
 /* 終端：担当 stage のみ現れ、base と他 stage は退場（深度規則は上の :not() ガードで既に不一致）。
-   E32: 終端 stage は --sink 式 filter のままだと縁（--sink≈1）で brightness≈0.19＝ほぼ黒に潰れるため、
-   base の終端と同じ「沈下 var に依存しない固定 filter」で見えを保証する（具体値の追い込みは実機の目）。 */
+   終端 stage は --sink 式に依存しない固定 filter（E32）。E55 で通常時の式が明るくなり（sink=1 で brightness .60）、
+   いまは終端のほうが一段暗い（surfaced .50／omega .52・hue-rotate なし）。値の是非は実機の目（human-gate）。 */
 body.surfaced .hz-bg-descent, body.surfaced .hz-stage { opacity: 0; }
 body.surfaced .hz-stage[data-stage="surfaced"] {
   opacity: 0.62; filter: brightness(0.5) saturate(0.6) contrast(1.04);
@@ -470,11 +471,6 @@ body.omega .hz-scene, body.surfaced .hz-scene { animation: none; }
   background: var(--bg);
   -webkit-overflow-scrolling: touch;
 }
-.hz-choices::before {
-  content: ""; position: absolute; left: 0; right: 0; top: -34px; height: 34px;
-  pointer-events: none;
-  background: linear-gradient(to top, var(--bg), transparent);
-}
 .hz-choice {
   appearance: none; -webkit-appearance: none;
   text-align: left; width: 100%;
@@ -686,9 +682,10 @@ html:lang(en) .hz-attune { text-orientation: mixed; }
 
 /* ---------- グリッジ（深度連動・描画の乱れ＝塗装が剥がれる） ----------
    既定は visibility:hidden＝idleコスト無し。JS が短いバーストで body に
-   .glitch-soft/.glitch-hard を付け、深いほど高頻度・高強度。RGBずれは descent
-   画像のゴースト(::before赤/::after青緑, screen blend)で表現＝画像複製は同一URL
-   キャッシュ流用。tear/mosh は hard のみ。reduced は静止の薄いRGBフリンジ。 */
+   .glitch-soft/.glitch-hard を付け、深いほど高頻度・高強度。RGBずれは写真の
+   ゴースト(::before赤/::after青緑, screen blend)で表現。E47 以降の入口は entry-e47 で、
+   ゴーストは旧 hero（key.webp・別構図/中央 crop）のまま＝差し替えは実機の目（E56 で記録）。
+   tear/mosh は hard のみ。reduced は静止の薄いRGBフリンジ。 */
 .hz-glitch {
   position: absolute; inset: -4%; z-index: 1; pointer-events: none;
   visibility: hidden; opacity: 0; mix-blend-mode: screen;
@@ -842,12 +839,6 @@ body.peeling .hz-peel { visibility: visible; animation: hz-peel-sweep .62s cubic
 }
 .hz-choice:active { box-shadow: inset 0 0 0 1px rgba(216,68,46,0.25); }
 
-/* 旧打ち消しクラスも、文字の外の小さな印として扱う。 */
-.hz-strike { position: relative; }
-.hz-strike::after {
-  content: ""; position: absolute; left: -0.65em; top: 0.25em; width: 2px; height: 0.9em;
-  background: var(--hand-red); opacity: 0.7;
-}
 /* 入口ボタン：スタンプ／殴り書きの枠。読める。沈むの語に手の重み。 */
 .hz-gate-enter {
   position: relative; font-weight: 800; letter-spacing: 0.5em; text-indent: 0.5em;
@@ -862,7 +853,7 @@ body.peeling .hz-peel { visibility: visible; animation: hz-peel-sweep .62s cubic
 @media (prefers-reduced-motion: reduce) {
   .hz-line .ch, .hz-line .ch.lit { opacity: 1 !important; filter: none !important; transition: none !important; }
   body[data-tension="high"] .hz-scene { animation: none; }
-  .hz-bg-descent, .hz-bg-mandala, .hz-vignette, .hz-bg-abyss, .hz-bg-grid { transition: none; }
+  .hz-bg-mandala, .hz-vignette, .hz-bg-abyss, .hz-bg-grid { transition: none; }   /* E56: .hz-bg-descent は末尾の stage 行に統合 */
   /* E6(監査): 沈下連動の幾何/色トランジションも即時化＝ゲージ伸縮(1.4s)/戻り道フェード(.8s)/地色変化(2.6s)。 */
   .hz-gauge-fill, .hz-return-paths i { transition: none; }
   body { transition: none; }
@@ -889,7 +880,7 @@ body.peeling .hz-peel { visibility: visible; animation: hz-peel-sweep .62s cubic
   /* A1: 浮上のウォッシュは transition なしで同じ静止状態へ到達する（瞬時に切り替わる）。 */
   .hz-bg::after, body.surfaced .hz-bg::after,
   body.surfaced .hz-bg-garden, body.surfaced .hz-bg-mandala,
-  body.surfaced .hz-bg-descent, body.surfaced .hz-scanline { transition: none; }
+  body.surfaced .hz-scanline { transition: none; }
   /* A1b: Ω 突破のウォッシュも同じく即時化（核の迫り上がり・底光・庭の退きを静止で）。 */
   body.omega .hz-bg::after, body.omega .hz-bg-mandala,
   body.omega .hz-bg-abyss, body.omega .hz-bg-garden { transition: none; }
@@ -897,6 +888,13 @@ body.peeling .hz-peel { visibility: visible; animation: hz-peel-sweep .62s cubic
      グリッジ・バーストに紐づくため reduced では発火せず＝事実上 off（保険で薄い静止に固定）。 */
   .hz-bg-descent, .hz-stage { transition: none; }
   body.leak-on .hz-bg-leak { opacity: 0.08; transition: none; }
+  /* E56: セッション中に OS の軽減を ON にしても JS（読み込み時の REDUCED 定数）はバーストを続けるため、
+     body.glitch-* が付いた状態でも上の静止フリンジと同じ値に固定する（特異度を揃えて後置＝必ず勝つ）。 */
+  body:is(.glitch-soft, .glitch-hard) .hz-glitch { opacity: 0.5; }
+  body:is(.glitch-soft, .glitch-hard) .hz-glitch::before { opacity: 0.06; transform: translate(-2px,0); animation: none; }
+  body:is(.glitch-soft, .glitch-hard) .hz-glitch::after  { opacity: 0.06; transform: translate(2px,0); animation: none; }
+  body:is(.glitch-soft, .glitch-hard) .hz-scanline { opacity: calc(0.05 + var(--press) * 0.14); }
+  body.glitch-hard .hz-grain { opacity: 0.03; animation: none; }
 }
 
 /* ============================================================================
@@ -920,7 +918,9 @@ body.peeling .hz-peel { visibility: visible; animation: hz-peel-sweep .62s cubic
 .hz-choice, .hz-chip, .hz-gate-enter { -webkit-tap-highlight-color: transparent; }
 ::selection { background: rgba(127,182,196,0.30); color: var(--ink); text-shadow: none; }
 @media (prefers-contrast: more) {
-  :root { --ink-dim: #858f9b; --ink-faint: #69747f; --line: rgba(127,182,196,0.44); }
+  /* E56: E55 で既定 --ink-dim が #98a7b7（8.3:1）へ上がり、ここが #858f9b（6.2:1）＝「濃く」の選択で逆に薄くなっていた。
+     既定より明るい値に是正（#b3c0cd≈10.9:1）。 */
+  :root { --ink-dim: #b3c0cd; --ink-faint: #69747f; --line: rgba(127,182,196,0.44); }
 }
 
 /* ============================================================================
@@ -937,6 +937,9 @@ body.peeling .hz-peel { visibility: visible; animation: hz-peel-sweep .62s cubic
 .hz-choice.unchosen { opacity: 0.3; transition: opacity .14s ease; }
 .hz-choice.ghost { opacity: 0.38; }
 .hz-choice.ghost .lead { color: var(--ink-dim); letter-spacing: 0.05em; }
+/* E56: locked/ghost/echo-skip は固有の opacity（.5/.38/.75）が .hz-choice{opacity:0} に勝って出現演出を飛ばし、
+   最後に出るはずの扉が先に見えていた。.in が付くまでは他の択と同じく不可視にする。 */
+.hz-choice:is(.locked, .ghost, .echo-skip):not(.in) { opacity: 0; }
 
 /* E44: opt-inの読書優先。進行・文字送り・音量は変えず、文字と背景を分ける。 */
 body.reading-comfort {
