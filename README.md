@@ -6,23 +6,24 @@ Hazama は、沈むほど戻りにくい「降下する対話」の没入型静�
 
 ## 構成（単一ビルド）
 
-- `index.html` : エントリーポイント（没入シェル＝9層アート＋本文＋選択＋認識インジケータ・初回ガイド・全文表示・読む/聴く設定・忘却の確認）
+- `index.html` : エントリーポイント（没入シェル＝入口写真＋景色4枚＋9層アート＋本文＋選択＋認識インジケータ・初回ガイド・全文表示・読む/聴く設定・忘却の確認）
 - `slice.js` : エンジン（reveal/全文表示・ページ内設定と記憶を残す再読み込み・表示専用の言語切替・沈下/認識/Ωゲート・エコー門・二極終端と振り返り・全候補表示後の選択解放・物語の位置に応じた背景・反転ガーデン/曼荼羅/グリッジ・内製Audio・below∞生成・spiral 記憶・縁カード）
 - E55.1: 深度データの取得/本文読了が10秒以内に完了しない場合に、既存の再試行を表示する。[再現・検証メモ](docs/playtest/boot-data-timeout-e55-1.md)。採用・配信状況は[作業台帳](docs/autonomy/SESSION-LEDGER.md)を参照。
 - `locales/en.json` : 英語試作カタログ（初回の身体の道＋共有終端/操作/エコー候補。全面英語対応ではない）
 - `slice.css` : 没入表示（深部の絵を黒に潰さない露出・本文の薄い暗幕・文字に重ならない痕跡）と、背景の明滅/揺れを抑える読書優先表示
 - `depths-shell.json` : 深度本文データ（depthMeta v0 スキーマ・沈下スパイン・72ノード）
-- `manifest.webmanifest` / `sw.js` / `icons/` : PWA install / offline shell（cache prefix `hazama-pwa-`）。E56: core（html/css/js/depths/manifest）だけ atomic に precache し視覚 asset は activate 後に best-effort、network の HTML は cache に書かない（offline の HTML は同版の precache のみ）
+- `manifest.webmanifest` / `sw.js` / `icons/` : PWA install / offline shell（cache prefix `hazama-pwa-`）。E56: core（html/css/js/depths/manifest）だけ atomic に precache し、視覚 asset・英語カタログ・`lp.html`（E57）は activate 後に best-effort（E57: 取り残しは次の fetch で一度だけ再走）、network の HTML は cache に書かない（offline の HTML は同版の precache のみ・入口以外は precache に無ければ network error）
 - `assets/hazama-descent-entry-e47.webp` : E47の入口（候補01を採用・原画と画素一致のlossless WebP）。36秒で僅かに寄って静まる有限カメラ。`hazama-descent-{drift,bottom,surfaced,omega}.webp` の4枚と周回セットBは深度/終端で引き継ぐ。旧`hazama-descent-key.webp`と`og-card.jpg`は共有OG画像として保持。
+- `lp.html` : 紹介LP（表玄関）。slice ランタイム非依存の自己完結ページで本編（`./`）へ導線、OG は `assets/og-card.jpg`。E57 から SW の optional precache 対象（offline でも再表示）
 - 検証: `scripts/hazama-check.mjs`（`autonomy-docs` ＋ `build-consistency` の2本）
 - 制作候補: `docs/BLENDER-AUTHORING.md`（WorkerPC Blender 5.2をrepo外の静止画制作実行器に限定。runtime非依存）
-- ビジュアル01: [本編E55](https://quietbriony.github.io/hazama/?v=e55) / [採用前の静止比較](https://quietbriony.github.io/hazama/tools/visual/visual-preview.html?v=visual-20260920-1) / [入口の実装と確認](docs/playtest/visual-entry-e47.md)。E55は入口→漂流→外殻→裏側→Ωの手前で既存の絵と視点を切り替える。実機の見え方は人間の確認待ち。
+- ビジュアル01: [本編](https://quietbriony.github.io/hazama/)（E55で統合） / [採用前の静止比較](https://quietbriony.github.io/hazama/tools/visual/visual-preview.html?v=visual-20260920-1) / [入口の実装と確認](docs/playtest/visual-entry-e47.md)。E55は入口→漂流→外殻→裏側→Ωの手前で既存の絵と視点を切り替える。実機の見え方は人間の確認待ち。
 - ビジュアル02: [スマホで操作できる「間の駅」](https://quietbriony.github.io/hazama/tools/visual/station-window-lab.html?v=station-20260928-1) / [制作・試遊メモ](docs/playtest/station-window-study-20260928.md)。同じ窓を見直すことで変わる景色を、tools-onlyの独立ページで検証中。本編未接続・実機の体感判断待ち。
 - ビジュアル03: [スマホで比較するThree.js奥行き版](https://quietbriony.github.io/hazama/tools/visual/station-window-three-lab.html?v=depth-20260930-1) / [A/Bメモ](docs/playtest/station-three-study-20260929.md)。02と同じ話・画で視点移動を比較。影の位置同期・遅延出現・視点リセット・縦タッチ操作を整備。本編未接続。固定CDN読込はこの独立ページ限り。
 - E55: [没入の改稿・痕跡・背景・更新表示](docs/playtest/immersion-e55.md)。Ωの端末名/説明列挙を景色と気配へ改稿。入口は周回後も八観を並べず、通った道の感覚を返す。設定に表示中の版と記憶を消さない再読み込みを追加。進行値・行き先・保存形式・音は不変。
 - 表紙タイトル: E50で一語の「HAZAMA」を見出しにし、重なっていた赤/シアンの文字を外した。スマホ幅と旧版からの更新を公開ページで確認済み。
 - 体験版候補: [E41 初見テスト](docs/playtest/steam-demo-candidate-e41.md)（既存Web版の初回２ルート・人間の評価待ち。Steam提出用ビルドではない）
-- E53公開候補: [E52の選択公平性](docs/playtest/choice-fairness-e52.md)に[身体の道の場面・選択文](docs/playtest/body-route-e53.md)を追加。戻り道0本時の費用表示も実際の挙動に合わせた。人間の初見評価はまだ。
+- E53公開: [E52の選択公平性](docs/playtest/choice-fairness-e52.md)に[身体の道の場面・選択文](docs/playtest/body-route-e53.md)を追加。戻り道0本時の費用表示も実際の挙動に合わせた。人間の初見評価はまだ。
 - E54公開: [構造の道B/C/Dの選択文](docs/playtest/structure-opening-e54.md)を場面と実際の戻り道コストに合わせた。Cの退路0本時も「戻れる」と案内せず、押せる退路を暗くしすぎない。進行・保存・音は不変。
 - Steam版の構成案: [Web本体とPC包装の分離](docs/playtest/steam-desktop-plan-e51.md)。実行ファイルは未作成。販売品質・Steam登録・審査は未達。
 - 冒頭導線: [E49 異変→選択→反応](docs/playtest/opening-hook-e49.md)から、E55で再訪Aの用語一覧も撤去。名付けは流れの道の中盤以降へ残し、入口は二つの感覚に絞る。初見の面白さは人間の試遊待ち。
@@ -35,7 +36,7 @@ Hazama は、沈むほど戻りにくい「降下する対話」の没入型静�
 
 > 旧 forward 実装（Gate Run 資源ゲーム・Music ブリッジ・v2.x 系）と `slice/` 重複・別プレビュー repo は
 > 整理・撤去済み。履歴は git に保全（ロールバック: `f8763f2` 没入初版 / `7d5def9` forward v2.45 /
-> `acba549` 旧codex）。沿革は本書末尾。
+> `acba549` 旧codex）。沿革は本書後半（Status / Rules の前）。
 
 ## 記憶（spiral 層） — E1
 
@@ -43,7 +44,10 @@ Hazama は、沈むほど戻りにくい「降下する対話」の没入型静�
 
 - 保存先: `localStorage` key `hazama_spiral_v1`
 - 保存するもの（集計済みの spiral 層のみ）: 周回 `cycle`・認識 `attunement`・訪問履歴 `visits`・
-  below(∞) 周回 `belowLoop`・持ち越し `legacy`（cycles / surfaceBounces / detoursSeen / maxRank）
+  below(∞) 周回 `belowLoop`・持ち越し `legacy`（cycles / surfaceBounces / detoursSeen / maxRank）・
+  前回降下したか `sank`（次の「沈む」で周回を進める判定）
+- spiral 層とは別キーに、初回ヒントの既読フラグ（`hazama_onboarded_v1`・`hazama_echo_onboarded_v1`・
+  `hazama_attune_gloss_v1`、値は `"1"` のみ）を残す。「すべて忘れる」はこれらを消さない。読む・聴く設定と言語は保存しない
 - 保存しないもの: transient（沈下 sink / 圧 dread / 戻り道 returnPaths / 観測者 observer）。
   閉じて戻るのは「浮上して、もう一度沈む」＝入口は新しく、世界だけが覚えている
 - 前セッションで実際に降下していた場合のみ、次の「沈む」で周回が一つ深まる
@@ -69,7 +73,7 @@ PNG カードに描く（worldSeed 決定論＝同じ縁は同じカード）。
 
 - 表紙の「沈む」で開始（音あり推奨・このタップで内製 Web Audio が解禁される）
 - 表紙の「Language / 言語」で `English (trial)` を選ぶと、初回の身体の道を英語で遊べる。
-  他の道・周回の変奏・共有画像には日本語が残る。未翻訳本文と道は明示し、選択肢を減らさない。
+  他の道・周回の本文の変奏・共有画像には日本語が残る（択の文言の変奏は英語では適用しない — E57）。未翻訳本文と道は明示し、選択肢を減らさない。
   言語は開始前に選び、再読み込みで日本語へ戻る。翻訳取得失敗時も日本語は起動できる。
   英語話者の確認手順は [E43 English trial](docs/playtest/english-trial-e43.md)
 - 表紙/プレイ中の「読む・聴く設定」で、本文と択を標準/115%/130%へ拡大、文字送りを自動全文表示へ変更、
@@ -77,6 +81,8 @@ PNG カードに描く（worldSeed 決定論＝同じ縁は同じカード）。
   設定はページ内だけで、再読み込みで標準へ戻る。spiral記憶には保存しない。OSの視覚効果軽減は優先される
 - 同じ設定の「読書優先」で、文字と操作のコントラストを上げ、本文の背面を不透明にし、背景の明滅/揺れを抑える。
   既定はオフ。文字送り・音・物語の選択は別のままで、途中でオン/オフにしても記憶を変えない
+- 同じ設定の「表示中の版」で現在の版を確かめ、「更新を確認して開き直す」で入口から読み直せる（周回・認識・痕跡は残る）。
+  「回路による音の気配」をオフにすると固定の応答に戻る（視覚効果軽減時は無効）
 - キーボードではTabで本文へ移り、矢印/Page Up/Page Down/Home/Endでスクロールできる。
   読み戻している間は新しい段落の自動追従を解除する。Tabで続けて選択肢へ移れる
 - 「全文を表示」で、その画面の残りの本文を読む。初見でも使用でき、読んでいる位置を保つ。
@@ -85,9 +91,11 @@ PNG カードに描く（worldSeed 決定論＝同じ縁は同じカード）。
   - 構造で読む（descend）＝沈む。**深い構造読み（編み目をなぞる・問いを立てる類）だけが認識を育てる**。
     ただ下りるだけの降下は育たない。戻り道 −1 のことがある
   - 表層で読む（surface）＝世界に弾かれ、別の筋へ逸れて前進する。**認識が少し剥がれる**
-  - 戻ろうとする（retreat）＝浅いうちは少し戻れる。観測者 3〜 は引き込まれ、9〜 は戻れない
+    （A の岐路の「編み目から手を離し、ただ身体で受けとめる」だけは弾かれず身体の道へ入り、認識も剥がれない — E16/E25）
+  - 戻ろうとする（retreat）＝浅いうちは少し戻れる。観測者 3〜 は引き込まれ、9〜 または戻り道が尽きると戻れない
+    （その時は戻り道を消費せず、「戻り道 −1」の表示も「効かない／尽きた」に変わる — E56）
 - 深度 Q・Z の**エコー門**: 降下で視た断片を真偽混合から選ぶ。視ていれば認識が育ち（+2）、
-  借り物の記憶では剥がれる（−1）。「目を逸らし、先へ」は正直なスキップ。周回ごとに一度
+  借り物の記憶では剥がれる（−1）。「目を逸らし、先へ」（Z では「目を閉じ、Ωへ」）は正直なスキップ。周回ごとに一度
 - 右端の計器: 沈下ゲージ・戻り道・観測者・認識 ◆（資源UIではない、感じるための線）
 - `♪` chip: 内製 BGM の一時停止/再開
 - 縁での「もう一度沈む / すべて忘れる」は上記の通り
@@ -111,16 +119,18 @@ python -m http.server 8000
 node scripts/hazama-check.mjs
 ```
 
-- `autonomy-docs` : `AGENTS.md` / `docs/autonomy/` / playtest テンプレートの接続を依存なしで確認
-- `build-consistency` : 単一ビルドの実体検証 — 必須/撤去ファイル、`?v=` と `sw.js` cache の version 同期、
+- `autonomy-docs` : `AGENTS.md` / `docs/autonomy/` / playtest テンプレート・試遊案内の接続、英語案内の択ラベルと `locales/en.json` の一致、BACKLOG の human-gate（HZ-BL-001/002）を依存なしで確認
+- `build-consistency` : 単一ビルドの実体検証 — 必須/撤去ファイル、版の 8 点同期（`AGENTS.md` 参照）と index/slice の全 `?v=` 参照、
   没入シェル構造、認識/Ωゲート・二極終端、spiral 記憶（transient を保存していないこと）、
-  認識2.0 契約（ECHO_BANK≥15・全キー実在・deep≥10・表層侵食・エコー門）、
+  認識2.0 契約（ECHO_BANK≥20・全キー実在・deep≥10・表層侵食・エコー門）、
   縁の二択と縁カード、出現中の連打・古い画面の遅延処理・reduced-motion下の単一選択、
+  SW の install/activate と inline boot（更新待ち・期限・再試行）の VM 実走、OG/LP/manifest、英語カタログの孤児キー/プレースホルダ、
   README/AGENTS が存在しない scripts を案内していないこと、depths グラフ到達性
 - tools-only音実験の回帰: `scripts/sensory-frame-smoke.mjs` / `scripts/neural-modulator-smoke.mjs`も単一checkに含む。再現性・反応/回復・長時間の数値境界・停止/非表示・音量上限を確認する。音質の合格判定ではない。
 - 本文付き比較の回帰: `scripts/scene-response-smoke.mjs`はE44原型Audioのhash固定、本文抜粋とA/B/Cスコアの維持、Dの単一Contextと音量/負荷tier/停止を検証する。E45以降は比較のAを現行音へ自動置換しない。
 - 入口の絵/動き: `scripts/entry-visual-smoke.mjs`は採用画像とprecache、有限カメラ、読書優先/視覚効果軽減/非表示、周回後も同じ入口と深度4枚の変奏を検証する。
 - 本編応答の回帰: `scripts/world-response-smoke.mjs`は実際のAudioとchoose/resolveResistから、認識の節目/再訪/抗いの接続、単一mix/音量、声数上限、停止/中断/遅延resume取消を検証する。
+- その他の回帰（`build-consistency` が import して同時実行・計13本）: `scripts/audio-governor-smoke.mjs`（E31 本番Audioの負荷/lifecycle）・`scripts/fly-circuit-smoke.mjs`（E46 縮約回路の出典/境界）・`scripts/choice-commit-smoke.mjs`（全候補表示後の解放・古い画面・reduced・鍵・忘却の確認/取消）・`scripts/reading-control-smoke.mjs`（全文表示/自動全文表示が進行・採点を進めない）・`scripts/reading-settings-smoke.mjs`（ページ内設定・読書優先・modal focus・音量/消音）・`scripts/reading-locale-smoke.mjs`（英語試作の表示専用・日本語fallback）・`scripts/immersion-copy-smoke.mjs`（E55の文言・再訪・景色5地点）・`scripts/depth-loading-smoke.mjs`（E55.1 深度読込の停止→再試行）。
 
 `0 FAIL` が commit 前提（`AGENTS.md` 参照）。
 

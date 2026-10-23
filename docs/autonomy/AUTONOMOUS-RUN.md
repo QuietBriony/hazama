@@ -52,7 +52,7 @@ Claude と Codex が同時に動く場合:
 
 - docs / autonomy 整備: docs だけを編集し、runtime version は bump しない
 - smoke / script: no dependency のまま追加
-- runtime UI: `index.html` / `slice.js` / `sw.js` の `?v=` 同期を確認（`build-consistency` が検証）
+- runtime UI: `index.html` / `slice.js` / `sw.js` の版 8 点（`AGENTS.md` の Version / Cache Discipline）を揃える（`build-consistency` が検証）
 - 手触り: `slice.js` の ATTUNE / RESIST_STRAIN / DEEP_LOCK 定数は manual play note と一緒に変える
 
 ## 6. 検証

@@ -21,7 +21,8 @@ import "./depth-loading-smoke.mjs";
 const root = process.cwd();
 const failures = [];
 const repoPath = (p) => path.join(root, p);
-const read = (p) => readFileSync(repoPath(p), "utf8");
+// 改行は LF に正規化して照合する＝autocrlf=true の新しい clone（CRLF 作業ツリー）でも契約が同じ結果になる（2026-10-24 文書監査 J3: 新しい clone で 3 契約が FAIL していた）。
+const read = (p) => readFileSync(repoPath(p), "utf8").replace(/\r\n?/g, "\n");
 const assert = (c, m) => { if (!c) failures.push(m); };
 const has = (t, n, label) => assert(t.includes(n), `${label} missing: ${n}`);
 const nonEmpty = (p) => { const fp = repoPath(p); assert(existsSync(fp), `missing: ${p}`); if (existsSync(fp)) assert(statSync(fp).size > 0, `empty: ${p}`); };

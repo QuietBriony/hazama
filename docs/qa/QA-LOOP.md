@@ -39,8 +39,8 @@
 
 - **本体不変が既定**: `slice.js` / `depths-shell.json` / 原典は、Phase 3 で**実バグを直す時だけ**触る。
   LP(`lp.html`)は本体と別系統。「展開を変える」改修は QA ループの仕事ではない（BACKLOG 案件）。
-- **version 同期**: runtime を1行でも変えたら `index.html` の `?v=`・`slice.js` の depths fetch `?v=`・
-  `sw.js` の `VERSION` を必ず揃える（`build-consistency` が落とす）。docs/CSV だけの変更では bump しない。
+- **version 同期**: runtime を1行でも変えたら `AGENTS.md` の Version / Cache Discipline の 8 点（`index.html` の css link・`SW_URL`・`RUNTIME_URL`・表示中の版、
+  `slice.js` の locales/depths fetch・SW 登録、`sw.js` の `VERSION`）を必ず揃える（`build-consistency` が落とす）。docs/CSV だけの変更では bump しない。
 - **検証の正**: 各修正後に `node scripts/hazama-check.mjs` が **0 FAIL**。挙動はブラウザ preview で確認。
 - **human-gate は agent が done にしない**: 音（軸色 setAxis / 呼気 breath = E21）・実機 PWA install/offline・
   mobile の手触り・音の体感。これらは P2 に「human-gate: 要実機」と記録し、人間に上げる（CSV human_gate=yes）。
@@ -52,7 +52,7 @@
 
 ## テスト手段（Phase 2 / 4）
 
-- ヘッドレス: `node scripts/hazama-check.mjs`（必須/撤去ファイル・version 三点同期・認識/Ωゲート・
+- ヘッドレス: `node scripts/hazama-check.mjs`（必須/撤去ファイル・version 8 点同期・認識/Ωゲート・
   二極終端・spiral 契約・エコー門・縁カード・depths 到達性）。
 - ブラウザ: `python -m http.server 8740` を立て、preview ツールで
   `沈む → 零章 → 構造/表層/戻る → エコー門 → 二極終端 → 縁の二択 → 再降下で周回深化` を実走。

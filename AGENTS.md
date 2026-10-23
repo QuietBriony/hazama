@@ -74,10 +74,11 @@ node scripts/build-consistency-smoke.mjs
 
 ## Version / Cache Discipline
 
-runtime asset を変える時は同期を忘れない。
+runtime asset を変える時は同期を忘れない（版は次の 8 点。`build-consistency` が 8 点と index/slice の全 `?v=` 参照を検証する）。
 
-- `index.html` の `?v=...`（css/js）と `slice.js` の depths fetch `?v=...` を揃える
-- `sw.js` の `VERSION`（`hazama-pwa-...`）も同じ version に揃える（`build-consistency` が検証する）
+- `index.html`: css link の `slice.css?v=...`・inline boot の `SW_URL`（`sw.js?v=...`）と `RUNTIME_URL`（`slice.js?v=...`）・設定の表示中の版 `<output id="build-version">`（大文字表記・例 `E57`）
+- `slice.js`: locales fetch（`locales/en.json?v=...`）・depths fetch（`depths-shell.json?v=...`）・SW 登録（`sw.js?v=...`）
+- `sw.js` の `VERSION`（`hazama-pwa-...`。precache の `?v=` は `RELEASE` で自動追従）
 - README の構成説明を更新する
 
 docs-only / autonomy-only 変更では app version と PWA cache は bump しない。

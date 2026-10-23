@@ -49,6 +49,7 @@ python -m http.server 8765
 3. インストール済みアプリを再起動、またはブラウザで Hazama URL をリロードする。
 4. アプリシェルがオフラインでも表示されることを確認する（ブラウザのネットワークエラー画面でないこと）。
 5. 「沈む」→ 零章 の降下がオフラインで動作することを確認する。
+   （E57）同じオフライン状態で `lp.html` も再表示されることを確認する（optional precache 済みの場合。入口以外の HTML は precache に無ければ network error）。
 6. ネットワークを再有効化し、もう一度リロードして正常に起動することを確認する。
 
 ## 更新途中の Offline 再起動確認（E56）
@@ -76,7 +77,7 @@ python -m http.server 8765
 
 1. 「縁から、もう一度沈む」または「すべて忘れる」の二択が表示されることを確認する。
 2. 「もう一度沈む」で spiral 層を保持したまま零章へ戻ることを確認する。
-3. 「すべて忘れる」で spiral 層が消去され、表紙が初期状態に戻ることを確認する。
+3. 「すべて忘れる」で確認 dialog が開き、「すべて忘れて始める」で spiral 層が消去されて零章から初回（周回 0）として始まることを確認する（取り消し/Esc では記憶は変わらない）。
 4. 「縁を画像で残す」chip が結末カードを PNG 出力することを確認する。
 
 ## Pass 条件（期待する結果）
@@ -104,9 +105,10 @@ python -m http.server 8765
 
 - install 不可: ブラウザ・プラットフォーム・manifest の可視性・origin を記録する。
 - オフラインリロード失敗: service worker 登録・cache version・初回 visit の完了有無を確認する。
-- アプリシェル空白: `index.html` / `sw.js` の version 同期を確認する。
+- アプリシェル空白: 版の 8 点同期（`AGENTS.md` の Version / Cache Discipline）を `node scripts/build-consistency-smoke.mjs` で確認する。
 - spiral 記憶が保持されない: `localStorage` key `hazama_spiral_v1` の内容をコンソールで確認する。
 - mobile 操作不可: viewport・端末・ブロックされた操作を記録する。
+- 入口に「起動データを読み込めません」（runtime が 20 秒で届かない）・「深度データを読み込めません」（深度が 10 秒で届かない）・「更新を適用できません」（新 SW へ 10 秒で切り替わらない）が出た: 通信状態と served URL を記録し、「再試行」で起動できるか確認する。
 
 ## Closeout Rule
 

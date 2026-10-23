@@ -77,7 +77,7 @@ BACKLOG の open item を 1 つだけ選び、小さく完了させて。
 - 音は内製 Audio（外部依存なし）
 - raw input 保存なし（保存は集計済み spiral 層のみ）
 - 音源/依存/GitHub Actions 追加なし
-- runtime を触ったら index.html / slice.js / sw.js の `?v=` 整合を見る（build-consistency が検証）
+- runtime を触ったら index.html / slice.js / sw.js の版 8 点（AGENTS.md の Version / Cache Discipline）を揃える（build-consistency が検証）
 ```
 
 ## Merge / Closeout

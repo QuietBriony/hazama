@@ -8,7 +8,7 @@ Hazama を小さな session 単位で進めるための開発エンジンです�
 - [SESSION-LEDGER.md](SESSION-LEDGER.md) — 追記専用ログ
 - [pwa-install-offline-checklist.md](pwa-install-offline-checklist.md) — HZ-BL-001 実機確認チェックリスト
 - [pwa-install-offline-result-template.md](pwa-install-offline-result-template.md) — HZ-BL-001 実機結果テンプレート
-- [browser-smoke-fallback.md](browser-smoke-fallback.md) — Playwright skip 時の手動 fallback
+- [browser-smoke-fallback.md](browser-smoke-fallback.md) — 手動ブラウザ確認チェックリスト（自動 browser smoke は無い）
 - [closeout-checklist.md](closeout-checklist.md) — agent handoff / commit 前の締めチェック
 - [harness-quality-checklist-candidate-001.md](harness-quality-checklist-candidate-001.md) — autonomy run / return packet の品質チェック候補
 - [next-agent-prompts.md](next-agent-prompts.md) — 次 agent へ渡すコピペ用プロンプト

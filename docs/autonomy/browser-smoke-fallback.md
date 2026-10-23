@@ -27,11 +27,11 @@ Playwright は本リポジトリの必須依存ではなく、このファイル
 
 ### 3. 縁の二極と二択
 
-- [ ] 認識 ≥ 6 で深度 Ω に到達し、深度 Ω 到達の結末（縁）へ進める。
-- [ ] 認識未達の場合は浮上の結末（縁）へ進む。いずれも有効な終端として機能する。
+- [ ] 認識 ≥ 6 のとき reborn の「核の外周を貫いて、観測をやめる」（賭け）が押せ、選ぶと深度 Ω 到達の結末（縁）へ進む。認識 <6 では同じ択が鍵付きで押せない。
+- [ ] 認識未達、または「ここで、静かに浮上する」を選んだ場合は浮上の結末（縁）へ進む。いずれも有効な終端として機能する。
 - [ ] 縁で「縁から、もう一度沈む」と「すべて忘れる」の二択が表示される。
 - [ ] 「もう一度沈む」で spiral 層を保持したまま零章へ戻る（周回が深まる）。
-- [ ] 「すべて忘れる」で spiral 層が消去され、表紙が初期状態に戻る。
+- [ ] 「すべて忘れる」で確認 dialog が開き、初期 focus は「記憶を残す」。取り消し/Esc では記憶が変わらない。「すべて忘れて始める」で spiral 層が消去され、表紙を経ずに零章から初回（周回 0）として始まる。
 - [ ] 「縁を画像で残す」chip で結末カード PNG が出力される。
 
 ### 4. リロードによる spiral 記憶復元
@@ -56,7 +56,7 @@ Playwright は本リポジトリの必須依存ではなく、このファイル
 
 - [ ] 旧版の Service Worker / cache を残した同一 origin へ新版を配信し、サイトデータを消さず1回だけ再読み込みする。
 - [ ] 表紙が「更新を確認中…」からreadyへ戻り、追加reloadなしで新版runtimeの「沈む」が機能する。
-- [ ] 更新中に必須runtimeを取得できない場合は入口をdisabledの失敗表示に留め、旧Hazama cacheを削除しない。配信復旧後のreloadで新版へ移行する。
+- [ ] 更新中に新SWへ10秒で切り替わらない場合、新版のcss/jsが既にcacheにあればそのまま起動し、無ければ入口に「更新を適用できません。通信を確認して再試行してください。」と押せる「再試行」を出す。旧Hazama cacheは削除しない。遅れて新SWがactivateすれば自動reload、または配信復旧後の「再試行」で新版へ移行する。
 - [ ] そのまま再訪してruntimeが二重起動せず、更新loopも起きない。
 - [ ] 一度onlineで開いた後に静的サーバを止め、offline reloadから「沈む」→最初の択まで進める。
 - [ ] Hazama以外の同一origin cacheを削除していない。
@@ -75,11 +75,11 @@ Playwright は本リポジトリの必須依存ではなく、このファイル
 
 ## 退役済みスクリプト
 
-旧 forward 実装時代の browser smoke スクリプトは逆統合 R9 で撤去済みです。
-このリポジトリで参照できる script は以下のみです:
+旧 forward 実装時代の browser smoke スクリプトは逆統合 R9 で撤去済みです（自動 browser smoke は無い）。
+このリポジトリの script は以下です:
 
-- `scripts/hazama-check.mjs`
+- `scripts/hazama-check.mjs`（単一入口）
 - `scripts/autonomy-docs-smoke.mjs`
 - `scripts/build-consistency-smoke.mjs`
-- `scripts/audio-governor-smoke.mjs`（`build-consistency` から自動実行）
-- `scripts/sensory-frame-smoke.mjs`（`build-consistency` から自動実行）
+- `build-consistency` から自動実行（13本）: `scripts/audio-governor-smoke.mjs` / `scripts/world-response-smoke.mjs` / `scripts/fly-circuit-smoke.mjs` / `scripts/sensory-frame-smoke.mjs` / `scripts/scene-response-smoke.mjs` / `scripts/neural-modulator-smoke.mjs` / `scripts/choice-commit-smoke.mjs` / `scripts/reading-control-smoke.mjs` / `scripts/reading-settings-smoke.mjs` / `scripts/reading-locale-smoke.mjs` / `scripts/entry-visual-smoke.mjs` / `scripts/immersion-copy-smoke.mjs` / `scripts/depth-loading-smoke.mjs`
+- `scripts/project-fly-circuit.mjs`（E46 の一度きりの制作用ユーティリティ・check 対象外）

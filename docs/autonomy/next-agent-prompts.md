@@ -24,12 +24,15 @@ Required checks:
 - Run git status --short --branch before editing.
 - Run node scripts/hazama-check.mjs before handoff; note PASS/FAIL.
 - Human verification should cover: install prompt, standalone launch, first visit then
-  offline reload, 「沈む」→ 零章 → a few descend choices, and reload-restore of the
-  spiral memory (gate greets the returning observer and the next 沈む deepens the cycle).
+  offline reload, 「沈む」→ 零章 → a few descend choices, reload-restore of the
+  spiral memory (gate greets the returning observer and the next 沈む deepens the cycle),
+  and the update path in pwa-install-offline-checklist.md（更新途中の Offline 再起動確認（E56））.
 - Final response must summarize human result, changed files, check output, and blockers.
 ```
 
 ## E23 Testament Independent Verification (for Codex/Hermes — read-only on runtime)
+
+> 完了済み（2026-07-10・本番 `?v=e23` で matrix 7/7 PASS・SESSION-LEDGER「E23 生成 testament 独立検証」）。再検証に使う時は対象の版を現行本番へ読み替える。
 
 ```text
 You are working in C:\workspace\hazama. The worktree may be dirty from other agents;
@@ -66,6 +69,8 @@ Required checks:
 
 ## Spiral Hardening (HZ-BL-011, for Codex — start AFTER E3 lands)
 
+> 完了済み（HZ-BL-011 ✅ 2026-07-07・BACKLOG Done 参照）。再利用する時も E3 待ちの前提は不要。
+
 ```text
 You are working in C:\workspace\hazama. The worktree may be dirty from other agents;
 do not revert or overwrite changes you did not make. Confirm in
@@ -88,8 +93,9 @@ Scope boundaries:
 Required checks:
 - Run git status --short --branch before editing.
 - node --check slice.js, then node scripts/hazama-check.mjs (2 PASS / 0 FAIL).
-- If slice.js changed, bump ?v= in index.html (css+js), slice.js depths fetch, and
-  sw.js VERSION together (build-consistency enforces sync).
+- If slice.js changed, bump all 8 version points together per AGENTS.md Version / Cache Discipline
+  (index.html css link / SW_URL / RUNTIME_URL / build-version, slice.js locales fetch / depths fetch /
+  SW register, sw.js VERSION); build-consistency enforces sync.
 - Final response: changed files, guards added, check output, and a SESSION-LEDGER entry draft.
 ```
 
