@@ -139,6 +139,59 @@ Hazama 自律開発の作業待ち行列。
 
 ## P2
 
+### HZ-BL-037 — depths の文言・データ提案（E57 レビューの作家判断分）
+- priority : P2
+- scope    : docs / balance
+- agent    : human
+- human-gate: yes
+- status   : open
+- source   : 2026-10-23 E57 第2輪レビュー（レンズ6: depths 監査）
+- detail   : (1) E[1]「戻り道（だが…）」・G[1]「止めても圧は消えない」は観測者 3〜8・残>0 で −1 を消費するのに費用を書かない
+  （隣の [0] は書く）。(2) E55 で A の八観一覧を外した後、T[4]「八観の、上位相」・V[5]「観察者観」が構造の道では前置きなしに出る。
+  (3) ECHO_BANK.A「表皮が剥がれ…」は E49 以前の A[0] の語（現 A[0] は「ピクセルが浮き／鉄錆色の配線」）。(4) reborn 変奏 #1/#2 の
+  「木目」が reborn[1] と像を重ねる。(5) M[0]「観測者を一枚増やす」・H[0]「二重観測者」・below[1] は観測者数が増えない（max 規則）。
+  (6) edge の sankLines と heldLines が初版から同一＝Ω 側の sank 分岐が効いていない。(7) _meta.schema/about の古い記述、
+  maps_to/procedural/branch・冗長な failTo/back。文言とデータの変更は作家の判断で、agent は提案まで。
+
+### HZ-BL-038 — 分岐機構の設計判断（E57 レビューの見送り分）
+- priority : P2
+- scope    : balance / runtime
+- agent    : either
+- human-gate: yes
+- status   : open
+- source   : 2026-10-23 E57 第2輪レビュー（レンズ6）
+- detail   : (1) エコー門の偽候補は未訪問の ECHO_BANK からだけ選ぶため、構造の道を 1 周し det_* も見ると偽が 0 になり、門が
+  「真 1＋逸らし」だけ（必ず +2）になる（実 seed で cycle5 以降）。偽 0 なら門を出さない／固定の偽断片／バンク拡張のいずれか。
+  (2) cycle0 の J[2]（表層読み）は seed 入力が常に同じで毎回 det_eightview（初見不変の帰結。散らすなら transient を seed へ）。
+  (3) cycle≥1 で A から入る寄り道の observer（3〜5）で C[2] の退路が浅い/中盤分岐に分かれ、ビートの有無が変わる。
+  いずれも進行値・分岐結果が変わるので BACKLOG で claim してから。
+
+### HZ-BL-039 — 英語試作の翻訳判断（E57 レビューの見送り分）
+- priority : P2
+- scope    : docs / runtime
+- agent    : human
+- human-gate: yes
+- status   : open
+- source   : 2026-10-23 E57 第2輪レビュー（レンズ7: 英語カタログ）
+- detail   : (1) 人称: 浮上側結末の self 行「あなたは光のほうへ…」が "I rise…"（他 2 行は you）、zero/A の self が you、Ω/reborn の
+  cold/danger が I（意図か）。(2) 訳語ゆれ: 周回=cycle/loop、外殻=outer shell/shell/threshold、賭け=stake/wager、降り方=way down/path/
+  descents、痕跡=Trace/A trace。(3) 結末記録カードの英語版に「降り方」「未達のヒント」「（合致）」「外殻踏破」が無い。
+  (4) 音 chip の英訳が状態（Sound on/off）で日本語（鳴らす＝動作）とずれる。(5) lang 属性の明示は 5 箇所のみ（未訳が入ると英語発音で
+  読まれる）＝共通ヘルパ化。(6) language-note に「記憶のない最初の降下が対象」を明記（記憶ありでは本文行に日本語の変奏が出る）。
+  (7) 遺言マーク「・遺言／深度N」の英訳。暫定訳の案はレビュー記録にあり、採否は人間。
+
+### HZ-BL-040 — a11y の設計判断（E57 レビューの見送り分）
+- priority : P2
+- scope    : runtime / verify
+- agent    : either
+- human-gate: yes
+- status   : open
+- source   : 2026-10-23 E57 第2輪レビュー（レンズ8: a11y・SR・キーボード）
+- detail   : (1) ロック択「まだ届かない（認識 N/6）」と封印された扉は disabled＝Tab 巡回から消える（E19/E27 は focus 対象外を意図）。
+  Tab/スイッチ利用者に存在を伝えるなら disabled を外し aria-disabled＋pointer-events:none へ。(2) 着地先を先頭の択でなく
+  「今回の本文の先頭行／門の結果ビート」にする構造案（本文→ヒント→択の順に読める。Tab が 1 回増える）。(3) 「全文を表示」chip が
+  読了後も disabled で残り、ブラウズ読みのたびに「使用不可」が挟まる。(4) 実 SR（VoiceOver/NVDA）での発話確認は未実施。
+
 ### HZ-BL-034 — reborn からの物語内再降下で退路が必ず失敗する機構の採否（C の failTo 不在を含む）
 - priority : P2
 - scope    : balance / research

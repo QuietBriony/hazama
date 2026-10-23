@@ -106,7 +106,7 @@ for (const renderer of ["renderChoices", "renderEchoChoices", "renderEdgeChoices
   assert((body.match(/queueA11yState\(\)/g) || []).length === 1,
     `E34 gauge summary must run exactly once in ${renderer}`);
 }
-assert((js.match(/^    queueA11yState\(\);/gm) || []).length === 3,
+assert((js.match(/^      queueA11yState\(\);/gm) || []).length === 3,   // E57: 解放タイマー内（着地の後）
   "E34 gauge summary must have exactly three renderer call-sites");
 has(js, "if (b && a11yStateTimer)", "E34 stale gauge summary cancellation on next scene");
 has(js, "戻り道 ${state.returnPaths}本。認識 ${lit}/${need}", "E34 gauge summary values");
@@ -570,7 +570,7 @@ has(css, "env(safe-area-inset-right)", "E25 landscape safe-area (right)");
 has(css, "env(safe-area-inset-left)", "E25 landscape safe-area (left)");
 has(js, "preventScroll", "E25 focus first choice after reveal (a11y)");
 assert(/JUNCTIONS\.has\(state\.id\)\s*&&\s*c\.kind === "surface"/.test(js), "E25 A trunk (soma) is recognition-neutral");
-has(js, 'aria-live", "polite"', "E25 onboarding hint in SR live region");
+has(js, 'p.id = "hz-hint-onboard"', "E25/E57 onboarding hint is described via the landing choice");
 
 // E26: design レビュー propose 反映＝replay 発見性/初◆グロス/浮上の音戻し/新幹 affordance。
 has(read("depths-shell.json"), "まだ開いていない降り方が", "E26 reborn promises unopened trunks (replay legibility)");
@@ -612,14 +612,14 @@ has(sw, 'new Request(url, { cache: "no-cache" })', "E56 sw precache revalidates 
 const installBody = (sw.match(/addEventListener\("install"[\s\S]*?\n\}\);/) || [""])[0];
 assert(installBody && !installBody.includes("OPTIONAL_PRECACHE_URLS"), "E56 sw install waits for core only");
 has(sw, "function precacheOptional", "E56 sw optional precache after activate");
-assert(/clients\.claim\(\)\)\s*\n\s*\.then\(\(\) => \{ precacheOptional\(\); \}\)/.test(sw), "E56 sw optional precache is fire-and-forget after claim");
+assert(/clients\.claim\(\)\)\s*\n\s*\.then\(\(\) => \{ ensureOptional\(\); \}\)/.test(sw), "E56/E57 sw optional precache is fire-and-forget after claim");
 // (3) inline boot: opaque origin ガード・runtime 停止の期限・takeover 失敗時の cache 起動（controllerchange は待ち続ける）
 has(bootScript, "/^https?:$/.test(window.location.protocol)", "E56 boot protocol guard");
 has(bootScript, "const cachedShell", "E56 boot cached-shell fallback");
-has(bootScript, "script.onload = () => window.clearTimeout(stalled)", "E56 boot runtime stall timer");
+has(bootScript, "script.onload = () => { window.clearTimeout(stalled); disarmRetry(); }", "E56/E57 boot runtime stall timer (disarmed on load)");
 has(bootScript, "const timeoutId = window.setTimeout(giveUp, 10000)", "E56 boot timeout routes through giveUp");
 assert(!/if \(ready\) return finish\(\(\) => window\.location\.reload\(\)\)/.test(bootScript), "E56 cached-shell path starts runtime, never reloads");
-has(bootScript, "if (ready) return finish(startRuntime)", "E56 cached-shell path starts runtime");
+has(bootScript, "if (ready) return finish(() => { disarmRetry(); startRuntime(); })", "E56/E57 cached-shell path starts runtime (retry disarmed)");
 // (4) slice.js: 退路の約束／キーリピート／reduced の解放猶予／descendAgain の終端保持／drift 周回錨／絵セット遅延差し替え
 has(js, "const spends = isRetreat ?", "E56 unified path-spend predicate");
 has(js, "戻り道は効かない", "E56 deep-lock retreat wording");
@@ -656,9 +656,9 @@ async function simulateBoot({ controller = null, register = "resolve", cachedShe
   const timers = []; let now = 0;
   const listeners = { controllerchange: [] };
   const appended = [];
-  const noteEl = { textContent: "", classList: { add() {} } };
+  const noteEl = { textContent: "", classList: { add() {}, remove() {} } };
   const labelEl = { textContent: "沈む" };
-  const gateButton = { disabled: true, clicks: [], querySelector: () => labelEl, addEventListener(type, fn) { this.clicks.push(fn); } };
+  const gateButton = { disabled: true, clicks: [], querySelector: () => labelEl, addEventListener(type, fn) { this.clicks.push(fn); }, removeEventListener(type, fn) { this.clicks = this.clicks.filter((f) => f !== fn); } };
   const document = {
     baseURI: "https://example.test/hazama/",
     querySelector: (sel) => (sel === 'link[rel="stylesheet"]' ? { getAttribute: () => "slice.css?v=test" } : null),
@@ -744,7 +744,76 @@ const OLD = { scriptURL: "https://example.test/hazama/sw.js?v=e0" };
   loaded.appended[0].onload();
   await loaded.advance(30000);
   assert(loaded.labelEl.textContent === "沈む", "E56 boot: a loaded runtime clears the stall timer");
+  // E57: 20s を過ぎて遅着した runtime は「再試行」状態（ラベル・reload listener）を引き継がない
+  const late = await simulateBoot();
+  await late.advance(20000);
+  assert(late.labelEl.textContent === "再試行" && late.gateButton.clicks.length === 1, "E57 boot: stalled runtime arms retry first");
+  late.appended[0].onload();
+  assert(late.labelEl.textContent === "沈む" && late.gateButton.clicks.length === 0 && late.gateButton.disabled === true,
+    "E57 boot: late runtime load disarms retry (label, listener, disabled until ready)");
+  const lateCached = await simulateBoot({ controller: OLD, register: "reject", cachedShell: false });
+  assert(lateCached.labelEl.textContent === "再試行", "E57 boot: failed takeover arms retry");
 }
+
+// E57: 第2輪レビュー（E56 差分の別目／depths 監査／英語カタログ／a11y・SR・キーボード／QA F40〜F61 実走）の客観是正を契約でロック。
+// (1) 英語試作: カバー外ノードは原文のまま・択の変奏は英語で適用しない・漂着マークの全角「／」置換・孤児キーなし・プレースホルダ整合
+has(js, "const here = Locale.english && Locale.covers(state.id);", "E57 uncovered node keeps original choice copy");
+has(js, "const varia = !locked && !Locale.english && state.cycle >= 1 && CHOICE_VARIA[", "E57 choice varia suppressed in English");
+assert((js.match(/\.replace\("／", " \/ "\)/g) || []).length === 2, "E57 drift mark full-width slash replaced at both sites");
+{
+  const pack = JSON.parse(read("locales/en.json"));
+  const sources = read("slice.js") + read("index.html") + read("depths-shell.json") + read("docs/playtest/invite-en.md");
+  const orphans = Object.keys(pack.strings).filter((k) => !sources.includes(k) && !sources.includes(k.replace(/\n/g, "\\n")));   // 表紙の動的文は JS 側で \n エスケープ
+  assert(orphans.length === 0, `E57 english catalog has orphan keys: ${orphans.slice(0, 3).join(" | ")}`);
+  const ph = (s) => [...String(s).matchAll(/\{(\w+)\}/g)].map((m) => m[1]).sort().join(",");
+  const badPh = Object.entries(pack.strings).filter(([k, v]) => ph(k) !== ph(v)).map(([k]) => k);
+  assert(badPh.length === 0, `E57 english catalog placeholder mismatch: ${badPh.join(" | ")}`);
+  const badWays = Object.entries(pack.strings).filter(([k, v]) => k.includes("戻り道 −1") && !/[Ww]ays back −1/.test(v)).map(([k]) => k);
+  assert(badWays.length === 0, `E57 english "ways back −1" contract: ${badWays.join(" | ")}`);
+}
+// (2) depths/変奏: CHOICE_VARIA の各キーはちょうど1択に対応（close の有無が違う択へ同じ費用文が出ない）・det_scar は未見のときだけ優先
+{
+  const depths = JSON.parse(read("depths-shell.json"));
+  const bank = (js.match(/const CHOICE_VARIA = \{[\s\S]*?\n  \};/) || [""])[0];
+  const keys = [...bank.matchAll(/^\s{4}"([^"]+)": \[/gm)].map((m) => m[1]);
+  assert(keys.length >= 9, "E57 CHOICE_VARIA keys extractable");
+  for (const key of keys) {
+    const [id, rest] = key.split(">"); const [to, kindDeep] = rest.split("#");
+    const deep = kindDeep.endsWith("+"); const kind = deep ? kindDeep.slice(0, -1) : kindDeep;
+    const n = ((depths.nodes[id] || {}).choices || []).filter((c) => c.to === to && (c.kind || "") === kind && !!c.deep === deep).length;
+    assert(n === 1, `E57 CHOICE_VARIA key must match exactly one choice: ${key} (${n})`);
+  }
+}
+has(js, 'const scar = unseen.length ? pool.filter((d) => d.id === "det_scar")[0] : null;', "E57 det_scar priority only while unseen");
+has(js, "if (i2 === i1) i2 = (i2 + 1) % N;", "E57 below axes never repeat");
+// (3) 入力・a11y: モダリティ追従の着地・ヒントの describedby・進行要約は着地後・見出し・音量 output・chip の data-on
+has(js, 'document.addEventListener("pointerdown", (e) => { landFocus = !(e.pointerType === "mouse"', "E57 input modality tracker");
+assert((js.match(/landFocus && document\.activeElement === document\.body/g) || []).length === 3, "E57 landing gated by modality on all three renderers");
+has(js, 'first.setAttribute("aria-describedby", hintIds)', "E57 hint described via the landing choice");
+has(js, 'p.id = "hz-hint-attune"', "E57 attune gloss id");
+has(html, 'id="reading-place" class="hz-reading-place" role="heading" aria-level="2"', "E57 in-game heading");
+has(html, '<output id="settings-volume-value" for="settings-volume" aria-hidden="true">', "E57 volume output hidden from the slider name");
+has(js, 'chip.setAttribute("data-on", Audio.playing', "E57 audio chip state via data-on");
+assert(!js.includes('"aria-pressed"') && /\.hz-chip\[data-on="true"\]/.test(css), "E57 audio chip no aria-pressed double state");
+hasRe(/content: "↑"; content: "↑" \/ "";/, "E57 retreat glyph alt text");
+hasRe(/content: "⤳"; content: "⤳" \/ "";/, "E57 surface glyph alt text");
+hasRe(/\.hz-choices \.hz-choice:focus-visible, \.hz-edge-record summary:focus-visible \{ outline-offset: -3px; \}/, "E57 focus ring drawn inside clipping parents");
+// (4) レイアウト・色: 低い表示で本文を確保・濃くの phase 上書き
+hasRe(/@media \(max-height: 520px\) \{[^}]*\.hz-app \{ overflow-y: auto; \}/, "E57 low-height layout scrolls the app");
+hasRe(/@media \(max-height: 520px\) \{[\s\S]*?\.hz-scene \{ flex: 0 0 auto; height: max\(8\.5em, 62dvh\)/, "E57 low-height layout reserves scene height");
+hasRe(/prefers-contrast: more\)\s*\{[\s\S]*?body\[data-phase\] \{ --ink-dim: #b3c0cd/, "E57 contrast-more overrides phase palettes");
+// (5) runtime: Mandala の未計測ガード・読書優先 OFF の再計測・clearRun・SW の lp.html precache と optional 再走・boot の disarm
+has(js, "if (!size || !cv.width) return;", "E57 mandala never draws at default canvas size");
+has(js, "if (!Preferences.readingComfort) Mandala.refresh();", "E57 mandala re-measures when comfort turns off");
+has(js, "function clearRun()", "E57 run-state reset split from restart");
+assert(/Spiral\.wipe\(\);\s*\n\s*clearRun\(\);/.test(js), "E57 forgetAll resets state synchronously after wipe");
+has(sw, '"lp.html",', "E57 LP precached for offline");
+has(sw, "function ensureOptional()", "E57 optional precache single-run");
+has(sw, "if (!optionalRun) event.waitUntil(ensureOptional());", "E57 optional precache retried on first fetch");
+has(sw, "if (!entry) return caches.match(request).then((cached) => cached || Response.error());", "E57 non-entry HTML served from precache or network error");
+has(bootScript, "const disarmRetry = () => {", "E57 boot disarmRetry");
+has(js, "if (myToken === revealToken && p.isConnected) p.textContent = line.t;", "E57 revealed lines collapse per-character spans");
+has(js, 'if (q.querySelector && q.querySelector(".ch")) q.textContent = q.textContent;', "E57 fast-forward collapses per-character spans");
 
 if (failures.length) {
   console.error("build-consistency smoke FAIL");

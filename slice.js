@@ -3,7 +3,7 @@
  * 北極星: 進行する対話が、進むほどプレイヤーを狭間へ沈め、戻りにくくする。
  * 形式が内容を映す = 「分岐を選ぶゲーム」ではなく「沈んでいく対話」。
  *
- * 本文は slice/depths-shell.json（note原典から再ルート、確定レジスター）。
+ * 本文は depths-shell.json（repo root・note原典から再ルート、確定レジスター）。
  * ノードIDは production の hazama-depths.json と整合する depthMeta v0 スキーマの実例。
  * 承認後、Codex がこのデータ＋レンダラ/沈下モデル/audio を本体へ畳み込む（docs/M2-spine.md §5.5）。
  *
@@ -105,6 +105,7 @@
   const state = { id: null, sink: 0, dread: 0, returnPaths: RETURN_PATHS_START, maxSink: 0, observer: 1, steps: 0, belowLoop: 0, resisted: 0, refused: 0, resistBeat: null, rank: 0, cycle: 0, visits: {}, rejoin: null, attunement: 0, echoDone: {}, activeTrunk: null, wagered: false, legacy: freshLegacy() };
   let DATA = null;
   let revealToken = 0;
+  let landFocus = true;   // E57: 直前の入力がキーボード/AT なら択の解放時に focus を着地させる（mouse/touch/pen の後は着地しない＝見えない focus への Space/Enter 一発で先頭の択が確定する誤爆を防ぐ）
   let sceneSkipHandler = null;   // E27: 既読再訪の reveal 早送り（scene タップ）。renderNode ごとに張り替える
   const clamp01 = (x) => Math.max(0, Math.min(1, x));
   // A4: phase 跨ぎの句読点。深くなる方向の遷移を一度だけ強く破断する。
@@ -385,7 +386,7 @@
     const N = UCM_AXES.length;
     const i0 = Math.floor(rng() * N);
     let i1 = (i0 + 1 + Math.floor(rng() * (N - 1))) % N;
-    let i2 = (i1 + 1 + Math.floor(rng() * (N - 1))) % N; if (i2 === i0) i2 = (i2 + 1) % N;
+    let i2 = (i1 + 1 + Math.floor(rng() * (N - 1))) % N; if (i2 === i0) i2 = (i2 + 1) % N; if (i2 === i1) i2 = (i2 + 1) % N;   // E57: i0 回避で i1 に重なる取りこぼし＝3軸を本当に重複させない
     const voidAxis = UCM_AXES[6]; // 空観 = 核を歪みで示唆（描かない）
     const lines = [];
     lines.push({ who: "cold", t: pick(UCM_AXES[i0].p) });
@@ -772,7 +773,7 @@
       const unseen = eligible.filter((d) => state.legacy.detoursSeen.indexOf(d.id) < 0);
       const pool = unseen.length ? unseen : eligible;   // 未見を優先＝毎回ちがう別の筋
       // 状態駆動のバイアス：弾かれ履歴があり det_scar が未見なら、優先的に地形へ出す。
-      const scar = pool.filter((d) => d.id === "det_scar")[0];
+      const scar = unseen.length ? pool.filter((d) => d.id === "det_scar")[0] : null;   // E57: 既見なら優先しない（全寄り道を見た後に約7割が det_scar になる退化を止める＝コメントの仕様どおり）
       const chosen = (scar && rng() < 0.7) ? scar : pool[Math.floor(rng() * pool.length)];
       if (state.legacy.detoursSeen.indexOf(chosen.id) < 0) state.legacy.detoursSeen.push(chosen.id);
       return chosen.id;
@@ -1045,7 +1046,7 @@
       const p = document.createElement("p");
       p.className = "hz-line " + (WHO_CLASS[line.who] || "") + (line.cross ? " cross" : "") + (line.foreign ? " foreign" : "");
       p.lang = line._lang || "ja";
-      if (line.foreign && line.mark) p.dataset.mark = Locale.english ? line.mark.replace("・深度", "· Depth ").replace("Ω 到達", "Ω").replace("浮上", "Surface") : line.mark;
+      if (line.foreign && line.mark) p.dataset.mark = Locale.english ? line.mark.replace("・深度", "· Depth ").replace("Ω 到達", "Ω").replace("浮上", "Surface").replace("／", " / ") : line.mark;
       return p;
     };
 
@@ -1060,6 +1061,8 @@
         const readingTop = sceneEl.scrollTop;
         Follow.release();                       // 全文追加で未読の末尾へ飛ばさず、読んでいた位置を保つ。
         sceneEl.querySelectorAll(".ch").forEach((s) => s.classList.add("lit"));
+        // E57: 1字ずつの span を素のテキストに畳む（VoiceOver 等が要素境界で1字ずつ区切るのを防ぐ・見た目同一）。
+        sceneEl.querySelectorAll(".hz-line").forEach((q) => { if (q.querySelector && q.querySelector(".ch")) q.textContent = q.textContent; });
         for (let i = appended; i < lines.length; i++) {
           const p = mkLine(lines[i]);
           p.textContent = lines[i].t; p.classList.add("shown");
@@ -1101,6 +1104,8 @@
         p.querySelectorAll(".ch").forEach((s, i) => {
           window.setTimeout(() => { if (myToken === revealToken) s.classList.add("lit"); }, i * lineRevealMs);
         });
+        // E57: 最後の字の点灯（遷移 ≤280ms）が終わったら span を素のテキストへ畳む＝SR が1字ずつ読まない（見た目同一）。
+        window.setTimeout(() => { if (myToken === revealToken && p.isConnected) p.textContent = line.t; }, chars.length * lineRevealMs + 300);
       }, delay);
       delay += chars.length * lineRevealMs + 360 + (line.gap || 0);
     });
@@ -1135,7 +1140,7 @@
     const p = document.createElement("p");
     p.className = "hz-onboard";
     p.setAttribute("role", "note");
-    p.setAttribute("aria-live", "polite");   // E25: 唯一の明示ヒントを SR にも届ける
+    p.id = "hz-hint-onboard";                // E57: 着地する択の aria-describedby で読ませる（後挿入の live 要素は読まれないことがある）
     p.textContent = tr("——どう読むかで、どこまで降りられるかが決まる。深く読むほど、深く。");
     choicesEl.appendChild(p);    // choices の先頭＝ボタンの上
   }
@@ -1151,7 +1156,7 @@
     const p = document.createElement("p");
     p.className = "hz-onboard";
     p.setAttribute("role", "note");
-    p.setAttribute("aria-live", "polite");
+    p.id = "hz-hint-attune";                 // E57: 同上
     p.textContent = tr("——ひとつ、灯った。視た分だけ、深く降りられる。");
     choicesEl.appendChild(p);
   }
@@ -1245,7 +1250,8 @@
       // E36: 択の文言変奏＝周回(cycle>=1)のみ、原文含む候補から seeded pick（機構は c のまま＝表示だけ）。
       //   locked（見える鍵）は変奏しない＝鍵の文言は約束なので固定。
       let lead = c.t, sub = c.sub;
-      const varia = !locked && state.cycle >= 1 && CHOICE_VARIA[state.id + ">" + c.to + "#" + (c.kind || "") + (c.deep ? "+" : "")];
+      // E57: 英語試作では択の文言変奏を適用しない（変奏は未訳＝同一ボタン内で日英が混在する）。本文行の変奏は行ごとに lang を持つので据え置き。
+      const varia = !locked && !Locale.english && state.cycle >= 1 && CHOICE_VARIA[state.id + ">" + c.to + "#" + (c.kind || "") + (c.deep ? "+" : "")];
       if (varia) {
         const vr = mulberry32((hashStr("hazama:world") ^ hashStr("label:" + state.id + ">" + c.to + (c.deep ? "+" : "") + ":" + state.cycle) ^ 0x1abe15) >>> 0);  // E38: 周回錨（transient 非依存）
         const pick = pickR(vr, [null].concat(varia));
@@ -1267,19 +1273,22 @@
       btn.className = "hz-choice " + (c.kind || "") + (locked ? " locked" : "") + (newly ? " newly" : "");
       if (!locked && c.kind === "retreat" && state.maxSink > 0.4) btn.classList.add("heavy");
       btn.innerHTML = `<span class="lead"></span>${sub ? `<span class="sub"></span>` : ""}`;
-      btn.querySelector(".lead").textContent = tr(lead);
-      btn.querySelector(".lead").lang = Locale.english && Locale.translated(lead) ? "en" : "ja";
+      // E57: 現在ノードがカバー外（他の道・周回の幹）なら lead/sub は原文のまま＝全域表の「沈む」等が sub だけ英語になる混在を防ぐ。
+      const here = Locale.english && Locale.covers(state.id);
+      const loc = (s, v) => (here ? tr(s, v) : String(s).replace(/\{(\w+)\}/g, (m, k) => (v && Object.hasOwn(v, k)) ? String(v[k]) : m));
+      btn.querySelector(".lead").textContent = loc(lead);
+      btn.querySelector(".lead").lang = here && Locale.translated(lead) ? "en" : "ja";
       if (sub) {
         const label = locked ? "まだ届かない（認識 {value}/{need}）" : sub;
         const el = btn.querySelector(".sub");
-        let displayed = tr(label, { value: Math.round(state.attunement || 0), need: ATTUNE.omegaThreshold });
+        let displayed = loc(label, { value: Math.round(state.attunement || 0), need: ATTUNE.omegaThreshold });
         // 戻り道は0未満にならない。消費できない時に「−1」と約束しない（翻訳後の表示だけ変更）。
         // E56: retreat も同じ述語＝深部ロック（残があるのに効かない）は「効かない」、残0は「尽きた」。英語は大小文字を保つ。
         if (!spends && (c.close || isRetreat)) displayed = displayed
           .replace("戻り道 −1", lockedOut ? "戻り道は効かない" : "戻り道は尽きた")
           .replace(/([Ww])ays back −1/, (m, w) => (lockedOut ? w + "ays back no longer hold" : (w === "W" ? "No ways back remain" : "no ways back remain")));
         el.textContent = displayed;
-        el.lang = Locale.english && Locale.translated(label) ? "en" : "ja";
+        el.lang = here && Locale.translated(label) ? "en" : "ja";
       }
       if (Locale.english && !Locale.covers(c.to)) {
         const tag = document.createElement("span");
@@ -1299,13 +1308,17 @@
     });
     // 全候補を読む前に先頭だけ押せると、まだ見えない道を選ぶ機会が失われる。
     // 出現演出は保ち、最後の候補のフェード（CSS 400ms）が終わってから一斉に解放する。
-    if (candidates.length) window.setTimeout(() => {
+    window.setTimeout(() => {
       if (myToken !== revealToken || !candidates.every(({ btn }) => choicesEl.contains(btn))) return;
       candidates.forEach(({ btn, locked }) => { if (!locked) btn.disabled = false; });
       const first = candidates.find(({ locked }) => !locked)?.btn;
-      // E25: キーボード/SR/スイッチのフォーカス喪失時だけ着地させる。
-      if (first && document.activeElement === document.body) first.focus({ preventScroll: true });
-    }, REDUCED ? REDUCED_UNLOCK_MS : Math.max(...candidates.map(({ appear }) => appear)) + 400);   // E56: reduced も一拍
+      // E57: 唯一の明示ヒント（onboard／認識グロス）は着地先の択の説明として読ませる（後挿入の live 要素は読まれないことがある）。
+      const hintIds = [...choicesEl.querySelectorAll("[id^='hz-hint-']")].map((h) => h.id).join(" ");
+      if (first && hintIds) first.setAttribute("aria-describedby", hintIds);
+      // E25: キーボード/SR/スイッチのフォーカス喪失時だけ着地させる。E57: 直前が mouse/touch なら着地しない。
+      if (first && landFocus && document.activeElement === document.body) first.focus({ preventScroll: true });
+      queueA11yState();            // E57: 着地の発話の後ろに進行要約を並べる（focus が live 発話を打ち切らない）
+    }, candidates.length ? (REDUCED ? REDUCED_UNLOCK_MS : Math.max(...candidates.map(({ appear }) => appear)) + 400) : 0);   // E56: reduced も一拍
     // E27: 次に開く降り方を「封印された扉」として一枚だけ見せる（幹の中身は伏せる＝驚き温存・
     //   E19 の"見える鍵"イディオム）。周回の理由が初回から見える＝扉は sub の原文句で機構を語る。
     //   全幹が開いたら出ない。押せない＝aria-disabled・focus 対象外。
@@ -1328,8 +1341,7 @@
     }
     // ボタンを積んで scene が縮んだ“後”に最新行を底へ。重なりはレイアウトで防止済み、
     // ここは「最後の行を選択肢の真上に見せる」ための追従（ユーザーが上に居れば奪わない）。
-    setBusy(false);              // E6: 本文＋選択肢が出揃った＝SR は1ノードを一括で読む
-    queueA11yState();            // E34: 本文live regionの後に、変化した進行値だけを一度読む
+    setBusy(false);              // E6: 本文＋選択肢が出揃った＝SR は1ノードを一括で読む（進行要約は解放時＝E57）
     Follow.stick();
   }
 
@@ -1425,10 +1437,10 @@
       if (myToken !== revealToken || !candidates.every((b) => choicesEl.contains(b))) return;
       candidates.forEach((b) => { b.disabled = false; });
       // E28: 門でも全断片を読めるようになってから focus 着地。
-      if (document.activeElement === document.body) candidates[0]?.focus({ preventScroll: true });
+      if (landFocus && document.activeElement === document.body) candidates[0]?.focus({ preventScroll: true });   // E57: mouse/touch 後は着地しない
+      queueA11yState();            // E57: 着地の発話の後ろに進行要約
     }, REDUCED ? REDUCED_UNLOCK_MS : 120 + (candidates.length - 1) * 150 + 400);
-    setBusy(false);              // E6: 本文＋エコー門が出揃った
-    queueA11yState();            // E34: 門が確定してから進行値を一度だけ読む
+    setBusy(false);              // E6: 本文＋エコー門が出揃った（進行要約は解放時＝E57）
     Follow.stick();
   }
 
@@ -1691,10 +1703,10 @@
       if (myToken !== revealToken || !candidates.every((b) => choicesEl.contains(b))) return;
       candidates.forEach((b) => { b.disabled = false; });
       // E28: 縁（終端）でも二択を読める状態で focus 着地。
-      if (document.activeElement === document.body) candidates[0]?.focus({ preventScroll: true });
+      if (landFocus && document.activeElement === document.body) candidates[0]?.focus({ preventScroll: true });   // E57: mouse/touch 後は着地しない
+      queueA11yState();            // E57: 着地の発話の後ろに進行要約
     }, REDUCED ? REDUCED_UNLOCK_MS : 200 + (candidates.length - 1) * 160 + 400);
-    setBusy(false);              // E6: 縁が出揃った
-    queueA11yState();            // E34: 結末本文と競合させず、最後の進行値を読む
+    setBusy(false);              // E6: 縁が出揃った（進行要約は解放時＝E57）
     Follow.stick();
   }
 
@@ -1765,6 +1777,7 @@
   // REDUCED でも壊れない（即時挿入＋短い待ち）。Hazama の cold ビート文体（——で開始・現象だけ）。
   function forgetAll() {
     Spiral.wipe();
+    clearRun();                            // E57: 消去と同期で state も初期化（遅延 restart が世代で飛んでも記憶を書き戻さない）
     revealToken++;                         // 縁で進んでいた reveal の余韻を断つ
     choicesEl.innerHTML = "";              // 「縁から、もう一度沈む / すべて忘れる」を消す＝選択は確定
     const p = document.createElement("p");
@@ -2261,7 +2274,7 @@
       draw(0);
     }
     function draw(time) {
-      if (!cv.width) return;
+      if (!size || !cv.width) return;   // E57: 未計測（読書優先中に開始）の既定 300×150 で描かない
       const s = cur.sink, obs = cur.observer, d = cur.dread;
       const W = cv.width, H = cv.height, cx = W / 2, cy = H / 2, R = W * 0.46;
       g.clearRect(0, 0, W, H);
@@ -2340,6 +2353,7 @@
     }
     return {
       start,
+      refresh: () => { if (!size) resize(); },   // E57: 読書優先 OFF で測り直す（REDUCED は loop が無い）
       // 深度が変わった瞬間に1枚即描画（reactivity の即応＋rAF が間引かれる環境でも反映）。
       // rAF ループは回転を継続させる。
       update: (sink, observer, dread) => { cur = { sink, observer, dread }; if (!size) resize(); draw(lastT); }
@@ -2777,7 +2791,7 @@
     function label() {
       if (!chip) return;
       chip.textContent = tr(Audio.suspendedByVisibility ? "♪ 再開" : Audio.playing ? (Audio.volume === 0 ? "♪ 音量0" : "♪ 鳴っている") : "♪ 鳴らす");
-      chip.setAttribute("aria-pressed", Audio.playing ? "true" : "false");
+      chip.setAttribute("data-on", Audio.playing ? "true" : "false");   // E57: 文言が状態を伝える（鳴らす/鳴っている…）ので aria-pressed の二重状態を外す
       const sound = $("settings-sound");
       if (sound && entered) sound.checked = Audio.playing;
     }
@@ -2850,6 +2864,7 @@
     comfort.addEventListener("change", () => {
       Preferences.readingComfort = comfort.checked;
       document.body.classList.toggle("reading-comfort", Preferences.readingComfort);
+      if (!Preferences.readingComfort) Mandala.refresh();   // E57: display:none 中に開始した曼荼羅を測り直す
       Follow.release(); // 見た目の切替で読んでいた位置を奪わない。
     });
     sound.addEventListener("change", () => { Music.setEnabled(sound.checked); sync(); });
@@ -2883,7 +2898,7 @@
     // 翻訳が取得できなくても日本語の起動は止めない。言語は表紙での明示選択・保存しない。
     const controller = new AbortController();
     const timer = window.setTimeout(() => controller.abort(), 8000);
-    fetch("locales/en.json?v=e56", { signal: controller.signal }).then((response) => {
+    fetch("locales/en.json?v=e57", { signal: controller.signal }).then((response) => {
       if (!response.ok) throw new Error("English catalog HTTP " + response.status);
       return response.json();
     }).then((data) => {
@@ -2902,7 +2917,7 @@
     const controller = new AbortController();
     const timer = window.setTimeout(() => controller.abort(), 10000);
     try {
-      const res = await fetch("depths-shell.json?v=e56", { cache: "no-store", signal: controller.signal });
+      const res = await fetch("depths-shell.json?v=e57", { cache: "no-store", signal: controller.signal });
       if (!res.ok) throw new Error(`depths-shell HTTP ${res.status}`);
       const data = await res.json();
       if (!data || typeof data !== "object" || !data.start || !data.nodes || !data.nodes[data.start]) {
@@ -2962,19 +2977,27 @@
     Glitch.start();
     renderNode(DATA.start || "zero");
   }
-  function restart() {
-    revealToken++;
+  // E57: 実行状態の初期化を restart から分離＝forgetAll が wipe と同期で呼ぶ（遅延 restart が世代で飛んでも消した記憶を書き戻さない）。
+  function clearRun() {
     state.id = null; state.sink = 0; state.dread = 0; state.returnPaths = RETURN_PATHS_START; state.maxSink = 0; state.observer = 1; state.steps = 0; state.belowLoop = 0; state.resisted = 0; state.refused = 0; state.resistBeat = null; state.rank = 0; state.cycle = 0; state.visits = {}; state.rejoin = null; state.attunement = 0; state.echoDone = {}; state.activeTrunk = null; state.wagered = false; state.legacy = freshLegacy();
     Audio.setAxis(null);     // E21: 全消去/再起動で音の軸色も従来の地へ戻す
     lastPhase = "surface";   // A4: restart/forget でも跨ぎ検知を初期化（再降下で最初の跨ぎが効く）
+    const st = $("status"); if (st) st.textContent = "";
+  }
+  function restart() {
+    revealToken++;
+    clearRun();
     applyCycleSkin();        // B4: cycle=0 に戻ったので表紙スキンも 0（完全に従来どおり）へ
     if (document.body && document.body.classList) document.body.classList.remove("surfaced", "omega", "phase-break", "glitch-hard", "glitch-soft", "leak-on");
-    const st = $("status"); if (st) st.textContent = "";
     buildReturnPaths();
     renderNode(DATA.start || "zero");
   }
 
   $("audio-toggle").addEventListener("click", () => Music.cycle());
+  // E57: 入力モダリティ＝直前が mouse/touch/pen なら択の解放時に focus を着地させない（見えない focus への Space/Enter 一発で
+  //   先頭の択が確定する誤爆を防ぐ）。キーボード/AT（pointerdown を伴わない）は従来どおり着地する。
+  document.addEventListener("pointerdown", (e) => { landFocus = !(e.pointerType === "mouse" || e.pointerType === "touch" || e.pointerType === "pen"); }, true);
+  document.addEventListener("keydown", () => { landFocus = true; }, true);
   // E56: Enter/Space の長押し（キーリピート）で、確定→次ノードの focus 着地（E25）→再確定…と連鎖しない。
   //   repeat の keydown だけ既定動作（click 発火）を止める。単押し・他キー・設定 dialog は従来どおり。
   document.addEventListener("keydown", (e) => {
@@ -3001,7 +3024,7 @@
     if (!["http:", "https:"].includes(window.location.protocol)) return;
     if (!("serviceWorker" in navigator)) return;
     const register = () => {
-      navigator.serviceWorker.register("sw.js?v=e56", { scope: "./", updateViaCache: "none" }).then((reg) => {
+      navigator.serviceWorker.register("sw.js?v=e57", { scope: "./", updateViaCache: "none" }).then((reg) => {
         if (typeof reg.update === "function") reg.update().catch(() => {});
       }).catch((err) => console.warn("[Hazama slice] SW register failed:", err));
     };
@@ -3036,7 +3059,7 @@
         m.className = "hz-gate-drift-mark";
         m.textContent = "― 別の観測の痕跡 " + foreign.mark + " ―";
         m.setAttribute("data-i18n", "");
-        m.setAttribute("data-i18n-text", "— A trace of another observation " + foreign.mark.replace("・深度", "· Depth ").replace("Ω 到達", "Ω").replace("浮上", "Surface") + " —");
+        m.setAttribute("data-i18n-text", "— A trace of another observation " + foreign.mark.replace("・深度", "· Depth ").replace("Ω 到達", "Ω").replace("浮上", "Surface").replace("／", " / ") + " —");
         p.appendChild(document.createElement("br"));
         p.appendChild(m);
         inner.appendChild(p);

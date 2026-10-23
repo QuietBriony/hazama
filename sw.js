@@ -6,7 +6,7 @@
    - cache prefix=hazama-pwa- ＝旧 forward 版 cache(hazama-pwa-v2.45 等)を activate で掃除し更新。
 ========================================================= */
 
-const VERSION = "hazama-pwa-e56";
+const VERSION = "hazama-pwa-e57";
 const RELEASE = VERSION.replace("hazama-pwa-", "");
 const CACHE_PREFIX = "hazama-pwa-";
 const STATIC_CACHE = `${VERSION}-static`;
@@ -29,6 +29,7 @@ const CORE_PRECACHE_URLS = [
 
 const OPTIONAL_PRECACHE_URLS = [
   `locales/en.json?v=${RELEASE}`,
+  "lp.html",
   "icons/icon-96.png",
   "icons/icon-192.png",
   "icons/icon-512.png",
@@ -69,6 +70,13 @@ function precacheOptional() {
   );
 }
 
+// E57: SW が idle 終了して取り残しても、次に起きた fetch で一回だけ再走し waitUntil で延命する（既存 hit は飛ばすので軽い）。
+let optionalRun = null;
+function ensureOptional() {
+  if (!optionalRun) optionalRun = precacheOptional();
+  return optionalRun;
+}
+
 self.addEventListener("activate", (event) => {
   event.waitUntil(
     caches.keys()
@@ -80,7 +88,7 @@ self.addEventListener("activate", (event) => {
         )
       )
       .then(() => self.clients.claim())
-      .then(() => { precacheOptional(); })   // E56: 待たない＝activating 中に fetch を止めない。欠けた分は静的分岐が拾う
+      .then(() => { ensureOptional(); })   // E56/E57: 待たない＝activating 中に fetch を止めない。取り残しは次の fetch で再走
   );
 });
 
@@ -117,6 +125,7 @@ self.addEventListener("fetch", (event) => {
   const request = event.request;
   if (request.method !== "GET") return;
   if (request.headers.get("range")) return;
+  if (!optionalRun) event.waitUntil(ensureOptional());   // E57: 取り残した視覚 asset の precache を再走（一回だけ）
 
   const url = new URL(request.url);
 
@@ -127,7 +136,9 @@ self.addEventListener("fetch", (event) => {
     event.respondWith(
       fetch(request).catch(() => {
         const dir = new URL("./", self.location.href).pathname;
-        if (url.pathname !== dir && url.pathname !== dir + "index.html") return Response.error();
+        const entry = url.pathname === dir || url.pathname === dir + "index.html";
+        // E57: 入口以外（lp.html 等）は precache にある同 URL だけ返し、無ければ network error（入口を返さない）。
+        if (!entry) return caches.match(request).then((cached) => cached || Response.error());
         return caches.match(request)
           .then((cached) => cached || caches.match("index.html"))
           .then((cached) => cached || caches.match("./"));

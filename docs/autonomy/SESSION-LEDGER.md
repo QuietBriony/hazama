@@ -19,6 +19,24 @@ Hazama 自律開発 session の追記専用ログ。
 
 ---
 
+## 2026-10-23 — E57 第2輪レビューの是正（E56 差分の別目／depths 監査／英語試作／a11y・SR・キーボード／QA F40〜F61 実走）
+- agent      : Claude Fable 5.1（マネジメント・実装・実走検証）＋worker(opus)×5（レンズ5〜8＋QA Phase2 の headless Chrome 実走）
+- goal       : E56 を含む統合ビルドを別の目で再レビューし、客観・低リスクの是正だけを E57 として実装・検証する（push は号令待ち）
+- shipped    :
+  - `slice.js`: renderChoices＝カバー外ノードでは lead/sub を原文のまま（`Locale.covers(state.id)`）・英語時は CHOICE_VARIA を適用しない／漂着マークの「／」置換×2／入力モダリティ追従 `landFocus`（pointerdown=mouse/touch/pen で着地せず・keydown で復帰）を 3 レンダラの着地条件へ／ヒント（onboard・認識グロス）を aria-live から id＋着地先の aria-describedby へ／進行要約 `queueA11yState()` を解放タイマー内（着地の後）へ移動／文字送りの 1 字 span を点灯後と早送り時に素のテキストへ畳む／Mandala の `draw` を未計測ガード＋`refresh`（読書優先 OFF で再計測）／`clearRun()` を restart から分離し forgetAll が wipe と同期で呼ぶ／pickDetour の det_scar 優先を未見のときだけに／genBelowNode の 3 軸重複を解消／音 chip を aria-pressed→data-on／旧パスのコメント
+  - `index.html`: inline boot に `disarmRetry()`（遅着 runtime の onload／cache 起動で再試行状態を解除）／音量 output を aria-hidden／`#reading-place` に role=heading aria-level=2／版 e57
+  - `sw.js`: lp.html を OPTIONAL precache／HTML 分岐の入口以外は precache hit か `Response.error()`／`ensureOptional()`＝activate 後に一回・SW 再起動後の最初の fetch で `waitUntil` 再走／VERSION e57
+  - `slice.css`: `@media (max-height: 520px)` で本文の高さ確保＋全体 scroll／prefers-contrast:more に `body[data-phase]` の上書き／択帯と summary の focus ring を内側（-3px）／::before 記号に代替テキスト空／`.hz-chip[data-on]`
+  - `locales/en.json`: 孤児キー 9 件を削除（294→285）
+  - smoke: build-consistency＝E57 契約（英語カタログの孤児/プレースホルダ/ways back、CHOICE_VARIA キー一意、着地モダリティ×3、describedby、見出し、output、chip、記号 alt、ring、低い表示、濃くの phase、Mandala、clearRun、lp precache、ensureOptional、disarmRetry、span 畳み）＋boot VM に遅着シナリオ＋E34/E25/E56 契約の更新／choice-commit＝定数をソースから抽出・landFocus 文脈・英語ケースを covered ノードへ／reading-settings＝Mandala stub
+  - docs: README 沿革 E57、BACKLOG HZ-BL-037〜040（文言・設計・翻訳・a11y 設計の見送り分）、QA 正典 F64〜F67＋F40〜F61 の P2（worker/opus の headless Chrome+CDP 実走＝独立の目: 13 pass／9 human-gate（機械検証は pass）／fail 0・defect 0 を検収して記入）、LOOP-STATE
+- checks     : `node --check` 全 PASS／`hazama-check` 2 PASS / 0 FAIL / 0 SKIP
+- verified   : ブラウザ実走（localhost:8740・SW/cache/保存クリーン・?v=e57）＝起動 e57・static cache 23 件（lp.html あり・key-b なし）／本編見出し role=heading・音量 output aria-hidden／cycle0 A: ヒント id=hz-hint-onboard（aria-live なし）・先頭の択に aria-describedby・着地 focus／pointerdown(mouse) 後の解放では activeElement=body・keydown 後は先頭の択へ着地／音 chip data-on=true・aria-pressed なし／読書優先 ON で開始→曼荼羅 width 300（描画せず）→OFF で 508 に再計測／英語: カバー外 B・E_reso は lead/sub とも日本語（lang=ja・タグあり）、B_soma は英語、cycle3 の零章は変奏なしで原文の英訳／844×390: 本文 242px≈10 行・app scroll・横溢れなし／320×256: 本文 159px≈6 行・択に scroll で到達／文字送り後の 1 字 span 0・早送り後も 0／console 0。prefers-contrast・実 SR・旧 SW からの遅着は VM/静的契約に依拠
+- backlog    : 追加 HZ-BL-037（depths の文言・データ提案: E[1]/G[1] の費用未告知、T/V の八観の前置き、ECHO_BANK.A の旧語、reborn 変奏の木目重複、「観測者が増える」表記、edge の sank/held 同一、_meta）／038（機構: エコー門の偽候補枯渇、cycle0 の J[2] 固定寄り道、C 退路の寄り道 observer 依存）／039（英語試作: 人称・訳語ゆれ・結末記録の英語欠落・chip 文言・lang 共通化・note の明記）／040（a11y 設計: locked/扉の Tab 到達・着地先を本文行へ・reveal-now の disabled 残り）。既存 human-gate は閉じない
+- next       : 号令で push（fetch→採番衝突の確認→Pages 反映→`?v=e57` 実走）。次ループは QA 正典 F62〜F67 の P2 と、BACKLOG 037/039 の文言判断を人間へ
+- blockers   : push は号令待ち。実 SR（VoiceOver/NVDA）・実スマホ横持ち・prefers-contrast は human-gate
+- note       : agent 5/5 完走。採用 28 件／見送り（文言・設計・翻訳の判断）は BACKLOG。罠: 同じ版文字列のまま runtime を編集すると SW の exact-match cache が旧ビルドを返す＝検証前に unregister＋caches.delete＋cache:'reload' が必須（今回 1 度踏んだ）。Codex の smoke 群の vm 文脈に新しい自由変数（landFocus／Mandala）を足すのも前回と同じ
+
 ## 2026-10-23 — E56 レビュー輪の是正（変奏×後続変更／起動・PWA／選択の状態機械／CSS・性能／QA 正典）
 - agent      : Claude Fable 5.1（マネジメント・実装・実走検証）＋worker(opus)×4 レンズ＋worker(sonnet)×1（QA 追補）。今回は agent 5/5 完走（前回の 529/429 は再発せず）
 - goal       : E36〜E38（Claude）と E39〜E55.1（Codex）の統合ビルドを独立レビューし、客観・低リスクの是正だけを E56 として実装・検証する（push は号令待ち）

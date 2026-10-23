@@ -10,6 +10,10 @@ const css = readFileSync(new URL("../slice.css", import.meta.url), "utf8");
 const englishCatalog = JSON.parse(readFileSync(new URL("../locales/en.json", import.meta.url), "utf8"));
 const forgetGuard = source.match(/  const ForgetGuard = \(\(\) => \{[\s\S]*?\n  \}\)\(\);/)?.[0];
 assert.ok(forgetGuard, "production forget confirmation must be available");
+// E57: 本番の定数をソースから抽出して注入する（直書きだと本番値が変わっても旧い値で通ってしまう）。
+const unlockMs = Number(source.match(/const REDUCED_UNLOCK_MS = (\d+);/)?.[1]);
+const deepLock = Number(source.match(/const DEEP_LOCK = (\d+);/)?.[1]);
+assert.ok(Number.isFinite(unlockMs) && Number.isFinite(deepLock), "production unlock/deep-lock constants must be extractable");
 const names = ["renderChoices", "confirmThen", "renderEchoChoices", "renderEdgeChoices"];
 const renderers = names.map((name) => {
   const match = source.match(new RegExp(`  function ${name}\\([^)]*\\) \\{[\\s\\S]*?\\n  \\}`));
@@ -63,7 +67,7 @@ function harness(reduced = false, dialogMode = "native") {
   if (dialogMode === "unsupported") dialog.showModal = undefined;
   if (dialogMode === "throws") dialog.showModal = () => { throw new Error("cannot show"); };
   const context = vm.createContext({
-    document, choicesEl, sceneEl, REDUCED: reduced, REDUCED_UNLOCK_MS: 300, DEEP_LOCK: 9, revealToken: 0, $: () => dialog,
+    document, choicesEl, sceneEl, REDUCED: reduced, REDUCED_UNLOCK_MS: unlockMs, DEEP_LOCK: deepLock, landFocus: true, revealToken: 0, $: () => dialog,
     englishCatalog,
     window: { setTimeout(fn, delay = 0) { timers.set(++nextTimer, { fn, at: now + delay }); return nextTimer; } },
     state: { id: "B", cycle: 0, maxSink: 0, attunement: 0, observer: 1, returnPaths: 5, visits: { B: 1 }, legacy: { detoursSeen: [] } },
@@ -104,6 +108,7 @@ function harness(reduced = false, dialogMode = "native") {
 // with the actual floor-at-zero rule in both available display languages.
 for (const language of ["ja", "en"]) {
   const h = harness();
+  h.context.state.id = "B_soma"; // E57: 翻訳はカバー対象ノードでだけ適用される
   h.context.state.returnPaths = 0;
   h.node.choices[0].sub = "身体に問う＝地盤が一枚固くなる（戻り道 −1）";
   h.node.choices[0].close = 1;
@@ -270,7 +275,7 @@ for (const kind of ["normal", "echo", "edge"]) {
   assert.ok(instant.every((button) => button.classList.contains("in")), `${kind}: reduced motion shows every candidate immediately`);
   instant[0].click();
   assert.equal(reduced.actions.length, 0, `${kind}: reduced motion still holds input for the unlock beat (E56 double-tap guard)`);
-  reduced.advance(299); instant[0].click();
+  reduced.advance(unlockMs - 1); instant[0].click();
   assert.equal(reduced.actions.length, 0, `${kind}: reduced motion holds input until the unlock beat ends`);
   reduced.advance(1); instant[0].click(); instant[1].click();
   assert.equal(reduced.actions.length, 1, `${kind}: reduced motion commits once after the unlock beat`);

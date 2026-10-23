@@ -137,6 +137,22 @@ Codex / Claude Code が同じ順番で作業を継続するための薄いエン
 
 ## 沿革（詳細は git log）
 
+- **進化 E57（2026-10-23・第2輪レビューの是正＝E56 差分の別目／depths 監査／英語試作／a11y・SR・キーボード）**: 5 本の agent
+  （opus×4＋QA 正典 F40〜F61 の headless Chrome 実走）で統合ビルドを再レビューし、客観・低リスクのみ実装。
+  (1) **英語試作の混在防止**＝カバー外ノード（他の道・周回の幹）では択の lead/sub を原文のまま（全域表の「沈む」が sub だけ英語に
+  なっていた 23 ボタン）、英語時は択の文言変奏を適用しない、漂着マークの全角「／」を置換、孤児キー 9 件を整理
+  (2) **入力と発話の a11y**＝直前が mouse/touch なら択の解放時に focus を着地させない（見えない focus への Space/Enter 一発で
+  先頭の択が確定する誤爆）、唯一の明示ヒントは着地先の aria-describedby で読ませる、進行要約は着地の後ろに並べる（focus が
+  live 発話を打ち切らない）、文字送りの 1 字 span を点灯後に素のテキストへ畳む（VoiceOver の 1 字読み）、focus ring を切れる親の
+  内側に、択の記号 ::before に代替テキスト空、音 chip の aria-pressed 二重状態を外す、音量 output を slider 名から除外、
+  本編に見出し（場所名を h2）(3) **低い表示**＝横持ちスマホ 844×390 や 400% 拡大で本文が 0〜1 行に潰れていた（WCAG 1.4.10）→
+  max-height 520px で本文の高さを確保し全体を縦 scroll（実測 844×390: 本文 242px≈10 行／320×256: 159px≈6 行）、「濃く」の
+  是正を phase パレットの上書きにも適用 (4) **起動/PWA の継続是正**＝20s 超で遅着した runtime が「再試行」状態を引き継ぐ経路を
+  `disarmRetry` で解除、lp.html を precache して offline の LP を復元（入口以外は precache hit か network error）、optional
+  precache を SW の idle 終了後も次の fetch で再走、forgetAll は wipe と同期で state を初期化、曼荼羅は読書優先 OFF で再計測
+  (5) **機構の仕様どおり化**＝det_scar の優先を未見のときだけに（全寄り道を見た後に 7 割 det_scar になる退化）、below の 3 軸を
+  本当に重複させない。smoke: inline boot VM に遅着シナリオ、英語カタログ（孤児/プレースホルダ/「ways back −1」）、CHOICE_VARIA の
+  キー一意性、定数の抽出注入。見送り（文言・設計）は BACKLOG HZ-BL-037〜040（`?v=e57`）
 - **進化 E56（2026-10-23・レビュー輪の是正＝変奏×後続変更／起動・PWA／選択の状態機械／CSS・性能）**: Claude の5レンズ
   （worker/opus×4＋QA 正典の追補）で E36〜E55.1 の統合ビルドを独立レビューし、客観・低リスクのみ実装（agent 5/5 完走）。
   (1) **退路の約束と失敗条件の整合**＝「戻り道 −1」と約束する retreat が、深部ロック（観測者≥9）／戻り道0では消費せず

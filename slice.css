@@ -534,6 +534,8 @@ body.omega .hz-scene, body.surfaced .hz-scene { animation: none; }
 .hz-choice:focus-visible, .hz-chip:focus-visible, .hz-gate-enter:focus-visible {
   outline: 2px solid var(--accent); outline-offset: 2px;
 }
+/* E57: 択帯（overflow:auto）と結末記録の summary では外側の ring の左右が親で切れる＝内側に描く。 */
+.hz-choices .hz-choice:focus-visible, .hz-edge-record summary:focus-visible { outline-offset: -3px; }
 
 /* ---------- フッタ ---------- */
 .hz-footer {
@@ -559,7 +561,7 @@ body.omega .hz-scene, body.surfaced .hz-scene { animation: none; }
 /* E34: [hidden] のUA規則を display:inline-flex が上書きしないよう固定。
    音chipは「沈む」までは描画・focus対象のどちらにも出さない。 */
 .hz-chip[hidden] { display: none; }
-.hz-chip[aria-pressed="true"] { color: var(--accent); border-color: var(--accent); }
+.hz-chip[data-on="true"] { color: var(--accent); border-color: var(--accent); }   /* E57: aria-pressed→data-on（文言が状態を伝える） */
 .hz-chip-quiet { border-color: transparent; }
 .hz-status { margin-left: auto; font-size: 0.72rem; color: var(--ink-faint); letter-spacing: 0.08em; }
 
@@ -623,6 +625,13 @@ html:lang(en) .hz-attune { text-orientation: mixed; }
   .hz-gate-guide { margin: 0 0 0.7em; }
   .hz-language { margin-top: 8px; }
   .hz-language-note { line-height: 1.45; margin-bottom: 10px; }
+}
+/* E57: 低い表示（横持ちスマホ 844×390・400% 拡大）で、固定部（択帯 ≤56dvh・footer・読書ツール）が高さを先に取り
+   本文 #scene が 0〜1 行に潰れる（WCAG 1.4.10）。本文の高さを確保し、全体を縦 scroll にする。520px 超は従来どおり。 */
+@media (max-height: 520px) {
+  .hz-app { overflow-y: auto; }
+  .hz-scene { flex: 0 0 auto; height: max(8.5em, 62dvh); padding-block: 8px; }
+  .hz-choices { max-height: none; }
 }
 .hz-gate-settings + .hz-gate-note { margin-top: 1em; }
 /* E42: native dialogのtop layerで、背景の択/表紙とfocusを隔離する。 */
@@ -830,11 +839,11 @@ body.peeling .hz-peel { visibility: visible; animation: hz-peel-sweep .62s cubic
 }
 .hz-choice.retreat .lead { text-decoration: none; }
 .hz-choice.retreat .lead::before {
-  content: "↑"; position: absolute; left: -1.4em; top: 0;
+  content: "↑"; content: "↑" / ""; position: absolute; left: -1.4em; top: 0;   /* E57: 代替テキスト空＝SR の名前に記号を入れない（非対応は1つ目が効く） */
   color: var(--accent); opacity: 0.8;
 }
 .hz-choice.surface .lead::before {     /* 逸れマーク＝弾かれて別の筋へ折れる（戻りでも降下でもない） */
-  content: "⤳"; position: absolute; left: -1.45em; top: -0.04em;
+  content: "⤳"; content: "⤳" / ""; position: absolute; left: -1.45em; top: -0.04em;   /* E57: 同上 */
   color: var(--hand-red); font-weight: 700; opacity: 0.9;
 }
 .hz-choice:active { box-shadow: inset 0 0 0 1px rgba(216,68,46,0.25); }
@@ -921,6 +930,8 @@ body.peeling .hz-peel { visibility: visible; animation: hz-peel-sweep .62s cubic
   /* E56: E55 で既定 --ink-dim が #98a7b7（8.3:1）へ上がり、ここが #858f9b（6.2:1）＝「濃く」の選択で逆に薄くなっていた。
      既定より明るい値に是正（#b3c0cd≈10.9:1）。 */
   :root { --ink-dim: #b3c0cd; --ink-faint: #69747f; --line: rgba(127,182,196,0.44); }
+  /* E57: phase パレット（body[data-phase="bottom"] の --ink-dim:#93a2b3 等）の上書きにも効かせる。 */
+  body[data-phase] { --ink-dim: #b3c0cd; --line: rgba(127,182,196,0.44); }
 }
 
 /* ============================================================================
