@@ -1,11 +1,11 @@
-/* Hazama M2 vertical slice — 沈下スパイン（冒頭アーク・データ駆動）
+/* Hazama 狭間 — 本番ランタイム（没入版・単一ビルド・逆統合 slice エンジン）
  *
  * 北極星: 進行する対話が、進むほどプレイヤーを狭間へ沈め、戻りにくくする。
  * 形式が内容を映す = 「分岐を選ぶゲーム」ではなく「沈んでいく対話」。
  *
- * 本文は depths-shell.json（repo root・note原典から再ルート、確定レジスター）。
- * ノードIDは production の hazama-depths.json と整合する depthMeta v0 スキーマの実例。
- * 承認後、Codex がこのデータ＋レンダラ/沈下モデル/audio を本体へ畳み込む（docs/M2-spine.md §5.5）。
+ * 本文は depths-shell.json（repo root・note原典から再ルート、確定レジスター・depthMeta v0・72 ノード）。
+ * 旧 forward 実装（hazama-depths.json / Music ブリッジ / Gate Run）は逆統合で撤去済み＝このファイルが本体。
+ * 沿革は README の「沿革」、運用は AGENTS.md と docs/autonomy/ を参照。
  *
  * 三層で「どれだけ沈むか／戻りにくくなるか」を見せる:
  *   1) 本文     — 声が近づく / 戻り道が細る、を地の文で（JSONの lines）
@@ -173,9 +173,9 @@
     return { save, load, wipe, consumeCycleBump };
   })();
 
-  // 降下インデックス＝音楽ブリッジの第一義 depth（depth.html は source.rank/28 で深さを取る）。
-  // production の深度梯子(A_start..Z,Ω,A_reborn,HUB_NIGHT=0..28)に対応。retreat/drift は
-  // ランクを持たず＝直前の深さを保つ（沈下は残す）。below(∞)は最深=28。
+  // 降下インデックス＝物語深度（0..28）。用途: 内製 Audio の depth（rank/28）・景色の data-backdrop（backdropFor）・
+  // 持ち越しの maxRank・観測者数の下限。retreat/drift はランクを持たず＝直前の深さを保つ（沈下は残す）。
+  // below(∞)は最深=28。旧 Music ブリッジ／forward 梯子（HUB_NIGHT 等）は撤去済み。
   const RANK = {
     zero: 0, zero_hold: 0, A: 1, B: 2, C: 3, D: 4, E: 5, E_noreturn: 5, F: 6,
     G: 7, G_hold: 7, H: 8, I: 9, J: 10, K: 11, L: 12,
@@ -404,7 +404,7 @@
       if (foreign) lines.splice(2 + Math.floor(rng() * 2), 0, foreign);
     }
     const base = DATA.nodes.below;
-    return Object.assign({}, base, { lines, observer: 18 + loop, _color: loop });
+    return Object.assign({}, base, { lines, observer: 18 + loop });
   }
 
   // ---------- 巡回で変わるテキスト（§2 × バスキア §3：手が冷たい構造へ書き込む） ----------
@@ -635,7 +635,7 @@
   // E3 エコー門の燃料。nodeId→断片（12〜28字・『』は表示側が付ける）。
   // 訪問済みの断片＝真、未訪問＝偽として使う。
   const ECHO_BANK = {
-    // ---- 主要深度 14 ----
+    // ---- 主要深度 19（E14 で G/I/O/R/W を追加） ----
     // 出典: depths-shell.json A / 01-yoru1:57
     A: "表皮が剥がれ、鉄錆の配線が露れる",
     // 出典: depths-shell.json B / 02-yoru2:53-54
@@ -687,7 +687,7 @@
     // 出典: depths-shell.json det_scar
     det_scar: "前に弾かれた足跡が、まだ残っている",
 
-    // ---- 新規 detour 5（detours.draft.json） ----
+    // ---- 新規 detour 5（E2・本文は depths-shell.json の det_*） ----
     // 出典: 08-ai-dependence:202-204
     det_handoff: "頷くたび、自分の声が一枚薄くなる",
     // 出典: 13-memlock:60-64 / 174
@@ -708,7 +708,7 @@
   // 初回は導入用の表示、周回/再訪では原文と変奏を組み合わせる。
   function applyCycle(id, base) {
     const visits = state.visits[id] || 1;
-    // E55: Aの八観一覧は原文からも外す。周回しただけで用語をまとめて開示しない。
+    // E55: A の八観一覧は depths 側で削除済み（旧 filter は撤去）。周回しただけで用語をまとめて開示しない。
     if (state.cycle < 1 && visits < 2) return base;           // 初回通過は原文そのまま
     const seed = (hashStr(id) ^ Math.imul(state.cycle + 1, 0x9e3779b9) ^ Math.imul(visits, 0x85ebca6b)) >>> 0;
     const rng = mulberry32(seed);
@@ -885,7 +885,7 @@
     if (document.body.classList.contains("phase-break")) return; // 先勝ち（走行中は無視）
     document.body.classList.add("phase-break");
     clearTimeout(phaseBreakTimer);
-    phaseBreakTimer = window.setTimeout(() => document.body.classList.remove("phase-break"), 900);
+    phaseBreakTimer = window.setTimeout(() => document.body.classList.remove("phase-break"), 1200);   // E58: 専用 tear keyframes（1.2s）を最後まで再生する（900ms では後半 25% が切れていた）
     Glitch.hardBreak();          // glitch-hard＋leak-on を一拍点ける（視覚のみ・音は鳴らさない）
     Audio.glitchHit(0.9);        // 音の破断はここで一度だけ（未解禁なら no-op）
   }
@@ -897,7 +897,6 @@
     const root = document.documentElement.style;
     root.setProperty("--sink", sinkNorm.toFixed(3));
     root.setProperty("--press", Math.min(1, state.dread).toFixed(3));
-    root.setProperty("--reveal-ms", (REDUCED ? 0 : Math.round(34 + state.dread * 64)) + "ms");
     const phase = phaseFor(sinkNorm);
     document.body.dataset.phase = phase;
     // 絵は物語の場所で進める。沈下が早く上限に触れても、終盤まで同じ黒い絵に固定しない。
@@ -1549,11 +1548,11 @@
     applyAtmosphere({ tension: attuned ? "high" : "low" });
     Spiral.save();   // 縁＝結末でも spiral 層を確定（閉じて去っても、次の表紙が応えられる）
     if (!attuned) {
-      document.body && document.body.classList && document.body.classList.add("surfaced");
+      document.body.classList.add("surfaced");
       // E26: 浮上極では音も表層へ戻す＝深部で閉じていた lowpass を再開放（"音が戻る再認識"をコードで実体化）。
       //   Ω 側（核に在る）は深部据え置きが正。密度は観測者から（applyAtmosphere と同式）。未解禁なら Audio 側で no-op。
       Audio.update(0.16, 0.2, clamp01((state.observer - 1) / 18));
-    } else document.body && document.body.classList && document.body.classList.add("omega");   // E12: Ω 突破の専用ウォッシュ（核＝曼荼羅が前面化・底光で満ちる）
+    } else document.body.classList.add("omega");   // E12: Ω 突破の専用ウォッシュ（核＝曼荼羅が前面化・底光で満ちる）
     Audio.breath(attuned);   // E21: 縁の呼気（解決音ではない息・未解禁なら no-op）
     sceneEl.innerHTML = ""; choicesEl.innerHTML = "";
     setBusy(true);               // E6: 縁の結末文＋選択が出揃うまで SR を抑制
@@ -2260,7 +2259,7 @@
   //  - reduced-motion は1枚静止描画。タブ非表示で rAF 停止（モバイル負荷）。
   const Mandala = (() => {
     const cv = $("mandala");
-    if (!cv || !cv.getContext) return { start() {}, update() {} };
+    if (!cv || !cv.getContext) return { start() {}, update() {}, refresh() {} };   // E58: stub にも refresh（読書優先 OFF で呼ばれる）
     const g = cv.getContext("2d");
     let raf = 0, last = 0, lastT = 0, size = 0, dpr = 1, started = false;
     let cur = { sink: 0, observer: 1, dread: 0 };
@@ -2744,7 +2743,13 @@
       g.fillText("quietbriony.github.io/hazama", cx, H - 70);
       return cv;
     }
+    let sharing = false, coolUntil = 0;   // E58: 連打で「共有 1 回＋保存 4 回」にならない＝処理中と直後 1.5s（「残した」表示中）は無視（独立 QA の実測）
     async function share(attuned, chip) {
+      if (sharing || Date.now() < coolUntil) return;
+      sharing = true;
+      try { await shareOnce(attuned, chip); } finally { sharing = false; coolUntil = Date.now() + 1500; }
+    }
+    async function shareOnce(attuned, chip) {
       const cv = draw(attuned);
       const blob = await new Promise((res) => cv.toBlob(res, "image/png"));
       if (!blob) return;
@@ -2761,7 +2766,7 @@
         try { if (navigator.canShare(shareData)) payload = shareData; }
         catch (e) {} // canShare の組み合わせ判定自体が未実装でも files-only を守る
         try { await navigator.share(payload); return; }
-        catch (e) { if (e && e.name === "AbortError") return; }   // キャンセルは保存に落とさない
+        catch (e) { if (e && (e.name === "AbortError" || e.name === "InvalidStateError")) return; }   // キャンセル／共有中（E58）は保存に落とさない
       }
       const a = document.createElement("a");
       a.href = URL.createObjectURL(blob); a.download = file.name;
@@ -2898,7 +2903,7 @@
     // 翻訳が取得できなくても日本語の起動は止めない。言語は表紙での明示選択・保存しない。
     const controller = new AbortController();
     const timer = window.setTimeout(() => controller.abort(), 8000);
-    fetch("locales/en.json?v=e57", { signal: controller.signal }).then((response) => {
+    fetch("locales/en.json?v=e58", { signal: controller.signal }).then((response) => {
       if (!response.ok) throw new Error("English catalog HTTP " + response.status);
       return response.json();
     }).then((data) => {
@@ -2917,7 +2922,7 @@
     const controller = new AbortController();
     const timer = window.setTimeout(() => controller.abort(), 10000);
     try {
-      const res = await fetch("depths-shell.json?v=e57", { cache: "no-store", signal: controller.signal });
+      const res = await fetch("depths-shell.json?v=e58", { cache: "no-store", signal: controller.signal });
       if (!res.ok) throw new Error(`depths-shell HTTP ${res.status}`);
       const data = await res.json();
       if (!data || typeof data !== "object" || !data.start || !data.nodes || !data.nodes[data.start]) {
@@ -2974,7 +2979,6 @@
     //   この手勢の中で AudioContext を生成＆resume するので、モバイルでも音が鳴り始める。
     Music.startPrimary();
     Mandala.start();
-    Glitch.start();
     renderNode(DATA.start || "zero");
   }
   // E57: 実行状態の初期化を restart から分離＝forgetAll が wipe と同期で呼ぶ（遅延 restart が世代で飛んでも消した記憶を書き戻さない）。
@@ -2988,7 +2992,7 @@
     revealToken++;
     clearRun();
     applyCycleSkin();        // B4: cycle=0 に戻ったので表紙スキンも 0（完全に従来どおり）へ
-    if (document.body && document.body.classList) document.body.classList.remove("surfaced", "omega", "phase-break", "glitch-hard", "glitch-soft", "leak-on");
+    document.body.classList.remove("surfaced", "omega", "phase-break", "glitch-hard", "glitch-soft", "leak-on");
     buildReturnPaths();
     renderNode(DATA.start || "zero");
   }
@@ -3014,7 +3018,7 @@
   window.addEventListener("pageshow", syncEntryMotion);
   syncEntryMotion();
 
-  // 開発用フック（プレビュー検証専用）: 任意ノードへ跳ぶ／状態を読む／縁・カードを直接出す。
+  // 検証フック（本番にも同梱・QA ループと smoke が使う）: 任意ノードへ跳ぶ／状態を読む／縁・カードを直接出す。
   // garden(depth, dread, seed): A3 構図モード検証用＝seed を変えて #garden を直接描き直す。
   window.__hz = { go: renderNode, choose, state, isAttuned, edge: renderEdge, card: (a) => EdgeCard.draw(a == null ? isAttuned() : !!a), garden: (depth, dread, seed) => Garden.update(depth, dread, seed), get sink() { return sinkNorm(); }, get attunement() { return state.attunement; } };
 
@@ -3023,13 +3027,14 @@
     // Steam等の同梱app://版はbundle自体がoffline。Web用cacheを作らず配布側の更新に任せる。
     if (!["http:", "https:"].includes(window.location.protocol)) return;
     if (!("serviceWorker" in navigator)) return;
+    try { if (!navigator.serviceWorker) return; } catch (_) { return; }   // E58: opaque origin（sandbox iframe 等）では getter が SecurityError を投げる
     const register = () => {
-      navigator.serviceWorker.register("sw.js?v=e57", { scope: "./", updateViaCache: "none" }).then((reg) => {
+      navigator.serviceWorker.register("sw.js?v=e58", { scope: "./", updateViaCache: "none" }).then((reg) => {
         if (typeof reg.update === "function") reg.update().catch(() => {});
       }).catch((err) => console.warn("[Hazama slice] SW register failed:", err));
     };
-    // E35 以降、旧 controller からの takeover は入口で reload するため、この runtime は常に parse 中に追加される
-    // （readyState が complete の分岐は同梱版／直接読込の保険）。
+    // fresh／current controller では inline boot が parse 中に追加するので load 前（load 待ち）。E56 の cachedShell 経路
+    // （takeover を 10s 待ってから起動）では load 後に走るので readyState=complete の分岐を通る。
     if (document.readyState === "complete") register();
     else window.addEventListener("load", register, { once: true });
   }
@@ -3068,7 +3073,7 @@
     titleAmbient(returning);   // 表紙を動かす（反転ガーデン＋グリッジ＋原色 leak をゲート背後で薄く生かす）
     // 「沈む」の実タップ＝同一document の手勢。この中で enter()→Audio.start()→resume() が走る
     // ＝モバイルで AudioContext を堅牢に解禁できる（cross-document iframe・全画面オーバーレイは廃止）。
-    gb.addEventListener("click", enter, { once: false });
+    gb.addEventListener("click", enter);
     // すべての復元・描画・listener配線が成功してから、最後に入口をreadyへする。
     if (gateNote) gateNote.textContent = "音あり推奨・片手で読める縦長";
     setupLanguage();

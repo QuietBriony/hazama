@@ -10,13 +10,13 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="Hazama" />
   <!-- E4→E30: リンク共有プレビュー（OG/Twitter）。og:image は絶対URL必須＝本番 Pages を指す。
-       画像は三段: JPG(og-card) → hero webp → png(icon-512)。詳細は下の E30 コメント。 -->
+       画像は三段: JPG(og-card) → 旧 hero webp（key・E47 以降の入口は entry-e47 だが OG は共有画像として保持） → png(icon-512)。詳細は下の E30 コメント。 -->
   <meta property="og:type" content="website" />
   <meta property="og:title" content="Hazama 狭間" />
   <meta property="og:description" content="沈むほど戻りにくい。認識が合う者だけがΩへ潜る、没入の降下対話。" />
   <meta property="og:url" content="https://quietbriony.github.io/hazama/" />
   <!-- E30: 先頭は 1200×630 JPG（og-card・width/height 宣言）＝webp を読まない WhatsApp/旧クライアントでも
-       欠落しない。二枚目に hero webp、最後に png（icon-512）。LP と同じ og-card を共有（中身は E29 hero 由来）。 -->
+       欠落しない。二枚目に旧 hero webp、最後に png（icon-512）。LP と同じ og-card を共有（中身は E29 hero 由来）。 -->
   <meta property="og:image" content="https://quietbriony.github.io/hazama/assets/og-card.jpg" />
   <meta property="og:image:width" content="1200" />
   <meta property="og:image:height" content="630" />
@@ -29,7 +29,7 @@
   <link rel="manifest" href="manifest.webmanifest" />
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png" />
   <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png" />
-  <link rel="stylesheet" href="slice.css?v=e57" />
+  <link rel="stylesheet" href="slice.css?v=e58" />
 </head>
 <body data-phase="surface" data-backdrop="entry">
   <div class="hz-bg" aria-hidden="true">
@@ -68,7 +68,7 @@
   <!-- 塗装剥がれ／めくれ遷移：ノード遷移で一度だけ、ぎざついた縁の帯がめくれて降りる（reduced で無効）。 -->
   <div class="hz-peel" aria-hidden="true"></div>
 
-  <main id="app" class="hz-app">
+  <main class="hz-app">
     <!-- 沈下インジケータ：数値は出さない。線が下へ伸び、戻り道が一本ずつ消え、観測者が増える。 -->
     <div class="hz-gauge" aria-hidden="true">
       <div class="hz-observer" id="observer-count" data-count="1">私</div>
@@ -133,7 +133,7 @@
       </div>
       <p class="hz-settings-hint" data-i18n>音は「沈む」のあとに鳴ります。0%で無音です。小さな音量から試してください。</p>
       <div class="hz-settings-release">
-        <p><span data-i18n>表示中の版</span>: <output id="build-version">E57</output></p>
+        <p><span data-i18n>表示中の版</span>: <output id="build-version">E58</output></p>
         <p id="settings-refresh-note" class="hz-settings-hint" data-i18n>更新を確認すると入口に戻ります。周回・認識・痕跡の記憶は残ります。</p>
         <button id="settings-refresh" class="hz-chip" type="button" aria-describedby="settings-refresh-note" data-i18n>更新を確認して開き直す</button>
       </div>
@@ -168,8 +168,8 @@
     //          （自動 update で「URL は旧版・中身は新版」になった controller や、遅い回線での待ち）。
     //          無ければ再試行を出したまま controllerchange を待ち続け、遅れて activate したら自動 reload。
     (() => {
-      const SW_URL = "sw.js?v=e57";
-      const RUNTIME_URL = "slice.js?v=e57";
+      const SW_URL = "sw.js?v=e58";
+      const RUNTIME_URL = "slice.js?v=e58";
       const cssLink = document.querySelector('link[rel="stylesheet"]');
       const CSS_URL = cssLink ? cssLink.getAttribute("href") : "";
       const expectedController = new URL(SW_URL, document.baseURI).href;

@@ -139,6 +139,26 @@ Hazama 自律開発の作業待ち行列。
 
 ## P2
 
+### HZ-BL-041 — コード衛生レンズの提案（E58 の見送り分）と遅い回線の偽の失敗表示
+- priority : P2
+- scope    : runtime / smoke
+- agent    : either
+- human-gate: no
+- status   : open
+- source   : 2026-10-24 E58 第3輪（コード衛生レンズ・独立 QA x2）
+- detail   : (1) 直書き定数の集約: 確定の一拍 140ms（slice.js と CSS .14s と smoke の advance(140)）、最後のフェード 400ms、
+  出現の段差 120/150・200/160、stage のフェード 1.8s と差し替え 2000ms、縁のビート 400/1400、観測者スケール 18、drift の rank 9。
+  smoke は choice-commit のように本番値を抽出して注入する。(2) 3 レンダラ（renderChoices／renderEchoChoices／renderEdgeChoices）の
+  解放タイマー・着地・describedby の共通化 `revealChoiceSet()`（echo と edge は 188 トークン同一）。Fisher–Yates ×3、transient の
+  リセット ×2（descendAgain と clearRun）、幹ラベル ×2、`hashStr("hazama:world")` ×4 も同様。(3) smoke を文字列契約から VM 契約へ:
+  SW の fetch ハンドラ（入口/非入口・optional の再走 1 回）、pickDetour（det_scar は未見の間だけ）、genBelowNode（3 軸重複なし）、
+  CHOICE_VARIA とカバー外ノードの英語ケース。到達不能分岐 6 箇所（renderEchoChoices の truthPool 空・echoTruthAvail 偽・
+  resolveResist の __edge・rejoin 既定 B・Drift の空判定・applyCycle の範囲外）に「保険」の注記。(4) 値の判断: rgba(196,107,90)
+  は E55 以前の --warn（現 #d28670）、`const Audio` が window.Audio を shadow（改名は smoke 3 本に波及）、hazama-check の
+  optionalSkip 死にコード。(5) 独立 QA x2: 新 SW の通信だけ 50kbps だと takeover の 10s で「更新を適用できません」が出てから
+  56.7s 後に自動 reload＝偽の失敗表示（設計どおり回復はする）。timeout 時の文言を「時間がかかっています」系へ分けるか、
+  controllerchange 待ち中は再試行を出さないかは HZ-BL-035 と合わせて判断。
+
 ### HZ-BL-037 — depths の文言・データ提案（E57 レビューの作家判断分）
 - priority : P2
 - scope    : docs / balance

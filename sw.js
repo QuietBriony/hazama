@@ -4,9 +4,12 @@
    - HTML と depths-shell.json は network-first（デプロイ伝播を速く）。
    - 同一オリジン静的アセットは exact-version cache-first。
    - cache prefix=hazama-pwa- ＝旧 forward 版 cache(hazama-pwa-v2.45 等)を activate で掃除し更新。
+   - E56: network の HTML は cache に書かない（offline の HTML は install 時の precache のみ＝同版の css/js と対）。
+     install が待つのは core だけ（atomic）。視覚 asset・locales・lp.html は activate 後に best-effort。
+   - E57: 取り残した optional precache は SW 再起動後の最初の fetch で一回だけ再走（waitUntil で延命）。
 ========================================================= */
 
-const VERSION = "hazama-pwa-e57";
+const VERSION = "hazama-pwa-e58";
 const RELEASE = VERSION.replace("hazama-pwa-", "");
 const CACHE_PREFIX = "hazama-pwa-";
 const STATIC_CACHE = `${VERSION}-static`;
@@ -90,10 +93,6 @@ self.addEventListener("activate", (event) => {
       .then(() => self.clients.claim())
       .then(() => { ensureOptional(); })   // E56/E57: 待たない＝activating 中に fetch を止めない。取り残しは次の fetch で再走
   );
-});
-
-self.addEventListener("message", (event) => {
-  if (event.data?.type === "SKIP_WAITING") self.skipWaiting();
 });
 
 function isHtmlRequest(request) {

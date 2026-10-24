@@ -39,6 +39,8 @@ for (const stale of ["hazama-main.js", "hazama-gate-run.js", "hazama-depths.json
 
 const html = read("index.html");
 const js = read("slice.js");
+// E58: 文字数窓でなく関数全体（`function name(` から次の 2 字下げ `}` まで）を検査する。
+const fnSrc = (name) => { const i = js.indexOf("function " + name + "("); if (i < 0) return ""; const j = js.indexOf("\n  }", i); return j < 0 ? "" : js.slice(i, j + 4); };
 const css = read("slice.css");
 const sw = read("sw.js");
 
@@ -87,7 +89,8 @@ has(js, 'gateEl.setAttribute("inert", "")', "E33 departed gate inert state");
 has(js, 'gateEl.setAttribute("aria-hidden", "true")', "E33 departed gate accessibility state");
 assert(js.indexOf('gb.addEventListener("click", enter') < js.indexOf('gb.disabled = false', js.indexOf("loadData().then")),
   "E33 gate must enable only after click listener wiring");
-const loadCatch = (js.match(/loadData\(\)\.then\([\s\S]*?\n  \}\);/) || [""])[0];
+// E58: catch 側だけを切り出す（then を含むと `gb.disabled = false` が then 側で満たされ検査が空になる）。
+const loadCatch = (js.match(/loadData\(\)\.then\([\s\S]*?\n  \}\)\.catch\(\(e\) => \{([\s\S]*?)\n  \}\);/) || [])[1] || "";
 has(loadCatch, 'window.__hazamaArmRetry("深度データを読み込めません。再試行してください。")',
   "E34 failed depth load routes to retry control");
 has(loadCatch, "gb.disabled = false", "E34 fallback retry control is enabled");
@@ -116,7 +119,7 @@ has(js, "window.__hazamaArmRetry", "E34 depth-load retry handoff");
 // slice.js: 認識/Ωゲート(逆統合の核)＋二極終端＋認識インジケータ
 has(js, "function gainRecognition", "recognition gain");
 has(js, "isAttuned", "omega attunement gate");
-has(js, "function renderEdge", "edge terminal");
+has(js, "function renderEdge(", "edge terminal");
 has(js, "浮上 — 表層へ帰る", "two-pole surface ending");
 has(js, "深度Ω 到達", "omega ending");
 has(js, "function renderAttune", "recognition indicator");
@@ -148,7 +151,8 @@ for (const transient of ["returnPaths", "dread", "observer", "echoDone", "sink"]
 
 // E3: 認識2.0（読解の試験化）＝深い構造読み＋エコー門。原典給餌(E2)の燃料が揃っていること。
 has(js, "const ECHO_BANK", "E3 echo bank");
-const echoKeys = [...js.matchAll(/^\s{4}([A-Za-z_]+): "/gm)].map((m) => m[1]);
+const echoBank = (js.match(/const ECHO_BANK = \{[\s\S]*?\n  \};/) || [""])[0];   // E58: バンク内に限定
+const echoKeys = [...echoBank.matchAll(/^\s{4}([A-Za-z_]+): "/gm)].map((m) => m[1]);
 // E14: 中盤深度 G/I/O/R/W の真候補を追加＝Q/Z の門が中盤を取りこぼさない（≥20）。
 assert(echoKeys.length >= 20, `E3/E14 echo bank entries: ${echoKeys.length} (need >=20)`);
 for (const k of ["G", "I", "O", "R", "W"]) assert(echoKeys.includes(k), `E14 ECHO_BANK missing mid-depth key: ${k}`);
@@ -222,11 +226,11 @@ assert(saveBody.length > 0 && !saveBody.includes("activeTrunk"), "E16 activeTrun
 // E17: 周回連動＝周回(cycle>=1)で A に第3の幹(reso/流れ)が開く。minCycle ゲート＋trunk フィールドで分岐。
 assert(/filter\(\(c\) => !c\.minCycle/.test(js), "E17 cycle-gate filters choices by minCycle");
 assert(/state\.activeTrunk = c\.trunk \|\|/.test(js), "E17 fork honors c.trunk (third trunk)");
-has(js, '=== "reso" ? "流れ"', "E17 edge card labels the reso trunk");
+has(js, '=== "reso" ? "流れ"', "E17 ending record labels the reso trunk");
 // E18: 第4の幹 casc（崩壊と再生）＝cycle≥2 で A に開く。E17 の trunk/minCycle 機構をそのまま活用。
-has(js, '=== "casc" ? "崩壊"', "E18 edge card labels the casc trunk");
+has(js, '=== "casc" ? "崩壊"', "E18 ending record labels the casc trunk");
 // E20: 第5の幹 other（並行自己）＝cycle≥3 で A に開く。E17/E18 と同じ trunk/minCycle 機構。
-has(js, '=== "other" ? "並行"', "E20 edge card labels the otherself trunk");
+has(js, '=== "other" ? "並行"', "E20 ending record labels the otherself trunk");
 // E21: 音の軸色（幹ごとの微変調 setAxis ＋ 縁の呼気 breath）。human-gate＝耳で採否＝コード存在のみ検証。
 has(js, "function setAxis", "E21 per-trunk audio axis");
 has(js, "function breath", "E21 edge breath (呼気)");
@@ -431,7 +435,7 @@ has(html, 'property="og:image:alt"', "E32 og:image alt declared");
 // 初見 cycle0 不変・決定論（worldSeed 系）・機構（to/sink/deep）不変・縁/エコー門は対象外、を契約でロック。
 has(js, "const CHOICE_VARIA", "E36 choice varia bank");
 has(js, "function orderedChoices", "E36 ordered choices fn");
-assert(/function orderedChoices[\s\S]{0,400}?state\.cycle < 1/.test(js), "E36 shuffle must be cycle-gated (cycle0 = authored order)");
+assert(/state\.cycle < 1/.test(fnSrc("orderedChoices")), "E36 shuffle must be cycle-gated (cycle0 = authored order)");
 assert((js.match(/orderedChoices\(/g) || []).length === 2, "E36 orderedChoices used exactly once (renderChoices only — edge/echo excluded)");
 assert(/state\.cycle >= 1 && CHOICE_VARIA\[/.test(js), "E36 label varia must be cycle-gated");
 has(js, '"zero>A#descend"', "E36 varia key format (entry band)");
@@ -451,7 +455,7 @@ assert(!existsSync(repoPath("assets/hazama-descent-key-b.webp")), "E56 unreferen
 assert(!sw.includes("hazama-descent-key-b.webp"), "E56 unreferenced set-B hero must not be precached");
 has(js, "const ART_SETS", "E37 art set bank");
 has(js, "function applyArtSet", "E37 art set picker");
-assert(/function applyArtSet[\s\S]{0,900}?c < 1 \? ""/.test(js), "E37 picker must be cycle-gated (cycle0 = canonical set)");
+assert(/c < 1 \? ""/.test(fnSrc("applyArtSet")), "E37 picker must be cycle-gated (cycle0 = canonical set)");
 has(js, "applyArtSet();", "E37 picker wired into applyCycleSkin");
 // HTML 既定 src は正典セットのまま（JS 死亡時/初回ペイント＝従来どおり）
 assert(!/hazama-descent-key-b\.webp/.test(html), "E37 html default src must stay canonical set");
@@ -460,9 +464,9 @@ assert(!/hazama-descent-[a-z]+-b\.webp/.test(html), "E37/E38 html must not refer
 // E38: picker の seed 規約＝周回錨（transient 非依存）＋hashStr 拡散。回帰防止:
 //  (1) 3 picker とも worldSeed() を参照しない（rank/maxRank で同周回の見えが揺れる）
 //  (2) cycle 項に Math.imul を使わない（worldSeed 定数との XOR 相殺／imul 対の先頭 draw 縞）
-const pickerSrc = (name, span) => { const i = js.indexOf(name); return i < 0 ? "" : js.slice(i, i + span); };
-for (const [name, span] of [["function applyArtSet", 900], ["function orderedChoices", 1100]]) {
-  const src = pickerSrc(name, span);
+const pickerSrc = (name) => fnSrc(name.replace(/^function /, ""));
+for (const name of ["function applyArtSet", "function orderedChoices"]) {
+  const src = pickerSrc(name);
   assert(src.length > 0, `E38 picker present: ${name}`);
   assert(!/worldSeed\(/.test(src), `E38 ${name} must not depend on worldSeed() (transient rank/maxRank)`);
   assert(!/Math\.imul\((state\.cycle|c) \+ 1/.test(src), `E38 ${name} must diffuse cycle via hashStr, not imul`);
@@ -541,7 +545,6 @@ if (depths) {
 
 // E22: 紹介 LP（表玄関）＋OG カード。ゲーム本体とは別ページ・自己完結（slice ランタイム非依存）・ゲームへ導線。
 nonEmpty("lp.html");
-nonEmpty("assets/og-card.jpg");
 const lpHtml = read("lp.html");
 has(lpHtml, 'href="./"', "E22 LP links into the game (./)");
 has(lpHtml, "assets/og-card.jpg", "E22 LP references the OG card");
@@ -553,7 +556,7 @@ has(js, "function pickTestament", "E23 testament picker");
 has(js, "const TESTAMENT", "E23 testament bank");
 has(js, "遺言", "E23 testament mark (departed-voice)");
 assert(/isAttuned\(\)[\s\S]{0,80}pickTestament/.test(js), "E23 testament only on attuned deep run");
-const driftFn = (js.match(/function maybeForeignDrift[\s\S]*?\n  \}/) || [""])[0];
+const driftFn = (js.match(/function maybeForeignDrift\([\s\S]*?\n  \}/) || [""])[0];
 assert(driftFn && !driftFn.includes("pickTestament"), "E23 mid-descent seat must not emit testament (single seat)");
 assert(!saveBody.includes("testament") && !saveBody.includes("遺言"), "E23 testament stays out of spiral save");
 
@@ -815,6 +818,15 @@ has(sw, "if (!entry) return caches.match(request).then((cached) => cached || Res
 has(bootScript, "const disarmRetry = () => {", "E57 boot disarmRetry");
 has(js, "if (myToken === revealToken && p.isConnected) p.textContent = line.t;", "E57 revealed lines collapse per-character spans");
 has(js, 'if (q.querySelector && q.querySelector(".ch")) q.textContent = q.textContent;', "E57 fast-forward collapses per-character spans");
+// E58: 衛生輪（コード衛生レンズ）の是正を契約でロック＝死にコードの再混入を防ぐ・微修正の固定。
+assert(!html.includes('id="app"') && !css.includes("--reveal-ms") && !css.includes("--hand-gold") && !js.includes("--reveal-ms"), "E58 dead ids/vars stay removed");
+has(js, "return { start() {}, update() {}, refresh() {} };", "E58 mandala stub has refresh");
+has(js, 'classList.remove("phase-break"), 1200);', "E58 phase-break lasts the full 1.2s tear");
+hasRe(/\.hz-line\.hz-edge-more \{[^}]*color: var\(--ink-dim\)/, "E58 ending hint uses the current dim ink (contrast)");
+assert(fnSrc("applyArtSet").includes("artSetEpoch") && fnSrc("orderedChoices").includes("return out;"), "E58 whole-function extraction covers the pickers");
+has(js, "if (sharing || Date.now() < coolUntil) return;", "E58 edge card share has an in-flight guard and cooldown");
+has(js, 'e.name === "InvalidStateError")) return;', "E58 share-in-progress does not fall back to download");
+has(js, "try { if (!navigator.serviceWorker) return; } catch (_) { return; }", "E58 runtime SW probe tolerates opaque origins");
 
 if (failures.length) {
   console.error("build-consistency smoke FAIL");

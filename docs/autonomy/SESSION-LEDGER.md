@@ -19,6 +19,24 @@ Hazama 自律開発 session の追記専用ログ。
 
 ---
 
+## 2026-10-24 — E58 第3輪＝コード衛生＋独立 QA（F62〜F67・敵対的エッジ）＋文書整合（8d2edac）
+- agent      : Claude Fable 5.1（マネジメント・実装・実走検証）＋worker(opus)×4（QA F62〜F67＋エッジ 16 項目の CDP 実走／性能・資源（結果待ち・別途）／docs 整合／コード衛生）
+- goal       : E56/E57 を実装者と別の目で実走し、死にコード・古い記述・smoke の穴を客観に是正する（push は号令待ち→号令で push）
+- shipped    :
+  - 先行 commit 8d2edac（docs/smoke）: 文書ドリフト 38 件（版同期「三点」→8 点、忘却の実態、再試行の実態、構成・記憶・操作の要点・スモーク説明・script 一覧・完了済みプロンプトの注記・PWA checklist）＋build-consistency の read() を LF 正規化（autocrlf=true の新しい clone で 3 契約が FAIL していた＝CRLF 複製 175 ファイルで 2 PASS を確認）
+  - `slice.js`: EdgeCard.share に処理中ガード＋直後 1.5s の cooldown・共有中（InvalidStateError）は保存へ落とさない／registerSlicePWA は navigator.serviceWorker の getter を try で確かめる（opaque origin）／曼荼羅 stub に refresh／phase-break 900→1200ms／死にコード削除（`_color`・`--reveal-ms` setProperty・enter の no-op `Glitch.start()`・`{ once: false }`・body ガード×3）／先頭説明・RANK・ECHO_BANK 見出し・detour 見出し・E55 注記・検証フック・SW 登録のコメントを現状へ
+  - `slice.css`: `--reveal-ms`・`--hand-gold`・死に宣言（mandala top 118%・入口ボタンの字間/text-indent/transition・summary の outline-offset 3px・退路の text-decoration）・reduced/comfort の冗長 kill（surfaced/omega の ::after・abyss・gate-title）を削除／`.hz-edge-more` を var(--ink-dim)／先頭説明・本文コメントの位置・R5 見出し・手マーク見出しを現状へ
+  - `sw.js`: 未使用の SKIP_WAITING message listener を削除／先頭説明に E56/E57 の構成
+  - `index.html`: 未参照の `id="app"` を削除／OG コメントの「hero webp」→旧 hero
+  - `scripts/build-consistency-smoke.mjs`: loadData の catch だけを抽出（then を含み `gb.disabled = false` が空検査だった）／`function renderEdge(`・`maybeForeignDrift(` の前方一致／ECHO_BANK 限定のキー抽出／文字数窓→関数全体 `fnSrc()`（applyArtSet の E56 部・orderedChoices の全体を検査）／重複 nonEmpty 削除／E58 契約（死にコード再混入なし・stub refresh・1200ms・edge-more の色・共有ガード・SW probe・抽出の網羅）
+  - docs: README 沿革 E58／BACKLOG HZ-BL-041（衛生レンズの提案＝定数化・3 レンダラ共通化・smoke の VM 化・旧 --warn 色・Audio の shadow、独立 QA の x2＝遅い回線での偽の失敗表示）／QA 正典 F68＋F62〜F67 に独立実走の結果を併記・F62/F63/F66 の記述誤り（根拠行・cache 件数・行数）を訂正／LOOP-STATE
+- checks     : `node --check` 全 PASS／`hazama-check` 2 PASS / 0 FAIL（LF 作業ツリー・CRLF 複製）
+- verified   : ブラウザ実走（localhost:8740・SW/cache/保存クリーン）＝入口ボタンの字間 8.4px（削除した 0.4em は元々上書き）・mandala の top は後勝ちの値のまま・`#app` なし／phase-break: +1050ms で class あり・+1350ms でなし／結末ヒントの文字色 rgb(152,167,183)＝現在の --ink-dim／縁カード chip の連打 5→保存 1・1.5s 後の押下は通る（例外 0）／console 0。独立 QA（worker/opus・E57 凍結ビルド）: F62〜F67 6/6 pass、エッジ a〜n 13 pass・m fail（本 E で修正）、x1 fail（本 E で修正）、x2（遅い回線の偽の失敗表示→自動回復 56.7s）は設計の範囲として BACKLOG
+- backlog    : 追加 HZ-BL-041。既存 human-gate は閉じない
+- next       : 性能・資源レンズ（CDP tracing）の結果が戻り次第、客観分だけを次の E で。号令で push→Pages 反映→`?v=e58` 実走
+- blockers   : 実 SR・実スマホ横持ち・prefers-contrast・遅い回線の実機は human-gate
+- note       : 衛生レンズの削除 20 件は「参照 0（HTML/JS 文字列/smoke/docs の全数 grep）＋削除後 2 PASS」で確定したものだけ採用。到達不能分岐 6 箇所と定数の直書きは注記/提案に留めた。独立 QA の実走中に repo が動いたため（8d2edac と未 commit の E58）、worker は E57 の凍結コピー（git archive）で配信し直した＝並行作業時は worker に凍結コピーを使わせるのが安全
+
 ## 2026-10-23 — E57 第2輪レビューの是正（E56 差分の別目／depths 監査／英語試作／a11y・SR・キーボード／QA F40〜F61 実走）
 - agent      : Claude Fable 5.1（マネジメント・実装・実走検証）＋worker(opus)×5（レンズ5〜8＋QA Phase2 の headless Chrome 実走）
 - goal       : E56 を含む統合ビルドを別の目で再レビューし、客観・低リスクの是正だけを E57 として実装・検証する（push は号令待ち）

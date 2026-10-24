@@ -147,6 +147,22 @@ Codex / Claude Code が同じ順番で作業を継続するための薄いエン
 
 ## 沿革（詳細は git log）
 
+- **進化 E58（2026-10-24・第3輪＝衛生と独立 QA）**: コード衛生レンズ（識別子の全数照合・CSS セレクタ照合・mutation 検査）と、
+  E56/E57 の QA 正典 F62〜F67＋敵対的エッジ 16 項目の独立実走（headless Chrome+CDP・E57 凍結ビルド）を受けて是正。
+  (1) **独立 QA の fail 2 件**＝縁カード「縁を画像で残す」の連打で共有 1 回＋保存 4 回になる（処理中ガードなし・共有中の
+  InvalidStateError が保存へ落ちる）→処理中と直後 1.5s は無視・共有中は保存に落とさない（実測: 連打 5→保存 1）／opaque origin
+  （sandbox iframe）で runtime の SW 登録が未捕捉 SecurityError→getter を try で確かめる (2) **死にコード 20 件を削除**＝未使用の
+  `_color`・`--reveal-ms`（JS/CSS）・`--hand-gold`・no-op の `Glitch.start()`・常に上書きされる宣言（mandala の top・入口ボタンの
+  字間/transition・summary の ring offset・退路の text-decoration）・reduced/comfort の冗長な kill 指定・`id="app"`・使われない
+  SW message・重複 smoke（削除後 2 PASS を実走で確認） (3) **微修正**＝曼荼羅 stub に refresh（canvas 無しで読書優先 OFF が
+  TypeError）、phase-break を 1.2s（専用 tear keyframes を最後まで再生・900ms では後半が切れていた）、結末ヒント `.hz-edge-more` の
+  文字色を旧 --ink-dim の直書き（4.3:1）から現在の薄い文字色（8.3:1）へ (4) **古いコメント**＝slice.js/slice.css/sw.js の先頭説明
+  （M1/M2 vertical slice・Music ブリッジ・hazama-depths.json）、RANK・ECHO_BANK・検証フック・SW 登録・手マーク等を現状へ
+  (5) **smoke の精度**＝loadData の catch だけを切り出す（then を含み `gb.disabled=false` が空検査だった）、renderEdge/
+  maybeForeignDrift の前方一致、ECHO_BANK 限定のキー抽出、文字数窓→関数全体の抽出（applyArtSet の E56 部が検査外だった）。
+  独立 QA: F62〜F67 6/6 pass・エッジ a〜n は m 以外 pass（E56→E57 の実 takeover は reload 1 回、offline の LP 200、reduced の
+  ダブルタップ/実キーリピート/モダリティ着地/forgetAll 整合/低い表示×dialog/200 遷移の資源増なし）。見送り（定数化・3 レンダラの
+  共通化・smoke の VM 化・旧 --warn 色・遅い回線の偽の失敗表示）は BACKLOG HZ-BL-041（`?v=e58`）
 - **進化 E57（2026-10-23・第2輪レビューの是正＝E56 差分の別目／depths 監査／英語試作／a11y・SR・キーボード）**: 5 本の agent
   （opus×4＋QA 正典 F40〜F61 の headless Chrome 実走）で統合ビルドを再レビューし、客観・低リスクのみ実装。
   (1) **英語試作の混在防止**＝カバー外ノード（他の道・周回の幹）では択の lead/sub を原文のまま（全域表の「沈む」が sub だけ英語に
