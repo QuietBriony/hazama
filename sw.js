@@ -9,7 +9,7 @@
    - E57: 取り残した optional precache は SW 再起動後の最初の fetch で一回だけ再走（waitUntil で延命）。
 ========================================================= */
 
-const VERSION = "hazama-pwa-e58";
+const VERSION = "hazama-pwa-e59";
 const RELEASE = VERSION.replace("hazama-pwa-", "");
 const CACHE_PREFIX = "hazama-pwa-";
 const STATIC_CACHE = `${VERSION}-static`;

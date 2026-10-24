@@ -29,7 +29,7 @@
   <link rel="manifest" href="manifest.webmanifest" />
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png" />
   <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png" />
-  <link rel="stylesheet" href="slice.css?v=e58" />
+  <link rel="stylesheet" href="slice.css?v=e59" />
 </head>
 <body data-phase="surface" data-backdrop="entry">
   <div class="hz-bg" aria-hidden="true">
@@ -39,11 +39,13 @@
     </div>
     <!-- E55: 物語の位置(data-backdrop)で景色を進め、沈下(data-phase/--sink)は圧と色へ。
          深部を黒に潰さず、外殻では視点のcropも変える。終端はsurfaced/omegaを優先する。
-         JS無効/reducedでも入口は表示。既存4枚と周回の変奏を再利用し、外部依存は追加しない。 -->
-    <img class="hz-stage" data-stage="drift"    src="assets/hazama-descent-drift.webp"    alt="" aria-hidden="true" decoding="async" fetchpriority="low" />
-    <img class="hz-stage" data-stage="bottom"   src="assets/hazama-descent-bottom.webp"   alt="" aria-hidden="true" decoding="async" fetchpriority="low" />
-    <img class="hz-stage" data-stage="surfaced" src="assets/hazama-descent-surfaced.webp" alt="" aria-hidden="true" decoding="async" fetchpriority="low" />
-    <img class="hz-stage" data-stage="omega"    src="assets/hazama-descent-omega.webp"    alt="" aria-hidden="true" decoding="async" fetchpriority="low" />
+         JS無効/reducedでも入口は表示。既存4枚と周回の変奏を再利用し、外部依存は追加しない。
+         E59: 4枚の src は HTML に書かず applyArtSet（起動直後）が与える＝表紙では不可視の 168KB が HTML 解析時に CSS/JS と
+         帯域を取り合わない（実測: 1.6Mbps で FCP 1.0→0.6s・「沈む」2.8→2.0s）。周回≥1 の起動ではセット B を直接読む。 -->
+    <img class="hz-stage" data-stage="drift"    alt="" aria-hidden="true" decoding="async" fetchpriority="low" />
+    <img class="hz-stage" data-stage="bottom"   alt="" aria-hidden="true" decoding="async" fetchpriority="low" />
+    <img class="hz-stage" data-stage="surfaced" alt="" aria-hidden="true" decoding="async" fetchpriority="low" />
+    <img class="hz-stage" data-stage="omega"    alt="" aria-hidden="true" decoding="async" fetchpriority="low" />
     <!-- 反転重森ガーデン（R6）：深く潜るほど"世界の輪郭が溶け"、サイバーパンク×重森三玲の
          枯山水（砂紋/石組/市松苔）が色相反転（自然色を180°反転＝不気味）して progressive に露出する。
          構図は分岐エンジンの信号（周回/到達深度/弾かれ履歴/ランク）= worldSeed で再生成。
@@ -133,7 +135,7 @@
       </div>
       <p class="hz-settings-hint" data-i18n>音は「沈む」のあとに鳴ります。0%で無音です。小さな音量から試してください。</p>
       <div class="hz-settings-release">
-        <p><span data-i18n>表示中の版</span>: <output id="build-version">E58</output></p>
+        <p><span data-i18n>表示中の版</span>: <output id="build-version">E59</output></p>
         <p id="settings-refresh-note" class="hz-settings-hint" data-i18n>更新を確認すると入口に戻ります。周回・認識・痕跡の記憶は残ります。</p>
         <button id="settings-refresh" class="hz-chip" type="button" aria-describedby="settings-refresh-note" data-i18n>更新を確認して開き直す</button>
       </div>
@@ -168,8 +170,8 @@
     //          （自動 update で「URL は旧版・中身は新版」になった controller や、遅い回線での待ち）。
     //          無ければ再試行を出したまま controllerchange を待ち続け、遅れて activate したら自動 reload。
     (() => {
-      const SW_URL = "sw.js?v=e58";
-      const RUNTIME_URL = "slice.js?v=e58";
+      const SW_URL = "sw.js?v=e59";
+      const RUNTIME_URL = "slice.js?v=e59";
       const cssLink = document.querySelector('link[rel="stylesheet"]');
       const CSS_URL = cssLink ? cssLink.getAttribute("href") : "";
       const expectedController = new URL(SW_URL, document.baseURI).href;

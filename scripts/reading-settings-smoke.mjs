@@ -40,7 +40,7 @@ function harness(reduced = false) {
   const context = vm.createContext({
     $, document, window: new Element(), Audio: audio, REDUCED: reduced, entered: false,
     Preferences: { textScale: 1, fullText: false, sound: true, readingComfort: false }, Follow: { release() {} },
-    Mandala: { refresh() {} },   // E57: 読書優先 OFF で測り直す（この smoke の対象外＝記録しない）
+    Mandala: { refresh() {}, comfort() {} },   // E57/E59: 読書優先の切替で呼ばれる（この smoke の対象外＝記録しない）
     localStorage: new Proxy({}, { get() { throw new Error("settings must not access storage"); } })
   });
   context.window.location = { reload() { calls.push("reload"); } };

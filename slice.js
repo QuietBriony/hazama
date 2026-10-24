@@ -2259,7 +2259,7 @@
   //  - reduced-motion は1枚静止描画。タブ非表示で rAF 停止（モバイル負荷）。
   const Mandala = (() => {
     const cv = $("mandala");
-    if (!cv || !cv.getContext) return { start() {}, update() {}, refresh() {} };   // E58: stub にも refresh（読書優先 OFF で呼ばれる）
+    if (!cv || !cv.getContext) return { start() {}, update() {}, refresh() {}, comfort() {} };   // E58/E59: stub にも refresh/comfort（読書優先の切替で呼ばれる）
     const g = cv.getContext("2d");
     let raf = 0, last = 0, lastT = 0, size = 0, dpr = 1, started = false;
     let cur = { sink: 0, observer: 1, dread: 0 };
@@ -2346,13 +2346,20 @@
       if (REDUCED) return;
       document.addEventListener("visibilitychange", () => {
         if (document.hidden) { cancelAnimationFrame(raf); raf = 0; }
-        else if (!raf) { last = 0; raf = requestAnimationFrame(loop); }
+        else if (!raf && !document.body.classList.contains("reading-comfort")) { last = 0; raf = requestAnimationFrame(loop); }
       });
       raf = requestAnimationFrame(loop);
+    }
+    // E59: 読書優先（display:none）中は rAF 自体を止める（E56 は描画だけ止めていた＝60/s の空回り）。OFF で再開。
+    function comfort(on) {
+      if (REDUCED || !started) return;
+      if (on) { cancelAnimationFrame(raf); raf = 0; }
+      else if (!raf && !document.hidden) { last = 0; raf = requestAnimationFrame(loop); }
     }
     return {
       start,
       refresh: () => { if (!size) resize(); },   // E57: 読書優先 OFF で測り直す（REDUCED は loop が無い）
+      comfort,
       // 深度が変わった瞬間に1枚即描画（reactivity の即応＋rAF が間引かれる環境でも反映）。
       // rAF ループは回転を継続させる。
       update: (sink, observer, dread) => { cur = { sink, observer, dread }; if (!size) resize(); draw(lastT); }
@@ -2570,9 +2577,11 @@
     }
     function start() {
       if (started || REDUCED) return; started = true;
+      paused = document.hidden;   // E59: 背景タブで開始すると可視化時の schedule と二重になり連鎖が 2 本（バースト倍）になっていた
       document.addEventListener("visibilitychange", () => {
         paused = document.hidden;
-        if (paused) { clearTimeout(timer); clearBurst(); } else schedule();
+        clearTimeout(timer);
+        if (paused) clearBurst(); else schedule();
       });
       schedule();
     }
@@ -2869,6 +2878,7 @@
     comfort.addEventListener("change", () => {
       Preferences.readingComfort = comfort.checked;
       document.body.classList.toggle("reading-comfort", Preferences.readingComfort);
+      Mandala.comfort(Preferences.readingComfort);           // E59: 読書優先中は rAF を止める／OFF で再開
       if (!Preferences.readingComfort) Mandala.refresh();   // E57: display:none 中に開始した曼荼羅を測り直す
       Follow.release(); // 見た目の切替で読んでいた位置を奪わない。
     });
@@ -2903,7 +2913,7 @@
     // 翻訳が取得できなくても日本語の起動は止めない。言語は表紙での明示選択・保存しない。
     const controller = new AbortController();
     const timer = window.setTimeout(() => controller.abort(), 8000);
-    fetch("locales/en.json?v=e58", { signal: controller.signal }).then((response) => {
+    fetch("locales/en.json?v=e59", { signal: controller.signal }).then((response) => {
       if (!response.ok) throw new Error("English catalog HTTP " + response.status);
       return response.json();
     }).then((data) => {
@@ -2922,7 +2932,7 @@
     const controller = new AbortController();
     const timer = window.setTimeout(() => controller.abort(), 10000);
     try {
-      const res = await fetch("depths-shell.json?v=e58", { cache: "no-store", signal: controller.signal });
+      const res = await fetch("depths-shell.json?v=e59", { cache: "no-store", signal: controller.signal });
       if (!res.ok) throw new Error(`depths-shell HTTP ${res.status}`);
       const data = await res.json();
       if (!data || typeof data !== "object" || !data.start || !data.nodes || !data.nodes[data.start]) {
@@ -3029,7 +3039,7 @@
     if (!("serviceWorker" in navigator)) return;
     try { if (!navigator.serviceWorker) return; } catch (_) { return; }   // E58: opaque origin（sandbox iframe 等）では getter が SecurityError を投げる
     const register = () => {
-      navigator.serviceWorker.register("sw.js?v=e58", { scope: "./", updateViaCache: "none" }).then((reg) => {
+      navigator.serviceWorker.register("sw.js?v=e59", { scope: "./", updateViaCache: "none" }).then((reg) => {
         if (typeof reg.update === "function") reg.update().catch(() => {});
       }).catch((err) => console.warn("[Hazama slice] SW register failed:", err));
     };

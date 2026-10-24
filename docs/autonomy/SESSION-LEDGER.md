@@ -19,6 +19,21 @@ Hazama 自律開発 session の追記専用ログ。
 
 ---
 
+## 2026-10-24 — E59 性能レンズの客観是正（景色 4 枚の遅延読込・グリッジの背景開始・読書優先中の rAF）
+- agent      : Claude Fable 5.1（実装・実走検証）＋worker(opus)×1（レンズ9: CDP tracing 実測＝E57/E58 相当の runtime）
+- goal       : 実測で確定した性能の無駄を、見た目を変えずに是正する（push は号令待ち）
+- shipped    :
+  - `index.html`: `.hz-stage` 4 枚から `src` を外す（applyArtSet が起動直後に与える）
+  - `slice.js`: Glitch.start は `paused = document.hidden` で始め、visibilitychange では timer を必ず clear してから再 schedule（背景タブ開始で連鎖 2 本・バースト/破断音が倍になっていた）／Mandala に `comfort(on)`（読書優先中は rAF を止め、OFF と可視復帰で再開）・stub にも comfort／設定の読書優先 change で `Mandala.comfort()`
+  - smoke: build-consistency の E59 契約（stage の src なし・4 枚維持・applyArtSet の代入・Glitch の hidden 開始・Mandala.comfort と呼び出し）／E58 契約の stub 文言を更新／reading-settings の Mandala stub に comfort
+  - docs: README 沿革 E59／BACKLOG HZ-BL-042（性能の人間判断: 入口画像の可逆 1.24MB、観測者の呼吸アニメ、曼荼羅 top の transition、slice.js preload、再訪の depths network-first、en.json の遅延、Peel の強制 reflow）／QA 正典 F69／LOOP-STATE
+- checks     : `node --check` PASS／`hazama-check` 2 PASS / 0 FAIL
+- verified   : ブラウザ実走（localhost:8740・SW/cache クリーン・?v=e59）＝resource timing で stage 4 枚の取得開始が 42ms（slice.js 27-31ms・depths 34-38ms の後＝起動後）、起動後の stage src は 4 枚とも正典／controller sw.js?v=e59・console error 0。読書優先中の rAF 停止は built-in browser のペインが rAF を回さない（素の rAF も 0 tick）ため実測できず、smoke 契約と静的確認に依拠。背景タブ開始の二重連鎖は worker が修正版コピーで実測（40s のバースト 16→6 回・pending 1）
+- 実測の要点 : 初回 cold（gz・Pages 相当）1.6Mbps: FCP 1.0s／「沈む」2.7s／入口画像完了 8.2s、400kbps: 3.1s／10.1s／32.3s。LCP 候補はテキスト（入口画像は候補にならない）。slice.js は CSS 完了後に Low で要求される（直列）。遷移: renderNode 同期 2.9ms 中央（4x 13.1ms）・Long task 0。常駐: 零章 60s で main 2.8%・レンダラ 11.9%（音 ≈5%）、hidden で全停止。287 遷移で heap 2.3MB・timer/AudioNode/voice に増加なし。SW: core→optional の順、同 URL の二重取得 0
+- backlog    : 追加 HZ-BL-042。既存 human-gate は閉じない
+- next       : 号令で push（fetch→Pages→`?v=e59` 実走）。入口画像の画質と呼吸アニメは人間の判断
+- blockers   : 実機（H2 の優先度・GPU・電池）での再計測は human/実機
+
 ## 2026-10-24 — E58 第3輪＝コード衛生＋独立 QA（F62〜F67・敵対的エッジ）＋文書整合（8d2edac）
 - agent      : Claude Fable 5.1（マネジメント・実装・実走検証）＋worker(opus)×4（QA F62〜F67＋エッジ 16 項目の CDP 実走／性能・資源（結果待ち・別途）／docs 整合／コード衛生）
 - goal       : E56/E57 を実装者と別の目で実走し、死にコード・古い記述・smoke の穴を客観に是正する（push は号令待ち→号令で push）

@@ -820,13 +820,20 @@ has(js, "if (myToken === revealToken && p.isConnected) p.textContent = line.t;",
 has(js, 'if (q.querySelector && q.querySelector(".ch")) q.textContent = q.textContent;', "E57 fast-forward collapses per-character spans");
 // E58: 衛生輪（コード衛生レンズ）の是正を契約でロック＝死にコードの再混入を防ぐ・微修正の固定。
 assert(!html.includes('id="app"') && !css.includes("--reveal-ms") && !css.includes("--hand-gold") && !js.includes("--reveal-ms"), "E58 dead ids/vars stay removed");
-has(js, "return { start() {}, update() {}, refresh() {} };", "E58 mandala stub has refresh");
+has(js, "return { start() {}, update() {}, refresh() {}, comfort() {} };", "E58/E59 mandala stub has refresh/comfort");
 has(js, 'classList.remove("phase-break"), 1200);', "E58 phase-break lasts the full 1.2s tear");
 hasRe(/\.hz-line\.hz-edge-more \{[^}]*color: var\(--ink-dim\)/, "E58 ending hint uses the current dim ink (contrast)");
 assert(fnSrc("applyArtSet").includes("artSetEpoch") && fnSrc("orderedChoices").includes("return out;"), "E58 whole-function extraction covers the pickers");
 has(js, "if (sharing || Date.now() < coolUntil) return;", "E58 edge card share has an in-flight guard and cooldown");
 has(js, 'e.name === "InvalidStateError")) return;', "E58 share-in-progress does not fall back to download");
 has(js, "try { if (!navigator.serviceWorker) return; } catch (_) { return; }", "E58 runtime SW probe tolerates opaque origins");
+// E59: 性能レンズ（CDP 実測）の客観是正＝stage 4 枚は HTML で読まず起動後に与える・Glitch の背景開始・読書優先中の rAF 停止。
+assert(!/class="hz-stage"[^>]*\ssrc=/.test(html), "E59 stage overlays must not carry src in HTML (parse-time bandwidth)");
+assert((html.match(/class="hz-stage"/g) || []).length === 4, "E59 four stage overlays remain");
+has(js, 'img.src = next; return;', "E59 applyArtSet assigns stage src after boot");
+has(js, "paused = document.hidden;   // E59", "E59 glitch chain starts paused when hidden");
+has(js, "function comfort(on) {", "E59 mandala rAF pause in reading-comfort");
+has(js, "Mandala.comfort(Preferences.readingComfort);", "E59 comfort handler pauses/resumes the mandala loop");
 
 if (failures.length) {
   console.error("build-consistency smoke FAIL");

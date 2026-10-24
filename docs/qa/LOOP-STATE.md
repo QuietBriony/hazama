@@ -5,7 +5,7 @@
 - current_phase: DONE（QA一巡完了・2026-06-23）
 - phase_label: 完了。全25機能 検証 pass・敵対的エッジ検査クリア・**実バグ0**。P3=N/A（欠陥なし）・P4=N/A（修正0）
 - loop_status: STOPPED（次の自動起床なし。再開は再び /loop で）
-- last_row_id: F68
+- last_row_id: F69
 - canonical: docs/qa/feature-stories.csv
 - baseline_check: 2 PASS / 0 FAIL（node scripts/hazama-check.mjs）
 - preview_serverId: 9449ff33-dd4d-4f08-8f01-ebeb6d0422cd（port 8740・preview_start name=hazama）
@@ -15,6 +15,7 @@
 - addendum（2026-10-23・docs-only 追記＋E56 で F27 修正）: 本番 E55.1 に対し正典が F39 で止まっていた乖離を是正＝E39〜E55.1 のプレイヤー観測可能な新挙動を **F40〜F61**（worker/sonnet 起草・根拠行は grep 実測・Fable 検収・P2 は空欄＝次ループの Phase2 で実走）、E56（退路の約束の整合・入力の暴発防止・PWA 更新の堅牢化）を **F62/F63** として追補し正典は **63機能**。**F27 は E55 以降 prefers-contrast:more の --ink-dim が既定より暗い逆転＝実バグ**として E56 で修正（P2_不具合/P3/P4 を記入）。F22/F37 の備考を現状（8 点同期・data-backdrop）へ。既存行の根拠行番号は E56 の tree へ機械再対応（difflib）。歴史（25機能・欠陥0 の一巡）は不変。
 - addendum（2026-10-23・E57）: 第2輪レビューの是正 E57 を **F64〜F67** として追補し正典は **67機能**。F40〜F61 の P2 は worker(opus) の headless Chrome+CDP 実走結果（独立の目）を Fable が検収して記入（詳細は各行）。
 - addendum（2026-10-24・E58）: F62〜F67 を worker(opus) が E57 凍結ビルドで独立実走（6/6 pass）し P2 に併記、敵対的エッジ 16 項目で fail 2（縁カード連打・opaque origin）→E58 で修正し **F68** として追補（正典 **68機能**）。F62/F63/F66 の記述誤り（根拠行・cache 件数・行数の過大）を訂正。
+- addendum（2026-10-24・E59）: 性能レンズ（CDP 実測）の客観是正を **F69** として追補（正典 **69機能**）。人間判断の性能項目は HZ-BL-042。
 
 ## Phase 3 計画（修正）
 Phase2 happy-path は欠陥0。確定前に「敵対的エッジ検査」を1チャンク行い、実バグが出たら working tree のみで修正→hazama-check 0FAIL→P3列、出なければ「修正0」を確定して Phase4(=再テスト不要)へ。

@@ -139,6 +139,22 @@ Hazama 自律開発の作業待ち行列。
 
 ## P2
 
+### HZ-BL-042 — 性能レンズの人間判断（E59 の見送り分）
+- priority : P2
+- scope    : runtime / verify
+- agent    : human
+- human-gate: yes
+- status   : open
+- source   : 2026-10-24 E59 性能レンズ（CDP tracing の実測）
+- detail   : (1) 入口画像 entry-e47.webp は可逆 1,235,594B＝初回転送の 80%。可逆のまま最大圧縮で −6.2%、不可逆 q95 157KB／q90 92KB
+  （PSNR 43.6dB）／q85 61KB。q90 なら 400kbps で load 32.3→8.7s、総転送 1.54→0.42MB。画質の採否は目で。
+  (2) 観測者 `.deep`（M 以降）の呼吸アニメが text-shadow で毎フレーム Layout（4x で main 18.6%→opacity だけなら 11.2%）。
+  (3) 曼荼羅 `top` の 3s transition が沈むたびに毎フレーム Layout（transform: translateY(vh) へ。URL バー伸縮時の位置は実機で）。
+  (4) `<link rel="preload" as="script" fetchpriority="low">` で「沈む」−0.2〜0.9s（gz）。H2 の本番では未測・版の同期点が 1 つ増える。
+  (5) 再訪でも depths を network-first（no-store）で待つ＝「沈む」が gz 354/987ms（1.6M/400k）。デプロイ伝播とのトレードオフ。
+  (6) en.json（gz 16KB）を英語を使わない人にも毎回取得／Peel の強制 reflow 遷移ごと 2 回（4x で 4.4ms）。
+  いずれも見た目・設計に触れるので人間の判断。計測スクリプトと生データは当該 session の scratchpad（lens9）に残した。
+
 ### HZ-BL-041 — コード衛生レンズの提案（E58 の見送り分）と遅い回線の偽の失敗表示
 - priority : P2
 - scope    : runtime / smoke
