@@ -29,7 +29,7 @@
   <link rel="manifest" href="manifest.webmanifest" />
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png" />
   <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png" />
-  <link rel="stylesheet" href="slice.css?v=e59" />
+  <link rel="stylesheet" href="slice.css?v=e60" />
 </head>
 <body data-phase="surface" data-backdrop="entry">
   <div class="hz-bg" aria-hidden="true">
@@ -135,7 +135,7 @@
       </div>
       <p class="hz-settings-hint" data-i18n>音は「沈む」のあとに鳴ります。0%で無音です。小さな音量から試してください。</p>
       <div class="hz-settings-release">
-        <p><span data-i18n>表示中の版</span>: <output id="build-version">E59</output></p>
+        <p><span data-i18n>表示中の版</span>: <output id="build-version">E60</output></p>
         <p id="settings-refresh-note" class="hz-settings-hint" data-i18n>更新を確認すると入口に戻ります。周回・認識・痕跡の記憶は残ります。</p>
         <button id="settings-refresh" class="hz-chip" type="button" aria-describedby="settings-refresh-note" data-i18n>更新を確認して開き直す</button>
       </div>
@@ -170,8 +170,8 @@
     //          （自動 update で「URL は旧版・中身は新版」になった controller や、遅い回線での待ち）。
     //          無ければ再試行を出したまま controllerchange を待ち続け、遅れて activate したら自動 reload。
     (() => {
-      const SW_URL = "sw.js?v=e59";
-      const RUNTIME_URL = "slice.js?v=e59";
+      const SW_URL = "sw.js?v=e60";
+      const RUNTIME_URL = "slice.js?v=e60";
       const cssLink = document.querySelector('link[rel="stylesheet"]');
       const CSS_URL = cssLink ? cssLink.getAttribute("href") : "";
       const expectedController = new URL(SW_URL, document.baseURI).href;

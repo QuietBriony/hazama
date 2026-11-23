@@ -2913,7 +2913,7 @@
     // 翻訳が取得できなくても日本語の起動は止めない。言語は表紙での明示選択・保存しない。
     const controller = new AbortController();
     const timer = window.setTimeout(() => controller.abort(), 8000);
-    fetch("locales/en.json?v=e59", { signal: controller.signal }).then((response) => {
+    fetch("locales/en.json?v=e60", { signal: controller.signal }).then((response) => {
       if (!response.ok) throw new Error("English catalog HTTP " + response.status);
       return response.json();
     }).then((data) => {
@@ -2932,7 +2932,7 @@
     const controller = new AbortController();
     const timer = window.setTimeout(() => controller.abort(), 10000);
     try {
-      const res = await fetch("depths-shell.json?v=e59", { cache: "no-store", signal: controller.signal });
+      const res = await fetch("depths-shell.json?v=e60", { cache: "no-store", signal: controller.signal });
       if (!res.ok) throw new Error(`depths-shell HTTP ${res.status}`);
       const data = await res.json();
       if (!data || typeof data !== "object" || !data.start || !data.nodes || !data.nodes[data.start]) {
@@ -3039,7 +3039,7 @@
     if (!("serviceWorker" in navigator)) return;
     try { if (!navigator.serviceWorker) return; } catch (_) { return; }   // E58: opaque origin（sandbox iframe 等）では getter が SecurityError を投げる
     const register = () => {
-      navigator.serviceWorker.register("sw.js?v=e59", { scope: "./", updateViaCache: "none" }).then((reg) => {
+      navigator.serviceWorker.register("sw.js?v=e60", { scope: "./", updateViaCache: "none" }).then((reg) => {
         if (typeof reg.update === "function") reg.update().catch(() => {});
       }).catch((err) => console.warn("[Hazama slice] SW register failed:", err));
     };

@@ -399,7 +399,7 @@ body.omega    .hz-stage[data-stage="omega"] {
 }
 .hz-reading-tools[hidden] { display: none; }
 .hz-reading-place {
-  min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  min-width: 0;
   color: var(--ink-dim); font-size: 0.74rem; letter-spacing: 0.04em;
 }
 #reveal-now { flex: 0 0 auto; }
