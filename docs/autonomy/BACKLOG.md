@@ -442,6 +442,11 @@ handoff 前の確認は `docs/autonomy/closeout-checklist.md` を使います。
 
 ## Done
 
+### HZ-BL-043 — 狭い画面で現在地の見出しを最後まで読む
+- scope: runtime / verify
+- status: done — E60候補。日本語・英語の深度Zで折り返しと操作をブラウザ確認。
+- human-gate: no（実機PWA・読み心地の評価は既存の001/002で継続）
+
 ### HZ-BL-033 — 深度データの通信停止から起動を復旧する ✅ 2026-10-02
 - scope: runtime(narrow) / smoke / verify
 - status: done — E55.1実装・agent確認済。採用・配信状況はSESSION-LEDGER参照。

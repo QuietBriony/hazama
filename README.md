@@ -10,7 +10,7 @@ Hazama は、沈むほど戻りにくい「降下する対話」の没入型静�
 - `slice.js` : エンジン（reveal/全文表示・ページ内設定と記憶を残す再読み込み・表示専用の言語切替・沈下/認識/Ωゲート・エコー門・二極終端と振り返り・全候補表示後の選択解放・物語の位置に応じた背景・反転ガーデン/曼荼羅/グリッジ・内製Audio・below∞生成・spiral 記憶・縁カード）
 - E55.1: 深度データの取得/本文読了が10秒以内に完了しない場合に、既存の再試行を表示する。[再現・検証メモ](docs/playtest/boot-data-timeout-e55-1.md)。採用・配信状況は[作業台帳](docs/autonomy/SESSION-LEDGER.md)を参照。
 - `locales/en.json` : 英語試作カタログ（初回の身体の道＋共有終端/操作/エコー候補。全面英語対応ではない）
-- `slice.css` : 没入表示（深部の絵を黒に潰さない露出・本文の薄い暗幕・文字に重ならない痕跡）と、背景の明滅/揺れを抑える読書優先表示
+- `slice.css` : 現在地の長い見出しは「全文を表示」の手前で折り返す（E60）。没入表示（深部の絵を黒に潰さない露出・本文の薄い暗幕・文字に重ならない痕跡）と、背景の明滅/揺れを抑える読書優先表示
 - `depths-shell.json` : 深度本文データ（depthMeta v0 スキーマ・沈下スパイン・72ノード）
 - `manifest.webmanifest` / `sw.js` / `icons/` : PWA install / offline shell（cache prefix `hazama-pwa-`）。E56: core（html/css/js/depths/manifest）だけ atomic に precache し、視覚 asset・英語カタログ・`lp.html`（E57）は activate 後に best-effort（E57: 取り残しは次の fetch で一度だけ再走）、network の HTML は cache に書かない（offline の HTML は同版の precache のみ・入口以外は precache に無ければ network error）
 - `assets/hazama-descent-entry-e47.webp` : E47の入口（候補01を採用・原画と画素一致のlossless WebP）。36秒で僅かに寄って静まる有限カメラ。`hazama-descent-{drift,bottom,surfaced,omega}.webp` の4枚と周回セットBは深度/終端で引き継ぐ。旧`hazama-descent-key.webp`と`og-card.jpg`は共有OG画像として保持。
